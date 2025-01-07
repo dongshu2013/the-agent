@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Path
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -9,7 +9,7 @@ from ai_companion.core.config import settings
 from ai_companion.core.openrouter import OpenRouterClient
 from ai_companion.database import get_db
 from ai_companion.models.messages import Message
-from ai_companion.models.user import User
+from ai_companion.models.user import User, UserPersona
 from ai_companion.utils.validators import MessageValidator
 
 router = APIRouter()
@@ -74,8 +74,23 @@ def combine_messages(messages: List[dict]) -> str:
 
 
 def create_user_context(db: Session, user_id: int) -> str:
-    user_tags = db.query(User).filter(User.id == user_id).first()
-    return "Context about me: \n" + "\n-".join(user_tags)
+    persona = get_latest_persona(db, user_id)
+    if persona:
+        return f"Context about me:\n{persona}"
+    return "Context about me: No additional context available."
+
+
+def get_latest_persona(db: Session, user_id: int) -> str:
+    """Get only the latest persona for a user."""
+    latest_persona = (
+        db.query(UserPersona)
+        .filter(UserPersona.user_id == user_id)
+        .order_by(UserPersona.version.desc())
+        .first()
+    )
+    if latest_persona:
+        return latest_persona.persona
+    return ""
 
 
 @router.post("/chat")
@@ -137,3 +152,17 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
         return response
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/user/{tg_user_id}/persona")
+async def get_user_persona(
+    tg_user_id: str = Path(..., description="Telegram user ID"),
+    db: Session = Depends(get_db),
+):
+    """Get the latest persona information for a user."""
+    user = db.query(User).filter(User.tg_user_id == tg_user_id).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {"persona": get_latest_persona(db, user.id)}
