@@ -31,6 +31,3 @@ CREATE TABLE IF NOT EXISTS user_personas (
     created_at BIGINT DEFAULT EXTRACT(EPOCH FROM CURRENT_TIMESTAMP)::BIGINT,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
-
--- Add index for efficient querying
-CREATE INDEX idx_user_personas_user_version ON user_personas(user_id, version);
