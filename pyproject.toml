@@ -42,3 +42,7 @@ check_untyped_defs = true
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+start = "ai_companion.main:start_server"
+start-dev = "ai_companion.main:start_dev"

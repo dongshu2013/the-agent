@@ -1,4 +1,11 @@
 import uvicorn
 
-if __name__ == "__main__":
-    uvicorn.run("ai_companion.main:app", host="0.0.0.0", port=8000, reload=True)
+
+def start_server():
+    uvicorn.run("ai_companion.main:app", host="0.0.0.0", port=8000, lifespan="on")
+
+
+def start_dev():
+    uvicorn.run(
+        "ai_companion.main:app", host="0.0.0.0", port=8000, lifespan="on", reload=True
+    )
