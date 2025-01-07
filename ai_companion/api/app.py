@@ -1,6 +1,6 @@
+from asyncio import create_task, sleep
 from contextlib import asynccontextmanager
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -11,26 +11,27 @@ from ai_companion.core.openrouter import OpenRouterClient
 from ai_companion.database import get_db
 from ai_companion.tasks.persona_builder import PersonaBuilder
 
-scheduler = AsyncIOScheduler()
+
+async def run_periodic_task(persona_builder: PersonaBuilder):
+    while True:
+        await persona_builder.run_persona_update()
+        await sleep(6 * 3600)  # Sleep for 6 hours
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: create scheduler and persona builder
+    # Startup: create persona builder
     db: Session = next(get_db())
     openrouter_client = OpenRouterClient()
     persona_builder = PersonaBuilder(db, openrouter_client)
 
-    # Schedule persona updates every 6 hours
-    scheduler.add_job(
-        persona_builder.run_persona_update, "interval", hours=6, id="persona_builder"
-    )
-    scheduler.start()
+    # Start periodic task
+    task = create_task(run_periodic_task(persona_builder))
 
     yield
 
     # Shutdown: clean up resources
-    scheduler.shutdown()
+    task.cancel()
     db.close()
 
 
