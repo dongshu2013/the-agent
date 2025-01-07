@@ -19,3 +19,18 @@ CREATE TABLE IF NOT EXISTS messages (
     created_at BIGINT DEFAULT EXTRACT(EPOCH FROM CURRENT_TIMESTAMP)::BIGINT,
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+-- Create user_personas table
+CREATE TABLE IF NOT EXISTS user_personas (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    version INTEGER NOT NULL,
+    persona TEXT NOT NULL,
+    last_processed_message_id INTEGER NOT NULL,
+    messages_processed INTEGER NOT NULL,
+    created_at BIGINT DEFAULT EXTRACT(EPOCH FROM CURRENT_TIMESTAMP)::BIGINT,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- Add index for efficient querying
+CREATE INDEX idx_user_personas_user_version ON user_personas(user_id, version);
