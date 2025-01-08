@@ -29,8 +29,7 @@ def interactive_chat():
 
             # Print the response
             result = response.json()
-            assistant_message = result["choices"][0]["message"]["content"]
-            print("\nAssistant:", assistant_message)
+            print("\nAssistant:", result["reply"])
 
         except requests.RequestException as e:
             print(f"Error occurred: {e}")

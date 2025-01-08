@@ -37,9 +37,10 @@ Instructions:
 3. Explain why you have the impression of the user's persona, and put more evidence if possible.
 
 Remember:
-1. you only need to output a short summary of the persona, no other text, don't be too verbose
-2. dont list all items as bullet points, just pick the most important ones, just a few sentences to summarize what you observed
-3. at the end of the persona, add some tags the user with some keywords of their skills, occupation, industry, interests e.t.c
+1. You only need to output a short summary of the persona as evaluation report, don't be too verbose
+2. Don't list all items as bullet points, just pick the most important ones and explain it in a few sentences
+3. Don't list good impressions only, you should be fair and list both good and bad impressions per your observation
+4. At the end of the persona, add some tags the user with some keywords of their skills, occupation, industry, interests e.t.c
 """
 # fmt: on
 

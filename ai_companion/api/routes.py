@@ -137,7 +137,7 @@ async def chat(
         db.add(message)
         db.commit()
 
-        return response
+        return {"reply": assistant_message}
     except Exception as e:
         logging.error(f"Error occurred: {e}")
         raise HTTPException(status_code=500, detail=str(e))
