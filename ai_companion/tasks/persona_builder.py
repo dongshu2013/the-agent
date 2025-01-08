@@ -14,32 +14,33 @@ BATCH_SIZE = 100
 # flake8: noqa
 # fmt: off
 PERSONA_PROMPT = """Based on these conversations, build or update the user's persona.
-Focus on understanding:
+Focus on understanding following aspects of the user:
 
-1. Communication Style:
-   - Language preferences
-   - Writing style
-   - Typical response length
-   - Formality level
-
-2. Knowledge & Expertise:
+1. Knowledge & Expertise:
    - Professional background
    - Areas of expertise
-   - Topics they're learning about
 
-3. Interests & Patterns:
-   - Frequently discussed topics
+2. Interests & Patterns:
    - Hobbies and interests
-   - Regular activities mentioned
+   - Regular activities and frequently discussed topics
 
-4. Behavioral Traits:
-   - Problem-solving approach
-   - Learning style
-   - Interaction preferences
+3. Opinions & Traits:
+   - Their opinions on things, such as crypto, AI, politics, religion e.t.c, especially their opinions on some hot topics
+   - Their traits, such as MBTI, Big Five Personality Test e.t.c
+
 
 Previous persona: {previous_persona}
 
-Analyze these new conversations and evolve the persona. Maintain important patterns and update with new insights."""
+Instructions:
+1. You should only build a persona of the user based on the conversations. Analyze these new conversations and evolve the persona.
+2. Maintain important patterns, you don't need to be too verbose and you don't need to conclude everything in detail.
+3. Explain why you have the impression of the user's persona, and put more evidence if possible.
+
+Remember:
+1. you only need to output a short summary of the persona, no other text, don't be too verbose
+2. dont list all items as bullet points, just pick the most important ones, just a few sentences to summarize what you observed
+3. at the end of the persona, add some tags the user with some keywords of their skills, occupation, industry, interests e.t.c
+"""
 # fmt: on
 
 
