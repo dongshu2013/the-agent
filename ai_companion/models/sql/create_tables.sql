@@ -13,20 +13,33 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS messages (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
+    agent_id INTEGER NOT NULL,
     user_message TEXT NOT NULL,
     assistant_message TEXT NOT NULL,
     created_at BIGINT DEFAULT EXTRACT(EPOCH FROM CURRENT_TIMESTAMP)::BIGINT,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (agent_id) REFERENCES agents(id)
 );
 
 -- Create user_personas table
 CREATE TABLE IF NOT EXISTS user_personas (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL,
+    agent_id INTEGER NOT NULL,
     version INTEGER NOT NULL,
     persona TEXT NOT NULL,
     last_processed_message_id INTEGER NOT NULL,
     messages_processed INTEGER NOT NULL,
     created_at BIGINT DEFAULT EXTRACT(EPOCH FROM CURRENT_TIMESTAMP)::BIGINT,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (agent_id) REFERENCES agents(id)
+);
+
+CREATE TABLE IF NOT EXISTS agents (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT,
+    system_prompt TEXT NOT NULL,
+    enable_persona BOOLEAN DEFAULT FALSE,
+    created_at BIGINT DEFAULT EXTRACT(EPOCH FROM CURRENT_TIMESTAMP)::BIGINT
 );

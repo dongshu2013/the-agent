@@ -49,4 +49,6 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 start = "ai_companion.main:start_server"
 start-dev = "ai_companion.main:start_dev"
-start-chat = "scripts.test_chat_interactive:interactive_chat"
+start-chat = "ai_companion.scripts.test_chat_interactive:interactive_chat"
+
+add-agent = "ai_companion.scripts.manage_agents:main"

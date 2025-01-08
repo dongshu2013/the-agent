@@ -14,6 +14,8 @@ class Message(Base):
     user_message = Column(Text, nullable=False)
     assistant_message = Column(Text, nullable=False)
     created_at = Column(BigInteger, default=lambda: int(datetime.now().timestamp()))
+    agent_id = Column(Integer, ForeignKey("agents.id"))
 
     # Relationship with user
     user = relationship("User", back_populates="messages")
+    agent = relationship("Agent", back_populates="messages")

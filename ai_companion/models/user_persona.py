@@ -10,6 +10,7 @@ class UserPersona(Base):
     __tablename__ = "user_personas"
 
     id = Column(Integer, primary_key=True, index=True)
+    agent_id = Column(Integer, ForeignKey("agents.id"))
     user_id = Column(Integer, ForeignKey("users.id"))
     version = Column(Integer, nullable=False)
     persona = Column(Text, nullable=False)
@@ -19,3 +20,4 @@ class UserPersona(Base):
 
     # Relationship with user
     user = relationship("User", back_populates="user_personas")
+    agent = relationship("Agent", back_populates="user_personas")

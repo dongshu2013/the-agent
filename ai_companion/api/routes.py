@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from ai_companion.core.config import settings
 from ai_companion.core.openrouter import OpenRouterClient
 from ai_companion.database import get_db
+from ai_companion.models.agents import Agent
 from ai_companion.models.messages import Message
 from ai_companion.models.user import User
 from ai_companion.models.user_persona import UserPersona
@@ -40,18 +41,19 @@ async def validate_user(
     return user
 
 
-async def get_conversation_history(user_id: int, db: Session) -> List[dict]:
+async def get_conversation_history(
+    user_id: int, agent_id: int, db: Session
+) -> List[dict]:
     history = (
         db.query(Message)
         .filter(Message.user_id == user_id)
+        .filter(Message.agent_id == agent_id)
         .order_by(Message.created_at.desc())
         .limit(settings.MAX_CONTEXT_MESSAGES)
         .all()
     )
 
     messages = []
-    if settings.SYSTEM_PROMPT:
-        messages.append({"role": "system", "content": settings.SYSTEM_PROMPT})
 
     # Convert to list of messages in reverse chronological order (oldest first)
     for conv in reversed(history):
@@ -63,18 +65,12 @@ async def get_conversation_history(user_id: int, db: Session) -> List[dict]:
     return messages
 
 
-def create_user_context(db: Session, user_id: int) -> str:
-    persona = get_latest_persona(db, user_id)
-    if persona:
-        return f"Context about me:\n{persona}"
-    return "Context about me: No additional context available."
-
-
-def get_latest_persona(db: Session, user_id: int) -> str:
+def get_latest_persona(db: Session, user_id: int, agent_id: int) -> str:
     """Get only the latest persona for a user."""
     latest_persona = (
         db.query(UserPersona)
         .filter(UserPersona.user_id == user_id)
+        .filter(UserPersona.agent_id == agent_id)
         .order_by(UserPersona.version.desc())
         .first()
     )
@@ -83,9 +79,10 @@ def get_latest_persona(db: Session, user_id: int) -> str:
     return ""
 
 
-@router.post("/chat/{tg_user_id}")
+@router.post("/chat/{agent_id}/{tg_user_id}")
 async def chat(
     request: ChatRequest,
+    agent_id: int = Path(..., description="Agent ID"),
     tg_user_id: str = Path(..., description="Telegram user ID"),
     db: Session = Depends(get_db),
 ):
@@ -110,17 +107,32 @@ async def chat(
             tg_user_id=tg_user_id,
             db=db,
         )
+        agent = db.query(Agent).filter(Agent.id == agent_id).first()
+        if not agent:
+            raise HTTPException(status_code=404, detail="Agent not found")
 
         # Get conversation history
-        conversation_history = await get_conversation_history(user.id, db)
-        user_context = create_user_context(db, user.id)
+        system_message = [{"role": "system", "content": agent.system_prompt}]
+        conversation_history = await get_conversation_history(user.id, agent.id, db)
+
+        # Get persona if enabled
+        user_context = ""
+        if agent.enable_persona:
+            persona = get_latest_persona(db, user.id, agent_id)
+            if persona:
+                user_context = f"Context about me:\n{persona}\n\n"
+
         # Create full message array with context
-        full_messages = conversation_history + [
-            {
-                "role": "user",
-                "content": f"{user_context}\n\nCurrent message:\n{combined_message}",
-            }
-        ]
+        full_messages = (
+            system_message
+            + conversation_history
+            + [
+                {
+                    "role": "user",
+                    "content": f"{user_context}Current message:\n{combined_message}",
+                }
+            ]
+        )
 
         # Get response from AI
         response = await openrouter_client.chat_completion(full_messages)
@@ -131,6 +143,7 @@ async def chat(
         # Store message
         message = Message(
             user_id=user.id,
+            agent_id=agent.id,
             user_message=combined_message,
             assistant_message=assistant_message,
         )
@@ -143,8 +156,9 @@ async def chat(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/user/{tg_user_id}/persona")
+@router.get("/user/{agent_id}/{tg_user_id}/persona")
 async def get_user_persona(
+    agent_id: int = Path(..., description="Agent ID"),
     tg_user_id: str = Path(..., description="Telegram user ID"),
     db: Session = Depends(get_db),
 ):
@@ -154,4 +168,4 @@ async def get_user_persona(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    return {"persona": get_latest_persona(db, user.id)}
+    return {"persona": get_latest_persona(db, user.id, agent_id)}

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from ai_companion.core.config import settings
 from ai_companion.core.openrouter import OpenRouterClient
+from ai_companion.models.agents import Agent
 from ai_companion.models.messages import Message
 from ai_companion.models.user import User
 from ai_companion.models.user_persona import UserPersona
@@ -51,7 +52,7 @@ class PersonaBuilder:
         self.ai_client = openrouter_client
 
     async def get_unprocessed_messages(
-        self, user_id: int, last_message_id: int
+        self, user_id: int, agent_id: int, last_message_id: int
     ) -> List[Message]:
         """Get messages that haven't been processed for persona building."""
         return (
@@ -71,7 +72,7 @@ class PersonaBuilder:
             .first()
         )
 
-    async def build_persona(self, user_id: int) -> None:
+    async def build_persona(self, user_id: int, agent_id: int) -> None:
         """Build or update user persona based on new conversations."""
         latest_persona = await self.get_latest_persona(user_id)
         last_processed_id = (
@@ -79,7 +80,9 @@ class PersonaBuilder:
         )
         version = (latest_persona.version + 1) if latest_persona else 1
 
-        messages = await self.get_unprocessed_messages(user_id, last_processed_id)
+        messages = await self.get_unprocessed_messages(
+            user_id, agent_id, last_processed_id
+        )
         if not messages or len(messages) < 5:
             logging.info(
                 f"Not enough messages to process for user {user_id}, skipping..."
@@ -114,6 +117,7 @@ class PersonaBuilder:
         # Store new persona
         persona = UserPersona(
             user_id=user_id,
+            agent_id=agent_id,
             version=version,
             persona=new_persona,
             last_processed_message_id=messages[-1].id,
@@ -134,6 +138,13 @@ class PersonaBuilder:
         """Background task to update personas for all users."""
         users = self.db.query(User).all()
         for user in users:
-            logging.info(f"Running persona update for user {user.id}")
-            await self.build_persona(user.id)
-            logging.info(f"Persona update completed for user {user.id}")
+            for agent in (
+                self.db.query(Agent).filter(Agent.enable_persona == True).all()
+            ):
+                logging.info(
+                    f"Running persona update for user {user.id} and agent {agent.id}"
+                )
+                await self.build_persona(user.id, agent.id)
+                logging.info(
+                    f"Persona update completed for user {user.id} and agent {agent.id}"
+                )
