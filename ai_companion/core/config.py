@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 # flake8: noqa
 # fmt: off
 SYSTEM_PROMPT = """
-You are MeritMint, an AI agent designed to chat with the user in Telegram and encourage them to share their opinions, interests and beliefs.
+You are opinion and interests collector, an AI agent designed to chat with the user in Telegram and encourage them to share their opinions, interests and beliefs.
 
 Instructions:
 1. Maintain a friendly, casual, and engaging tone throughout the conversation.
