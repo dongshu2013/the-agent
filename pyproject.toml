@@ -6,13 +6,16 @@ authors = ["Your Name <your.email@example.com>"]
 packages = [{include = "ai_companion"}]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.11"
 fastapi = "^0.109.0"
 uvicorn = "^0.27.0"
 python-dotenv = "^1.0.0"
 pydantic = "^2.6.0"
 pydantic-settings = "^2.1.0"
 
+openai = "^1.59.4"
+sqlalchemy = "^2.0.36"
+psycopg2 = "^2.9.10"
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.0"
 black = "^24.2.0"
@@ -21,6 +24,7 @@ flake8 = "^7.0.0"
 mypy = "^1.8.0"
 pre-commit = "^3.6.0"
 
+requests = "^2.32.3"
 [tool.black]
 line-length = 88
 target-version = ['py311']
@@ -45,3 +49,4 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.scripts]
 start = "ai_companion.main:start_server"
 start-dev = "ai_companion.main:start_dev"
+start-chat = "test_chat_interactive:interactive_chat"

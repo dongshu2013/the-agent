@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional
 
 from sqlalchemy import desc
@@ -77,7 +78,7 @@ class PersonaBuilder:
         version = (latest_persona.version + 1) if latest_persona else 1
 
         messages = await self.get_unprocessed_messages(user_id, last_processed_id)
-        if not messages or len(messages) < 10:
+        if not messages or len(messages) < 50:
             return
 
         # Prepare conversation history for AI
@@ -128,4 +129,6 @@ class PersonaBuilder:
         """Background task to update personas for all users."""
         users = self.db.query(User).all()
         for user in users:
+            logging.info(f"Running persona update for user {user.id}")
             await self.build_persona(user.id)
+            logging.info(f"Persona update completed for user {user.id}")

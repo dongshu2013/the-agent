@@ -9,7 +9,8 @@ from ai_companion.core.config import settings
 from ai_companion.core.openrouter import OpenRouterClient
 from ai_companion.database import get_db
 from ai_companion.models.messages import Message
-from ai_companion.models.user import User, UserPersona
+from ai_companion.models.user import User
+from ai_companion.models.user_persona import UserPersona
 from ai_companion.utils.validators import MessageValidator
 
 router = APIRouter()
@@ -24,14 +25,13 @@ class ChatRequest(BaseModel):
 async def validate_user(
     tg_user_id: str,
     username: str = None,
-    first_name: str = None,
     db: Session = Depends(get_db),
 ) -> User:
     user = db.query(User).filter(User.tg_user_id == tg_user_id).first()
 
     if not user:
         # Create new user if doesn't exist
-        user = User(tg_user_id=tg_user_id, username=username, first_name=first_name)
+        user = User(tg_user_id=tg_user_id, username=username)
         db.add(user)
         db.commit()
         db.refresh(user)
@@ -119,7 +119,6 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
         user = await validate_user(
             tg_user_id=request.tg_user_id,
             username=request.username,
-            first_name=request.first_name,
             db=db,
         )
 
