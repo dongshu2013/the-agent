@@ -16,6 +16,6 @@ class Agent(Base):
     enable_persona = Column(Boolean, default=False)
     created_at = Column(BigInteger, default=lambda: int(datetime.now().timestamp()))
 
-    # Relationship with messages
-    messages = relationship("Message", back_populates="agent")
-    user_personas = relationship("UserPersona", back_populates="agent")
+    # Use string reference for relationships to avoid circular imports
+    messages = relationship("Message", back_populates="agent", lazy="dynamic")
+    user_personas = relationship("UserPersona", back_populates="agent", lazy="dynamic")

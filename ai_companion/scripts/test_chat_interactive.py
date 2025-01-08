@@ -5,6 +5,7 @@ BASE_URL = "http://localhost:8000"
 
 def interactive_chat():
     # Test user details
+    agent_id = 1
     test_user_id = "12345"
 
     print("Starting chat session (type 'quit' to exit)")
@@ -24,7 +25,9 @@ def interactive_chat():
 
         try:
             # Send chat request
-            response = requests.post(f"{BASE_URL}/chat/{test_user_id}", json=chat_data)
+            response = requests.post(
+                f"{BASE_URL}/chat/{agent_id}/{test_user_id}", json=chat_data
+            )
             response.raise_for_status()
 
             # Print the response
