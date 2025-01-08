@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from typing import List
 
@@ -13,25 +14,23 @@ from ai_companion.models.user import User
 from ai_companion.models.user_persona import UserPersona
 from ai_companion.utils.validators import MessageValidator
 
+logging.basicConfig(level=logging.INFO)
+
 router = APIRouter()
 openrouter_client = OpenRouterClient()
 
 
 class ChatRequest(BaseModel):
     messages: List[str]
-    tg_user_id: str
 
 
 async def validate_user(
     tg_user_id: str,
-    username: str = None,
     db: Session = Depends(get_db),
 ) -> User:
     user = db.query(User).filter(User.tg_user_id == tg_user_id).first()
-
     if not user:
-        # Create new user if doesn't exist
-        user = User(tg_user_id=tg_user_id, username=username)
+        user = User(tg_user_id=tg_user_id)
         db.add(user)
         db.commit()
         db.refresh(user)
@@ -64,15 +63,6 @@ async def get_conversation_history(user_id: int, db: Session) -> List[dict]:
     return messages
 
 
-def combine_messages(messages: List[dict]) -> str:
-    """Combine multiple messages into a single string with clear separation."""
-    combined = []
-    for msg in messages:
-        if msg["role"] == "user":
-            combined.append(msg["content"])
-    return "\n---\n".join(combined)
-
-
 def create_user_context(db: Session, user_id: int) -> str:
     persona = get_latest_persona(db, user_id)
     if persona:
@@ -93,16 +83,17 @@ def get_latest_persona(db: Session, user_id: int) -> str:
     return ""
 
 
-@router.post("/chat")
-async def chat(request: ChatRequest, db: Session = Depends(get_db)):
+@router.post("/chat/{tg_user_id}")
+async def chat(
+    request: ChatRequest,
+    tg_user_id: str = Path(..., description="Telegram user ID"),
+    db: Session = Depends(get_db),
+):
     try:
-        # Combine all user messages into one
-        combined_message = combine_messages(request.messages)
-
-        # Validate the combined message
+        combined_message = "\n---\n".join(request.messages)
         validation_result = MessageValidator.validate_message(combined_message)
-
         if not validation_result["valid"]:
+            logging.info(f"Message validation failed: {validation_result['error']}")
             error_response = {
                 "choices": [
                     {
@@ -115,10 +106,8 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
             }
             return error_response
 
-        # Validate user and get or create user record
         user = await validate_user(
-            tg_user_id=request.tg_user_id,
-            username=request.username,
+            tg_user_id=tg_user_id,
             db=db,
         )
 
@@ -150,6 +139,7 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)):
 
         return response
     except Exception as e:
+        logging.error(f"Error occurred: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

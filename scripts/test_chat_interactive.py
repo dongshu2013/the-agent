@@ -20,12 +20,11 @@ def interactive_chat():
         # Prepare the chat request
         chat_data = {
             "messages": [user_message],
-            "tg_user_id": test_user_id,
         }
 
         try:
             # Send chat request
-            response = requests.post(f"{BASE_URL}/chat", json=chat_data)
+            response = requests.post(f"{BASE_URL}/chat/{test_user_id}", json=chat_data)
             response.raise_for_status()
 
             # Print the response

@@ -78,7 +78,10 @@ class PersonaBuilder:
         version = (latest_persona.version + 1) if latest_persona else 1
 
         messages = await self.get_unprocessed_messages(user_id, last_processed_id)
-        if not messages or len(messages) < 50:
+        if not messages or len(messages) < 5:
+            logging.info(
+                f"Not enough messages to process for user {user_id}, skipping..."
+            )
             return
 
         # Prepare conversation history for AI
@@ -121,8 +124,8 @@ class PersonaBuilder:
         """Format conversations for AI analysis."""
         conversation_texts = []
         for msg in messages:
-            conversation_texts.append(f"User: {msg.messages['content']}")
-            conversation_texts.append(f"Assistant: {msg.assistant_message['content']}")
+            conversation_texts.append(f"User: {msg.user_message}")
+            conversation_texts.append(f"Assistant: {msg.assistant_message}")
         return "\n\n".join(conversation_texts)
 
     async def run_persona_update(self) -> None:

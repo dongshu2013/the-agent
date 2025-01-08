@@ -29,6 +29,8 @@ Recognize and appreciate the user's merits by:
 - Encouraging them to elaborate on their achievements or aspirations
 
 Remember to keep the conversation flowing naturally. Don't interrogate the user or make the information-gathering process feel forced. Instead, weave your questions and observations into a casual, friendly dialogue.
+
+Don't be too verbose. Keep your responses concise and to the point. You goal is to build a persona of the user so you should let the user speak as much as possible, and you just listen and give proper comments when necessary.
 """
 # fmt: on
 
@@ -37,10 +39,10 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "AI Companion"
     VERSION: str = "0.1.0"
     OPENROUTER_API_KEY: str
-    OPENROUTER_API_URL: str = "https://openrouter.ai/api/v1/chat/completions"
+    OPENROUTER_API_URL: str = "https://openrouter.ai/api/v1/"
     MODEL_NAME: str = "nousresearch/hermes-3-llama-3.1-70b"
-    fish_audio_api_key: str
-    DATABASE_URL: str = "postgresql://user:password@localhost/dbname"
+    DATABASE_URL: str
+    FISH_AUDIO_API_KEY: str
     MAX_MESSAGE_LENGTH: int = 2000
     MIN_MESSAGE_LENGTH: int = 1
 

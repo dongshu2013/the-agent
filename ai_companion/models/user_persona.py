@@ -18,4 +18,4 @@ class UserPersona(Base):
     created_at = Column(BigInteger, default=lambda: int(time()))
 
     # Relationship with user
-    user = relationship("User", back_populates="personas")
+    user = relationship("User", back_populates="user_personas")

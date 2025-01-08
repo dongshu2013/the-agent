@@ -1,7 +1,6 @@
 -- Create users table
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
-    user_type VARCHAR(10) DEFAULT 'tg',
     tg_user_id VARCHAR(255) NOT NULL,
     username VARCHAR(255),
     avatar_url VARCHAR(255),

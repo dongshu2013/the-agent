@@ -17,5 +17,5 @@ class User(Base):
     created_at = Column(BigInteger, default=lambda: int(datetime.now().timestamp()))
     last_active = Column(BigInteger, default=lambda: int(datetime.now().timestamp()))
 
-    # Relationship with conversations
-    conversations = relationship("Conversation", back_populates="user")
+    messages = relationship("Message", back_populates="user")
+    user_personas = relationship("UserPersona", back_populates="user")
