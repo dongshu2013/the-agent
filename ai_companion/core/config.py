@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     MAX_MESSAGE_LENGTH: int = 2000
     MIN_MESSAGE_LENGTH: int = 1
     MINIMUM_MESSAGES_TO_PROCESS: int = 10
+    API_SECRET_KEY: str
 
     # Chat context settings
     MAX_CONTEXT_MESSAGES: int = 50  # Number of previous messages to include as context
