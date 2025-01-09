@@ -1,8 +1,8 @@
 import logging
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, Header, HTTPException, Path
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -82,7 +82,13 @@ def get_latest_persona(db: Session, user_id: int, agent_id: int) -> str:
     # fmt: on
 
 
-@router.post("/chat/{agent_id}/{tg_user_id}")
+async def verify_api_key(x_api_key: Optional[str] = Header(None)):
+    if not x_api_key or x_api_key != settings.API_SECRET_KEY:
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
+    return x_api_key
+
+
+@router.post("/chat/{agent_id}/{tg_user_id}", dependencies=[Depends(verify_api_key)])
 async def chat(
     request: ChatRequest,
     agent_id: int = Path(..., description="Agent ID"),
@@ -159,7 +165,7 @@ async def chat(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/persona/{agent_id}/{tg_user_id}")
+@router.get("/persona/{agent_id}/{tg_user_id}", dependencies=[Depends(verify_api_key)])
 async def get_user_persona(
     agent_id: int = Path(..., description="Agent ID"),
     tg_user_id: str = Path(..., description="Telegram user ID"),
@@ -174,7 +180,7 @@ async def get_user_persona(
     return {"persona": get_latest_persona(db, user.id, agent_id)}
 
 
-@router.get("/agent/{agent_id}")
+@router.get("/agent/{agent_id}", dependencies=[Depends(verify_api_key)])
 async def get_agents(
     agent_id: int = Path(..., description="Agent ID"),
     db: Session = Depends(get_db),
