@@ -45,7 +45,7 @@ def main():
         {
             "name": "donuts",
             "description": """
-**I'm the Donuts, here to chat, listen, and learn about your interests and dreams!**
+I'm the Donuts, here to chat, listen, and learn about your interests and dreams!
 """,
             # flake8: noqa
             # fmt: off
@@ -76,7 +76,7 @@ Remember:
         {
             "name": "rebecca_the_wedding_planner",
             "description": """
-**I'm Rebecca, your wedding planner. Let's make your big day perfect!**
+I'm Rebecca, your wedding planner. Let's make your big day perfect!
 """,
             # flake8: noqa
             # fmt: off
