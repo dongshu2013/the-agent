@@ -156,7 +156,7 @@ async def chat(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/user/{agent_id}/{tg_user_id}/persona")
+@router.get("/persona/{agent_id}/{tg_user_id}")
 async def get_user_persona(
     agent_id: int = Path(..., description="Agent ID"),
     tg_user_id: str = Path(..., description="Telegram user ID"),
