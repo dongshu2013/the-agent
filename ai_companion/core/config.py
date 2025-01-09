@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     FISH_AUDIO_API_KEY: str
     MAX_MESSAGE_LENGTH: int = 2000
     MIN_MESSAGE_LENGTH: int = 1
+    MINIMUM_MESSAGES_TO_PROCESS: int = 10
 
     # Chat context settings
     MAX_CONTEXT_MESSAGES: int = 50  # Number of previous messages to include as context

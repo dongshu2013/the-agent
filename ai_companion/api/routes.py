@@ -76,7 +76,10 @@ def get_latest_persona(db: Session, user_id: int, agent_id: int) -> str:
     )
     if latest_persona:
         return latest_persona.persona
-    return ""
+    # flake8: noqa: E501
+    # fmt: off
+    return f"No persona found yet. Chat with me for at least {settings.MINIMUM_MESSAGES_TO_PROCESS} messages to generate your persona."
+    # fmt: on
 
 
 @router.post("/chat/{agent_id}/{tg_user_id}")

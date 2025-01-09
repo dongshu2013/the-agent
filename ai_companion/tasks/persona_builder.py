@@ -12,6 +12,7 @@ from ai_companion.models.user import User
 from ai_companion.models.user_persona import UserPersona
 
 BATCH_SIZE = 100
+
 # flake8: noqa
 # fmt: off
 PERSONA_PROMPT = """Based on these conversations, build or update the user's persona.
@@ -83,7 +84,7 @@ class PersonaBuilder:
         messages = await self.get_unprocessed_messages(
             user_id, agent_id, last_processed_id
         )
-        if not messages or len(messages) < 5:
+        if not messages or len(messages) < settings.MINIMUM_MESSAGES_TO_PROCESS:
             logging.info(
                 f"Not enough messages to process for user {user_id}, skipping..."
             )
