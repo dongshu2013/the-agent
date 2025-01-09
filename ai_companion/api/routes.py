@@ -172,3 +172,14 @@ async def get_user_persona(
         raise HTTPException(status_code=404, detail="User not found")
 
     return {"persona": get_latest_persona(db, user.id, agent_id)}
+
+
+@router.get("/agent/{agent_id}")
+async def get_agents(
+    agent_id: int = Path(..., description="Agent ID"),
+    db: Session = Depends(get_db),
+):
+    agent = db.query(Agent).filter(Agent.id == agent_id).first()
+    if not agent:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    return {"agent": agent}

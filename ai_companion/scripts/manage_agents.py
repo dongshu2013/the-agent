@@ -44,7 +44,9 @@ def main():
     agents = [
         {
             "name": "donuts",
-            "description": "An agent to learn about you and create your persona",
+            "description": """
+**I'm the Donuts, here to chat, listen, and learn about your interests and dreams!**
+""",
             # flake8: noqa
             # fmt: off
             "system_prompt": """
@@ -73,7 +75,11 @@ Remember:
         },
         {
             "name": "rebecca_the_wedding_planner",
-            "description": "An agent to help you plan your wedding",
+            "description": """
+**I'm Rebecca, your wedding planner. Let's make your big day perfect!**
+""",
+            # flake8: noqa
+            # fmt: off
             "system_prompt": """
 You are a wedding planner, an AI agent designed to help the user plan their wedding.
 
@@ -91,6 +97,7 @@ Remember:
 2. Let the user speak as much as possible, your goal is to encourage the user to share more and more.
 3. Keep the conversation flowing naturally. Don't interrogate the user or make the information-gathering process feel forced.
 """,
+            # fmt: on
             "enable_persona": False,
         },
     ]
