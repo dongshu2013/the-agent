@@ -78,7 +78,7 @@ def get_latest_persona(db: Session, user_id: int, agent_id: int) -> str:
         return latest_persona.persona
     # flake8: noqa: E501
     # fmt: off
-    return f"No persona found yet. Chat with me for at least {settings.MINIMUM_MESSAGES_TO_PROCESS} messages to generate your persona."
+    return f"No summary found yet. Chat with me for at least {settings.MINIMUM_MESSAGES_TO_PROCESS} messages to generate your chat summary."
     # fmt: on
 
 
