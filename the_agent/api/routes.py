@@ -88,11 +88,11 @@ async def verify_api_key(x_api_key: Optional[str] = Header(None)):
     return x_api_key
 
 
-@router.post("/chat/{agent_id}/{tg_user_id}", dependencies=[Depends(verify_api_key)])
+@router.post("/chat/{agent_id}/{user_id}", dependencies=[Depends(verify_api_key)])
 async def chat(
     request: ChatRequest,
     agent_id: int = Path(..., description="Agent ID"),
-    tg_user_id: str = Path(..., description="Telegram user ID"),
+    user_id: int = Path(..., description="User ID"),
     db: Session = Depends(get_db),
 ):
     try:
@@ -113,7 +113,7 @@ async def chat(
             return error_response
 
         user = await validate_user(
-            tg_user_id=tg_user_id,
+            user_id=user_id,
             db=db,
         )
         agent = db.query(Agent).filter(Agent.id == agent_id).first()
@@ -163,22 +163,6 @@ async def chat(
     except Exception as e:
         logging.error(f"Error occurred: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/persona/{agent_id}/{tg_user_id}", dependencies=[Depends(verify_api_key)])
-async def get_user_persona(
-    agent_id: int = Path(..., description="Agent ID"),
-    tg_user_id: str = Path(..., description="Telegram user ID"),
-    db: Session = Depends(get_db),
-):
-    """Get the latest persona information for a user."""
-    user = db.query(User).filter(User.tg_user_id == tg_user_id).first()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    return {"persona": get_latest_persona(db, user.id, agent_id)}
-
 
 @router.get("/agent/{agent_id}", dependencies=[Depends(verify_api_key)])
 async def get_agents(
