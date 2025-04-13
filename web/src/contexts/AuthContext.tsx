@@ -195,14 +195,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Refresh token before making the request
       const token = await refreshToken() || user.idToken;
       
-      const response = await fetch('/api/auth/apikey/rotate', {
+      const response = await fetch('/api/auth/apikey', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          userId: user.id
+          userId: user.id,
+          operation: 'rotate'
         }),
       });
       
@@ -227,14 +228,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Refresh token before making the request
       const token = await refreshToken() || user.idToken;
       
-      const response = await fetch('/api/auth/apikey/toggle', {
-        method: 'PATCH',
+      const response = await fetch('/api/auth/apikey', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           userId: user.id,
+          operation: 'toggle',
           enabled
         }),
       });
