@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "The Agent",
+  "version": "1.0.0",
+  "description": "A Chrome extension that provides AI assistance",
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "contextMenus"
+  ],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "action": {
+    "default_title": "Open The Agent"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}

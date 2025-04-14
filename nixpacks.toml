@@ -1,0 +1,12 @@
+[phases.setup]
+nixPkgs = ["nodejs_18", "pnpm"]
+
+[phases.install]
+cmds = ["cd web && pnpm install --frozen-lockfile"]
+
+[phases.build]
+cmds = ["cd web && NEXT_TELEMETRY_DISABLED=1 pnpm run build --no-lint"]
+
+[start]
+cmd = "cd web && PORT=$PORT pnpm start"
+type = "web" 
