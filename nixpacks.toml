@@ -26,6 +26,12 @@ cmds = [
   "chmod +x setup-railway.sh && ./setup-railway.sh"
 ]
 
+[phases.cleanup]
+cmds = [
+  "rm -rf ~/.npm",
+  "rm -f /nix/var/nix/profiles/per-user/*/share/bash-completion/completions/npm || true"
+]
+
 [start]
 cmd = "sh ./start-services.sh"
 
