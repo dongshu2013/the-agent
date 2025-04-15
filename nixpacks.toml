@@ -1,7 +1,9 @@
 [phases.setup]
 nixPkgs = [
   "python310",
-  "postgresql_14"
+  "postgresql_14",
+  "nodejs-slim-18_x",
+  "nodePackages.yarn"
 ]
 
 [phases.install]
