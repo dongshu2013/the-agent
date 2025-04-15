@@ -1,16 +1,16 @@
 [phases.setup]
 nixPkgs = [
   "python310",
-  "postgresql_14",
-  "nodejs-slim-18_x",
-  "nodePackages.yarn"
+  "postgresql_14"
 ]
+provideOutPaths = true
 
 [phases.install]
 cmds = [
-  # 安装Node.js和Yarn
-  "curl -fsSL https://deb.nodesource.com/setup_18.x | bash -",
-  "apt-get install -y nodejs",
+  # 使用npx安装yarn
+  "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash",
+  "export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\"",
+  "nvm install 18 && nvm use 18",
   "npm install -g yarn",
   # 安装前端依赖
   "cd web && yarn install"
