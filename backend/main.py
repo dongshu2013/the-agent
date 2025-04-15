@@ -25,7 +25,7 @@ app = FastAPI(
 # 配置CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 在生产环境中应该限制为特定域名
+    allow_origins=settings.CORS_ORIGINS,  # 从配置中读取允许的域名
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -59,7 +59,7 @@ async def root():
 
 # 直接运行服务器的入口点
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", "8000"))
+    port = int(os.getenv("PORT", "8080"))
     uvicorn.run(
         "main:app",
         host="0.0.0.0",

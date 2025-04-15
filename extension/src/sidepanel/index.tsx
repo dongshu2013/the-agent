@@ -20,6 +20,61 @@ import {
   getCurrentConversation,
 } from "../services/chat";
 
+// 新的 TabUI 组件
+const TabUI = ({
+  currentConversation,
+  createNewConversation,
+  darkMode,
+  closeTab,
+}) => {
+  return (
+    <div
+      className={`flex border-b ${darkMode ? "border-gray-700" : "border-gray-200"}`}
+    >
+      <div
+        className={`flex items-center px-4 py-2 ${darkMode ? "text-gray-300" : "text-gray-800"}`}
+      >
+        <button
+          className={`flex items-center gap-1.5 rounded-t-md px-4 py-2 ${
+            darkMode
+              ? "bg-[#24283b] text-gray-300"
+              : "bg-gray-100 text-gray-800"
+          }`}
+        >
+          <span className="text-sm font-medium truncate max-w-[100px]">
+            {currentConversation?.title || "New Chat"}
+          </span>
+        </button>
+      </div>
+      <div className="flex items-center">
+        <button
+          onClick={closeTab}
+          className={`p-1 rounded-md ${
+            darkMode
+              ? "hover:bg-[#292e42] text-gray-400"
+              : "hover:bg-gray-200 text-gray-500"
+          }`}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+            className="w-4 h-4"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const Sidepanel = () => {
   // 状态管理
   const [apiKey, setApiKey] = useStorage("apiKey");
@@ -37,6 +92,10 @@ const Sidepanel = () => {
   >("currentConversationId", null);
   const [showConversationList, setShowConversationList] = useState(false);
 
+  // 当前会话对象
+  const currentConversation =
+    conversations.find((c) => c.id === currentConversationId) || null;
+
   // 引用
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -49,6 +108,11 @@ const Sidepanel = () => {
   useEffect(() => {
     document.body.setAttribute("data-theme", darkMode ? "dark" : "light");
   }, [darkMode]);
+
+  // 关闭当前标签页并创建新会话
+  const closeTab = () => {
+    handleCreateNewConversation();
+  };
 
   // 初始化或加载当前会话
   useEffect(() => {
@@ -248,12 +312,8 @@ const Sidepanel = () => {
   return (
     <div
       className={`flex flex-col h-screen ${darkMode ? "bg-[#1a1b26]" : "bg-white"}`}
-      style={{
-        backgroundColor: darkMode ? "#1a1b26" : "#ffffff",
-        color: darkMode ? "#f8f8f2" : "#333333",
-      }}
     >
-      {/* 头部 */}
+      {/* 头部和会话控制 */}
       <Header
         darkMode={darkMode}
         setDarkMode={setDarkMode}
@@ -262,67 +322,18 @@ const Sidepanel = () => {
         createNewConversation={handleCreateNewConversation}
       />
 
-      {/* 消息区域 */}
-      <div
-        className={`flex-1 overflow-y-auto`}
-        style={{
-          backgroundColor: darkMode ? "#1a1b26" : "#ffffff",
-        }}
-      >
-        <div className="pb-32">
-          {messages.length > 0 ? (
-            messages.map((message) => (
-              <Message key={message.id} message={message} darkMode={darkMode} />
-            ))
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full p-4">
-              <div
-                className={`text-center max-w-md ${
-                  darkMode ? "text-gray-400" : "text-gray-600"
-                }`}
-              >
-                <h3 className="text-xl font-semibold mb-2">
-                  Welcome to MIZU Agent
-                </h3>
-                <p className="mb-4">
-                  Start a new conversation to explore the AI's capabilities. You
-                  can ask any question, get help, or just chat.
-                </p>
-                {!apiKey && (
-                  <div
-                    className={`p-3 rounded-md ${
-                      darkMode
-                        ? "bg-yellow-800/30 text-yellow-200"
-                        : "bg-yellow-50 text-yellow-800"
-                    }`}
-                  >
-                    <p className="text-sm">
-                      You haven't set up your API key yet. Click the settings
-                      icon in the top right corner to add your key for full
-                      functionality.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-      </div>
-
-      {/* 输入区域 */}
-      <InputArea
-        prompt={prompt}
-        setPrompt={setPrompt}
-        handleSubmit={handleSubmit}
-        isLoading={isLoading}
+      {/* 标签页UI */}
+      <TabUI
+        currentConversation={currentConversation}
+        createNewConversation={handleCreateNewConversation}
         darkMode={darkMode}
+        closeTab={closeTab}
       />
 
       {/* 会话列表 */}
       {showConversationList && (
         <ConversationList
-          conversations={conversations || []}
+          conversations={conversations}
           currentConversationId={currentConversationId}
           selectConversation={handleSelectConversation}
           deleteConversation={handleDeleteConversation}
@@ -331,6 +342,60 @@ const Sidepanel = () => {
           darkMode={darkMode}
         />
       )}
+
+      {/* 消息列表 */}
+      <div
+        className={`flex-1 overflow-y-auto p-4 ${
+          darkMode ? "text-gray-200" : "text-gray-700"
+        }`}
+      >
+        {messages.length === 0 ? (
+          <div className="h-full flex flex-col justify-center items-center">
+            <h1
+              className={`text-2xl font-bold mb-4 ${
+                darkMode ? "text-gray-200" : "text-gray-800"
+              }`}
+            >
+              Welcome to MIZU
+            </h1>
+            <p
+              className={`text-center ${
+                darkMode ? "text-gray-300" : "text-gray-600"
+              }`}
+            >
+              Start a new conversation to explore the AI's capabilities.
+              <br />
+              Ask a question, get help, or brainstorm ideas.
+            </p>
+            {!apiKey && (
+              <p
+                className={`mt-8 text-center ${
+                  darkMode ? "text-amber-300" : "text-amber-700"
+                }`}
+              >
+                You haven't set up your API key yet. Click the settings icon in
+                the top right corner to add your key for full functionality.
+              </p>
+            )}
+          </div>
+        ) : (
+          messages.map((message) => (
+            <Message key={message.id} message={message} darkMode={darkMode} />
+          ))
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* 输入区域 */}
+      <div className="p-4">
+        <InputArea
+          prompt={prompt}
+          setPrompt={setPrompt}
+          handleSubmit={handleSubmit}
+          isLoading={isLoading}
+          darkMode={darkMode}
+        />
+      </div>
     </div>
   );
 };
