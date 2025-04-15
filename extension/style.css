@@ -1,0 +1,516 @@
+/* 基本样式 */
+body {
+  margin: 0;
+  padding: 0;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+}
+
+/* 深色模式 */
+body[data-theme="dark"] {
+  background-color: #202123;
+  color: white;
+}
+
+/* 浅色模式 */
+body[data-theme="light"] {
+  background-color: #ffffff;
+  color: #333333;
+}
+
+/* 按钮样式 */
+.btn {
+  padding: 0.5rem 1rem;
+  background-color: #10a37f;
+  color: white;
+  border-radius: 0.375rem;
+  border: none;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background-color: #0d8e6c;
+}
+
+/* 布局类 */
+.flex {
+  display: flex;
+}
+.flex-col {
+  flex-direction: column;
+}
+.items-center {
+  align-items: center;
+}
+.justify-center {
+  justify-content: center;
+}
+.justify-between {
+  justify-content: space-between;
+}
+.h-screen {
+  height: 100vh;
+}
+.h-full {
+  height: 100%;
+}
+.w-full {
+  width: 100%;
+}
+.max-w-md {
+  max-width: 28rem;
+}
+.max-w-3xl {
+  max-width: 48rem;
+}
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+.overflow-y-auto {
+  overflow-y: auto;
+}
+.overflow-hidden {
+  overflow: hidden;
+}
+.whitespace-pre-wrap {
+  white-space: pre-wrap;
+}
+
+/* 间距和大小 */
+.w-32 {
+  width: 8rem;
+}
+.h-32 {
+  height: 8rem;
+}
+.w-5 {
+  width: 1.25rem;
+}
+.h-5 {
+  height: 1.25rem;
+}
+.w-6 {
+  width: 1.5rem;
+}
+.h-6 {
+  height: 1.5rem;
+}
+.w-7 {
+  width: 1.75rem;
+}
+.h-7 {
+  height: 1.75rem;
+}
+.w-8 {
+  width: 2rem;
+}
+.h-8 {
+  height: 2rem;
+}
+.w-4 {
+  width: 1rem;
+}
+.h-4 {
+  height: 1rem;
+}
+.mr-2 {
+  margin-right: 0.5rem;
+}
+.mb-1 {
+  margin-bottom: 0.25rem;
+}
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+.mb-4 {
+  margin-bottom: 1rem;
+}
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+.mb-8 {
+  margin-bottom: 2rem;
+}
+.mt-2 {
+  margin-top: 0.5rem;
+}
+.gap-2 {
+  gap: 0.5rem;
+}
+.gap-4 {
+  gap: 1rem;
+}
+.space-x-2 > * + * {
+  margin-left: 0.5rem;
+}
+.space-y-4 > * + * {
+  margin-top: 1rem;
+}
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+.py-2 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+.py-3 {
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+.py-6 {
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+.px-3 {
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+.p-1 {
+  padding: 0.25rem;
+}
+.p-2 {
+  padding: 0.5rem;
+}
+.p-4 {
+  padding: 1rem;
+}
+.pb-3 {
+  padding-bottom: 0.75rem;
+}
+.pt-2 {
+  padding-top: 0.5rem;
+}
+.pl-4 {
+  padding-left: 1rem;
+}
+.pr-12 {
+  padding-right: 3rem;
+}
+.pb-32 {
+  padding-bottom: 8rem;
+}
+
+/* 文本样式 */
+.text-xs {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+.text-sm {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+.text-lg {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+.text-xl {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+.text-3xl {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+}
+.font-medium {
+  font-weight: 500;
+}
+.font-bold {
+  font-weight: 700;
+}
+.text-left {
+  text-align: left;
+}
+.text-center {
+  text-align: center;
+}
+.text-white {
+  color: rgb(255, 255, 255);
+}
+.text-gray-100 {
+  color: rgb(243, 244, 246);
+}
+.text-gray-300 {
+  color: rgb(209, 213, 219);
+}
+.text-gray-400 {
+  color: rgb(156, 163, 175);
+}
+.text-gray-500 {
+  color: rgb(107, 114, 128);
+}
+.text-gray-700 {
+  color: rgb(55, 65, 81);
+}
+.text-gray-800 {
+  color: rgb(31, 41, 55);
+}
+
+/* 背景颜色 */
+.bg-gray-900 {
+  background-color: #111827;
+}
+.bg-gray-800 {
+  background-color: #1f2937;
+}
+.bg-gray-700 {
+  background-color: #374151;
+}
+.bg-gray-600 {
+  background-color: #4b5563;
+}
+.bg-gray-50 {
+  background-color: #f9fafb;
+}
+.bg-\[\#202123\] {
+  background-color: #202123;
+}
+.bg-\[\#40414f\] {
+  background-color: #40414f;
+}
+.bg-\[\#343541\] {
+  background-color: #343541;
+}
+.bg-\[\#444654\] {
+  background-color: #444654;
+}
+.bg-\[\#10a37f\] {
+  background-color: #10a37f;
+}
+.bg-\[\#19c37d\] {
+  background-color: #19c37d;
+}
+
+/* 鼠标悬停效果 */
+.hover\:bg-\[\#10a37f\]:hover {
+  background-color: #10a37f;
+}
+.hover\:bg-gray-700:hover {
+  background-color: rgb(55, 65, 81);
+}
+.hover\:bg-gray-800:hover {
+  background-color: rgb(31, 41, 55);
+}
+.hover\:border-gray-400:hover {
+  border-color: rgb(156, 163, 175);
+}
+
+/* 边框 */
+.border {
+  border-width: 1px;
+}
+.border-b {
+  border-bottom-width: 1px;
+}
+.border-gray-200 {
+  border-color: rgb(229, 231, 235);
+}
+.border-gray-300 {
+  border-color: rgb(209, 213, 219);
+}
+.border-gray-600 {
+  border-color: rgb(75, 85, 99);
+}
+.border-gray-700 {
+  border-color: rgb(55, 65, 81);
+}
+.rounded-md {
+  border-radius: 0.375rem;
+}
+.rounded-lg {
+  border-radius: 0.5rem;
+}
+.rounded-xl {
+  border-radius: 0.75rem;
+}
+.rounded-sm {
+  border-radius: 0.125rem;
+}
+
+/* 阴影和效果 */
+.shadow-lg {
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
+.opacity-25 {
+  opacity: 0.25;
+}
+.opacity-40 {
+  opacity: 0.4;
+}
+.opacity-75 {
+  opacity: 0.75;
+}
+.transition-colors {
+  transition-property: color, background-color, border-color;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.focus\:outline-none:focus {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+.focus\:ring-2:focus {
+  box-shadow: 0 0 0 2px rgb(34, 197, 94);
+}
+.focus\:ring-green-500:focus {
+  box-shadow: 0 0 0 2px rgb(34, 197, 94);
+}
+.resize-none {
+  resize: none;
+}
+
+/* 位置 */
+.absolute {
+  position: absolute;
+}
+.relative {
+  position: relative;
+}
+.inset-0 {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+}
+.z-10 {
+  z-index: 10;
+}
+.top-14 {
+  top: 3.5rem;
+}
+.right-4 {
+  right: 1rem;
+}
+.bottom-0 {
+  bottom: 0;
+}
+.bottom-2 {
+  bottom: 0.5rem;
+}
+.right-2 {
+  right: 0.5rem;
+}
+.left-0 {
+  left: 0;
+}
+.right-0 {
+  right: 0;
+}
+
+/* 动画 */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 布局和元素 */
+.grid {
+  display: grid;
+}
+.grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+.flex-shrink-0 {
+  flex-shrink: 0;
+}
+.min-w-0 {
+  min-width: 0;
+}
+.max-h-\[150px\] {
+  max-height: 150px;
+}
+
+/* 特定元素样式 */
+.prose {
+  max-width: 65ch;
+  color: inherit;
+}
+.prose p {
+  margin-top: 1.25em;
+  margin-bottom: 1.25em;
+}
+.prose strong {
+  font-weight: 600;
+}
+.prose a {
+  color: #10a37f;
+  text-decoration: underline;
+}
+.prose ul {
+  list-style-type: disc;
+  margin-top: 1.25em;
+  margin-bottom: 1.25em;
+  padding-left: 1.625em;
+}
+.prose ol {
+  list-style-type: decimal;
+  margin-top: 1.25em;
+  margin-bottom: 1.25em;
+  padding-left: 1.625em;
+}
+.prose code {
+  color: #ef4444;
+  font-weight: 600;
+  font-size: 0.875em;
+}
+
+/* 确保输入框文字可见 */
+textarea {
+  color: inherit !important;
+  caret-color: inherit !important;
+  border-radius: 0.5rem !important;
+}
+
+.sidepanel-input {
+  background-color: inherit !important;
+  color: inherit !important;
+  caret-color: inherit !important;
+  border-radius: 0.5rem !important;
+}
+
+/* 修改placeholder颜色 */
+textarea::placeholder {
+  color: #9ca3af !important;
+}
+
+/* 发送按钮位置修复 */
+.absolute.bottom-2.right-2 {
+  bottom: 1rem !important;
+  right: 1rem !important;
+  position: absolute !important;
+  z-index: 10 !important;
+  background-color: #10a37f !important;
+  border-radius: 50% !important;
+  width: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: white !important;
+  border: none !important;
+  padding: 8px !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 确保输入框右侧有足够空间容纳按钮 */
+textarea.sidepanel-input {
+  padding-right: 48px !important;
+}
+
+/* 输入框和容器样式改进 */
+.flex.items-end.border.rounded-lg {
+  position: relative !important;
+  overflow: visible !important;
+}

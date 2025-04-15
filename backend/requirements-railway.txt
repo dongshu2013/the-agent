@@ -1,0 +1,9 @@
+# 精简版requirements，避免在Railway上安装过多依赖
+fastapi>=0.95.0
+pydantic>=1.10.7
+pydantic-settings>=2.0.0
+openai>=0.27.0
+httpx>=0.24.0
+python-dotenv>=1.0.0
+requests>=2.28.0
+uvicorn>=0.21.1 

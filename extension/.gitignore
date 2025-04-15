@@ -138,3 +138,14 @@ dist
 .DS_Store
 
 .env
+
+.env.local
+
+./build
+
+./dist
+
+./node_modules
+
+./.plasmo
+

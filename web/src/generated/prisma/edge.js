@@ -156,7 +156,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "/Users/shudong/code/the-agent/web/src/generated/prisma",
+      "value": "/Users/coco/project/ai-agent/the-agent/web/src/generated/prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -170,12 +170,11 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "/Users/shudong/code/the-agent/web/prisma/schema.prisma",
+    "sourceFilePath": "/Users/coco/project/ai-agent/the-agent/web/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": null,
-    "schemaEnvPath": "../../../.env"
+    "rootEnvPath": null
   },
   "relativePath": "../../../prisma",
   "clientVersion": "6.6.0",
@@ -184,11 +183,12 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
+  "postinstall": true,
   "inlineDatasources": {
     "db": {
       "url": {
         "fromEnvVar": "DATABASE_URL",
-        "value": "postgresql://ai_agent:your_password@localhost:5432/ai_agent?schema=public"
+        "value": null
       }
     }
   },
