@@ -63,32 +63,16 @@ const ConversationList = ({
         }`}
       >
         <div
-          className={`p-4 flex justify-between items-center border-b ${
+          className={`px-4 py-3 flex justify-between items-center border-b ${
             darkMode ? "border-gray-700" : "border-gray-200"
           }`}
         >
           <button
             onClick={createNewConversation}
-            className={`flex items-center gap-2 rounded-md px-3 py-2 ${
+            className={`flex items-center gap-1.5 rounded-md px-3 py-2 ${
               darkMode
                 ? "bg-[#24283b] hover:bg-[#292e42] text-gray-200"
                 : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-            }`}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="w-4 h-4"
-            >
-              <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
-            </svg>
-            new chat
-          </button>
-          <button
-            onClick={() => setShowConversationList(false)}
-            className={`p-1 rounded-md ${
-              darkMode ? "hover:bg-gray-800" : "hover:bg-gray-100"
             }`}
           >
             <svg
@@ -97,7 +81,31 @@ const ConversationList = ({
               viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
-              className="w-5 h-5"
+              className="w-4 h-4"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 4.5v15m7.5-7.5h-15"
+              />
+            </svg>
+            <span className="text-sm font-medium">new chat</span>
+          </button>
+          <button
+            onClick={() => setShowConversationList(false)}
+            className={`p-2 rounded-md ${
+              darkMode
+                ? "bg-[#24283b] hover:bg-[#292e42]"
+                : "bg-gray-100 hover:bg-gray-200"
+            }`}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-4 h-4"
             >
               <path
                 strokeLinecap="round"

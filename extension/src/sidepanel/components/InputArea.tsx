@@ -30,23 +30,18 @@ const InputArea = ({
 
   return (
     <div
-      className="absolute bottom-0 left-0 right-0 px-4 pb-3 pt-2 border-t"
-      style={{
-        backgroundColor: darkMode ? "#1a1b26" : "#ffffff",
-        borderColor: darkMode ? "#374151" : "#e5e7eb",
-      }}
+      className={`${
+        darkMode ? "bg-[#1a1b26] border-gray-700" : "bg-white border-gray-200"
+      }`}
     >
       <div className="max-w-3xl mx-auto">
         <form onSubmit={handleSubmit} className="relative">
           <div
-            className="flex items-end border rounded-lg overflow-hidden"
-            style={{
-              backgroundColor: darkMode ? "#24283b" : "#ffffff",
-              borderColor: darkMode ? "#4b5563" : "#d1d5db",
-              boxShadow: darkMode
-                ? "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
-                : "0 1px 3px 0 rgba(0, 0, 0, 0.1)",
-            }}
+            className={`flex items-end border rounded-lg overflow-hidden ${
+              darkMode
+                ? "bg-[#24283b] border-gray-600 shadow-md"
+                : "bg-white border-gray-300 shadow-sm"
+            }`}
           >
             <textarea
               ref={textareaRef}
@@ -59,11 +54,11 @@ const InputArea = ({
                 }
               }}
               placeholder="Send a message to the AI assistant..."
-              className="w-full py-3 pl-4 pr-12 max-h-[150px] focus:outline-none resize-none"
-              style={{
-                backgroundColor: darkMode ? "#24283b" : "#ffffff",
-                color: darkMode ? "#f8f8f2" : "#333333",
-              }}
+              className={`w-full py-3 pl-4 pr-12 max-h-[150px] focus:outline-none resize-none ${
+                darkMode
+                  ? "bg-[#24283b] text-gray-200"
+                  : "bg-white text-gray-800"
+              }`}
               rows={1}
             />
             <button
@@ -111,8 +106,9 @@ const InputArea = ({
             </button>
           </div>
           <p
-            className="text-xs mt-2 text-center"
-            style={{ color: darkMode ? "#9ca3af" : "#6b7280" }}
+            className={`text-xs mt-2 text-center ${
+              darkMode ? "text-gray-400" : "text-gray-500"
+            }`}
           >
             MIZU AI assistant may produce inaccurate information. Your data is
             kept private.

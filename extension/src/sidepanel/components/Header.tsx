@@ -51,7 +51,7 @@ const Header = ({
 
         <button
           onClick={createNewConversation}
-          className={`flex items-center gap-2 ${
+          className={`flex items-center gap-1.5 ${
             darkMode
               ? "bg-[#24283b] hover:bg-[#292e42] text-gray-300"
               : "bg-gray-100 hover:bg-gray-200 text-gray-700"
@@ -63,7 +63,7 @@ const Header = ({
             viewBox="0 0 24 24"
             strokeWidth={1.5}
             stroke="currentColor"
-            className="w-5 h-5"
+            className="w-4 h-4"
           >
             <path
               strokeLinecap="round"
@@ -75,8 +75,8 @@ const Header = ({
         </button>
       </div>
 
-      <div className="flex gap-3">
-        {/* <button
+      <div className="flex gap-2">
+        <button
           onClick={() => setDarkMode(!darkMode)}
           className={`p-2 rounded-md ${
             darkMode
@@ -92,7 +92,7 @@ const Header = ({
               viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
-              className="w-5 h-5 text-gray-300"
+              className="w-4 h-4 text-gray-300"
             >
               <path
                 strokeLinecap="round"
@@ -107,7 +107,7 @@ const Header = ({
               viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
-              className="w-5 h-5 text-gray-700"
+              className="w-4 h-4 text-gray-700"
             >
               <path
                 strokeLinecap="round"
@@ -116,7 +116,7 @@ const Header = ({
               />
             </svg>
           )}
-        </button> */}
+        </button>
 
         <button
           onClick={() => setShowSettings(true)}
@@ -133,7 +133,7 @@ const Header = ({
             viewBox="0 0 24 24"
             strokeWidth={1.5}
             stroke="currentColor"
-            className={`w-5 h-5 ${
+            className={`w-4 h-4 ${
               darkMode ? "text-gray-300" : "text-gray-700"
             }`}
           >

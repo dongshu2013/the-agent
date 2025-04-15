@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import List
 
 
 class Settings(BaseSettings):
@@ -13,6 +14,8 @@ class Settings(BaseSettings):
     MIN_MESSAGE_LENGTH: int = 1
     MINIMUM_MESSAGES_TO_PROCESS: int = 10
     API_SECRET_KEY: str
+    CORS_ORIGINS: List[str] = ["https://the-agent-production.up.railway.app"]
+    DEBUG: bool = False
 
     # Chat context settings
     MAX_CONTEXT_MESSAGES: int = 50  # Number of previous messages to include as context
