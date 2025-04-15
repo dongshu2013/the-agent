@@ -18,6 +18,9 @@ import {
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
+// API基础URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || ".backend";
+
 // 定义用户类型
 interface User {
   id: string;
@@ -64,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // First, check if the user exists in our database
           try {
             const response = await fetch(
-              `/api/auth/user?userId=${firebaseUser.uid}`,
+              `${API_BASE_URL}/api/auth/user?userId=${firebaseUser.uid}`,
               {
                 headers: {
                   Authorization: `Bearer ${idToken}`,
@@ -92,18 +95,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 firebaseUser.email?.split("@")[0] ||
                 `user_${Math.random().toString(36).substring(2, 10)}`;
 
-              const createResponse = await fetch("/api/auth/user", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${idToken}`,
-                },
-                body: JSON.stringify({
-                  id: firebaseUser.uid,
-                  username,
-                  email: firebaseUser.email,
-                }),
-              });
+              const createResponse = await fetch(
+                `${API_BASE_URL}/api/auth/user`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${idToken}`,
+                  },
+                  body: JSON.stringify({
+                    id: firebaseUser.uid,
+                    username,
+                    email: firebaseUser.email,
+                  }),
+                }
+              );
 
               if (createResponse.ok) {
                 const newUserData = await createResponse.json();
@@ -216,7 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Refresh token before making the request
       const token = (await refreshToken()) || user.idToken;
 
-      const response = await fetch("/api/auth/apikey", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/apikey`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -249,7 +255,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Refresh token before making the request
       const token = (await refreshToken()) || user.idToken;
 
-      const response = await fetch("/api/auth/apikey", {
+      const response = await fetch(`${API_BASE_URL}/api/auth/apikey`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

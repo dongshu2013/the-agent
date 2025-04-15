@@ -6,11 +6,11 @@ import uvicorn
 import os
 
 from .routes.chat import router as chat_router
-from .config import DEBUG
+from .config import settings
 
 # 配置日志
 logging.basicConfig(
-    level=logging.DEBUG if DEBUG else logging.INFO,
+    level=logging.DEBUG if settings.DEBUG else logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("backend")
@@ -64,5 +64,5 @@ if __name__ == "__main__":
         "main:app",
         host="0.0.0.0",
         port=port,
-        reload=DEBUG
+        reload=settings.DEBUG
     ) 
