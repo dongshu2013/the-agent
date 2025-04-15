@@ -16,7 +16,7 @@ export default function Home() {
   }, [user, loading, router]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-white dark:bg-gray-900">
+    <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-white">
       <main className="flex flex-col items-center gap-8 max-w-md w-full">
         <div className="flex flex-col items-center text-center">
           <Image
