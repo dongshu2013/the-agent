@@ -6,7 +6,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -14,32 +13,30 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Define your models here
 model User {
   id            String         @id @default(uuid())
-  username      String         @unique
-  email         String?        @unique
-  api_key       String         @unique @default(uuid())
-  api_key_enabled Boolean      @default(true)
-  conversations Conversation[]
+  email         String         @unique
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  conversations Conversation[]
 }
 
 model Conversation {
-  id        String    @id @default(uuid())
-  user      User      @relation(fields: [user_id], references: [id])
-  user_id   String
-  messages  Message[]
+  id         String    @id @default(uuid())
+  user       User      @relation(fields: [user_id], references: [id])
+  user_id    String
+  messages   Message[]
   created_at DateTime  @default(now())
-  status    String    @default("active") // "active" or "deleted"
+  status     String    @default("active") // "active" or "deleted"
 }
 
 model Message {
   id              String       @id @default(uuid())
   conversation    Conversation @relation(fields: [conversation_id], references: [id])
   conversation_id String
-  role            String       // "system", "user", "assistant", or "tooling"
-  content         Json         // Array of text_message or image_message objects
+  role            String // "system", "user", "assistant", or "tooling"
+  content         Json // Array of text_message or image_message objects
   created_at      DateTime     @default(now())
 }
 

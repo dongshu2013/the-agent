@@ -5,7 +5,7 @@ FROM base AS deps
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json* .npmrc ./
 RUN npm ci
 
 # Rebuild the source code only when needed
@@ -16,6 +16,10 @@ COPY . .
 
 # Next.js collects anonymous telemetry data - disable it
 ENV NEXT_TELEMETRY_DISABLED 1
+ENV NODE_ENV production
+
+# Generate Prisma client - add this step
+RUN npx prisma generate
 
 RUN npm run build
 
@@ -25,6 +29,8 @@ WORKDIR /app
 
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
 
 # Create a non-root user and set permissions
 RUN addgroup --system --gid 1001 nodejs
@@ -41,8 +47,5 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 RUN mkdir -p .next/cache && chown -R nextjs:nodejs .next
 
 EXPOSE 3000
-
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
 
 CMD ["node", "server.js"] 
