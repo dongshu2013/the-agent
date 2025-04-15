@@ -1,13 +1,15 @@
 [phases.setup]
 nixPkgs = [
-  "nodejs_18", 
-  "yarn", 
   "python310",
   "postgresql_14"
 ]
 
 [phases.install]
 cmds = [
+  # 安装Node.js和Yarn
+  "curl -fsSL https://deb.nodesource.com/setup_18.x | bash -",
+  "apt-get install -y nodejs",
+  "npm install -g yarn",
   # 安装前端依赖
   "cd web && yarn install"
 ]
