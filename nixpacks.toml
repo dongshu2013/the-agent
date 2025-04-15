@@ -1,6 +1,6 @@
 [phases.setup]
 nixPkgs = [
-  "nodejs", 
+  "nodejs_18", 
   "yarn", 
   "python310",
   "postgresql_14"
