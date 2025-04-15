@@ -8,7 +8,7 @@ nixPkgs = [
 [phases.install]
 aptPkgs = ["nodejs", "npm"]
 cmds = [
-  "npm install -g yarn && YARN_PATH=$(npm bin -g)/yarn && cd web && $YARN_PATH install",
+  "cd web && npm install",
   "pip install psycopg2-binary"
 ]
 
@@ -18,7 +18,7 @@ cmds = [
   "chmod +x health-check.sh",
   "chmod +x railway-test.sh",
   "./railway-test.sh > railway-test-output.log || true",
-  "YARN_PATH=$(npm bin -g)/yarn && cd web && $YARN_PATH NEXT_TELEMETRY_DISABLED=1 build:railway",
+  "cd web && NEXT_TELEMETRY_DISABLED=1 npm run build:railway",
   "chmod +x setup-railway.sh && ./setup-railway.sh"
 ]
 
