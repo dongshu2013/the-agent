@@ -1,28 +1,32 @@
 [phases.setup]
-nixPkgs = ["nodejs", "yarn", "python310", "python310Packages.pip"]
+nixPkgs = [
+  "nodejs", 
+  "yarn", 
+  "python310"
+]
 
 [phases.install]
 cmds = [
-  # 安装Python依赖，使用精简版requirements
-  "pip install -r backend/requirements-railway.txt",
   # 安装前端依赖
   "cd web && yarn install"
 ]
 
 [phases.build]
 cmds = [
+  # 确保脚本可执行
+  "chmod +x start-services.sh",
+  "chmod +x health-check.sh",
+  "chmod +x railway-test.sh",
+  # 运行诊断脚本
+  "./railway-test.sh > railway-test-output.log || true",
   # 构建前端
   "cd web && yarn build",
   # 设置Railway环境
-  "chmod +x setup-railway.sh && ./setup-railway.sh",
-  # 确保脚本可执行
-  "chmod +x start-services.sh",
-  "chmod +x health-check.sh"
+  "chmod +x setup-railway.sh && ./setup-railway.sh"
 ]
 
 [start]
 cmd = "sh ./start-services.sh"
 
 [env]
-PORT = "8080"
-PYTHONPATH = "/app" 
+PORT = "8080" 
