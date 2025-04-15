@@ -24,6 +24,15 @@ class Settings(BaseSettings):
     # CORS 配置
     cors_origins: list = ["*"]
     
+    # LLM配置
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    OPENAI_API_BASE: Optional[str] = os.getenv("OPENAI_API_BASE")
+    DEEPSEEK_API_KEY: Optional[str] = os.getenv("DEEPSEEK_API_KEY", "")
+    DEEPSEEK_API_BASE: Optional[str] = os.getenv("DEEPSEEK_API_BASE", "https://api.deepseek.com")
+
+    # 应用配置
+    DEBUG: bool = os.getenv("DEBUG", "False").lower() in ("true", "1", "t")
+    
     class Config:
         env_file = ".env"
         case_sensitive = False

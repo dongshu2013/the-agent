@@ -1,74 +1,107 @@
-# Railway部署指南
+# AI Agent 项目
 
-本项目使用Railway进行部署，同时部署前端和后端服务。
+这是一个提供AI聊天和工具调用能力的应用程序，包含后端API和前端界面。
 
 ## 项目结构
 
 ```
 /
-├── web/             # 前端项目
-├── backend/         # 后端项目 
-├── nixpacks.toml    # Railway部署配置
-├── start-services.sh # 服务启动脚本
-└── Procfile         # 进程文件
+├── backend/               # FastAPI后端
+│   ├── routes/            # API路由
+│   ├── services/          # 服务层
+│   ├── main.py            # 主应用入口
+│   └── requirements.txt   # Python依赖
+│
+├── web/                   # 前端应用
+│   ├── components/        # React组件
+│   ├── pages/             # 页面
+│   └── package.json       # NPM依赖
+│
+└── start-services.sh      # 部署启动脚本
 ```
 
-## 部署步骤
+## 功能
 
-1. **Fork或克隆此仓库**
+- 与OpenAI/DeepSeek等LLM模型对接的聊天接口
+- 支持工具调用 (Tool Calling)
+- 响应式界面设计
+- PostgreSQL数据存储
 
-2. **创建Railway项目**
-   - 登录 [Railway](https://railway.app/)
-   - 创建新项目
-   - 选择从GitHub部署
-   - 选择你的仓库
+## 快速开始
 
-3. **设置环境变量**
-   在Railway项目设置中添加以下环境变量：
-   ```
-   OPENAI_API_KEY=你的OpenAI API密钥
-   ```
-   
-   可选变量:
-   ```
-   API_URL=你的后端API URL（如果与默认不同）
-   PORT=服务端口（默认8080）
-   ```
+### 环境设置
 
-4. **部署**
-   点击Deploy按钮进行部署，Railway会自动使用nixpacks.toml中的配置进行构建和部署。
+1. 克隆仓库
 
-## 本地开发
-
-### 安装依赖
 ```bash
-# 安装后端依赖
+git clone https://github.com/yourusername/ai-agent.git
+cd ai-agent
+```
+
+2. 设置环境变量
+
+创建`.env`文件:
+
+```
+OPENAI_API_KEY=your_openai_api_key
+DATABASE_URL=your_postgres_connection_string
+```
+
+### 启动后端
+
+```bash
 cd backend
-python -m venv venv
-source venv/bin/activate  # 在Windows上使用 venv\Scripts\activate
 pip install -r requirements.txt
-
-# 安装前端依赖
-cd web
-yarn install
+uvicorn main:app --reload --port 8000
 ```
 
-### 运行服务
+### 启动前端
+
 ```bash
-# 启动后端
-cd backend
-python run.py
-
-# 启动前端
 cd web
-yarn dev
+npm install
+npm run dev
 ```
 
-## 故障排除
+### 或使用部署脚本启动全部服务
 
-如果部署失败，请检查：
+```bash
+chmod +x start-services.sh
+./start-services.sh
+```
 
-1. 确保环境变量正确设置
-2. 检查Railway日志，查看具体错误信息
-3. 确保项目结构符合要求（frontend/和backend/目录正确放置）
-4. 尝试手动本地构建验证项目无误后再部署 
+## API文档
+
+后端启动后，访问 http://localhost:8000/docs 查看API文档。
+
+## 开发
+
+### 后端开发
+
+后端基于FastAPI开发，支持异步处理请求：
+
+```python
+@router.post("/completion")
+async def chat_completion(payload: ChatRequest):
+    response = await chat_with_llm(payload)
+    return response
+```
+
+### 前端开发
+
+前端使用Next.js框架，组件结构清晰：
+
+```jsx
+<ChatContainer>
+  <MessageList messages={messages} />
+  <ChatInput onSendMessage={handleSendMessage} />
+</ChatContainer>
+```
+
+## 贡献
+
+欢迎提交问题和改进建议！
+
+## 许可
+
+本项目采用MIT许可证。 

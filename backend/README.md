@@ -1,100 +1,84 @@
-# AI Agent Backend
+# AI Agent 后端 API
 
-这是AI Agent的后端服务，提供聊天和工具调用功能。
+这是AI Agent的FastAPI后端服务，负责处理聊天请求和工具调用。
 
-## 项目结构
+## 功能
 
-```
-/backend
-  ├── main.py                 # FastAPI 启动文件
-  ├── routes/chat.py          # /chat/completion API 路由
-  ├── services/llm_client.py  # 封装对 OpenAI、DeepSeek 的调用
-  ├── schemas.py              # Pydantic 请求/响应定义
-  └── config.py               # api_key / base_url 管理
-```
-
-## 环境要求
-
-- Python 3.8+
-- 在 `requirements.txt` 中列出的所有依赖
-
-## 环境变量
-
-在根目录创建 `.env` 文件，设置以下环境变量：
-
-```
-# OpenAI配置
-OPENAI_API_KEY=your_openai_api_key
-OPENAI_BASE_URL=https://api.openai.com/v1  # 可选，默认值
-
-# DeepSeek配置（可选）
-DEEPSEEK_API_KEY=your_deepseek_api_key
-DEEPSEEK_BASE_URL=https://api.deepseek.com/v1  # 可选，默认值
-
-# 默认模型
-DEFAULT_MODEL=gpt-4  # 可选，默认值
-```
+- 支持与OpenAI和DeepSeek等LLM模型的对接
+- 提供标准的Chat Completion API
+- 支持函数调用（Function Calling）
+- 健康检查端点
 
 ## 快速开始
 
-1. 安装依赖
+### 环境变量设置
+
+创建`.env`文件:
+
+```
+OPENAI_API_KEY=your_openai_api_key
+OPENAI_API_BASE=https://api.openai.com  # 可选
+DEEPSEEK_API_KEY=your_deepseek_api_key  # 可选
+DEBUG=False
+```
+
+### 安装依赖
 
 ```bash
 pip install -r requirements.txt
 ```
 
-2. 运行服务
+### 运行服务
 
 ```bash
-uvicorn backend.main:app --reload --port 8000
+uvicorn main:app --reload --port 8000
 ```
 
-## API 文档
+### 使用Docker
 
-启动服务后，访问 `http://localhost:8000/docs` 可查看自动生成的API文档。
-
-### 主要API端点
-
-#### 聊天补全 (Chat Completion)
-
-```
-POST /v1/chat/completion
+```bash
+docker build -t ai-agent-backend .
+docker run -p 8000:8000 --env-file .env ai-agent-backend
 ```
 
-请求示例：
+## API参考
+
+### 聊天完成 `/v1/chat/completion`
+
+**请求示例:**
 
 ```json
 {
   "messages": [
-    {"role": "system", "content": "你是一个有用的助手"},
-    {"role": "user", "content": "你好，请介绍一下自己"}
+    {"role": "system", "content": "你是一个有用的AI助手。"},
+    {"role": "user", "content": "你好，请介绍一下自己。"}
   ],
-  "temperature": 0.7,
-  "model": "gpt-4"
+  "model": "gpt-3.5-turbo",
+  "temperature": 0.7
 }
 ```
 
-响应示例：
+**响应示例:**
 
 ```json
 {
-  "role": "assistant",
-  "content": "你好！我是一个AI助手，设计用来提供帮助、回答问题和支持各种任务..."
+  "message": {
+    "role": "assistant",
+    "content": "你好！我是一个AI助手，被设计用来提供信息、回答问题和协助完成各种任务。我可以讨论各种主题，提供解释，帮助解决问题，或者只是聊天。虽然我没有个人经历或意识，但我努力提供有用、准确和有礼貌的回应。如果你有任何问题或需要帮助，请随时告诉我！"
+  },
+  "model": "gpt-3.5-turbo-0613",
+  "usage": {
+    "prompt_tokens": 37,
+    "completion_tokens": 108,
+    "total_tokens": 145
+  }
 }
 ```
 
 ## 测试
 
-可以使用curl命令测试API：
+使用`test_client.py`脚本进行简单测试:
 
 ```bash
-curl -X POST http://localhost:8000/v1/chat/completion \
-  -H "Content-Type: application/json" \
-  -d '{
-    "messages": [
-      {"role": "system", "content": "你是一个有用的助手"},
-      {"role": "user", "content": "你好，请介绍一下自己"}
-    ],
-    "temperature": 0.7
-  }'
+python test_client.py "你好，请介绍一下自己。"
 ``` 

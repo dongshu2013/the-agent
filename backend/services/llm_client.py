@@ -1,149 +1,133 @@
 import openai
-import httpx
 import json
 import logging
-from typing import Dict, List, Optional, Any
-import os
+import httpx
+from typing import Dict, List, Any, Optional
+from ..schemas import ChatRequest, ChatResponse, Message
+from ..config import OPENAI_API_KEY, OPENAI_API_BASE, DEEPSEEK_API_KEY, DEEPSEEK_API_BASE, DEFAULT_MODEL
 
-# 修改为绝对导入
-from backend.config import settings
-from backend.schemas import ChatRequest, ChatResponse, ErrorResponse
-
-# 设置日志
+# 配置日志
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("llm_client")
 
-# 配置OpenAI客户端 - 使用最新的OpenAI客户端初始化方式
-openai_client = openai.OpenAI(
-    api_key=settings.openai_api_key,
-    base_url=settings.openai_base_url
-)
+# 配置OpenAI客户端
+if OPENAI_API_BASE:
+    openai.api_base = OPENAI_API_BASE
+openai.api_key = OPENAI_API_KEY
 
-async def chat_with_llm(payload: ChatRequest) -> Dict[str, Any]:
-    """
-    统一处理与LLM的通信
-    根据请求中的model字段决定使用哪个提供商的API
-    """
-    try:
-        model = payload.model or settings.default_model
-        model_info = settings.model_mapping.get(model)
-        
-        if not model_info:
-            # 未找到模型映射，默认使用OpenAI
-            logger.warning(f"未找到模型 {model} 的映射配置，默认使用OpenAI")
-            return await chat_with_openai(payload)
-        
-        provider = model_info["provider"]
-        
-        if provider == "openai":
-            return await chat_with_openai(payload)
-        elif provider == "deepseek":
-            return await chat_with_deepseek(payload)
-        else:
-            logger.error(f"不支持的提供商: {provider}")
-            return {"error": "不支持的LLM提供商", "details": f"提供商 {provider} 暂不支持"}
+async def chat_with_llm(payload: ChatRequest) -> ChatResponse:
+    """与LLM进行对话，支持多种模型提供商"""
+    model = payload.model or DEFAULT_MODEL
     
-    except Exception as e:
-        logger.exception("LLM请求处理异常")
-        return {"error": "LLM请求失败", "details": str(e)}
+    # 根据模型决定使用哪个提供商
+    if model.startswith("deepseek-"):
+        return await chat_with_deepseek(payload)
+    else:
+        return await chat_with_openai(payload)
 
-async def chat_with_openai(payload: ChatRequest) -> Dict[str, Any]:
-    """调用OpenAI的API"""
+async def chat_with_openai(payload: ChatRequest) -> ChatResponse:
+    """使用OpenAI进行聊天"""
     try:
-        # 检查API密钥
-        if not settings.openai_api_key:
-            return {"error": "缺少API密钥", "details": "未设置OPENAI_API_KEY环境变量"}
+        # 准备消息格式
+        messages = [msg.dict(exclude_none=True) for msg in payload.messages]
         
         # 准备请求参数
-        model = payload.model or settings.default_model
-        if model in settings.model_mapping:
-            model = settings.model_mapping[model]["model_id"]
-            
-        # 兼容Pydantic v2，使用model_dump而不是dict
-        messages = [
-            {k: v for k, v in msg.model_dump().items() if v is not None}
-            for msg in payload.messages
-        ]
+        request_params = {
+            "model": payload.model or DEFAULT_MODEL,
+            "messages": messages,
+            "temperature": payload.temperature,
+        }
         
-        # 调用OpenAI API - 使用新的客户端接口
-        response = await httpx.AsyncClient().post(
-            f"{settings.openai_base_url}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {settings.openai_api_key}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": model,
-                "messages": messages,
-                "temperature": payload.temperature,
-                "max_tokens": payload.max_tokens,
-                "stream": False
-            },
-            timeout=60.0
+        # 如果有函数定义，添加到请求中
+        if payload.functions:
+            request_params["functions"] = [f.dict() for f in payload.functions]
+            if payload.function_call:
+                request_params["function_call"] = payload.function_call
+                
+        logger.info(f"Sending request to OpenAI: {json.dumps(request_params, indent=2)}")
+        
+        # 使用OpenAI API发送请求
+        response = await openai.ChatCompletion.acreate(**request_params)
+        
+        # 处理响应
+        assistant_message = response.choices[0].message
+        message = Message(
+            role=assistant_message.role,
+            content=assistant_message.get("content", None),
+            function_call=assistant_message.get("function_call", None)
         )
         
-        response.raise_for_status()
-        data = response.json()
+        # 返回标准化响应
+        return ChatResponse(
+            message=message,
+            model=response.model,
+            usage=response.usage.to_dict() if hasattr(response, "usage") else None
+        )
         
-        # 提取回复内容
-        reply = data["choices"][0]["message"]
-        
-        return {
-            "role": reply["role"],
-            "content": reply["content"]
-        }
-    
     except Exception as e:
-        logger.exception("OpenAI请求失败")
-        return {"error": "OpenAI请求失败", "details": str(e)}
+        logger.error(f"Error calling OpenAI API: {str(e)}")
+        raise
 
-async def chat_with_deepseek(payload: ChatRequest) -> Dict[str, Any]:
-    """调用DeepSeek的API"""
+async def chat_with_deepseek(payload: ChatRequest) -> ChatResponse:
+    """使用DeepSeek进行聊天"""
+    if not DEEPSEEK_API_KEY:
+        raise ValueError("DeepSeek API key not provided")
+    
     try:
-        # 检查API密钥
-        if not settings.deepseek_api_key:
-            return {"error": "缺少API密钥", "details": "未设置DEEPSEEK_API_KEY环境变量"}
+        # 准备消息格式
+        messages = [msg.dict(exclude_none=True) for msg in payload.messages]
         
         # 准备请求参数
-        model = payload.model
-        if model in settings.model_mapping:
-            model = settings.model_mapping[model]["model_id"]
-            
-        # 兼容Pydantic v2，使用model_dump而不是dict
-        messages = [
-            {k: v for k, v in msg.model_dump().items() if v is not None}
-            for msg in payload.messages
-        ]
+        request_data = {
+            "model": payload.model,
+            "messages": messages,
+            "temperature": payload.temperature,
+        }
         
-        # 准备HTTP请求
+        # 如果有函数定义，添加到请求中
+        if payload.functions:
+            request_data["functions"] = [f.dict() for f in payload.functions]
+            if payload.function_call:
+                request_data["function_call"] = payload.function_call
+        
+        logger.info(f"Sending request to DeepSeek: {json.dumps(request_data, indent=2)}")
+        
+        # 使用httpx发送HTTP请求
+        headers = {
+            "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        
+        endpoint = f"{DEEPSEEK_API_BASE}/v1/chat/completions"
+        
         async with httpx.AsyncClient(timeout=60.0) as client:
             response = await client.post(
-                f"{settings.deepseek_base_url}/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {settings.deepseek_api_key}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "model": model,
-                    "messages": messages,
-                    "temperature": payload.temperature,
-                    "max_tokens": payload.max_tokens,
-                    "stream": False
-                }
+                endpoint,
+                headers=headers,
+                json=request_data
             )
             
-            # 检查响应状态
-            response.raise_for_status()
-            data = response.json()
+            if response.status_code != 200:
+                logger.error(f"DeepSeek API error: {response.status_code} - {response.text}")
+                raise Exception(f"DeepSeek API error: {response.status_code} - {response.text}")
             
-            # 提取回复内容
-            reply = data["choices"][0]["message"]
+            response_data = response.json()
             
-            return {
-                "role": reply["role"],
-                "content": reply["content"]
-            }
-    
+            # 处理响应
+            assistant_message = response_data["choices"][0]["message"]
+            message = Message(
+                role=assistant_message["role"],
+                content=assistant_message.get("content"),
+                function_call=assistant_message.get("function_call")
+            )
+            
+            # 返回标准化响应
+            return ChatResponse(
+                message=message,
+                model=response_data["model"],
+                usage=response_data.get("usage")
+            )
+            
     except Exception as e:
-        logger.exception("DeepSeek请求失败")
-        return {"error": "DeepSeek请求失败", "details": str(e)} 
+        logger.error(f"Error calling DeepSeek API: {str(e)}")
+        raise 

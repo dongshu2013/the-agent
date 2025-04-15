@@ -1,53 +1,68 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
+from fastapi.responses import JSONResponse
 import logging
+import uvicorn
+import os
 
-# 将相对导入改为绝对导入
-from backend.routes.chat import router as chat_router
-from backend.config import settings
+from .routes.chat import router as chat_router
+from .config import DEBUG
 
 # 配置日志
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.DEBUG if DEBUG else logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("backend")
 
 # 创建FastAPI应用
 app = FastAPI(
-    title="AI Agent Backend",
-    description="AI Agent的后端API服务，处理聊天和工具调用",
+    title="AI Agent API",
+    description="AI Agent提供聊天和工具调用功能的后端API",
     version="0.1.0",
 )
 
-# 添加CORS中间件
+# 配置CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=["*"],  # 在生产环境中应该限制为特定域名
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 注册路由
-app.include_router(chat_router, prefix="/v1/chat", tags=["chat"])
+# 包含路由
+app.include_router(chat_router, prefix="/v1/chat")
+
+# 错误处理
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"未处理的异常: {str(exc)}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={"error": "服务器内部错误", "detail": str(exc)},
+    )
 
 # 健康检查
-@app.get("/health", tags=["health"])
+@app.get("/health")
 async def health_check():
-    return {"status": "healthy"}
+    return {"status": "ok"}
 
-# 应用信息
-@app.get("/", tags=["info"])
-async def get_info():
+# 根路径
+@app.get("/")
+async def root():
     return {
-        "app": "AI Agent Backend",
+        "name": "AI Agent API",
         "version": "0.1.0",
-        "endpoints": {
-            "chat": "/v1/chat/completion",
-        }
+        "docs_url": "/docs",
     }
 
+# 直接运行服务器的入口点
 if __name__ == "__main__":
-    uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True) 
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=port,
+        reload=DEBUG
+    ) 
