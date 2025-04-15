@@ -17,7 +17,7 @@ const Sidepanel = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
-  const [darkMode, setDarkMode] = useStorage<boolean>("darkMode", true);
+  const [darkMode, setDarkMode] = useStorage<boolean>("darkMode", false);
   const [showSettings, setShowSettings] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -34,6 +34,11 @@ const Sidepanel = () => {
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 150)}px`;
     }
   }, [prompt]);
+
+  // 添加useEffect来设置body的data-theme属性
+  useEffect(() => {
+    document.body.setAttribute("data-theme", darkMode ? "dark" : "light");
+  }, [darkMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,34 +99,34 @@ const Sidepanel = () => {
   // Set theme-based colors
   const theme = darkMode
     ? {
-        bg: "bg-gray-900",
-        conversationBg: "bg-[#343541]",
-        userBg: "bg-[#343541]",
-        botBg: "bg-[#444654]",
-        text: "text-gray-100",
-        secondaryText: "text-gray-300",
-        tertiaryText: "text-gray-400",
-        border: "border-gray-700",
+        // 深色模式
+        bg: "bg-[#1a1b26]",
+        conversationBg: "bg-[#24283b]",
+        userBg: "bg-[#24283b]",
+        botBg: "bg-[#292e42]",
+        text: "text-gray-50",
+        secondaryText: "text-gray-200",
+        tertiaryText: "text-gray-300",
+        border: "border-gray-600",
         userIcon: "bg-[#10a37f]",
         userIconText: "text-white",
         assistantIcon: "bg-[#19c37d]",
         assistantIconText: "text-white",
-        hover: "hover:bg-gray-700",
-        settingsBg: "bg-gray-800",
-        inputBg: "bg-[#40414f]",
-        inputBorder: "border-gray-600",
-        inputText: "text-gray-100",
+        hover: "hover:bg-[#292e42]",
+        settingsBg: "bg-[#1a1b26]",
+        inputBg: "bg-[#24283b]",
+        inputBorder: "border-gray-500",
+        inputText: "text-gray-50",
         buttonBg: "bg-[#10a37f]",
         buttonHover: "hover:bg-[#0d8e6c]",
-        gradientFrom: "from-[#343541]",
-        gradientVia: "via-[#343541]",
       }
     : {
-        bg: "bg-[#f7f7f8]",
+        // 浅色模式
+        bg: "bg-white",
         conversationBg: "bg-white",
-        userBg: "bg-white",
-        botBg: "bg-[#f7f7f8]",
-        text: "text-gray-800",
+        userBg: "bg-gray-50",
+        botBg: "bg-white",
+        text: "text-gray-900",
         secondaryText: "text-gray-700",
         tertiaryText: "text-gray-500",
         border: "border-gray-200",
@@ -129,51 +134,82 @@ const Sidepanel = () => {
         userIconText: "text-white",
         assistantIcon: "bg-[#19c37d]",
         assistantIconText: "text-white",
-        hover: "hover:bg-gray-100",
-        settingsBg: "bg-gray-50",
+        hover: "hover:bg-gray-50",
+        settingsBg: "bg-white",
         inputBg: "bg-white",
-        inputBorder: "border-gray-300",
-        inputText: "text-gray-800",
+        inputBorder: "border-gray-200",
+        inputText: "text-gray-900",
         buttonBg: "bg-[#10a37f]",
         buttonHover: "hover:bg-[#0d8e6c]",
-        gradientFrom: "from-white",
-        gradientVia: "via-white",
       };
 
   return (
-    <div className="flex flex-col h-screen bg-[#0B0D19] text-white">
+    <div
+      className={`flex flex-col h-screen ${darkMode ? theme.bg : "bg-white"}`}
+      style={{
+        backgroundColor: darkMode ? "#1a1b26" : "#ffffff",
+        color: darkMode ? "#f8f8f2" : "#333333",
+      }}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-[#0B0D19] text-white">
+      <div
+        className={`flex items-center justify-between px-4 py-3 border-b ${theme.border} ${theme.bg}`}
+      >
         <div className="flex items-center">
           <div className="w-12 h-12 rounded-full bg-[#3dbe80] mr-3"></div>
-          <h1 className="text-xl font-medium">MIZU Agent</h1>
+          <h1 className={`text-xl font-medium ${theme.text}`}>MIZU Agent</h1>
         </div>
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setDarkMode(!darkMode)}
-            className="p-2 rounded-md hover:bg-[#1E1F2E] transition-colors bg-[#26272F]"
+            className={`p-2 rounded-md ${
+              darkMode
+                ? "bg-[#24283b] hover:bg-[#292e42] border border-gray-600"
+                : "bg-gray-50 hover:bg-gray-100 border border-gray-200"
+            } transition-colors`}
             aria-label={
               darkMode ? "Switch to light mode" : "Switch to dark mode"
             }
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-5 h-5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"
-              />
-            </svg>
+            {darkMode ? (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-5 h-5 text-gray-50"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"
+                />
+              </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-5 h-5 text-gray-900"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"
+                />
+              </svg>
+            )}
           </button>
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className="p-2 rounded-md hover:bg-[#1E1F2E] transition-colors bg-[#26272F]"
+            className={`p-2 rounded-md ${
+              darkMode
+                ? "bg-[#24283b] hover:bg-[#292e42] border border-gray-600"
+                : "bg-gray-50 hover:bg-gray-100 border border-gray-200"
+            } transition-colors`}
             aria-label="Settings"
           >
             <svg
@@ -182,7 +218,7 @@ const Sidepanel = () => {
               viewBox="0 0 24 24"
               strokeWidth={1.5}
               stroke="currentColor"
-              className="w-5 h-5"
+              className={`w-5 h-5 ${darkMode ? "text-gray-50" : "text-gray-900"}`}
             >
               <path
                 strokeLinecap="round"
@@ -202,7 +238,7 @@ const Sidepanel = () => {
       {/* Settings dropdown */}
       {showSettings && (
         <div
-          className={`absolute right-4 top-14 z-10 ${theme.settingsBg} border border-gray-700 rounded-lg shadow-lg p-4 w-72`}
+          className={`absolute right-4 top-14 z-10 ${theme.settingsBg} border ${theme.border} rounded-lg shadow-lg p-4 w-72`}
         >
           <div className="space-y-4">
             <div>
@@ -242,10 +278,15 @@ const Sidepanel = () => {
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto bg-[#0B0D19]">
+      <div
+        className={`flex-1 overflow-y-auto ${theme.bg}`}
+        style={{
+          backgroundColor: darkMode ? "#1a1b26" : "#ffffff",
+        }}
+      >
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
-            <div className="max-w-md">
+            <div className={`max-w-md ${theme.bg}`}>
               <svg
                 className="w-32 h-32 mx-auto mb-6 text-[#10a37f]"
                 viewBox="0 0 24 24"
@@ -260,7 +301,9 @@ const Sidepanel = () => {
                   d="M8 10.5h8m-8 4h4m-9-9h20a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-8.5L9 21.5v-4H3a1 1 0 0 1-1-1v-12a1 1 0 0 1 1-1Z"
                 ></path>
               </svg>
-              <h2 className="text-3xl font-bold mb-4">How can I help today?</h2>
+              <h2 className={`text-3xl font-bold mb-4 ${theme.text}`}>
+                How can I help today?
+              </h2>
               <p className={`mb-8 ${theme.tertiaryText} text-lg`}>
                 Ask me anything or try one of these examples
               </p>
@@ -277,7 +320,11 @@ const Sidepanel = () => {
                       setPrompt(example);
                       setTimeout(() => textareaRef.current?.focus(), 100);
                     }}
-                    className={`p-4 rounded-xl border ${theme.border} text-left ${theme.hover} transition-colors hover:border-gray-400`}
+                    className={`p-4 rounded-xl ${
+                      darkMode
+                        ? `border ${theme.border} ${theme.hover}`
+                        : "bg-gray-50 border border-gray-100 hover:bg-gray-100"
+                    } transition-all text-left ${theme.text}`}
                   >
                     {example}
                   </button>
@@ -286,15 +333,21 @@ const Sidepanel = () => {
             </div>
           </div>
         ) : (
-          <div className="pb-32">
+          <div
+            className={`pb-32 ${theme.bg}`}
+            style={{
+              backgroundColor: darkMode ? "#1a1b26" : "#ffffff",
+            }}
+          >
             {messages.map((message, index) => (
               <div
                 key={index}
-                className={`py-6 ${message.type === "assistant" ? "bg-[#444654]" : "bg-[#343541]"}`}
+                className={`py-6 ${
+                  message.type === "assistant" ? theme.botBg : theme.userBg
+                }`}
               >
                 <div className="max-w-3xl mx-auto px-4">
                   {message.type === "assistant" ? (
-                    // AI消息 - 左侧显示
                     <div className="flex items-start gap-6">
                       <div className="flex-shrink-0">
                         <div className="w-8 h-8 rounded-sm flex items-center justify-center overflow-hidden bg-white">
@@ -307,17 +360,20 @@ const Sidepanel = () => {
                       </div>
                       <div className="min-w-0 max-w-[90%] w-full">
                         <div className="prose max-w-none">
-                          <div className="whitespace-pre-wrap text-white">
+                          <div className={`whitespace-pre-wrap ${theme.text}`}>
                             {message.content}
                           </div>
                         </div>
                       </div>
                     </div>
                   ) : (
-                    // 用户消息 - 右侧显示
                     <div className="flex flex-row-reverse w-full">
-                      <div className="bg-[#2a2c42] p-3 rounded-lg max-w-[80%]">
-                        <div className="whitespace-pre-wrap text-white">
+                      <div
+                        className={`${
+                          darkMode ? theme.userBg : "bg-gray-50"
+                        } p-3 rounded-lg max-w-[80%]`}
+                      >
+                        <div className={`whitespace-pre-wrap ${theme.text}`}>
                           {message.content}
                         </div>
                       </div>
@@ -332,10 +388,19 @@ const Sidepanel = () => {
       </div>
 
       {/* Input */}
-      <div className="absolute bottom-0 left-0 right-0 px-4 pb-3 pt-2 bg-[#0B0D19]">
+      <div
+        className={`absolute bottom-0 left-0 right-0 px-4 pb-3 pt-2 ${theme.bg} border-t ${theme.border}`}
+        style={{
+          backgroundColor: darkMode ? "#1a1b26" : "#ffffff",
+        }}
+      >
         <div className="max-w-3xl mx-auto">
           <form onSubmit={handleSubmit} className="relative">
-            <div className="flex items-end border border-gray-700 rounded-lg shadow-lg overflow-hidden bg-[#1E1F2E]">
+            <div
+              className={`flex items-end border ${theme.border} rounded-lg ${
+                darkMode ? "shadow-lg" : "shadow-sm"
+              } overflow-hidden ${theme.inputBg}`}
+            >
               <textarea
                 ref={textareaRef}
                 value={prompt}
@@ -347,10 +412,9 @@ const Sidepanel = () => {
                   }
                 }}
                 placeholder="Message AI Assistant..."
-                className="w-full py-3 pl-4 pr-12 max-h-[150px] bg-[#272935] text-white focus:outline-none resize-none sidepanel-input"
+                className={`w-full py-3 pl-4 pr-12 max-h-[150px] ${theme.inputBg} ${theme.text} focus:outline-none resize-none sidepanel-input`}
                 style={{
-                  color: "#FFFFFF !important",
-                  textShadow: "0 0 0 #FFFFFF",
+                  textShadow: "0 0 0 currentColor",
                 }}
                 rows={1}
               />
@@ -398,7 +462,7 @@ const Sidepanel = () => {
                 )}
               </button>
             </div>
-            <p className="text-xs mt-2 text-center text-gray-500">
+            <p className={`text-xs mt-2 text-center ${theme.tertiaryText}`}>
               AI Assistant may produce inaccurate information. Your data stays
               private.
             </p>

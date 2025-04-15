@@ -2,11 +2,21 @@
 body {
   margin: 0;
   padding: 0;
-  background-color: #202123;
-  color: white;
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
     sans-serif;
+}
+
+/* 深色模式 */
+body[data-theme="dark"] {
+  background-color: #202123;
+  color: white;
+}
+
+/* 浅色模式 */
+body[data-theme="light"] {
+  background-color: #ffffff;
+  color: #333333;
 }
 
 /* 按钮样式 */
@@ -458,17 +468,49 @@ body {
 
 /* 确保输入框文字可见 */
 textarea {
-  color: white !important;
-  caret-color: white !important;
+  color: inherit !important;
+  caret-color: inherit !important;
+  border-radius: 0.5rem !important;
 }
 
 .sidepanel-input {
-  background-color: #272935 !important;
-  color: white !important;
-  caret-color: white !important;
+  background-color: inherit !important;
+  color: inherit !important;
+  caret-color: inherit !important;
+  border-radius: 0.5rem !important;
 }
 
 /* 修改placeholder颜色 */
 textarea::placeholder {
   color: #9ca3af !important;
+}
+
+/* 发送按钮位置修复 */
+.absolute.bottom-2.right-2 {
+  bottom: 1rem !important;
+  right: 1rem !important;
+  position: absolute !important;
+  z-index: 10 !important;
+  background-color: #10a37f !important;
+  border-radius: 50% !important;
+  width: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: white !important;
+  border: none !important;
+  padding: 8px !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 确保输入框右侧有足够空间容纳按钮 */
+textarea.sidepanel-input {
+  padding-right: 48px !important;
+}
+
+/* 输入框和容器样式改进 */
+.flex.items-end.border.rounded-lg {
+  position: relative !important;
+  overflow: visible !important;
 }

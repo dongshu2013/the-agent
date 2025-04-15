@@ -26,90 +26,80 @@ chrome.action.onClicked.addListener((tab) => {
   }
 });
 
-// Process messages from the sidepanel and popup
+// Store agent instance and state
+let agent: TinyAgent | null = null;
+
+// Process messages from the sidepanel
 chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
   // Handle process-request messages from sidepanel
   if (message.name === "process-request") {
     const { apiKey, request } = message.body;
 
-    try {
-      // Create an instance of the agent
-      const agent = new TinyAgent();
+    // Create agent instance if not exists
+    if (!agent) {
+      agent = new TinyAgent();
+    }
 
-      // Capture the current state as an observation
-      const observation = agent.observe();
-
-      // Create a plan based on the user request
-      const userRequestObs = {
-        type: "userRequest",
-        payload: request,
-      };
-
-      // Try to get a response from the agent
+    // Process request through agent
+    (async () => {
       try {
-        const task = agent.plan(userRequestObs);
+        // Create a plan based on the user request
+        const userRequestObs = {
+          type: "userRequest",
+          payload: request,
+        };
 
-        // Act on the plan
-        agent.act(task);
+        // Get agent's plan
+        const task = await agent.plan(userRequestObs);
 
-        // Return the task description as the response
+        // Execute the plan
+        await agent.act(task);
+
+        // Return the task description and any results
         sendResponse({
           result: task.description,
+          actions: task.payload,
         });
       } catch (error) {
         console.error("Agent error:", error);
-        // Return a user-friendly error message
         sendResponse({
           error: "An error occurred while processing your request.",
         });
       }
-    } catch (error) {
-      console.error("System error:", error);
-      sendResponse({
-        error: "An error occurred while processing your request.",
-      });
-    }
+    })();
 
     return true; // Required for async response
   }
 
-  // Handle call-agent messages from popup
-  if (message.name === "call-agent") {
-    const { prompt } = message.body;
+  // Handle toolkit execution requests from content script
+  if (message.name === "EXECUTE_TOOLKIT") {
+    const { method, args } = message;
 
-    try {
-      // Create an instance of the agent
-      const agent = new TinyAgent();
-
-      // Create a plan based on the user request
-      const userRequestObs = {
-        type: "userRequest",
-        payload: prompt,
-      };
-
-      // Try to get a response from the agent
+    // Forward to content script of active tab
+    (async () => {
       try {
-        const task = agent.plan(userRequestObs);
-
-        // Act on the plan
-        agent.act(task);
-
-        // Return the task description as the response
-        sendResponse({
-          result: task.description,
+        const [tab] = await chrome.tabs.query({
+          active: true,
+          currentWindow: true,
         });
+        if (!tab || !tab.id) {
+          throw new Error("No active tab found");
+        }
+
+        const result = await chrome.tabs.sendMessage(tab.id, {
+          type: "EXECUTE_TOOLKIT",
+          method,
+          args,
+        });
+
+        sendResponse(result);
       } catch (error) {
-        console.error("Agent error:", error);
+        console.error("Toolkit execution error:", error);
         sendResponse({
-          error: "An error occurred while processing your request.",
+          error: "An error occurred while executing toolkit method.",
         });
       }
-    } catch (error) {
-      console.error("System error:", error);
-      sendResponse({
-        error: "An error occurred while processing your request.",
-      });
-    }
+    })();
 
     return true; // Required for async response
   }

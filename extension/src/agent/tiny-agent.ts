@@ -7,71 +7,60 @@ export class TinyAgent implements Agent {
     knowledge: {},
   };
 
-  observe(): Observation {
+  async observe(): Promise<Observation> {
     try {
-      // Example: scrape document title
-      const title = document.title || "Unknown page";
-      return { type: "pageTitle", payload: title };
+      // Get current tab
+      const [tab] = await chrome.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
+      if (!tab || !tab.id) {
+        throw new Error("No active tab found");
+      }
+
+      // Get page title and URL
+      const pageContext = {
+        title: tab.title || "Unknown page",
+        url: tab.url || "Unknown URL",
+      };
+
+      // Get page content through content script
+      const contentResult = await chrome.tabs.sendMessage(tab.id, {
+        type: "EXECUTE_TOOLKIT",
+        method: "getPageContent",
+        args: ["body"],
+      });
+
+      return {
+        type: "pageContext",
+        payload: {
+          ...pageContext,
+          content: contentResult?.result || "No content available",
+        },
+      };
     } catch (error) {
       console.error("Error in observe method:", error);
       return { type: "error", payload: "Could not observe current context" };
     }
   }
 
-  plan(observation: Observation): Task {
+  async plan(observation: Observation): Promise<Task> {
     try {
-      // Handle user requests specifically
+      // Handle user requests
       if (observation.type === "userRequest") {
         const userInput = observation.payload;
+        const pageContext = await this.observe();
 
-        // Check for valid input
-        if (!userInput || typeof userInput !== "string") {
-          return {
-            description:
-              "I received an empty or invalid request. Please try again with a clear question or command.",
-          };
-        }
+        // Call remote agent with user input and page context
+        const response = await this.callRemoteAgent({
+          prompt: userInput,
+          context: pageContext.payload,
+        });
 
-        // Simple pattern matching for various types of requests
-        if (
-          userInput.toLowerCase().includes("hello") ||
-          userInput.toLowerCase().includes("hi")
-        ) {
-          return {
-            description:
-              "Hello! I'm your AI assistant. How can I help you today?",
-          };
-        } else if (userInput.toLowerCase().includes("help")) {
-          return {
-            description:
-              "I can help you navigate web pages, answer questions, and perform simple tasks. Just ask me what you need!",
-          };
-        } else if (
-          userInput.toLowerCase().includes("current page") ||
-          userInput.toLowerCase().includes("what page")
-        ) {
-          try {
-            const currentPage = document.title || "Unknown page";
-            return {
-              description: `You're currently on: ${currentPage}`,
-            };
-          } catch (error) {
-            return {
-              description:
-                "I couldn't determine what page you're on. My browser access might be limited.",
-            };
-          }
-        } else {
-          // Generic response for other inputs
-          return {
-            description: `I received your request: "${userInput}". I'm a simple agent, but I'm learning to handle more complex tasks.`,
-          };
-        }
-      }
-
-      // Original code for pageTitle observations
-      if (observation.type === "pageTitle") {
-        return { description: `Log the page title: ${observation.payload}` };
+        return {
+          description: response.message || "No response from agent",
+          payload: response.actions || [],
+        };
       }
 
       if (observation.type === "error") {
@@ -90,10 +79,30 @@ export class TinyAgent implements Agent {
     }
   }
 
-  act(task: Task): void {
+  async act(task: Task): Promise<void> {
     try {
       console.log("Agent Acting:", task.description);
       this.remember(task.description);
+
+      // If there are actions to perform
+      if (task.payload && Array.isArray(task.payload)) {
+        const [tab] = await chrome.tabs.query({
+          active: true,
+          currentWindow: true,
+        });
+        if (!tab || !tab.id) {
+          throw new Error("No active tab found");
+        }
+
+        // Execute each action in sequence
+        for (const action of task.payload) {
+          await chrome.tabs.sendMessage(tab.id, {
+            type: "EXECUTE_TOOLKIT",
+            method: action.type,
+            args: action.args,
+          });
+        }
+      }
     } catch (error) {
       console.error("Error in act method:", error);
       this.remember("Error while trying to act on task");
@@ -109,6 +118,88 @@ export class TinyAgent implements Agent {
       }
     } catch (error) {
       console.error("Error in remember method:", error);
+    }
+  }
+
+  private async callRemoteAgent(request: {
+    prompt: string;
+    context: any;
+  }): Promise<any> {
+    try {
+      // Format request for Mastra/Camel
+      const formattedRequest = {
+        messages: [
+          {
+            role: "system",
+            content: `You are a helpful web assistant that can understand web pages and help users interact with them. 
+Current page context:
+Title: ${request.context.title}
+URL: ${request.context.url}
+Content: ${request.context.content.substring(0, 1000)}... (truncated)
+
+You can perform the following actions:
+- clickElement(selector): Click an element on the page
+- fillInput(selector, value): Fill a form input
+- extractText(selector): Extract text from an element
+- scrollToElement(selector): Scroll to make an element visible
+- waitForElement(selector): Wait for an element to appear
+
+Respond in the following JSON format:
+{
+  "message": "Your response message to the user",
+  "actions": [
+    {
+      "type": "actionName",
+      "args": ["arg1", "arg2"]
+    }
+  ]
+}`,
+          },
+          {
+            role: "user",
+            content: request.prompt,
+          },
+        ],
+        temperature: 0.7,
+        stream: false,
+      };
+
+      // Call Mastra/Camel API
+      const response = await fetch(
+        "http://localhost:8000/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formattedRequest),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Parse Mastra/Camel response
+      try {
+        const content = data.choices[0].message.content;
+        const parsedContent = JSON.parse(content);
+        return {
+          message: parsedContent.message,
+          actions: parsedContent.actions || [],
+        };
+      } catch (parseError) {
+        console.error("Error parsing agent response:", parseError);
+        return {
+          message: data.choices[0].message.content,
+          actions: [],
+        };
+      }
+    } catch (error) {
+      console.error("Error calling remote agent:", error);
+      throw error;
     }
   }
 }
