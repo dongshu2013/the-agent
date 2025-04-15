@@ -53,8 +53,8 @@ Thumbs.db
 *.swp
 *.swo 
 
-./extensions/.plasmo
-./extensions/build
-./extensions/node_modules
-./backend/node_modules
-./web/node_modules
+extension/.plasmo*
+extension/build
+extension/node_modules
+backend/node_modules
+web/node_modules
