@@ -1,36 +1,26 @@
+# 使用最小化的Nixpacks配置
 [phases.setup]
 nixPkgs = [
   "python310",
   "postgresql_14"
 ]
-provideOutPaths = true
 
 [phases.install]
+aptPkgs = ["nodejs", "npm"]
 cmds = [
-  # 使用shell脚本安装Node.js和yarn
-  "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\" && nvm install 18 && nvm use 18 && npm install -g yarn",
-  # 安装前端依赖
-  "cd web && export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\" && nvm use 18 && yarn install"
+  "npm install -g yarn",
+  "cd web && yarn install",
+  "pip install psycopg2-binary"
 ]
 
 [phases.build]
 cmds = [
-  # 确保脚本可执行
   "chmod +x start-services.sh",
   "chmod +x health-check.sh",
   "chmod +x railway-test.sh",
-  # 运行诊断脚本
   "./railway-test.sh > railway-test-output.log || true",
-  # 构建前端 - 使用自定义脚本跳过类型检查
-  "cd web && export NVM_DIR=\"$HOME/.nvm\" && [ -s \"$NVM_DIR/nvm.sh\" ] && . \"$NVM_DIR/nvm.sh\" && nvm use 18 && NEXT_TELEMETRY_DISABLED=1 yarn build:railway",
-  # 设置Railway环境
+  "cd web && NEXT_TELEMETRY_DISABLED=1 yarn build:railway",
   "chmod +x setup-railway.sh && ./setup-railway.sh"
-]
-
-[phases.cleanup]
-cmds = [
-  "rm -rf ~/.npm",
-  "rm -f /nix/var/nix/profiles/per-user/*/share/bash-completion/completions/npm || true"
 ]
 
 [start]
