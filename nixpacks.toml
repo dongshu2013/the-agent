@@ -9,6 +9,8 @@ nixPkgs = [
 aptPkgs = ["nodejs", "npm"]
 cmds = [
   "npm install -g yarn",
+  "echo 'PATH=$PATH:$(npm bin -g)' >> ~/.bashrc",
+  "export PATH=$PATH:$(npm bin -g)",
   "cd web && yarn install",
   "pip install psycopg2-binary"
 ]
