@@ -1,6 +1,11 @@
 #!/bin/bash
 # Railway部署启动脚本 - 启动前端和后端服务
 
+# 确保NVM可用并使用Node.js 18
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+nvm use 18 || nvm install 18
+
 # 设置工作目录
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
