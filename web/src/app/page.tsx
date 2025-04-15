@@ -28,7 +28,7 @@ export default function Home() {
             priority
           />
           <h1 className="text-4xl font-bold mb-2">MIZU Agent</h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-8">
+          <p className="text-gray-600 mb-8">
             Your intelligent AI assistant dashboard
           </p>
 
@@ -48,7 +48,7 @@ export default function Home() {
         </div>
       </main>
 
-      <footer className="mt-16 text-center text-sm text-gray-500 dark:text-gray-400">
+      <footer className="mt-16 text-center text-sm text-gray-500">
         {new Date().getFullYear()} MIZU Agent. All rights reserved.
       </footer>
     </div>

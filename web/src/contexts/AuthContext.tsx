@@ -7,13 +7,26 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
+import {
+  User as FirebaseUser,
+  GoogleAuthProvider,
+  signInWithPopup,
+  getRedirectResult,
+  signOut as firebaseSignOut,
+  onAuthStateChanged,
+  getIdToken,
+} from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 // 定义用户类型
 interface User {
-  uid: string;
-  email: string;
-  displayName?: string;
-  photoURL?: string;
+  id: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  apiKey: string | null;
+  apiKeyEnabled: boolean;
+  idToken: string | null;
 }
 
 // 定义AuthContext的类型
@@ -22,6 +35,9 @@ interface AuthContextType {
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  rotateApiKey: () => Promise<string | null>;
+  toggleApiKey: (enabled: boolean) => Promise<boolean>;
+  refreshToken: () => Promise<string | null>;
 }
 
 // 创建上下文
@@ -32,53 +48,248 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 模拟身份验证状态变化
-  useEffect(() => {
-    // 模拟身份验证加载
-    const timer = setTimeout(() => {
-      setUser(null);
-      setLoading(false);
-    }, 1000);
+  // Get the ID token for the current user
+  const getToken = async (firebaseUser: FirebaseUser): Promise<string> => {
+    return await getIdToken(firebaseUser, true); // Force refresh
+  };
 
-    return () => clearTimeout(timer);
+  // Handle user data when Firebase auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          // Get the ID token
+          const idToken = await getToken(firebaseUser);
+
+          // First, check if the user exists in our database
+          try {
+            const response = await fetch(
+              `/api/auth/user?userId=${firebaseUser.uid}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${idToken}`,
+                },
+              }
+            );
+
+            if (response.ok) {
+              // User exists, get their data
+              const userData = await response.json();
+              setUser({
+                id: firebaseUser.uid,
+                email: firebaseUser.email,
+                displayName: firebaseUser.displayName,
+                photoURL: firebaseUser.photoURL,
+                apiKey: userData.apiKey,
+                apiKeyEnabled: userData.apiKeyEnabled,
+                idToken,
+              });
+            } else if (response.status === 404) {
+              // User doesn't exist, create a new user - this is expected for first-time login
+              console.log("New user detected, creating user record...");
+              const username =
+                firebaseUser.displayName ||
+                firebaseUser.email?.split("@")[0] ||
+                `user_${Math.random().toString(36).substring(2, 10)}`;
+
+              const createResponse = await fetch("/api/auth/user", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${idToken}`,
+                },
+                body: JSON.stringify({
+                  id: firebaseUser.uid,
+                  username,
+                  email: firebaseUser.email,
+                }),
+              });
+
+              if (createResponse.ok) {
+                const newUserData = await createResponse.json();
+                console.log("User created successfully");
+                setUser({
+                  id: firebaseUser.uid,
+                  email: firebaseUser.email,
+                  displayName: firebaseUser.displayName,
+                  photoURL: firebaseUser.photoURL,
+                  apiKey: newUserData.apiKey,
+                  apiKeyEnabled: newUserData.apiKeyEnabled,
+                  idToken,
+                });
+              } else {
+                console.error(
+                  "Failed to create user:",
+                  await createResponse.text()
+                );
+              }
+            } else {
+              console.error(
+                "Error fetching user data:",
+                response.status,
+                await response.text()
+              );
+            }
+          } catch (fetchError) {
+            // Handle fetch errors separately to avoid crashing the auth flow
+            console.error("Error during user data fetch:", fetchError);
+          }
+        } catch (error) {
+          console.error("Error setting up user:", error);
+        }
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  // 模拟使用Google登录
-  const signInWithGoogle = async () => {
+  useEffect(() => {
+    const handleRedirect = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          const user = result.user;
+          const idToken = await getToken(user);
+          setUser({
+            id: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            apiKey: null,
+            apiKeyEnabled: false,
+            idToken,
+          });
+        }
+      } catch (error) {
+        console.error("Error handling redirect:", error);
+      }
+    };
+    handleRedirect();
+  }, []);
+
+  // Refresh the ID token
+  const refreshToken = async (): Promise<string | null> => {
+    if (!auth.currentUser) return null;
+
     try {
-      setLoading(true);
-      // 在这里，我们只是模拟登录
-      console.log("模拟Google登录");
-      // 模拟成功登录
-      setUser({
-        uid: "mock-user-id",
-        email: "user@example.com",
-        displayName: "Test User",
-        photoURL: "https://via.placeholder.com/150",
-      });
+      const newToken = await getToken(auth.currentUser);
+      setUser((prev) => (prev ? { ...prev, idToken: newToken } : null));
+      return newToken;
     } catch (error) {
-      console.error("登录错误:", error);
-    } finally {
-      setLoading(false);
+      console.error("Error refreshing token:", error);
+      return null;
     }
   };
 
-  // 模拟退出登录
+  const signInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      // Configure auth provider with custom parameters to avoid COOP issues
+      provider.setCustomParameters({
+        prompt: "select_account",
+        // This helps with some cross-origin issues
+        auth_type: "rerequest",
+      });
+
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error("Error signing in with Google", error);
+    }
+  };
+
   const signOut = async () => {
     try {
-      setLoading(true);
-      // 模拟退出登录
-      console.log("模拟退出登录");
+      await firebaseSignOut(auth);
       setUser(null);
     } catch (error) {
-      console.error("退出错误:", error);
-    } finally {
-      setLoading(false);
+      console.error("Error signing out", error);
+    }
+  };
+
+  const rotateApiKey = async (): Promise<string | null> => {
+    if (!user || !user.idToken) return null;
+
+    try {
+      // Refresh token before making the request
+      const token = (await refreshToken()) || user.idToken;
+
+      const response = await fetch("/api/auth/apikey", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          operation: "rotate",
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Update the user state with the new API key
+        setUser((prev) => (prev ? { ...prev, apiKey: data.apiKey } : null));
+        return data.apiKey;
+      }
+
+      return null;
+    } catch (error) {
+      console.error("Error rotating API key:", error);
+      return null;
+    }
+  };
+
+  const toggleApiKey = async (enabled: boolean): Promise<boolean> => {
+    if (!user || !user.idToken) return false;
+
+    try {
+      // Refresh token before making the request
+      const token = (await refreshToken()) || user.idToken;
+
+      const response = await fetch("/api/auth/apikey", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          operation: "toggle",
+          enabled,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Update the user state with the new API key enabled status
+        setUser((prev) =>
+          prev ? { ...prev, apiKeyEnabled: data.apiKeyEnabled } : null
+        );
+        return data.apiKeyEnabled;
+      }
+
+      return false;
+    } catch (error) {
+      console.error("Error toggling API key:", error);
+      return false;
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signOut }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        signInWithGoogle,
+        signOut,
+        rotateApiKey,
+        toggleApiKey,
+        refreshToken,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
