@@ -1,19 +1,21 @@
 # 使用最小化的Nixpacks配置
 [phases.setup]
 nixPkgs = [
-  "python310",
   "postgresql_14"
 ]
 
 [phases.install]
-aptPkgs = ["nodejs", "npm", "python3-pip", "python3-dev", "build-essential", "libpq-dev"]
+aptPkgs = ["nodejs", "npm", "python3", "python3-pip", "python3-dev", "build-essential", "libpq-dev"]
 cmds = [
+  # 确保系统PATH优先于Nix PATH
+  "export PATH=/usr/bin:/usr/local/bin:$PATH",
   "cd web && npm install",
-  "python3 -m pip install psycopg2-binary"
+  "export PATH=/usr/bin:/usr/local/bin:$PATH && python3 -m pip install psycopg2-binary"
 ]
 
 [phases.build]
 cmds = [
+  "export PATH=/usr/bin:/usr/local/bin:$PATH",
   "chmod +x start-services.sh",
   "chmod +x health-check.sh",
   "chmod +x railway-test.sh",
