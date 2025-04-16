@@ -160,7 +160,6 @@ Respond in the following JSON format:
             content: request.prompt,
           },
         ],
-        temperature: 0.7,
         stream: false,
       };
 

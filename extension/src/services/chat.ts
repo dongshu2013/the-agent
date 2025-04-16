@@ -2,13 +2,7 @@
  * 聊天服务 - 管理聊天会话和消息
  */
 
-import {
-  sendChatRequest,
-  sendToolResult,
-  ChatRequest,
-  ChatResponse,
-  AVAILABLE_TOOLS,
-} from "./api";
+import { sendChatRequest, ChatRequest, AVAILABLE_TOOLS } from "./api";
 import { executeTool } from "./tools";
 import { Storage } from "@plasmohq/storage";
 
@@ -21,6 +15,7 @@ export interface Message {
   type: "user" | "assistant" | "system";
   content: string;
   timestamp: Date;
+  isError?: boolean;
 }
 
 // 会话类型
@@ -305,8 +300,7 @@ export const sendMessage = async (
     // 构建请求
     const request: ChatRequest = {
       messages,
-      temperature: 0.7,
-      tools: AVAILABLE_TOOLS, // 无论是否直连都添加工具定义
+      ...(AVAILABLE_TOOLS.length > 0 ? { tools: AVAILABLE_TOOLS } : {}),
     };
 
     // Step 1: Send request to backend which calls LLM (or directly to OpenRouter)
@@ -374,7 +368,6 @@ export const sendMessage = async (
         finalResponse = await sendChatRequest(
           {
             messages: messagesWithToolResult,
-            temperature: 0.7,
           },
           apiKey
         );

@@ -7,7 +7,7 @@ interface ConversationListProps {
   selectConversation: (id: string) => void;
   deleteConversation: (id: string, e: React.MouseEvent) => void;
   createNewConversation: () => void;
-  setShowConversationList: (value: boolean) => void;
+  setShowConversationList: () => void;
 }
 
 const ConversationList = ({
@@ -18,132 +18,107 @@ const ConversationList = ({
   createNewConversation,
   setShowConversationList,
 }: ConversationListProps) => {
-  // 格式化日期
-  const formatDate = (date: Date): string => {
-    const now = new Date();
-    const conversationDate = new Date(date);
-
-    // 如果是今天，显示时间
-    if (
-      now.getFullYear() === conversationDate.getFullYear() &&
-      now.getMonth() === conversationDate.getMonth() &&
-      now.getDate() === conversationDate.getDate()
-    ) {
-      return conversationDate.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    }
-
-    // 如果是昨天，显示"昨天"
-    const yesterday = new Date(now);
-    yesterday.setDate(now.getDate() - 1);
-    if (
-      yesterday.getFullYear() === conversationDate.getFullYear() &&
-      yesterday.getMonth() === conversationDate.getMonth() &&
-      yesterday.getDate() === conversationDate.getDate()
-    ) {
-      return "昨天";
-    }
-
-    // 否则显示日期
-    return conversationDate.toLocaleDateString();
-  };
-
   return (
-    <div className="flex h-full w-full">
-      {/* 会话侧边栏 */}
-      <div className="w-72 h-full flex flex-col bg-white text-gray-800 border-r border-gray-200">
-        <div className="px-4 py-3 flex justify-between items-center border-b border-gray-200">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowConversationList(false)}
-              className="flex items-center justify-center rounded-md w-8 h-8 hover:bg-gray-100"
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-800">History</span>
+        </div>
+        <button
+          onClick={() => setShowConversationList()}
+          className="p-1 hover:bg-gray-100 rounded text-gray-500"
+          aria-label="Close history"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="w-4 h-4"
+          >
+            <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+          </svg>
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-2">
+          <button
+            onClick={() => {
+              createNewConversation();
+              setShowConversationList();
+            }}
+            className="flex w-full items-center gap-2 rounded-md border border-gray-200 px-3 py-2 text-sm hover:bg-gray-50"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-4 h-4 text-gray-500"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className="w-5 h-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
+              <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+            </svg>
+            New chat
+          </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2">
-          {conversations && conversations.length > 0 ? (
-            <div className="space-y-1">
-              {conversations.map((conv) => (
-                <div
-                  key={conv.id}
-                  className={`flex items-center group px-3 py-2 rounded-md cursor-pointer ${
-                    conv.id === currentConversationId
-                      ? "bg-gray-100"
-                      : "hover:bg-gray-100"
-                  }`}
-                  onClick={() => selectConversation(conv.id)}
+        {conversations && conversations.length > 0 ? (
+          <nav className="px-2 pb-2 space-y-1">
+            {conversations.map((conversation) => (
+              <div
+                key={conversation.id}
+                className={`group flex items-center gap-2 rounded-md px-3 py-2 text-sm cursor-pointer ${
+                  conversation.id === currentConversationId
+                    ? "bg-gray-100 text-gray-900"
+                    : "text-gray-600 hover:bg-gray-50"
+                }`}
+                onClick={() => selectConversation(conversation.id)}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="w-4 h-4 text-gray-500 flex-shrink-0"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M2 10c0-3.967 3.69-7 8-7 4.31 0 8 3.033 8 7s-3.69 7-8 7a9.165 9.165 0 01-1.504-.123 5.976 5.976 0 01-3.935 1.107.75.75 0 01-.584-1.143 3.478 3.478 0 00.522-1.756C2.979 13.825 2 12.025 2 10z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <span className="truncate flex-1">
+                  {conversation.messages.length > 0
+                    ? conversation.messages[0].content
+                    : "New Chat"}
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteConversation(conversation.id, e);
+                  }}
+                  className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 rounded text-gray-500"
+                  aria-label="Delete conversation"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth={1.5}
-                    stroke="currentColor"
-                    className="w-4 h-4 flex-shrink-0 mr-2"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                    className="w-3.5 h-3.5"
                   >
                     <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z"
+                      fillRule="evenodd"
+                      d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z"
+                      clipRule="evenodd"
                     />
                   </svg>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center">
-                      <div className="truncate text-sm font-medium">
-                        {conv.title}
-                      </div>
-                      <button
-                        className="opacity-0 group-hover:opacity-100 ml-2 hover:text-red-500"
-                        onClick={(e) => deleteConversation(conv.id, e)}
-                        aria-label="删除会话"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={1.5}
-                          stroke="currentColor"
-                          className="w-4 h-4"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {formatDate(new Date(conv.updatedAt))}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-10 text-gray-500">
-              您还没有任何会话
-            </div>
-          )}
-        </div>
+                </button>
+              </div>
+            ))}
+          </nav>
+        ) : (
+          <div className="flex items-center justify-center h-32">
+            <p className="text-sm text-gray-500">No conversations yet</p>
+          </div>
+        )}
       </div>
     </div>
   );

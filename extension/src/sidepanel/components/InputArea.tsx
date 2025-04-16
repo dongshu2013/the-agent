@@ -21,7 +21,7 @@ const InputArea = ({
       textareaRef.current.style.height = "24px";
       textareaRef.current.style.height = `${Math.min(
         textareaRef.current.scrollHeight,
-        150
+        44
       )}px`;
     }
   }, [prompt]);
@@ -41,7 +41,7 @@ const InputArea = ({
                   handleSubmit(e);
                 }
               }}
-              placeholder="发送消息..."
+              placeholder="send message..."
               className="w-full py-3 pl-4 pr-12 max-h-[150px] min-h-[44px] focus:outline-none resize-none bg-white text-gray-800 placeholder-gray-400"
               rows={1}
             />
@@ -88,7 +88,8 @@ const InputArea = ({
             </button>
           </div>
           <p className="text-xs mt-1 text-center text-gray-500">
-            MIZU AI assistant may produce inaccurate information. Your data is kept private.
+            MIZU AI assistant may produce inaccurate information. Your data is
+            kept private.
           </p>
         </form>
       </div>

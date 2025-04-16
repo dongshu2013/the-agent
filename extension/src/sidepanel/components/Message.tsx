@@ -1,4 +1,3 @@
-import React from "react";
 import { Message as MessageType } from "../../services/chat";
 
 // @ts-ignore
@@ -20,7 +19,7 @@ const Message = ({ message }: MessageProps) => {
               <div className="w-8 h-8 rounded-sm flex items-center justify-center overflow-hidden bg-white">
                 <img
                   src={aiIcon}
-                  alt="AI助手"
+                  alt="AI Agent"
                   className="w-full h-full object-cover"
                 />
               </div>

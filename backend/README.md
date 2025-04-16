@@ -57,7 +57,6 @@ uv run uvicorn edge_agent.api.app:app --reload --port 8000 --lifespan on
     {"role": "user", "content": "你好，请介绍一下自己。"}
   ],
   "model": "gpt-3.5-turbo",
-  "temperature": 0.7
 }
 ```
 

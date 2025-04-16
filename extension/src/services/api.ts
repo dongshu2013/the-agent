@@ -2,29 +2,31 @@
  * API Service - Handles communication with our backend server
  */
 
+// 导入 Plasmo 的存储机制
+import { Storage } from "@plasmohq/storage";
+
+// 初始化存储
+const storage = new Storage();
+
+// 配置项键名常量
+const CONFIG_KEYS = {
+  BACKEND_URL: "BACKEND_URL",
+  API_ENDPOINT: "API_ENDPOINT",
+  API_TOKEN: "API_TOKEN",
+};
+
+// 空的可用工具数组，先暂时不启用工具调用功能
+export const AVAILABLE_TOOLS: any[] = [];
+
 // Chat request interface
 export interface ChatRequest {
+  model?: string;
   messages: Array<{
     role: string;
     content: string;
-    function_call?: any;
   }>;
-  tools?: Array<{
-    type: string;
-    function: {
-      name: string;
-      description?: string;
-      parameters?: Record<string, any>;
-    };
-  }>;
-  temperature?: number;
   max_tokens?: number;
-}
-
-// 在类型定义部分添加工具调用类型
-export interface ToolCall {
-  name: string;
-  arguments: Record<string, any>;
+  stream?: boolean;
 }
 
 // Chat response interface
@@ -32,73 +34,38 @@ export interface ChatResponse {
   success: boolean;
   data?: any;
   error?: string;
-  tool_calls?: ToolCall[];
-}
-
-// Backend response types
-export interface BackendDirectResponse {
-  type: "response";
-  content: string;
-}
-
-export interface BackendToolCallResponse {
-  type: "tool_call";
-  tool_call: {
+  tool_calls?: Array<{
     name: string;
     arguments: Record<string, any>;
-  };
-  message_content: string;
-  conversation_context: Array<{
-    role: string;
-    content: string;
-    function_call?: any;
   }>;
-  model: string;
 }
-
-export type BackendResponse = BackendDirectResponse | BackendToolCallResponse;
-
-// Available tools
-export const AVAILABLE_TOOLS = [
-  {
-    type: "function",
-    function: {
-      name: "getWeather",
-      description: "Get the current weather for a specific time and location",
-      parameters: {
-        type: "object",
-        properties: {
-          time: {
-            type: "string",
-            description:
-              "The time to get weather for, e.g. 'now', 'today', 'tomorrow'",
-          },
-        },
-        required: ["time"],
-      },
-    },
-  },
-];
-
-// Backend API configuration
-const BACKEND_URL = "http://localhost:8000"; // 本地后端URL
-const API_ENDPOINTS = {
-  CHAT_WITH_TOOLS: "/v1/chat/with-tools",
-  TOOL_RESULT: "/v1/chat/tool-result",
-  EXECUTE_TOOL: "/v1/chat/execute-tool",
-};
-const DEFAULT_API_KEY =
-  "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";
-
-// Flag to control direct API access (bypassing backend)
-// 可以通过设置环境变量或LocalStorage来控制
-// 本地开发默认为true(直连API)，生产环境可设为false(使用后端)
-const USE_DIRECT_API = true;
 
 // 添加调试日志函数
 const debug = (message: string, data?: any) => {
   console.log(`[MIZU API] ${message}`, data || "");
 };
+
+// 获取配置项
+async function getConfig(key: string, defaultValue: string): Promise<string> {
+  try {
+    const value = await storage.get(key);
+    return value || defaultValue;
+  } catch (error) {
+    debug(`Error getting config for ${key}:`, error);
+    return defaultValue;
+  }
+}
+
+// 获取存储的 API Token
+export async function getApiToken(): Promise<string | undefined> {
+  try {
+    const token = await storage.get(CONFIG_KEYS.API_TOKEN);
+    return token || undefined;
+  } catch (error) {
+    debug("Error getting API Token:", error);
+    return undefined;
+  }
+}
 
 /**
  * Send a chat request to our backend server
@@ -108,238 +75,74 @@ export const sendChatRequest = async (
   apiKey?: string
 ): Promise<ChatResponse> => {
   try {
-    // Default to OpenRouter API if no key is provided
-    const key = apiKey || DEFAULT_API_KEY;
+    // 获取后端 URL 配置
+    const BACKEND_URL = await getConfig(
+      CONFIG_KEYS.BACKEND_URL,
+      "http://localhost:8000"
+    );
+    const API_ENDPOINT = await getConfig(
+      CONFIG_KEYS.API_ENDPOINT,
+      "/v1/chat/completions"
+    );
 
-    if (USE_DIRECT_API) {
-      // 直接调用OpenRouter API
-      debug("Using direct OpenRouter API (bypassing backend)");
-
-      // OpenRouter API endpoint
-      const url = "https://openrouter.ai/api/v1/chat/completions";
-
-      const body: any = {
-        model: "google/gemini-2.5-pro-exp-03-25:free",
-        messages: request.messages,
-        temperature: request.temperature || 0.7,
-        max_tokens: request.max_tokens || 1000,
-      };
-
-      // Add tools if provided
-      if (request.tools && request.tools.length > 0) {
-        body.tools = request.tools;
-        body.tool_choice = "auto";
-      }
-
-      debug("Direct API request body:", body);
-
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${key}`,
-          "HTTP-Referer": "https://github.com",
-          "X-Title": "MIZU Agent",
-        },
-        body: JSON.stringify(body),
-      });
-
-      debug("Direct API response status:", response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        debug("Direct API error:", errorData);
-        return {
-          success: false,
-          error: errorData.error?.message || `API Error: ${response.status}`,
-        };
-      }
-
-      const data = await response.json();
-      debug("Direct API successful response:", data);
-
-      // Extract tool calls if any
-      const message = data.choices[0].message;
-      const toolCalls: ToolCall[] = [];
-
-      if (message.tool_calls && message.tool_calls.length > 0) {
-        message.tool_calls.forEach((toolCall: any) => {
-          try {
-            toolCalls.push({
-              name: toolCall.function.name,
-              arguments: JSON.parse(toolCall.function.arguments),
-            });
-          } catch (e) {
-            debug("Error parsing tool call arguments:", e);
-          }
-        });
-      }
-
-      return {
-        success: true,
-        data,
-        tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
-      };
-    } else {
-      // Send request to our backend server instead of OpenRouter directly
-      debug(
-        `Sending request to backend: ${BACKEND_URL}${API_ENDPOINTS.CHAT_WITH_TOOLS}`
-      );
-      debug("Request payload:", {
-        messages: request.messages,
-        api_key: key ? "***" : "not provided", // 隐藏真实API密钥
-        model: "google/gemini-2.5-pro-exp-03-25:free",
-        temperature: request.temperature || 0.7,
-        max_tokens: request.max_tokens || 1000,
-      });
-
-      const response = await fetch(
-        `${BACKEND_URL}${API_ENDPOINTS.CHAT_WITH_TOOLS}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            messages: request.messages,
-            api_key: key,
-            model: "google/gemini-2.5-pro-exp-03-25:free",
-            temperature: request.temperature || 0.7,
-            max_tokens: request.max_tokens || 1000,
-          }),
-        }
-      );
-
-      console.log("Response status:", response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        return {
-          success: false,
-          error: errorData.detail || `API Error: ${response.status}`,
-        };
-      }
-
-      const backendResponse = (await response.json()) as BackendResponse;
-
-      console.log("Backend response:", backendResponse);
-
-      // Process the response based on its type
-      if (backendResponse.type === "tool_call") {
-        // Extract tool call information
-        const toolCalls: ToolCall[] = [
-          {
-            name: backendResponse.tool_call.name,
-            arguments: backendResponse.tool_call.arguments,
-          },
-        ];
-
-        // Format response to match our internal format
-        return {
-          success: true,
-          data: {
-            choices: [
-              {
-                message: {
-                  content: backendResponse.message_content,
-                  tool_calls: [
-                    {
-                      function: {
-                        name: backendResponse.tool_call.name,
-                        arguments: JSON.stringify(
-                          backendResponse.tool_call.arguments
-                        ),
-                      },
-                    },
-                  ],
-                },
-              },
-            ],
-          },
-          tool_calls: toolCalls,
-        };
-      } else {
-        // Direct response with no tool calls
-        return {
-          success: true,
-          data: {
-            choices: [
-              {
-                message: {
-                  content: backendResponse.content,
-                },
-              },
-            ],
-          },
-        };
-      }
+    // 如果没有提供 apiKey，尝试从存储中获取
+    if (!apiKey) {
+      apiKey = await getApiToken();
     }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error occurred",
+
+    // Send request to our backend server
+    debug(`Sending request to backend: ${BACKEND_URL}${API_ENDPOINT}`);
+
+    // 准备请求体 - 直接发送完整请求结构
+    const body = {
+      ...request, // 包括model, messages, temperature等字段
     };
-  }
-};
 
-/**
- * Send tool execution result back to the backend
- */
-export const sendToolResult = async (
-  toolName: string,
-  arguments_: Record<string, any>,
-  conversationId: string,
-  messages: Array<{
-    role: string;
-    content: string;
-    function_call?: any;
-  }>,
-  apiKey?: string
-): Promise<ChatResponse> => {
-  try {
-    // Default to OpenRouter API if no key is provided
-    const key = apiKey || DEFAULT_API_KEY;
+    // 构建请求头
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
 
-    // Send the tool result to our backend
-    const response = await fetch(`${BACKEND_URL}${API_ENDPOINTS.TOOL_RESULT}`, {
+    // 如果提供了API key，添加到请求头作为认证令牌
+    if (apiKey) {
+      headers["Authorization"] = `Token ${apiKey}`;
+    }
+
+    debug("Backend request payload:", body);
+
+    // 发送请求到后端
+    const response = await fetch(`${BACKEND_URL}${API_ENDPOINT}`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        tool_name: toolName,
-        arguments: arguments_,
-        conversation_id: conversationId,
-        messages: messages,
-        api_key: key,
-        model: "google/gemini-2.5-pro-exp-03-25:free",
-      }),
+      headers,
+      body: JSON.stringify(body),
     });
 
+    debug("Backend response status:", response.status);
+
+    // 检查响应状态
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({}));
+      debug("Backend error:", errorData);
       return {
         success: false,
-        error: errorData.detail || `API Error: ${response.status}`,
+        error:
+          errorData.detail ||
+          errorData.error?.message ||
+          `API Error: ${response.status}`,
       };
     }
 
-    const backendResponse = (await response.json()) as BackendDirectResponse;
+    // 解析从后端返回的数据
+    const data = await response.json();
+    debug("Backend successful response:", data);
 
-    // Return the final response
+    // 返回成功响应
     return {
       success: true,
-      data: {
-        choices: [
-          {
-            message: {
-              content: backendResponse.content,
-            },
-          },
-        ],
-      },
+      data,
     };
   } catch (error) {
+    debug("Error in sendChatRequest:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Unknown error occurred",

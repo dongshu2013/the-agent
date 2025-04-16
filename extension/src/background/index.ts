@@ -1,14 +1,66 @@
 import { sendChatRequest } from "../services/api";
-import { executeTool } from "../services/tools";
+import { Storage } from "@plasmohq/storage";
+
+// 初始化存储
+const storage = new Storage();
+
+// 配置项键名
+const CONFIG_KEYS = {
+  BACKEND_URL: "BACKEND_URL",
+  API_ENDPOINT: "API_ENDPOINT",
+  API_TOKEN: "API_TOKEN",
+};
+
+// 默认配置
+const DEFAULT_CONFIG = {
+  [CONFIG_KEYS.BACKEND_URL]: "http://localhost:8000",
+  [CONFIG_KEYS.API_ENDPOINT]: "/v1/chat/completions",
+};
+
+// 设置默认配置
+async function initializeConfig() {
+  try {
+    // 检查并设置默认配置
+    for (const [key, value] of Object.entries(DEFAULT_CONFIG)) {
+      const existingValue = await storage.get(key);
+      if (!existingValue) {
+        await storage.set(key, value);
+        console.log(`Set default config: ${key} = ${value}`);
+      }
+    }
+
+    // 检查是否已有 API Token
+    const apiToken = await storage.get(CONFIG_KEYS.API_TOKEN);
+    if (!apiToken) {
+      console.log("No API Token found. User needs to provide one in settings.");
+    } else {
+      console.log("API Token found in storage.");
+    }
+  } catch (error) {
+    console.error("Error initializing config:", error);
+  }
+}
 
 // 设置面板行为
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener(async () => {
+  // 初始化配置
+  await initializeConfig();
+
   // 设置侧边面板在点击扩展图标时打开
   if (chrome.sidePanel) {
     chrome.sidePanel
       .setPanelBehavior({ openPanelOnActionClick: true })
       .catch((error) => console.error("Error setting panel behavior:", error));
   }
+
+  // 添加右键菜单
+  chrome.contextMenus.create({
+    id: "mizu-agent",
+    title: "Analyze with MIZU",
+    contexts: ["selection"],
+  });
+
+  console.log("MIZU Agent Extension installed successfully");
 });
 
 // 添加点击处理程序作为备用
@@ -28,52 +80,20 @@ chrome.action.onClicked.addListener((tab) => {
 
 // 处理来自侧边面板的消息
 chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
+  console.log("Background script received message:", message);
+
   // 处理process-request消息
   if (message.name === "process-request") {
     const { apiKey, request } = message.body;
+    console.log("Processing request:", { request, hasApiKey: !!apiKey });
 
     // 使用API服务处理请求
     (async () => {
       try {
-        // Step 1: Send initial request to API
-        const initialResponse = await sendChatRequest(
-          {
-            messages: [
-              {
-                role: "system",
-                content:
-                  "You are a helpful AI assistant named MIZU Agent. Answer questions succinctly and professionally. When a user asks about information that requires tools (like weather, time, etc.), identify the need and call the appropriate function.",
-              },
-              {
-                role: "user",
-                content: request,
-              },
-            ],
-            tools: AVAILABLE_TOOLS,
-          },
-          apiKey
-        );
-
-        if (!initialResponse.success) {
-          throw new Error(
-            initialResponse.error || "Failed to get response from model"
-          );
-        }
-
-        // Step 2: Check for tool calls
-        if (
-          initialResponse.tool_calls &&
-          initialResponse.tool_calls.length > 0
-        ) {
-          // Process the tool call
-          const toolCall = initialResponse.tool_calls[0];
-          const { name, arguments: args } = toolCall;
-
-          // Step 3: Execute the tool locally
-          const toolResult = await executeTool(name, args);
-
-          // Create messages with tool result
-          const messagesWithToolResult = [
+        // 发送请求到后端
+        console.log("Preparing chat request with message:", request);
+        const chatRequest = {
+          messages: [
             {
               role: "system",
               content:
@@ -83,56 +103,31 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
               role: "user",
               content: request,
             },
-            {
-              role: "assistant",
-              content: initialResponse.data.choices[0].message.content || "",
-              function_call: {
-                name,
-                arguments: JSON.stringify(args),
-              },
-            },
-            {
-              role: "function",
-              name,
-              content: JSON.stringify(
-                toolResult.success
-                  ? toolResult.result
-                  : { error: toolResult.error }
-              ),
-            },
-          ];
+          ],
+        };
+        console.log("Full chat request payload:", chatRequest);
 
-          // Step 4: Send the result back
-          const followUpResponse = await sendChatRequest(
-            { messages: messagesWithToolResult },
-            apiKey
+        const response = await sendChatRequest(chatRequest, apiKey);
+        console.log("Raw API response:", response);
+
+        if (!response.success) {
+          console.error("API request failed:", response.error);
+          throw new Error(
+            response.error || "Failed to get response from model"
           );
-
-          if (!followUpResponse.success) {
-            throw new Error(
-              followUpResponse.error ||
-                "Failed to get follow-up response from model"
-            );
-          }
-
-          // Step 5: Send the final response
-          sendResponse({
-            result: followUpResponse.data.choices[0].message.content,
-            error: null,
-            toolUsed: {
-              name,
-              result: toolResult.success
-                ? toolResult.result
-                : { error: toolResult.error },
-            },
-          });
-        } else {
-          // No tool calls, just return the initial response
-          sendResponse({
-            result: initialResponse.data.choices[0].message.content,
-            error: null,
-          });
         }
+
+        console.log("Received successful response from backend");
+
+        // 从响应中提取回答内容
+        const result = response.data.choices[0].message.content;
+        console.log("Final chat response:", result);
+
+        // 发送回答给UI
+        sendResponse({
+          result,
+          error: null,
+        });
       } catch (error) {
         console.error("Error processing request:", error);
         sendResponse({
@@ -148,50 +143,32 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
     return true; // 用于异步响应
   }
 
-  // 处理来自content script的工具执行请求
-  if (message.name === "EXECUTE_TOOLKIT") {
-    const { method, args } = message;
-
-    // 转发到活动标签页的content script
+  // 处理配置更新消息
+  if (message.name === "update-config") {
+    // 更新配置
     (async () => {
       try {
-        const [tab] = await chrome.tabs.query({
-          active: true,
-          currentWindow: true,
-        });
-        if (!tab || !tab.id) {
-          throw new Error("No active tab found");
-        }
-
-        const result = await chrome.tabs.sendMessage(tab.id, {
-          type: "EXECUTE_TOOLKIT",
-          method,
-          args,
-        });
-
-        sendResponse(result);
+        const { key, value } = message.body;
+        await storage.set(key, value);
+        console.log(`Updated config: ${key} = ${value}`);
+        sendResponse({ success: true });
       } catch (error) {
-        console.error("Toolkit execution error:", error);
+        console.error("Error updating config:", error);
         sendResponse({
-          error: "Error executing toolkit method",
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error",
         });
       }
     })();
 
     return true; // 用于异步响应
   }
-});
 
-// 在扩展安装时创建上下文菜单项
-chrome.runtime.onInstalled.addListener(() => {
-  console.log("Extension installed");
-
-  // 添加右键菜单
-  chrome.contextMenus.create({
-    id: "mizu-agent",
-    title: "Analyze with MIZU",
-    contexts: ["selection"],
-  });
+  // 处理来自content script的右键菜单文本选择
+  if (message.name === "selected-text") {
+    // 处理选中的文本
+    console.log("Selected text received");
+  }
 });
 
 // 处理右键菜单点击
