@@ -29,7 +29,7 @@ export default function Message({ message }: MessageProps) {
         {/* AI头像只在AI消息时显示，且在左侧 */}
         {!isUser && (
           <div className="flex-shrink-0 mr-2">
-            <img src={aiIcon} alt="AI" className="w-8 h-8" />
+            <img src={aiIcon} alt="AI" className="w-6 h-6" />
           </div>
         )}
 
