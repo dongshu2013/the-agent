@@ -7,9 +7,9 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Edge Agent"
     VERSION: str = "0.1.0"
     
-    # OpenRouter Configuration
-    OPENROUTER_API_KEY: str = ""
-    OPENROUTER_API_URL: str = "https://openrouter.ai/api/v1/"
+    # LLM API Configuration
+    LLM_API_KEY: str = ""
+    LLM_API_URL: str = ""
     
     # Default Model
     DEFAULT_MODEL: str = "google/gemini-2.5-pro-exp-03-25:free"

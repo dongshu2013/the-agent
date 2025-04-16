@@ -28,8 +28,8 @@ class ChatCompletionRequest(BaseModel):
 
 router = APIRouter(tags=["chat"])
 llm = AsyncOpenAI(
-    api_key=settings.OPENROUTER_API_KEY,
-    base_url=settings.OPENROUTER_API_URL,
+    api_key=settings.LLM_API_KEY,
+    base_url=settings.LLM_API_URL,
     default_headers={
         "HTTP-Referer": "https://mizu.technology",
         "X-Title": settings.PROJECT_NAME,
