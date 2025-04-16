@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useStorage } from "@plasmohq/storage/hook";
 import "../../style.css";
 import Header from "./components/Header";
@@ -13,7 +13,6 @@ import {
   selectConversation as selectConv,
   deleteConversation as deleteConv,
   clearCurrentConversation,
-  getCurrentConversation,
 } from "../services/chat";
 import { Storage } from "@plasmohq/storage";
 
@@ -31,6 +30,12 @@ const Sidepanel = () => {
     string | null
   >("currentConversationId", null);
   const [showConversationList, setShowConversationList] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(
+    null
+  );
+  const streamPausedRef = useRef<boolean>(false);
 
   // Reference to the messages end
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -97,206 +102,163 @@ const Sidepanel = () => {
     });
   }, []);
 
+  // 修改暂停处理函数
+  const handlePauseStream = useCallback(() => {
+    console.log("Pause clicked");
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsStreaming(false); // 只重置流状态
+      // 移除 setIsLoading(false) 因为我们不需要重置加载状态
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
-    const userPrompt = prompt.trim();
-    const userMessage: MessageType = {
+
+    // 创建用户消息
+    const userMessage = {
       id: crypto.randomUUID(),
-      type: "user",
-      content: userPrompt,
+      type: "user", // 确保类型是 "user"
+      content: prompt.trim(),
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    // 添加用户消息到消息列表
+    setMessages((prev: any) => [...prev, userMessage]);
     setPrompt("");
     setIsLoading(true);
+    setIsStreaming(true);
+
+    // 创建新的 AbortController
+    abortControllerRef.current = new AbortController();
 
     try {
-      // build chat message request, format match the backend expectation
-      const chatRequest = {
-        model: "openai/gpt-3.5-turbo", // 与后端的DEFAULT_MODEL保持一致
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a helpful AI assistant named MIZU Agent. Answer questions succinctly and professionally.",
-          },
-          {
-            role: "user",
-            content: userPrompt,
-          },
-        ],
-        max_tokens: 1000,
-        // 后端已配置为使用MOCK模式
-      };
-
-      console.log("发送请求到后端:", JSON.stringify(chatRequest, null, 2));
-
-      // 直接调用API服务
-      const BACKEND_URL = "http://localhost:8000"; // 直接硬编码以排除配置问题
-      const API_ENDPOINT = "/v1/chat/completions";
-
-      // 添加授权头
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      };
-
-      // 使用fetch直接发送请求
-      const response = await fetch(`${BACKEND_URL}${API_ENDPOINT}`, {
+      const BACKEND_URL = "http://localhost:8000";
+      const response = await fetch(`${BACKEND_URL}/v1/chat/completions`, {
         method: "POST",
-        headers,
-        mode: "cors", // 显式指定CORS模式
-        credentials: "omit", // 不发送身份验证信息（简化跨域）
-        body: JSON.stringify(chatRequest),
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "text/event-stream",
+        },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "user",
+              content: prompt.trim(),
+            },
+          ],
+          stream: true,
+          model: "gpt-4o-mini",
+        }),
+        signal: abortControllerRef.current.signal,
+        mode: "cors",
+        credentials: "omit",
       });
 
-      console.log("API响应状态:", response.status);
-
-      let assistantContent = "No response received";
-      let isError = false; // Flag to indicate error
-
-      if (response.ok) {
-        try {
-          const data = await response.json();
-          console.log("API成功响应:", data);
-
-          // 根据响应内容类型决定如何处理
-          if (
-            data.choices &&
-            Array.isArray(data.choices) &&
-            data.choices.length > 0
-          ) {
-            // 标准 OpenAI/OpenRouter 格式
-            const choice = data.choices[0];
-            if (choice.message && choice.message.content) {
-              assistantContent = choice.message.content;
-            } else if (choice.text) {
-              assistantContent = choice.text;
-            }
-          } else if (data.message || data.content || data.text) {
-            // 其他常见格式
-            assistantContent = data.message || data.content || data.text;
-          } else {
-            // 未能识别的格式，用友好的错误信息替代
-            console.error("未知响应格式:", data);
-            assistantContent =
-              "收到了未知格式的响应。这可能是服务端配置问题，请联系管理员。";
-            isError = true;
-          }
-
-          // 如果是模拟模式，添加提示
-          if (
-            data.model &&
-            (data.model === "mock-model" || data.model.includes("mock"))
-          ) {
-            assistantContent +=
-              "\n\n[注：当前使用模拟模式，连接真实AI服务时将提供更好的回复]";
-          }
-        } catch (error) {
-          const parseError = error as Error;
-          console.error("解析响应失败:", parseError);
-          assistantContent = `解析响应时出错，请联系管理员。${parseError.message}`;
-          isError = true;
-        }
-      } else {
-        // 处理API错误（例如4xx、5xx）
-        isError = true;
-        assistantContent = `连接服务失败，请稍后再试。`;
-
-        try {
-          const errorText = await response.text();
-          console.error(`API错误 (${response.status}):`, errorText);
-
-          try {
-            // 尝试解析为JSON
-            const errorData = JSON.parse(errorText);
-            const errorMessage =
-              errorData.error?.message ||
-              errorData.message ||
-              errorData.detail ||
-              response.statusText;
-
-            // 检查是否为地区限制错误
-            if (errorMessage.includes("location is not supported")) {
-              assistantContent =
-                "抱歉，您所在的地区不支持使用此API服务。请联系管理员查看可用的替代方案。";
-            } else if (
-              errorMessage.includes("quota exceeded") ||
-              errorMessage.includes("rate limit")
-            ) {
-              assistantContent =
-                "抱歉，API使用配额已超限。请稍后再试或联系管理员升级配额。";
-            } else {
-              assistantContent = `服务暂时不可用: ${errorMessage.substring(0, 100)}`;
-            }
-          } catch {
-            // 非JSON格式错误，提供简洁的错误信息
-            assistantContent = `服务暂时不可用，请稍后再试。`;
-          }
-        } catch (e) {
-          console.error("读取错误响应失败:", e);
-          assistantContent = `连接服务失败，请检查网络连接。`;
-        }
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // 添加助手回复到UI
-      const assistantMessage: MessageType = {
-        id: crypto.randomUUID(),
-        type: "assistant",
-        content: assistantContent,
+      // 创建 AI 消息
+      const assistantMessageId = crypto.randomUUID();
+      const assistantMessage = {
+        id: assistantMessageId,
+        type: "assistant", // 确保类型是 "assistant"
+        content: "",
         timestamp: new Date(),
-        isError: isError, // Add error flag to message type if needed for styling
       };
 
-      setMessages((prev) => [...prev, assistantMessage]);
+      setMessages((prev: any) => [...prev, assistantMessage]);
 
-      // Update current conversation
-      const conversation = await getCurrentConversation();
-      if (conversation) {
-        const updatedMessages = [
-          ...conversation.messages,
-          userMessage,
-          assistantMessage,
-        ];
-        const updatedConversations = conversations.map((c) =>
-          c.id === conversation.id
-            ? {
-                ...c,
-                messages: updatedMessages,
-                title:
-                  c.title === "New Chat" && updatedMessages.length <= 3
-                    ? userPrompt.substring(0, 30) +
-                      (userPrompt.length > 30 ? "..." : "")
-                    : c.title,
-                updatedAt: new Date(),
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedContent = "";
+      let buffer = ""; // 用于处理不完整的数据
+
+      try {
+        while (true) {
+          const { done, value } = await reader!.read();
+          if (done) break;
+
+          // 解码新的数据块并添加到缓冲区
+          buffer += decoder.decode(value, { stream: true });
+
+          // 按行处理数据
+          const lines = buffer.split("\n");
+          // 保留最后一行（可能不完整）
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (line.trim() === "") continue;
+
+            if (line.startsWith("data: ")) {
+              const data = line.slice(5).trim();
+
+              // 检查是否是结束标记
+              if (data === "[DONE]") {
+                console.log("Stream completed");
+                setIsLoading(false);
+                setIsStreaming(false);
+                continue;
               }
-            : c
-        );
 
-        setConversations(updatedConversations);
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices?.[0]?.delta?.content || "";
+                if (content) {
+                  accumulatedContent += content;
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      msg.id === assistantMessageId
+                        ? { ...msg, content: accumulatedContent }
+                        : msg
+                    )
+                  );
+                }
+              } catch (e) {
+                console.log("Skipping invalid JSON:", data);
+                continue;
+              }
+            }
+          }
+        }
+      } catch (error: any) {
+        if (error.name === "AbortError") {
+          console.log("Stream paused");
+          return;
+        }
+        throw error;
+      } finally {
+        // 确保在流结束时重置状态
+        setIsLoading(false);
+        setIsStreaming(false);
       }
-    } catch (error) {
-      console.error("调用API错误 (Fetch Exception):", error);
-      setIsLoading(false); // Ensure loading state is reset
-
-      // 添加网络或fetch调用本身的错误消息
-      const errorMessage: MessageType = {
-        id: crypto.randomUUID(),
-        type: "assistant",
-        content:
-          "Sorry, I couldn't connect to the service. Please check your network or the server status.",
-        timestamp: new Date(),
-        isError: true, // Mark as error
-      };
-
-      setMessages((prev) => [...prev, errorMessage]);
-      // No finally block needed here anymore as it's handled within try/catch
-      return; // Exit handleSubmit after handling fetch error
+    } catch (error: any) {
+      if (error.name === "AbortError") {
+        console.log("Stream paused");
+      } else {
+        console.error("Error:", error);
+        setMessages((prev: any) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            type: "error",
+            content: "发生错误，请重试",
+            timestamp: new Date(),
+          },
+        ]);
+      }
+      // 确保在错误时也重置状态
+      setIsLoading(false);
+      setIsStreaming(false);
+    } finally {
+      // 移除这个 finally 块中的状态重置，因为我们已经在其他地方处理了
+      if (!abortControllerRef.current) {
+        abortControllerRef.current = null;
+      }
     }
-    // Moved setIsLoading(false) inside the try block success path and catch block
-    setIsLoading(false);
   };
 
   // UI toggle handlers
@@ -316,6 +278,12 @@ const Sidepanel = () => {
 
   // Select conversation
   const handleSelectConversation = async (id: string) => {
+    if (id === "new") {
+      // If "new" is passed, create a new conversation
+      await handleCreateNewConversation();
+      return;
+    }
+
     const conversation = await selectConv(id);
     if (conversation) {
       setMessages(conversation.messages);
@@ -408,6 +376,7 @@ const Sidepanel = () => {
           right: 0,
           overflowY: "auto",
           overflowX: "hidden",
+          backgroundColor: "#FFFFFF",
         }}
       >
         <div className="max-w-3xl mx-auto p-4">
@@ -457,15 +426,17 @@ const Sidepanel = () => {
         <InputArea
           prompt={prompt}
           setPrompt={setPrompt}
-          handleSubmit={handleSubmit}
+          onSubmit={handleSubmit}
           isLoading={isLoading}
+          isStreaming={isStreaming}
+          onPauseStream={handlePauseStream}
         />
       </div>
 
       {/* 浮动面板 */}
       {showConversationList && (
         <div className="fixed z-50 bg-black/20">
-          <div className="absolute left-0 h-full w-[300px] bg-amber-100 shadow-xl rounded-r-lg overflow-hidden border-r border-gray-200">
+          <div className="absolute left-0 h-full w-[300px] shadow-xl rounded-r-lg overflow-hidden border-r border-gray-200">
             <ConversationList
               conversations={conversations}
               currentConversationId={currentConversationId}

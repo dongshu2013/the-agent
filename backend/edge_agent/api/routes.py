@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 import logging
 from typing import Dict, Any, List, Optional, Union
@@ -17,7 +18,6 @@ class ChatMessage(BaseModel):
     content: str
 
 class ChatCompletionRequest(BaseModel):
-    model: str = Field(default=settings.DEFAULT_MODEL)
     messages: List[ChatMessage]
     stream: bool = False
     temperature: Optional[float] = None
@@ -27,6 +27,7 @@ class ChatCompletionRequest(BaseModel):
     presence_penalty: Optional[float] = None
 
 router = APIRouter(tags=["chat"])
+
 llm = AsyncOpenAI(
     api_key=settings.LLM_API_KEY,
     base_url=settings.LLM_API_URL,
@@ -45,7 +46,7 @@ async def chat_completion(payload: ChatCompletionRequest):
                 media_type="text/event-stream"
             )
         else:
-            response = await llm.chat.completions.create(**payload.dict(exclude_none=True))
+            response = await llm.chat.completions.create(messages=payload.messages, model=settings.DEFAULT_MODEL)
             return response
 
     except Exception as e:
@@ -59,11 +60,26 @@ async def stream_chat_response(payload: ChatCompletionRequest):
     try:
         params = payload.dict(exclude_none=True)
         params["stream"] = True
+        params["model"] = settings.DEFAULT_MODEL  # 确保设置模型
+        
         stream = await llm.chat.completions.create(**params)
         
-        for chunk in stream:
-            chunk_dict = json.loads(chunk.json())
-            yield f"data: {json.dumps(chunk_dict)}\n\n"
+        async for chunk in stream:
+            if chunk.choices[0].delta.content is not None:
+                response = {
+                    "id": chunk.id,
+                    "object": "chat.completion.chunk",
+                    "created": chunk.created,
+                    "model": chunk.model,
+                    "choices": [{
+                        "index": 0,
+                        "delta": {
+                            "content": chunk.choices[0].delta.content
+                        },
+                        "finish_reason": chunk.choices[0].finish_reason
+                    }]
+                }
+                yield f"data: {json.dumps(response)}\n\n"
 
         yield "data: [DONE]\n\n"
 

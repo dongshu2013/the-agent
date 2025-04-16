@@ -2,99 +2,86 @@ import React, { useRef, useEffect } from "react";
 
 interface InputAreaProps {
   prompt: string;
-  setPrompt: (value: string) => void;
-  handleSubmit: (e: React.FormEvent) => void;
+  setPrompt: (prompt: string) => void;
+  onSubmit: (e: React.FormEvent) => void;
   isLoading: boolean;
+  isStreaming: boolean;
+  onPauseStream: () => void;
 }
 
-const InputArea = ({
+export default function InputArea({
   prompt,
   setPrompt,
-  handleSubmit,
+  onSubmit,
   isLoading,
-}: InputAreaProps) => {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // 自动调整文本区域高度
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "24px";
-      textareaRef.current.style.height = `${Math.min(
-        textareaRef.current.scrollHeight,
-        44
-      )}px`;
+  isStreaming,
+  onPauseStream,
+}: InputAreaProps) {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault(); // 阻止默认的换行行为
+      if (prompt.trim() && !isLoading) {
+        onSubmit(e as any);
+      }
     }
-  }, [prompt]);
+  };
 
   return (
-    <div className="w-full bg-white border-t border-gray-200">
-      <div className="max-w-3xl mx-auto px-4 py-3">
-        <form onSubmit={handleSubmit} className="relative">
-          <div className="flex items-end rounded-lg overflow-hidden bg-white shadow-sm border border-gray-300">
-            <textarea
-              ref={textareaRef}
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit(e);
-                }
-              }}
-              placeholder="send message..."
-              className="w-full py-3 pl-4 pr-12 max-h-[150px] min-h-[44px] focus:outline-none resize-none bg-white text-gray-800 placeholder-gray-400"
-              rows={1}
-            />
-            <button
-              type="submit"
-              disabled={isLoading || !prompt.trim()}
-              className={`absolute right-2 bottom-2 rounded-lg p-2 flex items-center justify-center transition-colors ${
-                isLoading || !prompt.trim()
-                  ? "text-gray-400 opacity-50"
-                  : "text-white bg-blue-500 hover:bg-blue-600"
-              }`}
-              aria-label="Send message"
+    <div>
+      <form className="flex items-end gap-2 p-2 border-t">
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={handleKeyDown} // 添加键盘事件处理
+          disabled={isLoading}
+          placeholder="send message..."
+          className="w-full py-3 pl-4 pr-12 max-h-[150px] min-h-[44px] focus:outline-none resize-none bg-white text-gray-800 placeholder-gray-400"
+          rows={3} // 默认只显示一行
+        />
+        {isStreaming ? (
+          <button
+            type="button"
+            onClick={onPauseStream}
+            className="p-2 rounded hover:bg-gray-100"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
             >
-              {isLoading ? (
-                <svg
-                  className="w-5 h-5 animate-spin"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className="w-5 h-5"
-                >
-                  <path d="M3.105 2.289a.75.75 0 00-.826.95l1.414 4.925A1.5 1.5 0 005.135 9.25h6.115a.75.75 0 010 1.5H5.135a1.5 1.5 0 00-1.442 1.086l-1.414 4.926a.75.75 0 00.826.95 28.896 28.896 0 0015.293-7.154.75.75 0 000-1.115A28.897 28.897 0 003.105 2.289z" />
-                </svg>
-              )}
-            </button>
-          </div>
-          <p className="text-xs mt-1 text-center text-gray-500">
-            MIZU AI assistant may produce inaccurate information. Your data is
-            kept private.
-          </p>
-        </form>
-      </div>
+              <rect x="6" y="4" width="4" height="16" rx="1" />
+              <rect x="14" y="4" width="4" height="16" rx="1" />
+            </svg>
+          </button>
+        ) : (
+          <button
+            type="submit"
+            onClick={onSubmit}
+            disabled={!prompt.trim() || isLoading}
+            className="p-2 rounded hover:bg-gray-100"
+          >
+            <svg
+              className="w-5 h-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <path
+                d="M5 12h14M12 5l7 7-7 7"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        )}
+      </form>
+      <p className="text-xs mt-1 text-center text-gray-500">
+        MIZU AI assistant may produce inaccurate information. Your data is kept
+        private.
+      </p>
     </div>
   );
-};
-
-export default InputArea;
+}
