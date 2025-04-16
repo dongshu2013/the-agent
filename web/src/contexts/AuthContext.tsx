@@ -1,10 +1,10 @@
 "use client";
 
-import React, {
+import {
   createContext,
   useContext,
-  useState,
   useEffect,
+  useState,
   ReactNode,
 } from "react";
 import {
@@ -18,10 +18,6 @@ import {
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
-// API基础URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || ".backend";
-
-// 定义用户类型
 interface User {
   id: string;
   email: string | null;
@@ -32,7 +28,6 @@ interface User {
   idToken: string | null;
 }
 
-// 定义AuthContext的类型
 interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -43,10 +38,8 @@ interface AuthContextType {
   refreshToken: () => Promise<string | null>;
 }
 
-// 创建上下文
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// AuthProvider组件
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Handle user data when Firebase auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log("firebaseUser🍷", firebaseUser);
       if (firebaseUser) {
         try {
           // Get the ID token
@@ -67,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // First, check if the user exists in our database
           try {
             const response = await fetch(
-              `${API_BASE_URL}/api/auth/user?userId=${firebaseUser.uid}`,
+              `/api/auth/user?userId=${firebaseUser.uid}`,
               {
                 headers: {
                   Authorization: `Bearer ${idToken}`,
@@ -95,21 +89,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 firebaseUser.email?.split("@")[0] ||
                 `user_${Math.random().toString(36).substring(2, 10)}`;
 
-              const createResponse = await fetch(
-                `${API_BASE_URL}/api/auth/user`,
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${idToken}`,
-                  },
-                  body: JSON.stringify({
-                    id: firebaseUser.uid,
-                    username,
-                    email: firebaseUser.email,
-                  }),
-                }
-              );
+              const createResponse = await fetch("/api/auth/user", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${idToken}`,
+                },
+                body: JSON.stringify({
+                  id: firebaseUser.uid,
+                  username,
+                  email: firebaseUser.email,
+                }),
+              });
 
               if (createResponse.ok) {
                 const newUserData = await createResponse.json();
@@ -222,7 +213,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Refresh token before making the request
       const token = (await refreshToken()) || user.idToken;
 
-      const response = await fetch(`${API_BASE_URL}/api/auth/apikey`, {
+      const response = await fetch("/api/auth/apikey", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -255,7 +246,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Refresh token before making the request
       const token = (await refreshToken()) || user.idToken;
 
-      const response = await fetch(`${API_BASE_URL}/api/auth/apikey`, {
+      const response = await fetch("/api/auth/apikey", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -301,11 +292,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// 自定义钩子来使用AuthContext
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth必须在AuthProvider内部使用");
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

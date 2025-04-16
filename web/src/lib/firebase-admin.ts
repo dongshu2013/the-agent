@@ -20,22 +20,35 @@ export const adminAuth = getAuth(firebaseAdmin);
 
 // Verify ID token and return the decoded token
 export async function verifyIdToken(token: string) {
-  // 始终返回错误，这是一个桩实现
-  throw new Error("Firebase Admin is not initialized in this environment");
+  try {
+    const decodedToken = await adminAuth.verifyIdToken(token);
+    return {
+      uid: decodedToken.uid,
+      email: decodedToken.email,
+      isValid: true,
+    };
+  } catch (error) {
+    console.error("Error verifying ID token:", error);
+    return { isValid: false, uid: null, email: null };
+  }
 }
 
 // Middleware to authenticate requests
 export async function authenticateRequest(authHeader: string | null) {
-  // 始终返回未认证状态，这是一个桩实现
-  return {
-    isAuthenticated: false,
-    uid: null,
-    error: "Firebase Admin is not initialized in this environment",
-  };
-}
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return {
+      isAuthenticated: false,
+      uid: null,
+      error: "Missing or invalid authorization header",
+    };
+  }
 
-// 导出默认对象
-export default {
-  authenticateRequest,
-  verifyIdToken,
-};
+  const idToken = authHeader.split("Bearer ")[1];
+  const { isValid, uid, email } = await verifyIdToken(idToken);
+
+  if (!isValid || !uid) {
+    return { isAuthenticated: false, uid: null, error: "Invalid ID token" };
+  }
+
+  return { isAuthenticated: true, uid, email };
+}

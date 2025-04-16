@@ -67,8 +67,8 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <header className="bg-white shadow">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <header className="bg-white dark:bg-gray-800 shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center">
             <Image
@@ -78,7 +78,7 @@ export default function ProfilePage() {
               height={40}
               className="mr-3"
             />
-            <h1 className="text-xl font-bold text-gray-900">
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
               MIZU Agent Dashboard
             </h1>
           </div>
@@ -92,7 +92,7 @@ export default function ProfilePage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white shadow rounded-lg overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
           <div className="px-4 py-5 sm:px-6 flex items-center">
             {user?.photoURL ? (
               <Image
@@ -108,18 +108,18 @@ export default function ProfilePage() {
               </div>
             )}
             <div>
-              <h3 className="text-lg leading-6 font-medium text-gray-900">
+              <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
                 {user?.displayName || "User"}
               </h3>
-              <p className="mt-1 max-w-2xl text-sm text-gray-500">
+              <p className="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
                 {user?.email}
               </p>
             </div>
           </div>
 
-          <div className="border-t border-gray-200 px-4 py-5 sm:p-6">
+          <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-5 sm:p-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg leading-6 font-medium text-gray-900">
+              <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
                 Your API Key
               </h3>
               <div className="flex items-center">
@@ -145,7 +145,7 @@ export default function ProfilePage() {
                 </button>
               </div>
             </div>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
               Use this API key to authenticate requests to the MIZU Agent API.
             </p>
 
@@ -159,15 +159,17 @@ export default function ProfilePage() {
                       ? user?.apiKey || ""
                       : "••••••••••••••••••••••••"
                   }
-                  className={`w-full px-4 py-2 border border-gray-300 rounded-md ${
-                    user?.apiKeyEnabled ? "bg-gray-50" : "bg-gray-100"
-                  } text-gray-900 focus:ring-blue-500 focus:border-blue-500`}
+                  className={`w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md ${
+                    user?.apiKeyEnabled
+                      ? "bg-gray-50 dark:bg-gray-700"
+                      : "bg-gray-100 dark:bg-gray-800"
+                  } text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500`}
                   disabled={!user?.apiKeyEnabled}
                 />
                 {user?.apiKeyEnabled && (
                   <button
                     onClick={handleCopyApiKey}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                     aria-label="Copy API key"
                   >
                     {isCopied ? (
@@ -207,7 +209,7 @@ export default function ProfilePage() {
         </div>
       </main>
 
-      <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-sm text-gray-500">
+      <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
         {new Date().getFullYear()} MIZU Agent. All rights reserved.
       </footer>
     </div>
