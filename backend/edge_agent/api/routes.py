@@ -5,8 +5,9 @@ from typing import Dict, Any, List, Optional, Union
 import json
 import httpx
 import os
-from pydantic import BaseModel
-from edge_agent.models import ChatRequest, ChatResponse, ErrorResponse
+from openai import AsyncOpenAI
+from openai.types.chat import ChatCompletionCreateParams
+from edge_agent.core.config import settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("chat_route")
@@ -22,7 +23,7 @@ llm = AsyncOpenAI(
 )
 
 @router.post("/api/v1/chat/completions")
-async def chat_completion(payload: ChatRequest):
+async def chat_completion(payload: ChatCompletionCreateParams):
     try:
         if payload.stream:
             # Handle streaming response
@@ -32,54 +33,24 @@ async def chat_completion(payload: ChatRequest):
             )
         else:
             # Handle regular response
-            response = await llm.chat.completions.create(
-                model=settings.DEFAULT_MODEL,
-                messages=payload.messages,
-                stream=False
-            )
-            return ChatResponse(**response.model_dump())
+            response = await llm.chat.completions.create(**payload.model_dump())
+            return response
 
     except Exception as e:
         logger.error(f"Error in chat completion: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")
 
-async def stream_chat_response(payload: ChatRequest):
+async def stream_chat_response(payload: ChatCompletionCreateParams):
     """
     Generator function that streams the chat response in SSE format.
     """
     try:
         # Create a streaming response from OpenAI
-        stream = await llm.chat.completions.create(
-            model=settings.DEFAULT_MODEL,
-            messages=payload.messages,
-            stream=True
-        )
-
+        stream = await llm.chat.completions.create(**payload.model_dump(exclude_none=True))
+        
         # Yield each chunk in SSE format
         for chunk in stream:
-            if chunk.choices:
-                delta = chunk.choices[0].delta
-                
-                # Create a response chunk in the format expected by clients
-                response_chunk = {
-                    "id": chunk.id,
-                    "object": "chat.completion.chunk",
-                    "created": chunk.created,
-                    "model": chunk.model,
-                    "choices": [
-                        {
-                            "index": chunk.choices[0].index,
-                            "delta": {
-                                "role": delta.role or "",
-                                "content": delta.content or ""
-                            },
-                            "finish_reason": chunk.choices[0].finish_reason
-                        }
-                    ]
-                }
-                
-                # Format as Server-Sent Event
-                yield f"data: {json.dumps(response_chunk)}\n\n"
+            yield f"data: {chunk.model_dump_json()}\n\n"
                 
         # Send the final [DONE] message to signal the end of the stream
         yield "data: [DONE]\n\n"
