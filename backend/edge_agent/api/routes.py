@@ -7,13 +7,19 @@ import httpx
 import os
 from pydantic import BaseModel
 from edge_agent.models import ChatRequest, ChatResponse, ErrorResponse
-from edge_agent.core.openrouter import OpenRouterClient
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("chat_route")
 
 router = APIRouter(tags=["chat"])
-llm = OpenRouterClient()
+llm = AsyncOpenAI(
+    api_key=settings.OPENROUTER_API_KEY,
+    base_url=settings.OPENROUTER_API_URL,
+    default_headers={
+        "HTTP-Referer": "https://mizu.technology",
+        "X-Title": settings.PROJECT_NAME,
+    },
+)
 
 @router.post("/api/v1/chat/completions")
 async def chat_completion(payload: ChatRequest):
@@ -26,8 +32,8 @@ async def chat_completion(payload: ChatRequest):
             )
         else:
             # Handle regular response
-            response = await llm.client.chat.completions.create(
-                model=llm.model,
+            response = await llm.chat.completions.create(
+                model=settings.DEFAULT_MODEL,
                 messages=payload.messages,
                 stream=False
             )
@@ -43,12 +49,12 @@ async def stream_chat_response(payload: ChatRequest):
     """
     try:
         # Create a streaming response from OpenAI
-        stream = await llm.client.chat.completions.create(
-            model=llm.model,
+        stream = await llm.chat.completions.create(
+            model=settings.DEFAULT_MODEL,
             messages=payload.messages,
             stream=True
         )
-        
+
         # Yield each chunk in SSE format
         for chunk in stream:
             if chunk.choices:
