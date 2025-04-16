@@ -16,29 +16,28 @@
 创建`.env`文件:
 
 ```
-OPENAI_API_KEY=your_openai_api_key
-OPENAI_API_BASE=https://api.openai.com  # 可选
-DEEPSEEK_API_KEY=your_deepseek_api_key  # 可选
+OPENROUTER_API_KEY=your_openai_api_key
+DATABASE_URL=your_database_url  # 可选
 DEBUG=False
+```
+
+### 更新依赖
+
+```bash
+uv lock
 ```
 
 ### 安装依赖
 
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
+
 
 ### 运行服务
 
 ```bash
-uvicorn main:app --reload --port 8000
-```
-
-### 使用Docker
-
-```bash
-docker build -t ai-agent-backend .
-docker run -p 8000:8000 --env-file .env ai-agent-backend
+uv run uvicorn main:app --reload --port 8000
 ```
 
 ## API参考

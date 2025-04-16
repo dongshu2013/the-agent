@@ -22,7 +22,7 @@ llm = AsyncOpenAI(
     },
 )
 
-@router.post("/api/v1/chat/completions")
+@router.post("/v1/chat/completions")
 async def chat_completion(payload: ChatCompletionCreateParams):
     try:
         if payload.stream:
@@ -51,7 +51,7 @@ async def stream_chat_response(payload: ChatCompletionCreateParams):
         # Yield each chunk in SSE format
         for chunk in stream:
             yield f"data: {chunk.model_dump_json()}\n\n"
-                
+
         # Send the final [DONE] message to signal the end of the stream
         yield "data: [DONE]\n\n"
             
