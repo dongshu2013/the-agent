@@ -10,7 +10,6 @@ const nextConfig = {
         pathname: '/**',
       },
     ],
-    domains: ['localhost', 'the-agent-production.up.railway.app'],
   },
 };
 

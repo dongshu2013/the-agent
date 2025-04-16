@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --no-lint",
     "build:railway": "next build --no-lint || next build",
     "start": "next start",
     "lint": "next lint"

@@ -6,8 +6,21 @@ import json
 import httpx
 import os
 from pydantic import BaseModel
+<<<<<<< HEAD:backend/the_agent/api/routes.py
 from ..schemas import ChatRequest, ChatResponse, ErrorResponse
 from ..services.llm_client import chat_with_llm
+=======
+from sqlalchemy.orm import Session
+
+from edge_agent.core.config import settings
+from edge_agent.core.openrouter import OpenRouterClient
+from edge_agent.database import get_db
+from edge_agent.models.agents import Agent
+from edge_agent.models.messages import Message
+from edge_agent.models.user import User
+from edge_agent.models.user_persona import UserPersona
+from edge_agent.utils.validators import MessageValidator
+>>>>>>> 156e52e2033e9aefc733f6798593e53142acf119:backend/edge_agent/api/routes.py
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)

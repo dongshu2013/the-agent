@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "edge_agent"
+version = "0.1.0"
+description = "MIZU Agent Backend API"
+authors = [
+    {name = "MIZU Team"}
+]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi>=0.95.0",
+    "uvicorn>=0.21.1",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "openai>=1.0.0",
+    "httpx>=0.24.0",
+    "python-dotenv>=1.0.0",
+    "requests>=2.28.0",
+    "aiohttp>=3.8.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==7.4.4",
+    "black==24.10.0",
+    "isort==5.13.2",
+    "flake8==7.1.1",
+    "mypy==1.14.1",
+    "pre-commit==3.8.0",
+]
+
+[tool.setuptools]
+packages = ["edge_agent"]

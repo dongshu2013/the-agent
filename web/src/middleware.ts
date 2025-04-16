@@ -8,6 +8,7 @@ export function middleware(request: NextRequest) {
   
   // Add your authentication logic here if needed
   // For now, we'll just let Next.js handle client-side auth redirects
+  console.log('middleware', request);
   
   return NextResponse.next();
 }

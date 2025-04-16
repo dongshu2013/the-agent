@@ -5,11 +5,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-from ai_companion.api.routes import router
-from ai_companion.core.config import settings
-from ai_companion.core.openrouter import OpenRouterClient
-from ai_companion.database import get_db
-from ai_companion.tasks.persona_builder import PersonaBuilder
+from edge_agent.api.routes import router
+from edge_agent.core.config import settings
+from edge_agent.core.openrouter import OpenRouterClient
+from edge_agent.database import get_db
+from edge_agent.tasks.persona_builder import PersonaBuilder
 
 
 async def run_periodic_task(persona_builder: PersonaBuilder):
