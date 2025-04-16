@@ -6,14 +6,14 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Path
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from ai_companion.core.config import settings
-from ai_companion.core.openrouter import OpenRouterClient
-from ai_companion.database import get_db
-from ai_companion.models.agents import Agent
-from ai_companion.models.messages import Message
-from ai_companion.models.user import User
-from ai_companion.models.user_persona import UserPersona
-from ai_companion.utils.validators import MessageValidator
+from edge_agent.core.config import settings
+from edge_agent.core.openrouter import OpenRouterClient
+from edge_agent.database import get_db
+from edge_agent.models.agents import Agent
+from edge_agent.models.messages import Message
+from edge_agent.models.user import User
+from edge_agent.models.user_persona import UserPersona
+from edge_agent.utils.validators import MessageValidator
 
 logging.basicConfig(level=logging.INFO)
 
