@@ -9,14 +9,8 @@ class OpenRouterClient:
             api_key=settings.OPENROUTER_API_KEY,
             base_url=settings.OPENROUTER_API_URL,
             default_headers={
-                "HTTP-Referer": "https://your-site.com",
+                "HTTP-Referer": "https://mizu.technology",
                 "X-Title": settings.PROJECT_NAME,
             },
         )
-        self.model = settings.MODEL_NAME
-
-    async def chat_completion(self, messages):
-        response = await self.client.chat.completions.create(
-            model=self.model, messages=messages
-        )
-        return response.model_dump()
+        self.model = settings.DEFAULT_MODEL

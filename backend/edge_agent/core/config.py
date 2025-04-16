@@ -4,7 +4,7 @@ import os
 
 class Settings(BaseSettings):
     # Project Info
-    PROJECT_NAME: str = "AI Companion"
+    PROJECT_NAME: str = "Edge Agent"
     VERSION: str = "0.1.0"
     
     # OpenRouter Configuration
