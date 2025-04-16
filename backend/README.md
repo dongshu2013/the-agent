@@ -38,10 +38,10 @@ uv sync
 
 ```bash
 # prod mode
-uv run uvicorn edge_agent.main:start_server
+uv run uvicorn edge_agent.api.app:app --lifespan on
 
 # dev mode
-uv run uvicorn edge_agent.main:start_dev --reload --port 8000
+uv run uvicorn edge_agent.api.app:app --reload --port 8000 --lifespan on
 ```
 
 ## API参考
