@@ -5,8 +5,8 @@ import logging
 import uvicorn
 import os
 
-from .routes.chat import router as chat_router
-from .config import settings
+from backend.routes.chat import router as chat_router
+from backend.config import settings
 
 # 配置日志
 logging.basicConfig(
