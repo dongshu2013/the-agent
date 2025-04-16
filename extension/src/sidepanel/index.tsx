@@ -464,14 +464,13 @@ const Sidepanel = () => {
 
       {/* 浮动面板 */}
       {showConversationList && (
-        <div className="fixed inset-0 z-50 bg-black/20">
-          <div className="absolute inset-y-0 left-0 w-[260px] bg-white shadow-xl">
+        <div className="fixed z-50 bg-black/20">
+          <div className="absolute left-0 h-full w-[300px] bg-amber-100 shadow-xl rounded-r-lg overflow-hidden border-r border-gray-200">
             <ConversationList
               conversations={conversations}
               currentConversationId={currentConversationId}
               selectConversation={handleSelectConversation}
               deleteConversation={handleDeleteConversation}
-              createNewConversation={handleCreateNewConversation}
               setShowConversationList={toggleConversationList}
             />
           </div>

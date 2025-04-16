@@ -6,7 +6,6 @@ interface ConversationListProps {
   currentConversationId: string | null;
   selectConversation: (id: string) => void;
   deleteConversation: (id: string, e: React.MouseEvent) => void;
-  createNewConversation: () => void;
   setShowConversationList: () => void;
 }
 
@@ -15,7 +14,6 @@ const ConversationList = ({
   currentConversationId,
   selectConversation,
   deleteConversation,
-  createNewConversation,
   setShowConversationList,
 }: ConversationListProps) => {
   return (
@@ -41,26 +39,6 @@ const ConversationList = ({
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="p-2">
-          <button
-            onClick={() => {
-              createNewConversation();
-              setShowConversationList();
-            }}
-            className="flex w-full items-center gap-2 rounded-md border border-gray-200 px-3 py-2 text-sm hover:bg-gray-50"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="w-4 h-4 text-gray-500"
-            >
-              <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
-            </svg>
-            New chat
-          </button>
-        </div>
-
         {conversations && conversations.length > 0 ? (
           <nav className="px-2 pb-2 space-y-1">
             {conversations.map((conversation) => (
