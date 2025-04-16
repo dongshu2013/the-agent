@@ -6,27 +6,13 @@ import aiIcon from "data-base64:../../../assets/icon.png";
 
 interface MessageProps {
   message: MessageType;
-  darkMode: boolean;
 }
 
-const Message = ({ message, darkMode }: MessageProps) => {
+const Message = ({ message }: MessageProps) => {
   const isAssistant = message.type === "assistant";
 
-  // 根据深色模式设置样式
-  const theme = darkMode
-    ? {
-        userBg: "bg-[#24283b]",
-        botBg: "bg-[#292e42]",
-        text: "text-gray-50",
-      }
-    : {
-        userBg: "bg-gray-50",
-        botBg: "bg-white",
-        text: "text-gray-900",
-      };
-
   return (
-    <div className={`py-6 ${isAssistant ? theme.botBg : theme.userBg}`}>
+    <div className={`py-6 ${isAssistant ? "bg-white" : "bg-gray-50"}`}>
       <div className="max-w-3xl mx-auto px-4">
         {isAssistant ? (
           <div className="flex items-start gap-6">
@@ -41,7 +27,7 @@ const Message = ({ message, darkMode }: MessageProps) => {
             </div>
             <div className="min-w-0 max-w-[90%] w-full">
               <div className="prose max-w-none">
-                <div className={`whitespace-pre-wrap ${theme.text}`}>
+                <div className="whitespace-pre-wrap text-gray-900">
                   {message.content}
                 </div>
               </div>
@@ -49,12 +35,8 @@ const Message = ({ message, darkMode }: MessageProps) => {
           </div>
         ) : (
           <div className="flex flex-row-reverse w-full">
-            <div
-              className={`${
-                darkMode ? theme.userBg : "bg-gray-50"
-              } p-3 rounded-lg max-w-[80%]`}
-            >
-              <div className={`whitespace-pre-wrap ${theme.text}`}>
+            <div className="bg-gray-50 p-3 rounded-lg max-w-[80%]">
+              <div className="whitespace-pre-wrap text-gray-900">
                 {message.content}
               </div>
             </div>

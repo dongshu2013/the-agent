@@ -1,35 +1,21 @@
-import React from "react";
-
 interface HeaderProps {
-  darkMode: boolean;
-  setDarkMode: (value: boolean) => void;
   setShowSettings: (value: boolean) => void;
-  setShowConversationList: (value: boolean) => void;
   createNewConversation: () => void;
+  setShowConversationList: (value: boolean | ((prev: boolean) => boolean)) => void;
 }
 
 const Header = ({
-  darkMode,
-  setDarkMode,
   setShowSettings,
-  setShowConversationList,
   createNewConversation,
+  setShowConversationList,
 }: HeaderProps) => {
   return (
-    <div
-      className={`px-4 py-3 flex justify-between items-center border-b ${
-        darkMode ? "bg-[#1a1b26] border-gray-700" : "bg-white border-gray-200"
-      }`}
-    >
-      <div className="flex items-center gap-2">
+    <div className="px-4 py-3 flex justify-between items-center bg-white">
+      <div className="flex items-center">
         <button
-          onClick={() => setShowConversationList(true)}
-          className={`p-2 rounded-md ${
-            darkMode
-              ? "bg-[#24283b] hover:bg-[#292e42]"
-              : "bg-gray-100 hover:bg-gray-200"
-          }`}
-          aria-label="菜单"
+          onClick={() => setShowConversationList(prev => !prev)}
+          className="flex items-center justify-center rounded-md w-10 h-10 border border-gray-200 mr-2 hover:bg-gray-50"
+          aria-label="历史会话"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -37,25 +23,23 @@ const Header = ({
             viewBox="0 0 24 24"
             strokeWidth={1.5}
             stroke="currentColor"
-            className={`w-5 h-5 ${
-              darkMode ? "text-gray-300" : "text-gray-700"
-            }`}
+            className="w-5 h-5"
           >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"
+              d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z"
             />
           </svg>
         </button>
+        <span className="font-medium">MIZU Agent</span>
+      </div>
 
+      <div className="flex items-center gap-2">
         <button
           onClick={createNewConversation}
-          className={`flex items-center gap-1.5 ${
-            darkMode
-              ? "bg-[#24283b] hover:bg-[#292e42] text-gray-300"
-              : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-          } rounded-md px-3 py-2`}
+          className="flex items-center justify-center rounded-md w-10 h-10 border border-gray-200"
+          aria-label="新对话"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -63,7 +47,7 @@ const Header = ({
             viewBox="0 0 24 24"
             strokeWidth={1.5}
             stroke="currentColor"
-            className="w-4 h-4"
+            className="w-5 h-5"
           >
             <path
               strokeLinecap="round"
@@ -71,60 +55,11 @@ const Header = ({
               d="M12 4.5v15m7.5-7.5h-15"
             />
           </svg>
-          <span className="text-sm font-medium">new chat</span>
-        </button>
-      </div>
-
-      <div className="flex gap-2">
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          className={`p-2 rounded-md ${
-            darkMode
-              ? "bg-[#24283b] hover:bg-[#292e42]"
-              : "bg-gray-100 hover:bg-gray-200"
-          }`}
-          aria-label={darkMode ? "切换到浅色模式" : "切换到深色模式"}
-        >
-          {darkMode ? (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-4 h-4 text-gray-300"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z"
-              />
-            </svg>
-          ) : (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-4 h-4 text-gray-700"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"
-              />
-            </svg>
-          )}
         </button>
 
         <button
           onClick={() => setShowSettings(true)}
-          className={`p-2 rounded-md ${
-            darkMode
-              ? "bg-[#24283b] hover:bg-[#292e42]"
-              : "bg-gray-100 hover:bg-gray-200"
-          }`}
+          className="flex items-center justify-center rounded-md w-10 h-10 border border-gray-200"
           aria-label="设置"
         >
           <svg
@@ -133,9 +68,7 @@ const Header = ({
             viewBox="0 0 24 24"
             strokeWidth={1.5}
             stroke="currentColor"
-            className={`w-4 h-4 ${
-              darkMode ? "text-gray-300" : "text-gray-700"
-            }`}
+            className="w-5 h-5"
           >
             <path
               strokeLinecap="round"

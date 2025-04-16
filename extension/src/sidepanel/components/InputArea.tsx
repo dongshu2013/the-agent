@@ -5,7 +5,6 @@ interface InputAreaProps {
   setPrompt: (value: string) => void;
   handleSubmit: (e: React.FormEvent) => void;
   isLoading: boolean;
-  darkMode: boolean;
 }
 
 const InputArea = ({
@@ -13,7 +12,6 @@ const InputArea = ({
   setPrompt,
   handleSubmit,
   isLoading,
-  darkMode,
 }: InputAreaProps) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -29,20 +27,10 @@ const InputArea = ({
   }, [prompt]);
 
   return (
-    <div
-      className={`${
-        darkMode ? "bg-[#1a1b26] border-gray-700" : "bg-white border-gray-200"
-      }`}
-    >
-      <div className="max-w-3xl mx-auto">
+    <div className="w-full bg-white border-t border-gray-200">
+      <div className="max-w-3xl mx-auto px-4 py-3">
         <form onSubmit={handleSubmit} className="relative">
-          <div
-            className={`flex items-end border rounded-lg overflow-hidden ${
-              darkMode
-                ? "bg-[#24283b] border-gray-600 shadow-md"
-                : "bg-white border-gray-300 shadow-sm"
-            }`}
-          >
+          <div className="flex items-end rounded-lg overflow-hidden bg-white shadow-sm border border-gray-300">
             <textarea
               ref={textareaRef}
               value={prompt}
@@ -53,31 +41,25 @@ const InputArea = ({
                   handleSubmit(e);
                 }
               }}
-              placeholder="Send a message to the AI assistant..."
-              className={`w-full py-3 pl-4 pr-12 max-h-[150px] focus:outline-none resize-none ${
-                darkMode
-                  ? "bg-[#24283b] text-gray-200"
-                  : "bg-white text-gray-800"
-              }`}
+              placeholder="发送消息..."
+              className="w-full py-3 pl-4 pr-12 max-h-[150px] min-h-[44px] focus:outline-none resize-none bg-white text-gray-800 placeholder-gray-400"
               rows={1}
             />
             <button
               type="submit"
               disabled={isLoading || !prompt.trim()}
-              className={`absolute right-2 bottom-2 p-1 rounded-md transition-colors ${
+              className={`absolute right-2 bottom-2 rounded-lg p-2 flex items-center justify-center transition-colors ${
                 isLoading || !prompt.trim()
-                  ? "text-gray-400 opacity-40"
-                  : "text-white bg-[#19c37d] hover:bg-[#10a37f]"
+                  ? "text-gray-400 opacity-50"
+                  : "text-white bg-blue-500 hover:bg-blue-600"
               }`}
               aria-label="Send message"
             >
               {isLoading ? (
                 <svg
-                  className="w-6 h-6 animate-spin"
+                  className="w-5 h-5 animate-spin"
                   fill="none"
                   viewBox="0 0 24 24"
-                  width="24"
-                  height="24"
                 >
                   <circle
                     className="opacity-25"
@@ -95,23 +77,18 @@ const InputArea = ({
                 </svg>
               ) : (
                 <svg
-                  width="24"
-                  height="24"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
                   fill="currentColor"
-                  viewBox="0 0 24 24"
+                  className="w-5 h-5"
                 >
-                  <path d="M20.3 2.1c.4-.2.8-.1 1.1.2.3.3.4.7.2 1.1L11.9 21.9c-.2.4-.6.6-1 .6-.1 0-.2 0-.3-.1-.3-.1-.5-.3-.6-.6l-2-5.4-5.4-2c-.3-.1-.5-.3-.6-.6-.1-.4 0-.8.3-1.1L20.3 2.1z" />
+                  <path d="M3.105 2.289a.75.75 0 00-.826.95l1.414 4.925A1.5 1.5 0 005.135 9.25h6.115a.75.75 0 010 1.5H5.135a1.5 1.5 0 00-1.442 1.086l-1.414 4.926a.75.75 0 00.826.95 28.896 28.896 0 0015.293-7.154.75.75 0 000-1.115A28.897 28.897 0 003.105 2.289z" />
                 </svg>
               )}
             </button>
           </div>
-          <p
-            className={`text-xs mt-2 text-center ${
-              darkMode ? "text-gray-400" : "text-gray-500"
-            }`}
-          >
-            MIZU AI assistant may produce inaccurate information. Your data is
-            kept private.
+          <p className="text-xs mt-1 text-center text-gray-500">
+            MIZU AI assistant may produce inaccurate information. Your data is kept private.
           </p>
         </form>
       </div>

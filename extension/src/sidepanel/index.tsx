@@ -1,15 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useStorage } from "@plasmohq/storage/hook";
 import "../../style.css";
-
-// 导入组件
 import Header from "./components/Header";
 import Message from "./components/Message";
 import InputArea from "./components/InputArea";
 import Settings from "./components/Settings";
 import ConversationList from "./components/ConversationList";
-
-// 导入服务
 import {
   Message as MessageType,
   Conversation,
@@ -20,68 +16,11 @@ import {
   getCurrentConversation,
 } from "../services/chat";
 
-// 新的 TabUI 组件
-const TabUI = ({
-  currentConversation,
-  createNewConversation,
-  darkMode,
-  closeTab,
-}) => {
-  return (
-    <div
-      className={`flex border-b ${darkMode ? "border-gray-700" : "border-gray-200"}`}
-    >
-      <div
-        className={`flex items-center px-4 py-2 ${darkMode ? "text-gray-300" : "text-gray-800"}`}
-      >
-        <button
-          className={`flex items-center gap-1.5 rounded-t-md px-4 py-2 ${
-            darkMode
-              ? "bg-[#24283b] text-gray-300"
-              : "bg-gray-100 text-gray-800"
-          }`}
-        >
-          <span className="text-sm font-medium truncate max-w-[100px]">
-            {currentConversation?.title || "New Chat"}
-          </span>
-        </button>
-      </div>
-      <div className="flex items-center">
-        <button
-          onClick={closeTab}
-          className={`p-1 rounded-md ${
-            darkMode
-              ? "hover:bg-[#292e42] text-gray-400"
-              : "hover:bg-gray-200 text-gray-500"
-          }`}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2}
-            stroke="currentColor"
-            className="w-4 h-4"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
-      </div>
-    </div>
-  );
-};
-
 const Sidepanel = () => {
-  // 状态管理
   const [apiKey, setApiKey] = useStorage("apiKey");
   const [isLoading, setIsLoading] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<MessageType[]>([]);
-  const [darkMode, setDarkMode] = useStorage<boolean>("darkMode", true);
   const [showSettings, setShowSettings] = useState(false);
   const [conversations, setConversations] = useStorage<Conversation[]>(
     "conversations",
@@ -103,16 +42,6 @@ const Sidepanel = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
-
-  // 设置body的data-theme属性
-  useEffect(() => {
-    document.body.setAttribute("data-theme", darkMode ? "dark" : "light");
-  }, [darkMode]);
-
-  // 关闭当前标签页并创建新会话
-  const closeTab = () => {
-    handleCreateNewConversation();
-  };
 
   // 初始化或加载当前会话
   useEffect(() => {
@@ -141,7 +70,6 @@ const Sidepanel = () => {
     initializeConversation();
   }, [currentConversationId, conversations]);
 
-  // 处理右键菜单选中的文本
   useEffect(() => {
     const handleMessages = (request: any) => {
       // Handle selected text from context menu
@@ -164,15 +92,10 @@ const Sidepanel = () => {
     };
   }, []);
 
-  // 处理表单提交
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
-
-    // 记录当前提示
     const userPrompt = prompt.trim();
-
-    // 添加用户消息到UI
     const userMessage: MessageType = {
       id: crypto.randomUUID(),
       type: "user",
@@ -185,7 +108,6 @@ const Sidepanel = () => {
     setIsLoading(true);
 
     try {
-      // 调用background处理请求
       const resp = await chrome.runtime.sendMessage({
         name: "process-request",
         body: {
@@ -194,7 +116,7 @@ const Sidepanel = () => {
         },
       });
 
-      // 添加助手响应到UI
+      // add assistant response to UI
       const assistantMessage: MessageType = {
         id: crypto.randomUUID(),
         type: "assistant",
@@ -204,7 +126,7 @@ const Sidepanel = () => {
 
       setMessages((prev) => [...prev, assistantMessage]);
 
-      // 更新当前会话
+      // update current conversation
       const conversation = await getCurrentConversation();
       if (conversation) {
         const updatedMessages = [
@@ -230,9 +152,9 @@ const Sidepanel = () => {
         setConversations(updatedConversations);
       }
     } catch (error) {
-      console.error("处理请求出错:", error);
+      console.error("Error:", error);
 
-      // 添加错误消息
+      // add error message
       const errorMessage: MessageType = {
         id: crypto.randomUUID(),
         type: "assistant",
@@ -247,23 +169,38 @@ const Sidepanel = () => {
     }
   };
 
-  // 选择会话
+  // Modified handlers for toggling UI elements
+  const toggleSettings = (value: boolean) => {
+    setShowSettings(value);
+    if (value) {
+      setShowConversationList(false);
+    }
+  };
+
+  const toggleConversationList = (value: boolean | ((prev: boolean) => boolean)) => {
+    setShowConversationList(value);
+    if (typeof value === 'boolean' && value) {
+      setShowSettings(false);
+    }
+  };
+
+  // select conversation
   const handleSelectConversation = async (id: string) => {
     const conversation = await selectConv(id);
     if (conversation) {
       setMessages(conversation.messages);
       setCurrentConversationId(id);
-      setShowConversationList(false);
+      toggleConversationList(false);
     }
   };
 
-  // 删除会话
+  // delete conversation
   const handleDeleteConversation = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
 
     await deleteConv(id);
 
-    // 如果删除的是当前会话，选择另一个会话
+    // if delete current conversation, select another conversation
     if (id === currentConversationId) {
       const remaining = conversations.filter((c) => c.id !== id);
       if (remaining.length > 0) {
@@ -277,7 +214,7 @@ const Sidepanel = () => {
     }
   };
 
-  // 创建新会话
+  // create new conversation
   const handleCreateNewConversation = async () => {
     const newConv = await createNewConversation();
     setConversations((prev) => {
@@ -286,115 +223,103 @@ const Sidepanel = () => {
     });
     setCurrentConversationId(newConv.id);
     setMessages([]);
-    setShowConversationList(false);
+    toggleConversationList(false);
   };
 
-  // 清除当前会话
+  // clear current conversation
   const handleClearConversation = async () => {
     await clearCurrentConversation();
     setMessages([]);
-    setShowSettings(false);
+    toggleSettings(false);
   };
 
-  // 如果显示设置页面
-  if (showSettings) {
-    return (
-      <Settings
-        apiKey={apiKey || ""}
-        setApiKey={setApiKey}
-        setShowSettings={setShowSettings}
-        clearConversation={handleClearConversation}
-        darkMode={darkMode}
-      />
-    );
-  }
-
   return (
-    <div
-      className={`flex flex-col h-screen ${darkMode ? "bg-[#1a1b26]" : "bg-white"}`}
-    >
-      {/* 头部和会话控制 */}
+    <div className="flex flex-col h-screen bg-white text-gray-800">
+      {/* header menu */}
       <Header
-        darkMode={darkMode}
-        setDarkMode={setDarkMode}
-        setShowSettings={setShowSettings}
-        setShowConversationList={setShowConversationList}
+        setShowSettings={toggleSettings}
         createNewConversation={handleCreateNewConversation}
+        setShowConversationList={toggleConversationList}
       />
 
-      {/* 标签页UI */}
-      <TabUI
-        currentConversation={currentConversation}
-        createNewConversation={handleCreateNewConversation}
-        darkMode={darkMode}
-        closeTab={closeTab}
-      />
-
-      {/* 会话列表 */}
-      {showConversationList && (
-        <ConversationList
-          conversations={conversations}
-          currentConversationId={currentConversationId}
-          selectConversation={handleSelectConversation}
-          deleteConversation={handleDeleteConversation}
-          createNewConversation={handleCreateNewConversation}
-          setShowConversationList={setShowConversationList}
-          darkMode={darkMode}
-        />
-      )}
-
-      {/* 消息列表 */}
-      <div
-        className={`flex-1 overflow-y-auto p-4 ${
-          darkMode ? "text-gray-200" : "text-gray-700"
-        }`}
-      >
-        {messages.length === 0 ? (
-          <div className="h-full flex flex-col justify-center items-center">
-            <h1
-              className={`text-2xl font-bold mb-4 ${
-                darkMode ? "text-gray-200" : "text-gray-800"
-              }`}
-            >
-              Welcome to MIZU
-            </h1>
-            <p
-              className={`text-center ${
-                darkMode ? "text-gray-300" : "text-gray-600"
-              }`}
-            >
-              Start a new conversation to explore the AI's capabilities.
-              <br />
-              Ask a question, get help, or brainstorm ideas.
-            </p>
-            {!apiKey && (
-              <p
-                className={`mt-8 text-center ${
-                  darkMode ? "text-amber-300" : "text-amber-700"
-                }`}
-              >
-                You haven't set up your API key yet. Click the settings icon in
-                the top right corner to add your key for full functionality.
-              </p>
-            )}
+      <div className="flex-1 flex flex-col relative">
+        {showSettings ? (
+          // 设置面板
+          <div className="absolute inset-0 z-50 bg-white">
+            <Settings
+              apiKey={apiKey}
+              setApiKey={setApiKey}
+              clearConversation={handleClearConversation}
+              setShowSettings={toggleSettings}
+            />
           </div>
         ) : (
-          messages.map((message) => (
-            <Message key={message.id} message={message} darkMode={darkMode} />
-          ))
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+          <>
+            {/* 会话列表抽屉 */}
+            <div 
+              className={`fixed left-0 top-[60px] bottom-[88px] w-80 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out z-40 ${
+                showConversationList ? 'translate-x-0' : '-translate-x-full'
+              }`}
+            >
+              <ConversationList
+                conversations={conversations}
+                currentConversationId={currentConversationId}
+                selectConversation={handleSelectConversation}
+                deleteConversation={handleDeleteConversation}
+                createNewConversation={handleCreateNewConversation}
+                setShowConversationList={toggleConversationList}
+              />
+            </div>
 
-      {/* 输入区域 */}
-      <div className="p-4">
-        <InputArea
-          prompt={prompt}
-          setPrompt={setPrompt}
-          handleSubmit={handleSubmit}
-          isLoading={isLoading}
-          darkMode={darkMode}
-        />
+            {/* 遮罩层 */}
+            {showConversationList && (
+              <div 
+                className="fixed inset-0 bg-black bg-opacity-50 z-30"
+                onClick={() => toggleConversationList(false)}
+              />
+            )}
+
+            {/* 主聊天区域 */}
+            <div className="flex-1 overflow-y-auto mb-[88px]">
+              {messages.length > 0 ? (
+                <div className="max-w-3xl mx-auto px-4 py-4">
+                  {messages.map((message) => (
+                    <Message key={message.id} message={message} />
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+              ) : (
+                <div className="h-full flex flex-col justify-center items-center max-w-lg mx-auto px-4">
+                  <h1 className="text-2xl font-semibold mb-2 text-gray-800">
+                    Welcome to MIZU
+                  </h1>
+                  <p className="text-center mb-8 text-gray-600">
+                    Start a new conversation to explore the AI's capabilities.
+                    <br />
+                    Ask a question, get help, or brainstorm ideas.
+                  </p>
+                  {!apiKey && (
+                    <p className="text-center text-yellow-600">
+                      You haven't set up your API key yet. Click the settings icon
+                      in the top right corner to add your key for full
+                      functionality.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 输入区域 */}
+            <div className="fixed bottom-0 left-0 right-0 z-20">
+              <InputArea
+                prompt={prompt}
+                setPrompt={setPrompt}
+                handleSubmit={handleSubmit}
+                isLoading={isLoading}
+              />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
