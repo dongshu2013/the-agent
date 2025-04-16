@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from edge_agent.api.routes import router
 from edge_agent.core.config import settings
-from edge_agent.database import get_db
+from edge_agent.utils.database import get_db, init_db
 
 logger = logging.getLogger("app")
 
@@ -16,6 +16,12 @@ logger = logging.getLogger("app")
 async def lifespan(app: FastAPI):
     # Setup
     logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION}")
+    
+    # Initialize database
+    init_db()
+    logger.info("Database initialized")
+    
+    # Connect to database
     db: Session = next(get_db())
     
     # Yield control to the application
