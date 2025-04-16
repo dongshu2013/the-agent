@@ -1,23 +1,62 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session
+import logging
 
 from edge_agent.core.config import settings
-from edge_agent.models.database import Base
 
-SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
+logger = logging.getLogger("database")
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+# Create SQLAlchemy engine
+engine = create_engine(settings.DATABASE_URL)
+
+# Create sessionmaker
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+# Create base class for models
+Base = declarative_base()
 
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+class Database:
+    """
+    Database class to maintain a global database connection.
+    """
+    _instance = None
+    _session = None
 
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(Database, cls).__new__(cls)
+            cls._instance._session = None
+        return cls._instance
+    
+    def init(self):
+        """
+        Initialize the database connection.
+        This should be called in the lifespan before the app starts.
+        """
+        if self._session is None:
+            logger.info("Initializing database connection")
+            self._session = SessionLocal()
+        return self._session
+    
+    def close(self):
+        """
+        Close the database connection.
+        This should be called in the lifespan after the app stops.
+        """
+        if self._session is not None:
+            logger.info("Closing database connection")
+            self._session.close()
+            self._session = None
+    
+    @property
+    def session(self) -> Session:
+        """
+        Get the database session.
+        """
+        if self._session is None:
+            self.init()
+        return self._session
 
-def init_db():
-    """Initialize database tables if they don't exist"""
-    Base.metadata.create_all(bind=engine)
+# Create a global instance of the Database class
+db = Database()
