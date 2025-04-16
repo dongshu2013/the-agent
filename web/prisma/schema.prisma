@@ -6,6 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -13,13 +14,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Define your models here
 model User {
-  id            String         @id @default(uuid())
-  email         String         @unique
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  conversations Conversation[]
+  id              String         @id @default(uuid())
+  username        String         @unique
+  email           String?        @unique
+  api_key         String         @unique @default(uuid())
+  api_key_enabled Boolean        @default(true)
+  conversations   Conversation[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 }
 
 model Conversation {
