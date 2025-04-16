@@ -37,7 +37,11 @@ uv sync
 ### 运行服务
 
 ```bash
-uv run uvicorn main:app --reload --port 8000
+# prod mode
+uv run uvicorn edge_agent.main:start_server
+
+# dev mode
+uv run uvicorn edge_agent.main:start_dev --reload --port 8000
 ```
 
 ## API参考
