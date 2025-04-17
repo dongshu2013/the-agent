@@ -1,13 +1,11 @@
-from contextlib import asynccontextmanager
-import logging
-
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from contextlib import asynccontextmanager
+import logging
 from sqlalchemy.orm import Session
 
 from edge_agent.core.config import settings
-from edge_agent.utils.database import db
+from edge_agent.utils.database import DBSessionMiddleware, db
 from edge_agent.api.routes import router
 
 logging.basicConfig(level=logging.INFO)
@@ -21,15 +19,9 @@ async def lifespan(app: FastAPI):
     """
     logger.info(f"Starting {settings.PROJECT_NAME} v{settings.VERSION}")
 
-    db.init()
-    logger.info("Database connection initialized")
-
     yield
 
     logger.info(f"Shutting down {settings.PROJECT_NAME}")
-    db.close()
-    logger.info("Database connection closed")
-
 
 app = FastAPI(
     title=settings.PROJECT_NAME, 
@@ -48,6 +40,9 @@ app.add_middleware(
     expose_headers=["*"],
     max_age=86400, # 24 hours
 )
+
+# Add database session middleware
+app.add_middleware(DBSessionMiddleware)
 
 # Include routers
 app.include_router(router)
