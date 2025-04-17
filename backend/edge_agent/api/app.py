@@ -5,7 +5,7 @@ import logging
 from sqlalchemy.orm import Session
 
 from edge_agent.core.config import settings
-from edge_agent.utils.database import DBSessionMiddleware, db
+from edge_agent.utils.database import DBSessionMiddleware, get_db
 from edge_agent.api.routes import router
 
 logging.basicConfig(level=logging.INFO)

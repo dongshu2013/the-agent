@@ -72,6 +72,10 @@ class ConversationResponse(BaseModel):
     created_at: str
     status: str
 
+class SaveMessageRequest(BaseModel):
+    conversation_id: str
+    message: ChatMessage
+
 router = APIRouter(tags=["chat"])
 
 llm = AsyncOpenAI(
@@ -144,8 +148,7 @@ async def delete_conversation(
 
 @router.post("/v1/message/save")
 async def save_message(
-    conversation_id: str,
-    message: ChatMessage,
+    request_body: SaveMessageRequest,
     request: Request,
     user: User = Depends(verify_api_key)
 ):
@@ -154,16 +157,26 @@ async def save_message(
     """
     db = request.state.db
     try:
-        conversation = get_conversation(conversation_id, request)
-        db.add(
-            Message(
-                conversation_id=conversation.id,
-                role=message.role,
-                content=message.content
-            )
+        conversation = get_conversation(request_body.conversation_id, request)
+        message = Message(
+            conversation_id=conversation.id,
+            role=request_body.message.role,
+            content=request_body.message.content
         )
+        db.add(message)
         db.commit()
-        return {"success": True}
+        db.refresh(message)
+        
+        return {
+            "success": True,
+            "data": {
+                "id": message.id,
+                "conversation_id": message.conversation_id,
+                "role": message.role,
+                "content": message.content,
+                "created_at": message.created_at.isoformat()
+            }
+        }
     except Exception as e:
         logger.error(f"Error saving message: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error saving message: {str(e)}")
@@ -243,3 +256,53 @@ async def stream_chat_response(params: ChatCompletionCreateParam):
         }
         yield f"data: {json.dumps(error_response)}\n\n"
         yield "data: [DONE]\n\n"
+
+@router.get("/v1/conversation/list", response_model=List[dict])
+async def get_user_conversations(
+    request: Request,
+    user: User = Depends(verify_api_key)
+):
+    db = request.state.db
+    try:
+        # 使用JOIN一次性获取所有会话及其消息
+        query = db.query(
+            Conversation, Message
+        ).outerjoin(
+            Message, Conversation.id == Message.conversation_id
+        ).filter(
+            Conversation.user_id == user.id,
+            Conversation.status != "deleted"
+        ).order_by(
+            Conversation.created_at.desc(),
+            Message.created_at.asc()
+        ).all()
+        
+        # 使用字典整理数据，避免多次查询
+        conversations_map = {}
+        
+        for conversation, message in query:
+            # 如果会话不在字典中，添加它
+            if conversation.id not in conversations_map:
+                conversations_map[conversation.id] = {
+                    "id": conversation.id,
+                    "title": conversation.title or "New Chat",
+                    "created_at": conversation.created_at.isoformat(),
+                    "updated_at": conversation.updated_at.isoformat(),
+                    "messages": []
+                }
+            
+            # 如果有消息，添加到对应会话
+            if message:
+                conversations_map[conversation.id]["messages"].append({
+                    "id": message.id,
+                    "role": message.role,
+                    "content": message.content,
+                    "timestamp": message.created_at.isoformat()
+                })
+        
+        # 转换为列表并返回
+        result = list(conversations_map.values())
+        return result
+    except Exception as e:
+        logger.error(f"Error fetching user conversations: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching conversations: {str(e)}")

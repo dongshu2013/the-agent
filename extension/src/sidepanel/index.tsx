@@ -8,14 +8,15 @@ import InputArea from "./components/InputArea";
 import Settings from "./components/Settings";
 import ConversationList from "./components/ConversationList";
 import {
-  Message as MessageType,
+  MessageType,
   Conversation,
   createNewConversation,
   selectConversation as selectConv,
   deleteConversation as deleteConv,
-  clearCurrentConversation,
+  getConversations,
 } from "../services/chat";
 import { Storage } from "@plasmohq/storage";
+import { saveMessageApi } from "../services/api";
 
 const Sidepanel = () => {
   const [apiKey, setApiKey] = useStorage("apiKey");
@@ -112,36 +113,46 @@ const Sidepanel = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!prompt.trim() || !apiKey) {
-      if (!apiKey) {
-        setMessages((prev) => [
-          ...prev.filter((m: MessageType) => m.type !== "error"),
-          {
-            id: crypto.randomUUID(),
-            type: "error" as const,
-            content: "API Key is not set. Please configure it in settings.",
-            timestamp: new Date(),
-          },
-        ]);
-      }
-      return;
-    }
+    if (!prompt.trim() || !apiKey || !currentConversationId) return;
 
     const currentPrompt = prompt.trim();
     let assistantMessageId = crypto.randomUUID();
 
     // Create user message
     const userMessage: MessageType = {
-      id: crypto.randomUUID(),
-      type: "user",
+      role: "user",
       content: currentPrompt,
       timestamp: new Date(),
     };
 
+    // Save user message to backend first
+    const saveUserMessageResponse = await saveMessageApi(
+      currentConversationId,
+      userMessage
+    );
+    if (!saveUserMessageResponse.success) {
+      throw new Error(
+        saveUserMessageResponse.error || "Failed to save user message"
+      );
+    }
+
+    // Update user message with ID from backend
+    userMessage.id = saveUserMessageResponse.data?.id;
+
+    // Create loading message
+    const loadingMessage: MessageType = {
+      id: assistantMessageId,
+      role: "assistant",
+      content: "",
+      timestamp: new Date(),
+      isLoading: true,
+    };
+
     // Add user message to the list
     setMessages((prev: MessageType[]) => [
-      ...prev.filter((m) => m.type !== "error"),
+      ...prev.filter((m) => m.role !== "error"),
       userMessage,
+      loadingMessage, // 添加加载中消息
     ]);
     setPrompt("");
     setIsLoading(true);
@@ -161,14 +172,6 @@ const Sidepanel = () => {
       const messagesForApi = [
         { role: "user" as const, content: currentPrompt },
       ];
-
-      const assistantMessage: MessageType = {
-        id: assistantMessageId,
-        type: "assistant",
-        content: "",
-        timestamp: new Date(),
-      };
-      setMessages((prev: MessageType[]) => [...prev, assistantMessage]);
 
       // Call OpenAI compatible API
       const stream = await client.chat.completions.create(
@@ -192,7 +195,7 @@ const Sidepanel = () => {
           setMessages((prev: MessageType[]) =>
             prev.map((msg: MessageType) =>
               msg.id === assistantMessageId
-                ? { ...msg, content: accumulatedContent }
+                ? { ...msg, content: accumulatedContent, isLoading: false }
                 : msg
             )
           );
@@ -203,6 +206,33 @@ const Sidepanel = () => {
         }
       }
       console.log("Stream processing complete.");
+
+      // Save AI message
+      if (accumulatedContent) {
+        const aiMessageResponse = await saveMessageApi(currentConversationId, {
+          role: "assistant",
+          content: accumulatedContent,
+          timestamp: new Date(),
+        });
+
+        if (!aiMessageResponse.success) {
+          throw new Error("Failed to save AI message");
+        }
+
+        // Update the loading message with the final content and ID
+        setMessages((prev: MessageType[]) =>
+          prev.map((msg: MessageType) =>
+            msg.id === assistantMessageId
+              ? {
+                  ...msg,
+                  id: aiMessageResponse.data?.id,
+                  content: accumulatedContent,
+                  isLoading: false,
+                }
+              : msg
+          )
+        );
+      }
     } catch (error: any) {
       if (error.name === "AbortError") {
         console.log("Stream aborted by user.");
@@ -216,7 +246,7 @@ const Sidepanel = () => {
           ...prev.filter((m: MessageType) => m.id !== assistantMessageId),
           {
             id: crypto.randomUUID(),
-            type: "error",
+            role: "error",
             content: errorContent,
             timestamp: new Date(),
           },
@@ -237,26 +267,52 @@ const Sidepanel = () => {
     }
   };
 
-  const toggleConversationList = () => {
-    setShowConversationList((prev) => !prev);
-    if (!showConversationList) {
+  const toggleConversationList = async () => {
+    // 即将打开会话列表时，先刷新会话数据
+    const willShow = !showConversationList;
+    if (willShow) {
+      try {
+        setIsLoading(true);
+        // 刷新会话列表
+        const refreshedConversations = await getConversations();
+        setConversations(refreshedConversations);
+        console.log("会话列表已刷新");
+      } catch (error) {
+        console.error("刷新会话列表失败:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    // 切换显示状态
+    setShowConversationList(willShow);
+    if (willShow) {
       setShowSettings(false);
     }
   };
 
   // Select conversation
   const handleSelectConversation = async (id: string) => {
+    if (isLoading) return; // 防止重复操作
+
     if (id === "new") {
-      // If "new" is passed, create a new conversation
+      // 如果"new"被传递，创建一个新的会话
       await handleCreateNewConversation();
       return;
     }
 
-    const conversation = await selectConv(id);
-    if (conversation) {
-      setMessages(conversation.messages);
-      setCurrentConversationId(id);
-      toggleConversationList();
+    // 简单防重复处理
+    setIsLoading(true);
+
+    try {
+      const conversation = await selectConv(id);
+      if (conversation) {
+        setMessages(conversation.messages);
+        setCurrentConversationId(id);
+        toggleConversationList();
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -264,39 +320,110 @@ const Sidepanel = () => {
   const handleDeleteConversation = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
 
-    await deleteConv(id);
+    console.log("Deleting conversation:", id);
 
-    // If delete current conversation, select another conversation
-    if (id === currentConversationId) {
-      const remaining = conversations.filter((c) => c.id !== id);
-      if (remaining.length > 0) {
-        await handleSelectConversation(remaining[0].id);
-      } else {
-        const newConv = await createNewConversation();
-        setConversations([newConv]);
-        setCurrentConversationId(newConv.id);
-        setMessages([]);
+    // 防止重复操作
+    if (isLoading) return;
+    setIsLoading(true);
+
+    try {
+      await deleteConv(id);
+      console.log("Conversation deleted successfully");
+
+      // If delete current conversation, select another conversation
+      if (id === currentConversationId) {
+        const remaining = conversations.filter((c) => c.id !== id);
+        if (remaining.length > 0) {
+          await handleSelectConversation(remaining[0].id);
+        } else {
+          const newConv = await createNewConversation();
+          setConversations([newConv]);
+          setCurrentConversationId(newConv.id);
+          setMessages([]);
+        }
       }
+    } catch (error) {
+      console.error("Failed to delete conversation:", error);
+      // 显示错误消息
+      setMessages((prev) => [
+        ...prev.filter((m: MessageType) => m.role !== "error"),
+        {
+          id: crypto.randomUUID(),
+          role: "error",
+          content: "Failed to delete conversation. Please try again later.",
+          timestamp: new Date(),
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Create new conversation
   const handleCreateNewConversation = async () => {
-    const newConv = await createNewConversation();
-    setConversations((prev) => {
-      const prevList = prev || [];
-      return [newConv, ...prevList];
-    });
-    setCurrentConversationId(newConv.id);
-    setMessages([]);
-    toggleConversationList();
+    // 防止重复创建，如果正在加载状态，直接返回
+    if (isLoading) return;
+
+    console.log(
+      "Creating new conversation, API key:",
+      apiKey ? "Available" : "Not available"
+    );
+
+    // 简单的防重复点击处理
+    setIsLoading(true);
+
+    try {
+      // 创建新会话 - 现在会调用后端API
+      const newConv = await createNewConversation();
+      console.log("New conversation created successfully:", newConv.id);
+
+      // 更新会话列表
+      setConversations((prev) => {
+        const prevList = prev || [];
+        // 检查是否已经存在该会话，避免重复添加
+        if (prevList.some((conv) => conv.id === newConv.id)) {
+          return prevList;
+        }
+        return [newConv, ...prevList];
+      });
+
+      // 设置为当前会话
+      setCurrentConversationId(newConv.id);
+      setMessages([]);
+    } catch (error) {
+      console.error("Failed to create new conversation:", error);
+      // 错误处理 - 在UI中显示错误消息
+      setMessages([
+        {
+          id: crypto.randomUUID(),
+          role: "error",
+          content: "Failed to create new conversation. Please try again later.",
+          timestamp: new Date(),
+        },
+      ]);
+    } finally {
+      // 操作完成后重置加载状态
+      setIsLoading(false);
+    }
   };
 
   // 更新设置API密钥的函数，保存到存储中
   const handleSetApiKey = (key: string) => {
+    console.log("Setting API key:", key ? "有值" : "无值");
     setApiKey(key);
     const storage = new Storage();
-    storage.set("openai_api_key", key);
+
+    // 存储到 apiKey 键
+    storage.set("apiKey", key).then(() => {
+      console.log("API key saved to storage");
+    });
+
+    // 同时存储到 localStorage 以便API请求使用
+    try {
+      localStorage.setItem("apiKey", key);
+    } catch (e) {
+      console.warn("Failed to save API key to localStorage:", e);
+    }
   };
 
   return (

@@ -2,30 +2,88 @@
  * 聊天服务 - 管理聊天会话和消息
  */
 
-import { sendChatRequest, ChatRequest, AVAILABLE_TOOLS } from "./api";
-import { executeTool } from "./tools";
-import { Storage } from "@plasmohq/storage";
+import {
+  sendChatRequest,
+  ChatRequest,
+  AVAILABLE_TOOLS,
+  createConversationApi,
+  deleteConversationApi,
+  getConversationsApi,
+  saveMessageApi,
+} from "./api";
 
-// 存储实例
-const storage = new Storage();
-
-// 消息类型
-export interface Message {
-  id: string;
-  type: "user" | "assistant" | "system" | "error";
+// 消息类型定义
+export interface MessageType {
+  id?: string; // 改为可选，因为新消息创建时还没有ID
+  role: string;
   content: string;
   timestamp: Date;
-  isError?: boolean;
+  isLoading?: boolean;
+  type?: string; // 用于错误消息
 }
 
-// 会话类型
+// 会话类型定义
 export interface Conversation {
   id: string;
   title: string;
-  messages: Message[];
+  messages: MessageType[];
   createdAt: Date;
   updatedAt: Date;
 }
+
+// 缓存接口定义
+interface CacheData<T> {
+  data: T;
+  timestamp: number;
+}
+
+// 缓存管理器
+class CacheManager {
+  private static instance: CacheManager;
+  private cache: Map<string, CacheData<any>>;
+  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5分钟
+
+  private constructor() {
+    this.cache = new Map();
+  }
+
+  static getInstance(): CacheManager {
+    if (!CacheManager.instance) {
+      CacheManager.instance = new CacheManager();
+    }
+    return CacheManager.instance;
+  }
+
+  set<T>(key: string, data: T): void {
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now(),
+    });
+  }
+
+  get<T>(key: string): T | null {
+    const cached = this.cache.get(key);
+    if (!cached) return null;
+
+    if (Date.now() - cached.timestamp > this.CACHE_DURATION) {
+      this.cache.delete(key);
+      return null;
+    }
+
+    return cached.data;
+  }
+
+  delete(key: string): void {
+    this.cache.delete(key);
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+}
+
+// 获取缓存管理器实例
+const cacheManager = CacheManager.getInstance();
 
 // 生成唯一ID
 const generateId = (): string => {
@@ -35,59 +93,59 @@ const generateId = (): string => {
 // 获取所有会话
 export const getConversations = async (): Promise<Conversation[]> => {
   try {
-    const conversations = await storage.get<Conversation[]>("conversations");
-    return conversations || [];
-  } catch (error) {
-    console.error("获取会话失败:", error);
-    return [];
-  }
-};
-
-// 获取当前会话ID
-export const getCurrentConversationId = async (): Promise<string | null> => {
-  try {
-    const id = await storage.get<string>("currentConversationId");
-    return id || null;
-  } catch (error) {
-    console.error("获取当前会话ID失败:", error);
-    return null;
-  }
-};
-
-// 获取当前会话
-export const getCurrentConversation =
-  async (): Promise<Conversation | null> => {
-    try {
-      const id = await getCurrentConversationId();
-      if (!id) return null;
-
-      const conversations = await getConversations();
-      return conversations.find((c) => c.id === id) || null;
-    } catch (error) {
-      console.error("获取当前会话失败:", error);
-      return null;
+    const cachedConversations =
+      cacheManager.get<Conversation[]>("conversations");
+    if (cachedConversations) {
+      console.log("Using cached conversations");
+      return cachedConversations;
     }
-  };
+
+    const response = await getConversationsApi();
+    if (!response.success || !response.data) {
+      throw new Error(response.error || "Failed to fetch conversations");
+    }
+
+    const conversations: Conversation[] = response.data.map((conv: any) => ({
+      id: conv.id,
+      title: conv.title,
+      messages: conv.messages.map((msg: any) => ({
+        id: msg.id,
+        role: msg.role,
+        content: msg.content,
+        timestamp: new Date(msg.timestamp),
+      })),
+      createdAt: new Date(conv.created_at),
+      updatedAt: new Date(conv.updated_at),
+    }));
+
+    cacheManager.set("conversations", conversations);
+    return conversations;
+  } catch (error) {
+    console.error("Error fetching conversations:", error);
+    throw error;
+  }
+};
 
 // 创建新会话
 export const createNewConversation = async (): Promise<Conversation> => {
   try {
+    const response = await createConversationApi();
+    if (!response.success || !response.data) {
+      throw new Error(response.error || "Failed to create conversation");
+    }
+
     const newConversation: Conversation = {
-      id: generateId(),
-      title: "New Chat",
+      id: response.data.id,
+      title: response.data.title || "New Chat",
       messages: [],
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    const conversations = await getConversations();
-    const conversationsList = conversations || [];
-    await storage.set("conversations", [newConversation, ...conversationsList]);
-    await storage.set("currentConversationId", newConversation.id);
-
+    cacheManager.delete("conversations");
     return newConversation;
   } catch (error) {
-    console.error("Failed to create new conversation:", error);
+    console.error("Error creating conversation:", error);
     throw error;
   }
 };
@@ -100,14 +158,14 @@ export const selectConversation = async (
     const conversations = await getConversations();
     const conversation = conversations.find((c) => c.id === id);
 
-    if (conversation) {
-      await storage.set("currentConversationId", id);
-      return conversation;
+    if (!conversation) {
+      throw new Error("Conversation not found");
     }
 
-    return null;
+    cacheManager.set(`messages_${id}`, conversation.messages);
+    return conversation;
   } catch (error) {
-    console.error("选择会话失败:", error);
+    console.error("Error selecting conversation:", error);
     throw error;
   }
 };
@@ -115,154 +173,61 @@ export const selectConversation = async (
 // 删除会话
 export const deleteConversation = async (id: string): Promise<void> => {
   try {
-    const conversations = await getConversations();
-    const updatedConversations = conversations.filter((c) => c.id !== id);
-
-    await storage.set("conversations", updatedConversations);
-
-    // 如果删除的是当前会话，选择另一个会话或创建新的
-    const currentId = await getCurrentConversationId();
-    if (currentId === id) {
-      if (updatedConversations.length > 0) {
-        await storage.set("currentConversationId", updatedConversations[0].id);
-      } else {
-        const newConversation = await createNewConversation();
-        await storage.set("currentConversationId", newConversation.id);
-      }
+    const response = await deleteConversationApi(id);
+    if (!response.success) {
+      throw new Error(response.error || "Failed to delete conversation");
     }
+
+    cacheManager.delete("conversations");
   } catch (error) {
-    console.error("删除会话失败:", error);
+    console.error("Error deleting conversation:", error);
     throw error;
   }
 };
 
-// 清除当前会话消息
-export const clearCurrentConversation = async (): Promise<void> => {
+// 添加用户消息
+export const addUserMessage = async (content: string): Promise<MessageType> => {
   try {
-    const id = await getCurrentConversationId();
-    if (!id) return;
-
-    const conversations = await getConversations();
-    const updatedConversations = conversations.map((c) =>
-      c.id === id ? { ...c, messages: [], updatedAt: new Date() } : c
-    );
-
-    await storage.set("conversations", updatedConversations);
-  } catch (error) {
-    console.error("清除会话失败:", error);
-    throw error;
-  }
-};
-
-// 添加用户消息到当前会话
-export const addUserMessage = async (content: string): Promise<Message> => {
-  try {
-    let conversation = await getCurrentConversation();
-
-    // 如果没有当前会话，创建一个新的
-    if (!conversation) {
-      conversation = await createNewConversation();
-    }
-
-    const message: Message = {
-      id: generateId(),
-      type: "user",
+    const message: MessageType = {
+      role: "user",
       content,
       timestamp: new Date(),
     };
-
-    // 更新会话
-    const updatedMessages = [...conversation.messages, message];
-    await updateConversationMessages(conversation.id, updatedMessages);
-
     return message;
   } catch (error) {
-    console.error("添加用户消息失败:", error);
+    console.error("Error adding user message:", error);
     throw error;
   }
 };
 
-// 添加助手消息到当前会话
+// 添加助手消息
 export const addAssistantMessage = async (
   content: string
-): Promise<Message> => {
+): Promise<MessageType> => {
   try {
-    const conversation = await getCurrentConversation();
-    if (!conversation) throw new Error("当前没有活跃的会话");
-
-    const message: Message = {
-      id: generateId(),
-      type: "assistant",
+    const message: MessageType = {
+      role: "assistant",
       content,
       timestamp: new Date(),
     };
-
-    // 更新会话
-    const updatedMessages = [...conversation.messages, message];
-    await updateConversationMessages(conversation.id, updatedMessages);
-
     return message;
   } catch (error) {
-    console.error("添加助手消息失败:", error);
+    console.error("Error adding assistant message:", error);
     throw error;
   }
 };
 
-// 更新会话标题
-export const updateConversationTitle = async (
-  id: string,
-  title: string
-): Promise<void> => {
-  try {
-    const conversations = await getConversations();
-    const updatedConversations = conversations.map((c) =>
-      c.id === id ? { ...c, title, updatedAt: new Date() } : c
-    );
-
-    await storage.set("conversations", updatedConversations);
-  } catch (error) {
-    console.error("更新会话标题失败:", error);
-    throw error;
-  }
-};
-
-// 更新会话消息
-const updateConversationMessages = async (
-  id: string,
-  messages: Message[]
-): Promise<void> => {
-  try {
-    const conversations = await getConversations();
-
-    // 更新指定会话的消息
-    const updatedConversations = conversations.map((c) => {
-      if (c.id === id) {
-        // 如果是新会话（只有一两条消息），尝试从用户问题生成标题
-        let title = c.title;
-        if (c.title === "New Chat" && messages.length <= 2) {
-          const firstUserMsg = messages.find((m) => m.type === "user");
-          if (firstUserMsg) {
-            title = firstUserMsg.content.substring(0, 30);
-            if (firstUserMsg.content.length > 30) title += "...";
-          }
-        }
-
-        return {
-          ...c,
-          messages,
-          title,
-          updatedAt: new Date(),
-        };
-      }
-      return c;
-    });
-
-    await storage.set("conversations", updatedConversations);
-  } catch (error) {
-    console.error("更新会话消息失败:", error);
-    throw error;
-  }
-};
+// 获取当前会话
+export const getCurrentConversation =
+  async (): Promise<Conversation | null> => {
+    try {
+      const conversations = await getConversations();
+      return conversations[0] || null; // 返回第一个会话作为当前会话
+    } catch (error) {
+      console.error("Error getting current conversation:", error);
+      return null;
+    }
+  };
 
 // 发送消息并获取响应
 export const sendMessage = async (
@@ -271,25 +236,38 @@ export const sendMessage = async (
 ): Promise<string> => {
   try {
     // 添加用户消息
-    await addUserMessage(content);
+    const userMessage = await addUserMessage(content);
 
-    // 获取当前会话的所有消息
+    // 获取当前会话
     const conversation = await getCurrentConversation();
     if (!conversation) throw new Error("No active conversation");
 
+    // 保存用户消息到后端
+    const saveUserMessageResponse = await saveMessageApi(
+      conversation.id,
+      userMessage
+    );
+    if (!saveUserMessageResponse.success) {
+      throw new Error(
+        saveUserMessageResponse.error || "Failed to save user message"
+      );
+    }
+
+    // 更新用户消息的ID（从后端返回）
+    userMessage.id = saveUserMessageResponse.data?.id;
+
+    // 将消息添加到当前会话
+    conversation.messages.push(userMessage);
+    updateMessageCache(conversation.id, conversation.messages);
+
     // 将消息转换为API请求格式
-    const messages = conversation.messages.map((msg) => ({
-      role:
-        msg.type === "user"
-          ? "user"
-          : msg.type === "assistant"
-            ? "assistant"
-            : "system",
+    const messages = conversation.messages.map((msg: MessageType) => ({
+      role: msg.role,
       content: msg.content,
     }));
 
     // 添加系统消息（如果没有）
-    if (!messages.some((m) => m.role === "system")) {
+    if (!messages.some((m: { role: string }) => m.role === "system")) {
       messages.unshift({
         role: "system",
         content:
@@ -303,116 +281,54 @@ export const sendMessage = async (
       ...(AVAILABLE_TOOLS.length > 0 ? { tools: AVAILABLE_TOOLS } : {}),
     };
 
-    // Step 1: Send request to backend which calls LLM (or directly to OpenRouter)
+    // 发送请求
     const response = await sendChatRequest(request, apiKey);
-    console.log("Initial API response:", response);
-
-    // Step 2: Check if there are tool calls in the response
-    if (
-      response.success &&
-      response.tool_calls &&
-      response.tool_calls.length > 0
-    ) {
-      // Get the initial message content (might be empty or have instructions)
-      const initialContent = response.data.choices[0].message.content || "";
-
-      // Add a system message indicating tool call processing if there's content
-      if (initialContent.trim()) {
-        await addAssistantMessage(`🔍 ${initialContent}`);
-      }
-
-      // Process the tool call
-      const toolCall = response.tool_calls[0];
-      const { name, arguments: args } = toolCall;
-
-      // Log the tool call (visible only to the user)
-      await addAssistantMessage(
-        `⚙️ Calling tool: ${name}(${JSON.stringify(args)})`
-      );
-
-      // Step 3: Execute the tool locally in the client
-      const toolResult = await executeTool(name, args);
-
-      // Log the tool result
-      await addAssistantMessage(
-        `📊 Tool result: ${JSON.stringify(toolResult.success ? toolResult.result : { error: toolResult.error })}`
-      );
-
-      // Step 4: Send the tool result back to the backend or process directly
-      let finalResponse;
-
-      try {
-        // Create messages with tool result
-        const messagesWithToolResult = [
-          ...messages,
-          {
-            role: "assistant",
-            content: initialContent,
-            function_call: {
-              name,
-              arguments: JSON.stringify(args),
-            },
-          },
-          {
-            role: "function",
-            name,
-            content: JSON.stringify(
-              toolResult.success
-                ? toolResult.result
-                : { error: toolResult.error }
-            ),
-          },
-        ];
-
-        // Send request with tool result
-        finalResponse = await sendChatRequest(
-          {
-            messages: messagesWithToolResult,
-          },
-          apiKey
-        );
-      } catch (error) {
-        console.error("Error sending tool result:", error);
-        throw new Error(
-          `Failed to process tool result: ${error instanceof Error ? error.message : String(error)}`
-        );
-      }
-
-      if (!finalResponse.success || !finalResponse.data) {
-        throw new Error(
-          finalResponse.error || "Failed to get follow-up response"
-        );
-      }
-
-      // Step 5: Get the final assistant response
-      const assistantResponse = finalResponse.data.choices[0].message.content;
-
-      // Add the final response to the UI
-      await addAssistantMessage(assistantResponse);
-
-      return assistantResponse;
-    }
-
-    // No tool calls, just process the regular response
     if (!response.success || !response.data) {
-      const errorMessage = response.error || "Failed to get model response";
-      await addAssistantMessage(
-        `Sorry, there was an error processing your request: ${errorMessage}`
-      );
-      throw new Error(errorMessage);
+      throw new Error(response.error || "Failed to get model response");
     }
 
     // 获取响应内容
     const assistantResponse = response.data.choices[0].message.content;
 
     // 添加助手回复
-    await addAssistantMessage(assistantResponse);
+    const assistantMessage = await addAssistantMessage(assistantResponse);
+
+    // 保存助手消息到后端
+    const saveAssistantMessageResponse = await saveMessageApi(
+      conversation.id,
+      assistantMessage
+    );
+    if (!saveAssistantMessageResponse.success) {
+      throw new Error(
+        saveAssistantMessageResponse.error || "Failed to save assistant message"
+      );
+    }
+
+    // 更新助手消息的ID（从后端返回）
+    assistantMessage.id = saveAssistantMessageResponse.data?.id;
+
+    // 将助手消息添加到当前会话
+    conversation.messages.push(assistantMessage);
+    updateMessageCache(conversation.id, conversation.messages);
 
     return assistantResponse;
   } catch (error) {
     console.error("Failed to send message:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
-    await addAssistantMessage(`Error: ${errorMessage}`);
     throw error;
   }
+};
+
+// 消息缓存管理函数
+export const getCachedMessages = (
+  conversationId: string
+): MessageType[] | null => {
+  return cacheManager.get<MessageType[]>(`messages_${conversationId}`);
+};
+
+export const updateMessageCache = (
+  conversationId: string,
+  messages: MessageType[]
+): void => {
+  cacheManager.set(`messages_${conversationId}`, messages);
 };

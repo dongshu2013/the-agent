@@ -42,7 +42,7 @@ export default function InputArea({
           <button
             type="button"
             onClick={onPauseStream}
-            className="p-2 rounded hover:bg-gray-100"
+            className="p-2 rounded hover:bg-gray-100 active:scale-95 transition-transform"
           >
             <svg
               className="w-5 h-5"
@@ -60,7 +60,7 @@ export default function InputArea({
             type="submit"
             onClick={onSubmit}
             disabled={!prompt.trim() || isLoading}
-            className="p-2 rounded hover:bg-gray-100"
+            className="p-2 rounded hover:bg-gray-100 active:scale-95 transition-transform"
           >
             <svg
               className="w-5 h-5"

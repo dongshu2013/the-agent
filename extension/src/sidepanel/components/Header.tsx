@@ -16,8 +16,9 @@ const Header = ({
       <div className="flex items-center">
         <button
           onClick={setShowConversationList}
-          className="flex items-center justify-center rounded-md w-10 h-10 border border-gray-200 mr-2 hover:bg-gray-50"
+          className="flex items-center justify-center w-10 h-10 text-gray-500 hover:text-gray-700 mr-2 active:scale-95 transition-transform"
           aria-label="Toggle history"
+          style={{ background: "none", border: "none", padding: 0 }}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -40,8 +41,9 @@ const Header = ({
       <div className="flex items-center gap-2">
         <button
           onClick={createNewConversation}
-          className="flex items-center justify-center rounded-md w-10 h-10 border border-gray-200 hover:bg-gray-50"
+          className="flex items-center justify-center w-10 h-10 text-gray-500 hover:text-gray-700 active:scale-95 transition-transform"
           aria-label="New chat"
+          style={{ background: "none", border: "none", padding: 0 }}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -61,12 +63,11 @@ const Header = ({
 
         <button
           onClick={() => setShowSettings(!showSettings)}
-          className={`flex items-center justify-center rounded-md w-10 h-10 border ${
-            showSettings
-              ? "bg-gray-100 border-gray-300"
-              : "border-gray-200 hover:bg-gray-50"
-          }`}
+          className={`flex items-center justify-center w-10 h-10 text-gray-500 ${
+            showSettings ? "text-gray-900" : "hover:text-gray-700"
+          } active:scale-95 transition-transform`}
           aria-label="Settings"
+          style={{ background: "none", border: "none", padding: 0 }}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"

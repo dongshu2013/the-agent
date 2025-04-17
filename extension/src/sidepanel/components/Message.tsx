@@ -1,18 +1,16 @@
-import { Message as MessageType } from "../../services/chat";
+import { MessageType } from "../../services/chat";
 
 // @ts-ignore
 import aiIcon from "data-base64:../../../assets/icon.png";
+import LoadingBrain from "./LoadingBrain";
 
 interface MessageProps {
-  message: {
-    type: string;
-    content: string;
-    timestamp?: Date;
-  };
+  message: MessageType;
 }
 
 export default function Message({ message }: MessageProps) {
-  const isUser = message.type === "user";
+  const isUser = message.role === "user";
+  const isLoading = message.isLoading === true;
 
   console.log("isUser🍷", isUser);
 
@@ -43,7 +41,7 @@ export default function Message({ message }: MessageProps) {
               isUser ? "text-right" : "text-left"
             }`}
           >
-            {message.content}
+            {isLoading ? <LoadingBrain /> : message.content}
           </div>
         </div>
       </div>
