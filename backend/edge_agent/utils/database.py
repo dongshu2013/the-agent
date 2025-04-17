@@ -2,6 +2,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 import logging
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
 
 from edge_agent.core.config import settings
 
@@ -16,53 +19,39 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Create base class for models
 Base = declarative_base()
 
-class Database:
+class DBSessionMiddleware(BaseHTTPMiddleware):
     """
-    Database class to maintain a global database connection.
+    Middleware that attaches a database session to each request.
+    The session is available as request.state.db and is automatically
+    closed when the request is complete.
     """
-    _instance = None
-    _session = None
+    async def dispatch(self, request: Request, call_next):
+        # Create a new database session
+        db = SessionLocal()
+        # Attach it to the request state
+        request.state.db = db
+        
+        try:
+            # Process the request
+            response = await call_next(request)
+            return response
+        except Exception as e:
+            # Make sure to close the session in case of error
+            logger.error(f"Error in request: {str(e)}")
+            raise e
+        finally:
+            # Always close the session when done
+            db.close()
 
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(Database, cls).__new__(cls)
-            cls._instance._session = None
-        return cls._instance
-    
-    def init(self):
-        """
-        Initialize the database connection.
-        This should be called in the lifespan before the app starts.
-        """
-        if self._session is None:
-            logger.info("Initializing database connection")
-            self._session = SessionLocal()
-        return self._session
-    
-    def close(self):
-        """
-        Close the database connection.
-        This should be called in the lifespan after the app stops.
-        """
-        if self._session is not None:
-            logger.info("Closing database connection")
-            self._session.close()
-            self._session = None
+def get_db(request: Request) -> Session:
+    """
+    Helper function to get the database session from the request.
+    """
+    return request.state.db
 
-    def get_new_session(self) -> Session:
-        """
-        Get a new database session.
-        """
-        return SessionLocal()
-    
-    @property
-    def session(self) -> Session:
-        """
-        Get the database session.
-        """
-        if self._session is None:
-            self.init()
-        return self._session
-
-# Create a global instance of the Database class
-db = Database()
+def get_db_session():
+    session = SessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()

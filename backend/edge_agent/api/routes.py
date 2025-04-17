@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from edge_agent.core.config import settings
-from edge_agent.utils.database import db
+from edge_agent.utils.database import get_db
 from edge_agent.models.database import User, Conversation, Message
 
 logging.basicConfig(level=logging.INFO)
@@ -22,14 +22,17 @@ logger = logging.getLogger("chat_route")
 # Create a Bearer token security scheme
 bearer_scheme = HTTPBearer(auto_error=True)
 
-async def verify_api_key(credentials: HTTPAuthorizationCredentials = Security(bearer_scheme)):
+async def verify_api_key(
+    request: Request,
+    credentials: HTTPAuthorizationCredentials = Security(bearer_scheme)
+):
     """
     Verify the API key and return the associated user.
+    Uses the database session from the request state.
     """
+    db = request.state.db
     api_key = credentials.credentials
-    session = db.get_new_session()
-    user = session.query(User).filter(User.api_key == api_key, User.api_key_enabled == True).first()
-
+    user = db.query(User).filter(User.api_key == api_key, User.api_key_enabled == True).first()
     if not user:
         raise HTTPException(status_code=401, detail="Invalid or disabled API key")
     return user
@@ -80,29 +83,31 @@ llm = AsyncOpenAI(
     },
 )
 
-def get_conversation(conversation_id: str):
+def get_conversation(conversation_id: str, request: Request):
     """
     Get a conversation by ID.
     """
-    conversation = db.session.query(Conversation).filter(Conversation.id == conversation_id).first()
+    db = request.state.db
+    conversation = db.query(Conversation).filter(Conversation.id == conversation_id).first()
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
     return conversation
 
-
 @router.post("/v1/conversation/create", response_model=ConversationResponse)
 async def create_conversation(
+    request: Request,
     user: User = Depends(verify_api_key)
 ):
     """
     Create a new conversation for the authenticated user.
     """
+    db = request.state.db
     try:
         # Create a new conversation
         conversation = Conversation(user_id=user.id)
-        db.session.add(conversation)
-        db.session.commit()
-        db.session.refresh(conversation)
+        db.add(conversation)
+        db.commit()
+        db.refresh(conversation)
 
         return {
             "id": conversation.id,
@@ -117,18 +122,18 @@ async def create_conversation(
 @router.post("/v1/conversation/delete/{conversation_id}")
 async def delete_conversation(
     conversation_id: str,
+    request: Request,
     user: User = Depends(verify_api_key)
 ):
     """
     Delete a conversation by ID.
     """
+    db = request.state.db
     try:
         # Delete the conversation
-        conversation = db.session.query(Conversation).filter(Conversation.id == conversation_id).first()
-        if not conversation:
-            raise HTTPException(status_code=404, detail="Conversation not found")
-        db.session.update({"status": "deleted"})
-        db.session.commit()
+        conversation = get_conversation(conversation_id, request)
+        db.update({"status": "deleted"})
+        db.commit()
 
         return {
             "success": True
@@ -141,18 +146,23 @@ async def delete_conversation(
 async def save_message(
     conversation_id: str,
     message: ChatMessage,
+    request: Request,
     user: User = Depends(verify_api_key)
 ):
+    """
+    Save a message in a conversation.
+    """
+    db = request.state.db
     try:
-        conversation = get_conversation(conversation_id)
-        db.session.add(
+        conversation = get_conversation(conversation_id, request)
+        db.add(
             Message(
                 conversation_id=conversation.id,
                 role=message.role,
                 content=message.content
             )
         )
-        db.session.commit()
+        db.commit()
         return {"success": True}
     except Exception as e:
         logger.error(f"Error saving message: {str(e)}")
@@ -163,6 +173,9 @@ async def chat_completion(
     params: ChatCompletionCreateParam,
     user: User = Depends(verify_api_key)
 ):
+    """
+    Create a chat completion.
+    """
     try:
         if params.stream:
             return StreamingResponse(
