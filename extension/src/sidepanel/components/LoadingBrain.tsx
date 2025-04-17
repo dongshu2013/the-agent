@@ -3,17 +3,43 @@ import React from "react";
 const LoadingBrain: React.FC = () => {
   return (
     <div className="flex items-center space-x-3 text-gray-500 py-1">
+      <style>
+        {`
+          @keyframes thinking {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+          }
+          @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          @keyframes dots {
+            0%, 20% { opacity: 0; }
+            50% { opacity: 1; }
+            80%, 100% { opacity: 0; }
+          }
+          .thinking-dot {
+            animation: thinking 1.5s infinite;
+          }
+          .rotate-glow {
+            animation: rotate 3s linear infinite;
+          }
+          .loading-dot {
+            animation: dots 1.5s infinite;
+          }
+        `}
+      </style>
       <div className="relative w-6 h-6">
-        {/* 闪烁的圆圈动画 */}
+        {/* 思考动画 */}
         <div
-          className="absolute inset-0 bg-blue-500 opacity-20 rounded-full animate-ping"
-          style={{ animationDuration: "2s" }}
+          className="absolute inset-0 bg-blue-500 rounded-full thinking-dot"
+          style={{ opacity: 0.3 }}
         ></div>
 
-        {/* 旋转的光晕 */}
+        {/* 旋转光环 */}
         <div
-          className="absolute inset-0 border-2 border-blue-400 opacity-30 rounded-full animate-spin"
-          style={{ animationDuration: "3s" }}
+          className="absolute inset-0 border-2 border-blue-400 rounded-full rotate-glow"
+          style={{ opacity: 0.5 }}
         ></div>
 
         {/* 主图标 */}
@@ -34,24 +60,15 @@ const LoadingBrain: React.FC = () => {
 
       {/* 加载文字 */}
       <div className="text-sm font-medium text-gray-600">
-        思考中
+        thinking
         <span className="inline-flex ml-1">
-          <span
-            className="animate-pulse delay-0"
-            style={{ animationDuration: "1.5s" }}
-          >
+          <span className="loading-dot" style={{ animationDelay: "0s" }}>
             .
           </span>
-          <span
-            className="animate-pulse"
-            style={{ animationDuration: "1.5s", animationDelay: "0.3s" }}
-          >
+          <span className="loading-dot" style={{ animationDelay: "0.3s" }}>
             .
           </span>
-          <span
-            className="animate-pulse"
-            style={{ animationDuration: "1.5s", animationDelay: "0.6s" }}
-          >
+          <span className="loading-dot" style={{ animationDelay: "0.6s" }}>
             .
           </span>
         </span>
