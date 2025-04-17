@@ -74,15 +74,33 @@ def get_conversation(conversation_id: str):
     return conversation
 
 
-async def verify_api_key(x_api_key: str = Header(None)):
+async def verify_api_key(
+    authorization: Optional[str] = Header(None)
+):
     """
-    Verify the API key from the X-API-Key header and return the associated user.
+    Verify the API key from the Authorization header.
     This function is used as a dependency for routes that require authentication.
+
+    The Authorization header should be in the format "Bearer YOUR_API_KEY".
     """
-    if not x_api_key:
-        raise HTTPException(status_code=401, detail="API key is required")
+    # Check if Authorization header is present
+    if not authorization:
+        raise HTTPException(
+            status_code=401, 
+            detail="API key is required. Provide it in the Authorization header with 'Bearer' prefix."
+        )
     
-    user = db.session.query(User).filter(User.api_key == x_api_key, User.api_key_enabled == True).first()
+    # Extract API key from Authorization header
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401, 
+            detail="Invalid Authorization format. Use 'Bearer YOUR_API_KEY'"
+        )
+    
+    api_key = authorization.replace("Bearer ", "")
+    
+    # Verify the API key
+    user = db.session.query(User).filter(User.api_key == api_key, User.api_key_enabled == True).first()
     if not user:
         raise HTTPException(status_code=401, detail="Invalid or disabled API key")
 
@@ -136,7 +154,6 @@ async def delete_conversation(
         logger.error(f"Error deleting conversation: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error deleting conversation: {str(e)}")
 
-
 @router.post("/v1/message/save")
 async def save_message(
     conversation_id: str,
@@ -167,17 +184,61 @@ async def chat_completion(
         if params.stream:
             return StreamingResponse(
                 stream_chat_response(params),
-                media_type="text/event-stream"
+                media_type="text/event-stream",
+                headers={
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                    "Content-Type": "text/event-stream",
+                    "X-Accel-Buffering": "no"
+                }
             )
         else:
+            # For non-streaming responses, we directly pass through the OpenAI response
             response = await llm.chat.completions.create(**params.to_dict(exclude_none=True))
-            return response
+            return response.model_dump()
 
     except Exception as e:
         logger.error(f"Error in chat completion: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)}")
+        # Format error response in OpenAI-compatible format
+        error_response = {
+            "error": {
+                "message": str(e),
+                "type": "server_error",
+                "param": None,
+                "code": "server_error"
+            }
+        }
+        return JSONResponse(
+            status_code=500,
+            content=error_response
+        )
 
 async def stream_chat_response(params: ChatCompletionCreateParam):
-    stream = await llm.chat.completions.create(**params.to_dict(exclude_none=True))
-    async for chunk in stream:
-        yield chunk
+    """
+    Stream chat completions directly from the LLM provider.
+    """
+    try:
+        # Ensure stream is set to True
+        params_dict = params.to_dict(exclude_none=True)
+        params_dict["stream"] = True
+        
+        stream = await llm.chat.completions.create(**params_dict)
+        
+        # Simply pass through the chunks as they come from the provider
+        async for chunk in stream:
+            # The AsyncOpenAI client already returns properly formatted SSE chunks
+            yield chunk
+
+    except Exception as e:
+        logger.error(f"Error in streaming response: {str(e)}")
+        # Format error as SSE in OpenAI format
+        error_response = {
+            "error": {
+                "message": str(e),
+                "type": "server_error",
+                "param": None,
+                "code": "server_error"
+            }
+        }
+        yield f"data: {json.dumps(error_response)}\n\n"
+        yield "data: [DONE]\n\n"
