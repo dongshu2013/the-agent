@@ -92,6 +92,98 @@ async def create_conversation(
         logger.error(f"Error creating conversation: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error creating conversation: {str(e)}")
 
+async def process_llm_response(response, conversation_id):
+    """
+    Process a non-streaming LLM response and save it to the database.
+    Returns the role and content data.
+    """
+    # Determine the role based on the response
+    role = "assistant"
+    content_data = []
+
+    # Check if the response contains tool calls
+    if hasattr(response.choices[0].message, 'tool_calls') and response.choices[0].message.tool_calls:
+        role = "tooling"
+        # Process tool calls
+        for tool_call in response.choices[0].message.tool_calls:
+            content_data.append({
+                "type": "tool_call",
+                "tool_call": {
+                    "id": tool_call.id,
+                    "type": tool_call.type,
+                    "function": {
+                        "name": tool_call.function.name,
+                        "arguments": tool_call.function.arguments
+                    }
+                }
+            })
+    else:
+        # Regular text response
+        assistant_content = response.choices[0].message.content if response.choices else ""
+        content_data = [{"type": "text", "text": assistant_content}]
+
+    # Save the response to the database
+    save_response_to_database(conversation_id, role, content_data)
+    
+    return role, content_data
+
+def process_tool_call_chunk(tool_call_chunk, tool_calls):
+    """
+    Process a tool call chunk and update the tool_calls list.
+    Returns the updated tool_calls list.
+    """
+    # If this is an update to an existing tool call
+    if tool_call_chunk.index is not None:
+        index = tool_call_chunk.index
+
+        # Ensure we have enough tool calls in our list
+        while len(tool_calls) <= index:
+            tool_calls.append({
+                "id": None,
+                "type": None,
+                "function": {"name": "", "arguments": ""}
+            })
+
+        # Update the tool call
+        if tool_call_chunk.id:
+            tool_calls[index]["id"] = tool_call_chunk.id
+        
+        if tool_call_chunk.type:
+            tool_calls[index]["type"] = tool_call_chunk.type
+        
+        if tool_call_chunk.function:
+            if tool_call_chunk.function.name:
+                tool_calls[index]["function"]["name"] = tool_call_chunk.function.name
+            
+            if tool_call_chunk.function.arguments:
+                tool_calls[index]["function"]["arguments"] += tool_call_chunk.function.arguments
+    
+    return tool_calls
+
+def save_response_to_database(conversation_id, role, content_data):
+    """
+    Save a response to the database.
+    """
+    try:
+        assistant_message = Message(
+            conversation_id=conversation_id,
+            role=role,
+            content=content_data
+        )
+        db.session.add(assistant_message)
+        db.session.commit()
+        logger.info(f"Saved {role} response to database for conversation {conversation_id}")
+        return True
+    except Exception as db_error:
+        # If we can't save to the database, log the error but don't crash
+        logger.error(f"Failed to save response to database: {str(db_error)}")
+        # Try to rollback the session if possible
+        try:
+            db.session.rollback()
+        except:
+            pass
+        return False
+
 @router.post("/v1/chat/completions")
 async def chat_completion(
     payload: ChatCompletionRequest,
@@ -120,15 +212,9 @@ async def chat_completion(
                 model=settings.DEFAULT_MODEL
             )
 
-            assistant_content = response.choices[0].message.content if response.choices else ""
-            assistant_message = Message(
-                conversation_id=conversation.id,
-                role="assistant",
-                content=[{"type": "text", "text": assistant_content}]
-            )
-            db.session.add(assistant_message)
-            db.session.commit()
-
+            # Process and save the response
+            process_llm_response(response, conversation.id)
+            
             return response
 
     except Exception as e:
@@ -143,7 +229,9 @@ async def stream_chat_response(payload: ChatCompletionRequest, conversation_id: 
     # Initialize variables outside the try block so they're available in finally
     full_response = ""
     stream = None
-    
+    tool_calls = []
+    response_role = "assistant"
+
     try:
         # Create the streaming request to the LLM
         stream = await llm.chat.completions.create(
@@ -154,6 +242,7 @@ async def stream_chat_response(payload: ChatCompletionRequest, conversation_id: 
 
         # Process each chunk as it arrives
         async for chunk in stream:
+            # Handle content updates
             if chunk.choices[0].delta.content is not None:
                 # Add to the full response
                 full_response += chunk.choices[0].delta.content
@@ -173,6 +262,31 @@ async def stream_chat_response(payload: ChatCompletionRequest, conversation_id: 
                     }]
                 }
                 
+                # This yield will raise an exception if the client disconnects
+                yield f"data: {json.dumps(response)}\n\n"
+            
+            # Handle tool call updates
+            if hasattr(chunk.choices[0].delta, 'tool_calls') and chunk.choices[0].delta.tool_calls:
+                response_role = "tooling"
+
+                # Process tool call chunks
+                for tool_call_chunk in chunk.choices[0].delta.tool_calls:
+                    tool_calls = process_tool_call_chunk(tool_call_chunk, tool_calls)
+
+                # Format the response for streaming
+                response = {
+                    "id": chunk.id,
+                    "object": "chat.completion.chunk",
+                    "created": chunk.created,
+                    "model": chunk.model,
+                    "choices": [{
+                        "index": 0,
+                        "delta": {
+                            "tool_calls": [t for t in tool_calls if t["id"] is not None]
+                        },
+                        "finish_reason": chunk.choices[0].finish_reason
+                    }]
+                }
                 # This yield will raise an exception if the client disconnects
                 yield f"data: {json.dumps(response)}\n\n"
 
@@ -203,24 +317,26 @@ async def stream_chat_response(payload: ChatCompletionRequest, conversation_id: 
         # Clean up the stream if it exists
         if stream:
             await stream.aclose()
-        
+
         # Always save the response to the database, even if it's partial
-        if full_response:
+        if full_response or tool_calls:
             try:
-                # Save whatever response we collected
-                assistant_message = Message(
-                    conversation_id=conversation_id,
-                    role="assistant",
-                    content=[{"type": "text", "text": full_response}]
-                )
-                db.session.add(assistant_message)
-                db.session.commit()
-                logger.info(f"Saved response to database for conversation {conversation_id}")
+                # Prepare content data based on response type
+                content_data = []
+                
+                if response_role == "tooling" and tool_calls:
+                    # Format tool calls for database storage
+                    for tool_call in tool_calls:
+                        if tool_call["id"] is not None:  # Only include complete tool calls
+                            content_data.append({
+                                "type": "tool_call",
+                                "tool_call": tool_call
+                            })
+                elif full_response:
+                    # Regular text response
+                    content_data = [{"type": "text", "text": full_response}]
+                
+                if content_data:
+                    save_response_to_database(conversation_id, response_role, content_data)
             except Exception as db_error:
-                # If we can't save to the database, log the error but don't crash
                 logger.error(f"Failed to save response to database: {str(db_error)}")
-                # Try to rollback the session if possible
-                try:
-                    db.session.rollback()
-                except:
-                    pass
