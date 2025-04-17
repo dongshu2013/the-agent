@@ -2,12 +2,14 @@ interface HeaderProps {
   setShowSettings: (value: boolean) => void;
   createNewConversation: () => void;
   setShowConversationList: () => void;
+  showSettings: boolean;
 }
 
 const Header = ({
   setShowSettings,
   createNewConversation,
   setShowConversationList,
+  showSettings,
 }: HeaderProps) => {
   return (
     <div className="px-4 py-3 flex justify-between items-center bg-white">
@@ -38,7 +40,7 @@ const Header = ({
       <div className="flex items-center gap-2">
         <button
           onClick={createNewConversation}
-          className="flex items-center justify-center rounded-md w-10 h-10 border border-gray-200"
+          className="flex items-center justify-center rounded-md w-10 h-10 border border-gray-200 hover:bg-gray-50"
           aria-label="New chat"
         >
           <svg
@@ -58,8 +60,12 @@ const Header = ({
         </button>
 
         <button
-          onClick={() => setShowSettings(true)}
-          className="flex items-center justify-center rounded-md w-10 h-10 border border-gray-200"
+          onClick={() => setShowSettings(!showSettings)}
+          className={`flex items-center justify-center rounded-md w-10 h-10 border ${
+            showSettings
+              ? "bg-gray-100 border-gray-300"
+              : "border-gray-200 hover:bg-gray-50"
+          }`}
           aria-label="Settings"
         >
           <svg

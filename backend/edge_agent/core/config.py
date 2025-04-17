@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     PORT: int = 8000
     DEBUG: bool = False
 
+    PROJECT_DESCRIPTION: str = ""
+
     # CORS Settings
     CORS_ORIGINS: List[str] = [
         "https://the-agent-production.up.railway.app",

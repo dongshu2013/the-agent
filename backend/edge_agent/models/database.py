@@ -10,7 +10,7 @@ def generate_uuid():
     return str(uuid.uuid4())
 
 class User(Base):
-    __tablename__ = "users"
+    __tablename__ = "user"
 
     id = Column(String, primary_key=True, default=generate_uuid)
     username = Column(String, unique=True, nullable=False)

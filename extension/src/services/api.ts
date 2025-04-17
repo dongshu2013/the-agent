@@ -8,13 +8,6 @@ import { Storage } from "@plasmohq/storage";
 // 初始化存储
 const storage = new Storage();
 
-// 配置项键名常量
-const CONFIG_KEYS = {
-  BACKEND_URL: "BACKEND_URL",
-  API_ENDPOINT: "API_ENDPOINT",
-  API_TOKEN: "API_TOKEN",
-};
-
 // 空的可用工具数组，先暂时不启用工具调用功能
 export const AVAILABLE_TOOLS: any[] = [];
 
@@ -45,28 +38,6 @@ const debug = (message: string, data?: any) => {
   console.log(`[MIZU API] ${message}`, data || "");
 };
 
-// 获取配置项
-async function getConfig(key: string, defaultValue: string): Promise<string> {
-  try {
-    const value = await storage.get(key);
-    return value || defaultValue;
-  } catch (error) {
-    debug(`Error getting config for ${key}:`, error);
-    return defaultValue;
-  }
-}
-
-// 获取存储的 API Token
-export async function getApiToken(): Promise<string | undefined> {
-  try {
-    const token = await storage.get(CONFIG_KEYS.API_TOKEN);
-    return token || undefined;
-  } catch (error) {
-    debug("Error getting API Token:", error);
-    return undefined;
-  }
-}
-
 /**
  * Send a chat request to our backend server
  */
@@ -75,20 +46,9 @@ export const sendChatRequest = async (
   apiKey?: string
 ): Promise<ChatResponse> => {
   try {
-    // 获取后端 URL 配置
-    const BACKEND_URL = await getConfig(
-      CONFIG_KEYS.BACKEND_URL,
-      "http://localhost:8000"
-    );
-    const API_ENDPOINT = await getConfig(
-      CONFIG_KEYS.API_ENDPOINT,
-      "/v1/chat/completions"
-    );
-
-    // 如果没有提供 apiKey，尝试从存储中获取
-    if (!apiKey) {
-      apiKey = await getApiToken();
-    }
+    // 使用固定的后端URL
+    const BACKEND_URL = "http://localhost:8000";
+    const API_ENDPOINT = "/v1/chat/completions";
 
     // Send request to our backend server
     debug(`Sending request to backend: ${BACKEND_URL}${API_ENDPOINT}`);
@@ -103,9 +63,9 @@ export const sendChatRequest = async (
       "Content-Type": "application/json",
     };
 
-    // 如果提供了API key，添加到请求头作为认证令牌
+    // 如果提供了API key，添加到请求头
     if (apiKey) {
-      headers["Authorization"] = `Token ${apiKey}`;
+      headers["X-API-Key"] = apiKey;
     }
 
     debug("Backend request payload:", body);

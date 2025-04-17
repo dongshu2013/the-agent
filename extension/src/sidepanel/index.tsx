@@ -32,10 +32,6 @@ const Sidepanel = () => {
   const [showConversationList, setShowConversationList] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
-  const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(
-    null
-  );
-  const streamPausedRef = useRef<boolean>(false);
 
   // Reference to the messages end
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -141,6 +137,7 @@ const Sidepanel = () => {
         headers: {
           "Content-Type": "application/json",
           Accept: "text/event-stream",
+          "X-API-Key": apiKey,
         },
         body: JSON.stringify({
           messages: [
@@ -150,7 +147,7 @@ const Sidepanel = () => {
             },
           ],
           stream: true,
-          model: "gpt-4o-mini",
+          conversation_id: currentConversationId,
         }),
         signal: abortControllerRef.current.signal,
         mode: "cors",
@@ -245,7 +242,7 @@ const Sidepanel = () => {
           {
             id: crypto.randomUUID(),
             type: "error",
-            content: "发生错误，请重试",
+            content: error.message || "发生错误，请重试",
             timestamp: new Date(),
           },
         ]);
@@ -324,13 +321,6 @@ const Sidepanel = () => {
     toggleConversationList();
   };
 
-  // Clear current conversation
-  const handleClearConversation = async () => {
-    await clearCurrentConversation();
-    setMessages([]);
-    toggleSettings(false);
-  };
-
   // 更新设置API密钥的函数，保存到存储中
   const handleSetApiKey = (key: string) => {
     setApiKey(key);
@@ -363,6 +353,7 @@ const Sidepanel = () => {
           setShowSettings={toggleSettings}
           createNewConversation={handleCreateNewConversation}
           setShowConversationList={toggleConversationList}
+          showSettings={showSettings}
         />
       </div>
 
@@ -452,22 +443,7 @@ const Sidepanel = () => {
         </div>
       )}
 
-      {showSettings && (
-        <div className="fixed inset-0 z-50 bg-black/20">
-          <div className="absolute inset-y-0 right-0 w-[320px] bg-white shadow-xl">
-            <Settings
-              apiKey={apiKey}
-              setApiKey={handleSetApiKey}
-              setShowSettings={setShowSettings}
-              clearConversation={handleClearConversation}
-            />
-          </div>
-          <div
-            className="absolute inset-0 cursor-pointer"
-            onClick={() => setShowSettings(false)}
-          />
-        </div>
-      )}
+      {showSettings && <Settings apiKey={apiKey} setApiKey={handleSetApiKey} />}
     </div>
   );
 };
