@@ -117,24 +117,24 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
   Serializable: 'Serializable'
 });
 
-exports.Prisma.UserScalarFieldEnum = {
+exports.Prisma.UsersScalarFieldEnum = {
   id: 'id',
   username: 'username',
   email: 'email',
   api_key: 'api_key',
   api_key_enabled: 'api_key_enabled',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
+  created_at: 'created_at',
+  updated_at: 'updated_at'
 };
 
-exports.Prisma.ConversationScalarFieldEnum = {
+exports.Prisma.ConversationsScalarFieldEnum = {
   id: 'id',
   user_id: 'user_id',
   created_at: 'created_at',
   status: 'status'
 };
 
-exports.Prisma.MessageScalarFieldEnum = {
+exports.Prisma.MessagesScalarFieldEnum = {
   id: 'id',
   conversation_id: 'conversation_id',
   role: 'role',
@@ -169,9 +169,9 @@ exports.Prisma.JsonNullValueFilter = {
 
 
 exports.Prisma.ModelName = {
-  User: 'User',
-  Conversation: 'Conversation',
-  Message: 'Message'
+  users: 'users',
+  conversations: 'conversations',
+  messages: 'messages'
 };
 
 /**

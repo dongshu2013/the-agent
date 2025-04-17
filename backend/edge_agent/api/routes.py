@@ -27,7 +27,9 @@ async def verify_api_key(credentials: HTTPAuthorizationCredentials = Security(be
     Verify the API key and return the associated user.
     """
     api_key = credentials.credentials
-    user = db.session.query(User).filter(User.api_key == api_key, User.api_key_enabled == True).first()
+    session = db.get_new_session()
+    user = session.query(User).filter(User.api_key == api_key, User.api_key_enabled == True).first()
+
     if not user:
         raise HTTPException(status_code=401, detail="Invalid or disabled API key")
     return user
@@ -175,7 +177,7 @@ async def chat_completion(
             )
         else:
             # For non-streaming responses, we directly pass through the OpenAI response
-            response = await llm.chat.completions.create(**params.to_dict(exclude_none=True))
+            response = await llm.chat.completions.create(**params.to_dict())
             return response.model_dump()
 
     except Exception as e:
@@ -200,15 +202,20 @@ async def stream_chat_response(params: ChatCompletionCreateParam):
     """
     try:
         # Ensure stream is set to True
-        params_dict = params.to_dict(exclude_none=True)
+        params_dict = params.to_dict()
         params_dict["stream"] = True
         
         stream = await llm.chat.completions.create(**params_dict)
         
-        # Simply pass through the chunks as they come from the provider
+        # Format each chunk as SSE
         async for chunk in stream:
-            # The AsyncOpenAI client already returns properly formatted SSE chunks
-            yield chunk
+            # Convert the chunk to JSON string
+            chunk_data = json.dumps(chunk.model_dump())
+            # Format as SSE
+            yield f"data: {chunk_data}\n\n"
+        
+        # Send [DONE] event
+        yield "data: [DONE]\n\n"
 
     except Exception as e:
         logger.error(f"Error in streaming response: {str(e)}")

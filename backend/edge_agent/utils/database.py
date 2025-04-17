@@ -48,6 +48,12 @@ class Database:
             logger.info("Closing database connection")
             self._session.close()
             self._session = None
+
+    def get_new_session(self) -> Session:
+        """
+        Get a new database session.
+        """
+        return SessionLocal()
     
     @property
     def session(self) -> Session:

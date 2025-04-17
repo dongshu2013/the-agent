@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       const newApiKey = generateApiKey();
 
       // Update the user's API key
-      const updatedUser = await prisma.user.update({
+      const updatedUser = await prisma.users.update({
         where: { id: userId },
         data: { api_key: newApiKey },
       });
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Update the API key enabled status
-      const updatedUser = await prisma.user.update({
+      const updatedUser = await prisma.users.update({
         where: { id: userId },
         data: { api_key_enabled: enabled },
       });

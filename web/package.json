@@ -11,7 +11,11 @@
     "build": "next build --no-lint",
     "build:railway": "next build --no-lint || next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "prisma:push": "prisma db push"
   },
   "dependencies": {
     "@prisma/client": "^6.6.0",
