@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, Depends, Header, Request
+from fastapi import APIRouter, HTTPException, Depends, Header, Request, Security
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import logging
 from typing import Dict, Any, List, Optional, Union, Literal
 import json
@@ -17,6 +18,19 @@ from edge_agent.models.database import User, Conversation, Message
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("chat_route")
+
+# Create a Bearer token security scheme
+bearer_scheme = HTTPBearer(auto_error=True)
+
+async def verify_api_key(credentials: HTTPAuthorizationCredentials = Security(bearer_scheme)):
+    """
+    Verify the API key and return the associated user.
+    """
+    api_key = credentials.credentials
+    user = db.session.query(User).filter(User.api_key == api_key, User.api_key_enabled == True).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid or disabled API key")
+    return user
 
 class ChatMessage(BaseModel):
     role: str
@@ -72,39 +86,6 @@ def get_conversation(conversation_id: str):
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
     return conversation
-
-
-async def verify_api_key(
-    authorization: Optional[str] = Header(None)
-):
-    """
-    Verify the API key from the Authorization header.
-    This function is used as a dependency for routes that require authentication.
-
-    The Authorization header should be in the format "Bearer YOUR_API_KEY".
-    """
-    # Check if Authorization header is present
-    if not authorization:
-        raise HTTPException(
-            status_code=401, 
-            detail="API key is required. Provide it in the Authorization header with 'Bearer' prefix."
-        )
-    
-    # Extract API key from Authorization header
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=401, 
-            detail="Invalid Authorization format. Use 'Bearer YOUR_API_KEY'"
-        )
-    
-    api_key = authorization.replace("Bearer ", "")
-    
-    # Verify the API key
-    user = db.session.query(User).filter(User.api_key == api_key, User.api_key_enabled == True).first()
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid or disabled API key")
-
-    return user
 
 
 @router.post("/v1/conversation/create", response_model=ConversationResponse)
