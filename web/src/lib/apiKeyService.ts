@@ -9,7 +9,7 @@ export const generateApiKey = (): string => {
 // Get user's API key from database
 export const getUserApiKey = async (userId: string): Promise<string | null> => {
   try {
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { id: userId },
     });
 
@@ -33,7 +33,7 @@ export const createUserWithApiKey = async (
   try {
     const newApiKey = generateApiKey();
 
-    const user = await prisma.user.create({
+    const user = await prisma.users.create({
       data: {
         id: userId,
         username,
@@ -54,7 +54,7 @@ export const rotateApiKey = async (userId: string): Promise<string | null> => {
   try {
     const newApiKey = generateApiKey();
 
-    const updatedUser = await prisma.user.update({
+    const updatedUser = await prisma.users.update({
       where: { id: userId },
       data: { api_key: newApiKey },
     });
