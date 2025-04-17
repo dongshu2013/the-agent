@@ -12,7 +12,7 @@ const storage = new Storage();
 // 消息类型
 export interface Message {
   id: string;
-  type: "user" | "assistant" | "system";
+  type: "user" | "assistant" | "system" | "error";
   content: string;
   timestamp: Date;
   isError?: boolean;

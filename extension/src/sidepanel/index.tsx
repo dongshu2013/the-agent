@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useStorage } from "@plasmohq/storage/hook";
+import OpenAI from "openai";
 import "../../style.css";
 import Header from "./components/Header";
 import Message from "./components/Message";
@@ -93,7 +94,7 @@ const Sidepanel = () => {
   useEffect(() => {
     // init storage and get api key
     const storage = new Storage();
-    storage.get("openai_api_key").then((key) => {
+    storage.get("apiKey").then((key) => {
       if (key) setApiKey(key);
     });
   }, []);
@@ -111,150 +112,120 @@ const Sidepanel = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!prompt.trim()) return;
-
-    // 创建用户消息
-    const userMessage = {
-      id: crypto.randomUUID(),
-      type: "user", // 确保类型是 "user"
-      content: prompt.trim(),
-      timestamp: new Date(),
-    };
-
-    // 添加用户消息到消息列表
-    setMessages((prev: any) => [...prev, userMessage]);
-    setPrompt("");
-    setIsLoading(true);
-    setIsStreaming(true);
-
-    // 创建新的 AbortController
-    abortControllerRef.current = new AbortController();
-
-    try {
-      const BACKEND_URL = "http://localhost:8000";
-      const response = await fetch(`${BACKEND_URL}/v1/chat/completions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "text/event-stream",
-          "X-API-Key": apiKey,
-        },
-        body: JSON.stringify({
-          messages: [
-            {
-              role: "user",
-              content: prompt.trim(),
-            },
-          ],
-          stream: true,
-          conversation_id: currentConversationId,
-        }),
-        signal: abortControllerRef.current.signal,
-        mode: "cors",
-        credentials: "omit",
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      // 创建 AI 消息
-      const assistantMessageId = crypto.randomUUID();
-      const assistantMessage = {
-        id: assistantMessageId,
-        type: "assistant", // 确保类型是 "assistant"
-        content: "",
-        timestamp: new Date(),
-      };
-
-      setMessages((prev: any) => [...prev, assistantMessage]);
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let accumulatedContent = "";
-      let buffer = ""; // 用于处理不完整的数据
-
-      try {
-        while (true) {
-          const { done, value } = await reader!.read();
-          if (done) break;
-
-          // 解码新的数据块并添加到缓冲区
-          buffer += decoder.decode(value, { stream: true });
-
-          // 按行处理数据
-          const lines = buffer.split("\n");
-          // 保留最后一行（可能不完整）
-          buffer = lines.pop() || "";
-
-          for (const line of lines) {
-            if (line.trim() === "") continue;
-
-            if (line.startsWith("data: ")) {
-              const data = line.slice(5).trim();
-
-              // 检查是否是结束标记
-              if (data === "[DONE]") {
-                console.log("Stream completed");
-                setIsLoading(false);
-                setIsStreaming(false);
-                continue;
-              }
-
-              try {
-                const parsed = JSON.parse(data);
-                const content = parsed.choices?.[0]?.delta?.content || "";
-                if (content) {
-                  accumulatedContent += content;
-                  setMessages((prev) =>
-                    prev.map((msg) =>
-                      msg.id === assistantMessageId
-                        ? { ...msg, content: accumulatedContent }
-                        : msg
-                    )
-                  );
-                }
-              } catch (e) {
-                console.log("Skipping invalid JSON:", data);
-                continue;
-              }
-            }
-          }
-        }
-      } catch (error: any) {
-        if (error.name === "AbortError") {
-          console.log("Stream paused");
-          return;
-        }
-        throw error;
-      } finally {
-        // 确保在流结束时重置状态
-        setIsLoading(false);
-        setIsStreaming(false);
-      }
-    } catch (error: any) {
-      if (error.name === "AbortError") {
-        console.log("Stream paused");
-      } else {
-        console.error("Error:", error);
-        setMessages((prev: any) => [
-          ...prev,
+    if (!prompt.trim() || !apiKey) {
+      if (!apiKey) {
+        setMessages((prev) => [
+          ...prev.filter((m: MessageType) => m.type !== "error"),
           {
             id: crypto.randomUUID(),
-            type: "error",
-            content: error.message || "发生错误，请重试",
+            type: "error" as const,
+            content: "API Key is not set. Please configure it in settings.",
             timestamp: new Date(),
           },
         ]);
       }
-      // 确保在错误时也重置状态
+      return;
+    }
+
+    const currentPrompt = prompt.trim();
+    let assistantMessageId = crypto.randomUUID();
+
+    // Create user message
+    const userMessage: MessageType = {
+      id: crypto.randomUUID(),
+      type: "user",
+      content: currentPrompt,
+      timestamp: new Date(),
+    };
+
+    // Add user message to the list
+    setMessages((prev: MessageType[]) => [
+      ...prev.filter((m) => m.type !== "error"),
+      userMessage,
+    ]);
+    setPrompt("");
+    setIsLoading(true);
+    setIsStreaming(true);
+
+    // Create new AbortController
+    abortControllerRef.current = new AbortController();
+
+    // Instantiate OpenAI client
+    const client = new OpenAI({
+      apiKey: apiKey,
+      baseURL: "http://localhost:8000/v1",
+      dangerouslyAllowBrowser: true,
+    });
+
+    try {
+      const messagesForApi = [
+        { role: "user" as const, content: currentPrompt },
+      ];
+
+      const assistantMessage: MessageType = {
+        id: assistantMessageId,
+        type: "assistant",
+        content: "",
+        timestamp: new Date(),
+      };
+      setMessages((prev: MessageType[]) => [...prev, assistantMessage]);
+
+      // Call OpenAI compatible API
+      const stream = await client.chat.completions.create(
+        {
+          model: process.env.OPENAI_MODEL || "deepseek-chat",
+          messages: messagesForApi,
+          stream: true,
+        },
+        { signal: abortControllerRef.current?.signal }
+      );
+
+      let accumulatedContent = "";
+      for await (const chunk of stream) {
+        if (abortControllerRef.current === null) {
+          console.log("Stream processing aborted externally.");
+          break;
+        }
+        const content = chunk.choices[0]?.delta?.content || "";
+        if (content) {
+          accumulatedContent += content;
+          setMessages((prev: MessageType[]) =>
+            prev.map((msg: MessageType) =>
+              msg.id === assistantMessageId
+                ? { ...msg, content: accumulatedContent }
+                : msg
+            )
+          );
+        }
+        if (chunk.choices[0]?.finish_reason === "stop") {
+          console.log("Stream finished.");
+          break;
+        }
+      }
+      console.log("Stream processing complete.");
+    } catch (error: any) {
+      if (error.name === "AbortError") {
+        console.log("Stream aborted by user.");
+      } else {
+        console.error("API Call Error:", error);
+        const errorContent =
+          error.response?.data?.error?.message ||
+          error.message ||
+          "An unexpected error occurred. Please check the console.";
+        setMessages((prev: MessageType[]) => [
+          ...prev.filter((m: MessageType) => m.id !== assistantMessageId),
+          {
+            id: crypto.randomUUID(),
+            type: "error",
+            content: errorContent,
+            timestamp: new Date(),
+          },
+        ]);
+      }
+    } finally {
       setIsLoading(false);
       setIsStreaming(false);
-    } finally {
-      // 移除这个 finally 块中的状态重置，因为我们已经在其他地方处理了
-      if (!abortControllerRef.current) {
-        abortControllerRef.current = null;
-      }
+      abortControllerRef.current = null;
     }
   };
 
