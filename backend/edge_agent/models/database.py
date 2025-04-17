@@ -10,7 +10,7 @@ def generate_uuid():
     return str(uuid.uuid4())
 
 class User(Base):
-    __tablename__ = "user"
+    __tablename__ = "User"
 
     id = Column(String, primary_key=True, default=generate_uuid)
     username = Column(String, unique=True, nullable=False)
@@ -28,10 +28,10 @@ class User(Base):
 
 
 class Conversation(Base):
-    __tablename__ = "conversations"
+    __tablename__ = "Conversation"
 
     id = Column(String, primary_key=True, default=generate_uuid)
-    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    user_id = Column(String, ForeignKey("User.id"), nullable=False)
     created_at = Column(DateTime, default=func.now(), nullable=False)
     status = Column(String, default="active", nullable=False)  # "active" or "deleted"
 
@@ -44,10 +44,10 @@ class Conversation(Base):
 
 
 class Message(Base):
-    __tablename__ = "messages"
+    __tablename__ = "Message"
 
     id = Column(String, primary_key=True, default=generate_uuid)
-    conversation_id = Column(String, ForeignKey("conversations.id"), nullable=False)
+    conversation_id = Column(String, ForeignKey("Conversation.id"), nullable=False)
     role = Column(String, nullable=False)  # "system", "user", "assistant", or "tooling"
     content = Column(JSON, nullable=False)  # Array of text_message or image_message objects
     created_at = Column(DateTime, default=func.now(), nullable=False)
