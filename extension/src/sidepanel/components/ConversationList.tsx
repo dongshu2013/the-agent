@@ -6,7 +6,7 @@ interface ConversationListProps {
   currentConversationId: string | null;
   selectConversation: (id: string) => void;
   deleteConversation: (id: string, e: React.MouseEvent) => void;
-  setShowConversationList: () => void;
+  setShowConversationList: (show: boolean) => void;
 }
 
 const ConversationList = ({
@@ -17,93 +17,96 @@ const ConversationList = ({
   setShowConversationList,
 }: ConversationListProps) => {
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-4 py-3 border-b">
-        <button
-          onClick={() => setShowConversationList()}
-          className="p-1 hover:bg-gray-100 rounded text-gray-500 active:scale-95 transition-transform"
-          aria-label="Close history"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            className="w-4 h-4"
-          >
-            <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-          </svg>
-        </button>
-      </div>
-
+    <div className="fixed inset-0 z-50">
+      {/* 背景遮罩，点击关闭会话列表 */}
       <div
-        className="flex-1"
+        className="absolute inset-0 bg-black/20 cursor-pointer"
+        onClick={() => setShowConversationList(false)}
+      />
+
+      {/* 会话列表容器 */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-[300px] shadow-xl rounded-r-lg border-r border-gray-200 z-10"
         style={{
           backgroundColor: "#fff",
-          boxShadow: "0 0 15px 0 rgba(0, 0, 0, 0.15)",
-          borderRight: "1px solid rgba(0, 0, 0, 0.1)",
-          height: "92%",
-          overflowY: "auto",
+          top: "50px",
+          bottom: "150px",
+          height: "auto",
+          overflow: "hidden",
         }}
       >
-        {conversations && conversations.length > 0 ? (
-          <nav className="px-2 pb-2 space-y-1">
-            {conversations.map((conversation) => (
-              <div
-                key={conversation.id}
-                className={`group flex items-center gap-2 rounded-md px-3 py-2 text-sm cursor-pointer active:scale-98 transition-transform ${
-                  conversation.id === currentConversationId
-                    ? "bg-gray-100 text-gray-900"
-                    : "text-gray-600 hover:bg-gray-50"
-                }`}
-                onClick={() => selectConversation(conversation.id)}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className="w-4 h-4 text-gray-500 flex-shrink-0"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M2 10c0-3.967 3.69-7 8-7 4.31 0 8 3.033 8 7s-3.69 7-8 7a9.165 9.165 0 01-1.504-.123 5.976 5.976 0 01-3.935 1.107.75.75 0 01-.584-1.143 3.478 3.478 0 00.522-1.756C2.979 13.825 2 12.025 2 10z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                <span className="truncate flex-1">
-                  {conversation.messages.length > 0
-                    ? conversation.messages[0].content
-                    : "New Chat"}
-                </span>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteConversation(conversation.id, e);
-                  }}
-                  className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-gray-700 active:scale-95 transition-transform"
-                  aria-label="Delete conversation"
-                  style={{ background: "none", border: "none", padding: 0 }}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    className="w-4 h-4"
+        <div className="flex flex-col h-full">
+          <div
+            className="flex-1"
+            style={{
+              backgroundColor: "#fff",
+              boxShadow: "0 0 15px 0 rgba(0, 0, 0, 0.15)",
+              borderRight: "1px solid rgba(0, 0, 0, 0.1)",
+              overflowY: "auto",
+              height: "100%",
+            }}
+          >
+            {conversations && conversations.length > 0 ? (
+              <nav className="px-2 pb-6 pt-2 space-y-1">
+                {conversations.map((conversation) => (
+                  <div
+                    key={conversation.id}
+                    className={`group flex items-center gap-2 rounded-md px-3 py-2 text-sm cursor-pointer active:scale-98 transition-transform ${
+                      conversation.id === currentConversationId
+                        ? "bg-gray-100 text-gray-900"
+                        : "text-gray-600 hover:bg-gray-50"
+                    }`}
+                    onClick={() => selectConversation(conversation.id)}
                   >
-                    <path
-                      fillRule="evenodd"
-                      d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </button>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="w-4 h-4 text-blue-600 flex-shrink-0"
+                    >
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg>
+                    <span className="truncate flex-1">
+                      {conversation.messages.length > 0
+                        ? conversation.messages[0].content
+                        : "New Chat"}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteConversation(conversation.id, e);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-gray-700 active:scale-95 transition-transform z-20 ml-auto"
+                      aria-label="Delete conversation"
+                      style={{ background: "none", border: "none", padding: 0 }}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                        className="w-4 h-4"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </nav>
+            ) : (
+              <div className="flex items-center justify-center h-32">
+                <p className="text-sm text-gray-500">No conversations yet</p>
               </div>
-            ))}
-          </nav>
-        ) : (
-          <div className="flex items-center justify-center h-32">
-            <p className="text-sm text-gray-500">No conversations yet</p>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

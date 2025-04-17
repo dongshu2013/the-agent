@@ -267,9 +267,10 @@ const Sidepanel = () => {
     }
   };
 
-  const toggleConversationList = async () => {
-    // 即将打开会话列表时，先刷新会话数据
-    const willShow = !showConversationList;
+  const toggleConversationList = async (value?: boolean) => {
+    // 根据参数或当前状态确定新状态
+    const willShow = value !== undefined ? value : !showConversationList;
+
     if (willShow) {
       try {
         setIsLoading(true);
@@ -309,7 +310,7 @@ const Sidepanel = () => {
       if (conversation) {
         setMessages(conversation.messages);
         setCurrentConversationId(id);
-        toggleConversationList();
+        // 不再自动关闭会话列表
       }
     } finally {
       setIsLoading(false);
@@ -330,11 +331,18 @@ const Sidepanel = () => {
       await deleteConv(id);
       console.log("Conversation deleted successfully");
 
+      // 从缓存中删除会话
+      setConversations((prev) => (prev ? prev.filter((c) => c.id !== id) : []));
+
       // If delete current conversation, select another conversation
       if (id === currentConversationId) {
         const remaining = conversations.filter((c) => c.id !== id);
         if (remaining.length > 0) {
-          await handleSelectConversation(remaining[0].id);
+          const conversation = await selectConv(remaining[0].id);
+          if (conversation) {
+            setMessages(conversation.messages);
+            setCurrentConversationId(remaining[0].id);
+          }
         } else {
           const newConv = await createNewConversation();
           setConversations([newConv]);
@@ -524,21 +532,15 @@ const Sidepanel = () => {
 
       {/* 浮动面板 */}
       {showConversationList && (
-        <div className="fixed z-50 bg-black/20">
-          <div className="absolute left-0 h-full w-[300px] shadow-xl rounded-r-lg overflow-hidden border-r border-gray-200">
-            <ConversationList
-              conversations={conversations}
-              currentConversationId={currentConversationId}
-              selectConversation={handleSelectConversation}
-              deleteConversation={handleDeleteConversation}
-              setShowConversationList={toggleConversationList}
-            />
-          </div>
-          <div
-            className="absolute inset-0 cursor-pointer"
-            onClick={() => setShowConversationList(false)}
-          />
-        </div>
+        <ConversationList
+          conversations={conversations}
+          currentConversationId={currentConversationId}
+          selectConversation={handleSelectConversation}
+          deleteConversation={handleDeleteConversation}
+          setShowConversationList={(show: boolean) =>
+            toggleConversationList(show)
+          }
+        />
       )}
 
       {showSettings && <Settings apiKey={apiKey} setApiKey={handleSetApiKey} />}

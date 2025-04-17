@@ -77,15 +77,15 @@ export const createConversationApi = async (
 
     // 如果提供了API key，添加到请求头
     if (apiKey) {
-      // 只使用X-API-Key作为认证方式
-      headers["X-API-Key"] = apiKey;
+      // 使用Bearer Token作为认证方式
+      headers["Authorization"] = `Bearer ${apiKey}`;
     } else {
       debug("Warning: No API key provided for conversation creation");
       // 尝试从localStorage读取apiKey
       try {
         const storedApiKey = localStorage.getItem("apiKey");
         if (storedApiKey) {
-          headers["X-API-Key"] = storedApiKey;
+          headers["Authorization"] = `Bearer ${storedApiKey}`;
           debug("Using API key from localStorage");
         }
       } catch (e) {
@@ -96,7 +96,7 @@ export const createConversationApi = async (
     // 打印headers以便调试（不包含API key值）
     debug("Request headers:", {
       ...headers,
-      "X-API-Key": headers["X-API-Key"] ? "[REDACTED]" : undefined,
+      Authorization: headers["Authorization"] ? "[REDACTED]" : undefined,
     });
 
     // 发送请求到后端

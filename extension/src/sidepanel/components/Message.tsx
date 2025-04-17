@@ -41,7 +41,17 @@ export default function Message({ message }: MessageProps) {
               isUser ? "text-right" : "text-left"
             }`}
           >
-            {isLoading ? <LoadingBrain /> : message.content}
+            {isLoading ? (
+              <div className="flex items-center space-x-2">
+                <div className="animate-pulse flex space-x-1">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                  <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                  <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                </div>
+              </div>
+            ) : (
+              message.content
+            )}
           </div>
         </div>
       </div>

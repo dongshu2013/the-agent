@@ -178,7 +178,11 @@ export const deleteConversation = async (id: string): Promise<void> => {
       throw new Error(response.error || "Failed to delete conversation");
     }
 
-    cacheManager.delete("conversations");
+    // 清除所有相关缓存
+    cacheManager.delete("conversations"); // 清除会话列表缓存
+    cacheManager.delete(`messages_${id}`); // 清除该会话的消息缓存
+
+    console.log(`Conversation ${id} deleted successfully and cache cleared`);
   } catch (error) {
     console.error("Error deleting conversation:", error);
     throw error;

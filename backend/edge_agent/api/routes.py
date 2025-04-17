@@ -136,7 +136,13 @@ async def delete_conversation(
     try:
         # Delete the conversation
         conversation = get_conversation(conversation_id, request)
-        db.update({"status": "deleted"})
+        
+        # 检查会话是否属于当前用户
+        if conversation.user_id != user.id:
+            raise HTTPException(status_code=403, detail="You don't have permission to delete this conversation")
+        
+        # 更新会话状态为已删除
+        conversation.status = "deleted"
         db.commit()
 
         return {
@@ -285,9 +291,7 @@ async def get_user_conversations(
             if conversation.id not in conversations_map:
                 conversations_map[conversation.id] = {
                     "id": conversation.id,
-                    "title": conversation.title or "New Chat",
                     "created_at": conversation.created_at.isoformat(),
-                    "updated_at": conversation.updated_at.isoformat(),
                     "messages": []
                 }
             
