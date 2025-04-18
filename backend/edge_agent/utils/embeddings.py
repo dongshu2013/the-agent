@@ -73,11 +73,11 @@ async def update_message_embedding(message: Message, db: Session) -> Message:
         
         # Generate embedding
         embedding = await generate_embedding(text)
-        
+
         # Update message with embedding
         message.embedding = embedding
         db.commit()
-        
+
         return message
     except Exception as e:
         logger.error(f"Error updating message embedding: {str(e)}")

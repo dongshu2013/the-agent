@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends, Header, Request, Security
+from fastapi import APIRouter, HTTPException, Depends, Header, Request, Security, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -17,8 +17,8 @@ from edge_agent.utils.database import get_db
 from edge_agent.models.database import User, Conversation, Message
 from edge_agent.utils.embeddings import (
     update_message_embedding,
-    update_all_messages_embeddings,
-    find_similar_messages
+    find_similar_messages,
+    extract_text_from_content
 )
 
 logging.basicConfig(level=logging.INFO)
@@ -77,14 +77,20 @@ class ConversationResponse(BaseModel):
     created_at: str
     status: str
 
-class SaveMessageRequest(BaseModel):
+class MessageSearchRequest(BaseModel):
+    message: str
     conversation_id: str
-    message: ChatMessage
+    k: int = 3
 
 class SimilaritySearchRequest(BaseModel):
     query: str
     limit: int = 5
     conversation_id: Optional[str] = None
+
+class SaveMessageRequest(BaseModel):
+    conversation_id: str
+    role: str
+    content: Union[str, List[Dict[str, Any]]]
 
 router = APIRouter(tags=["chat"])
 
@@ -107,6 +113,48 @@ def get_conversation(conversation_id: str, request: Request):
         raise HTTPException(status_code=404, detail="Conversation not found")
     return conversation
 
+@router.get("/v1/conversation/list", response_model=List[dict])
+async def get_user_conversations(
+    request: Request,
+    user: User = Depends(verify_api_key)
+):
+    db = request.state.db
+    try:
+        query = db.query(
+            Conversation, Message
+        ).outerjoin(
+            Message, Conversation.id == Message.conversation_id
+        ).filter(
+            Conversation.user_id == user.id,
+            Conversation.status != "deleted"
+        ).order_by(
+            Conversation.created_at.desc(),
+            Message.created_at.asc()
+        ).all()
+
+        conversations_map = {}
+        for conversation, message in query:
+            if conversation.id not in conversations_map:
+                conversations_map[conversation.id] = {
+                    "id": conversation.id,
+                    "created_at": conversation.created_at.isoformat(),
+                    "messages": []
+                }
+
+            if message:
+                conversations_map[conversation.id]["messages"].append({
+                    "id": message.id,
+                    "role": message.role,
+                    "content": message.content,
+                    "timestamp": message.created_at.isoformat()
+                })
+
+        result = list(conversations_map.values())
+        return result
+    except Exception as e:
+        logger.error(f"Error fetching user conversations: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching conversations: {str(e)}")
+
 @router.post("/v1/conversation/create", response_model=ConversationResponse)
 async def create_conversation(
     request: Request,
@@ -117,7 +165,6 @@ async def create_conversation(
     """
     db = request.state.db
     try:
-        # Create a new conversation
         conversation = Conversation(user_id=user.id)
         db.add(conversation)
         db.commit()
@@ -162,41 +209,6 @@ async def delete_conversation(
         logger.error(f"Error deleting conversation: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error deleting conversation: {str(e)}")
 
-@router.post("/v1/message/save")
-async def save_message(
-    request_body: SaveMessageRequest,
-    request: Request,
-    user: User = Depends(verify_api_key)
-):
-    """
-    Save a message in a conversation.
-    """
-    db = request.state.db
-    try:
-        conversation = get_conversation(request_body.conversation_id, request)
-        message = Message(
-            conversation_id=conversation.id,
-            role=request_body.message.role,
-            content=request_body.message.content
-        )
-        db.add(message)
-        db.commit()
-        db.refresh(message)
-        
-        return {
-            "success": True,
-            "data": {
-                "id": message.id,
-                "conversation_id": message.conversation_id,
-                "role": message.role,
-                "content": message.content,
-                "created_at": message.created_at.isoformat()
-            }
-        }
-    except Exception as e:
-        logger.error(f"Error saving message: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error saving message: {str(e)}")
-
 @router.post("/v1/chat/completions")
 async def chat_completion(
     params: ChatCompletionCreateParam,
@@ -218,13 +230,11 @@ async def chat_completion(
                 }
             )
         else:
-            # For non-streaming responses, we directly pass through the OpenAI response
             response = await llm.chat.completions.create(**params.to_dict())
             return response.model_dump()
 
     except Exception as e:
         logger.error(f"Error in chat completion: {str(e)}")
-        # Format error response in OpenAI-compatible format
         error_response = {
             "error": {
                 "message": str(e),
@@ -243,25 +253,16 @@ async def stream_chat_response(params: ChatCompletionCreateParam):
     Stream chat completions directly from the LLM provider.
     """
     try:
-        # Ensure stream is set to True
-        params_dict = params.to_dict()
-        params_dict["stream"] = True
-        
+        params_dict = params.to_dict()        
         stream = await llm.chat.completions.create(**params_dict)
-        
-        # Format each chunk as SSE
+
         async for chunk in stream:
-            # Convert the chunk to JSON string
             chunk_data = json.dumps(chunk.model_dump())
-            # Format as SSE
             yield f"data: {chunk_data}\n\n"
-        
-        # Send [DONE] event
         yield "data: [DONE]\n\n"
 
     except Exception as e:
         logger.error(f"Error in streaming response: {str(e)}")
-        # Format error as SSE in OpenAI format
         error_response = {
             "error": {
                 "message": str(e),
@@ -273,166 +274,95 @@ async def stream_chat_response(params: ChatCompletionCreateParam):
         yield f"data: {json.dumps(error_response)}\n\n"
         yield "data: [DONE]\n\n"
 
-@router.post("/v1/messages/search", response_model=List[dict])
-async def search_similar_messages(
+@router.post("/v1/message/save", response_model=Dict[str, Any])
+async def save_message(
     request: Request,
-    search_params: SimilaritySearchRequest,
-    user: User = Depends(verify_api_key)
+    message_data: SaveMessageRequest,
+    user: User = Depends(verify_api_key),
+    background_tasks: BackgroundTasks
 ):
     """
-    Search for messages similar to the query text using vector similarity.
+    Save a message to a conversation and generate its embedding.
     """
     db = request.state.db
     
     try:
-        # Find similar messages
-        similar_messages = await find_similar_messages(
-            query_text=search_params.query,
-            limit=search_params.limit,
-            db=db
+        conversation = db.query(Conversation).filter(
+            Conversation.id == message_data.conversation_id,
+            Conversation.user_id == user.id
+        ).first()
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found or not authorized")
+        
+        message = Message(
+            conversation_id=message_data.conversation_id,
+            role=message_data.role,
+            content=message_data.content
         )
-        
-        # Filter by conversation_id if provided
-        if search_params.conversation_id:
-            similar_messages = [
-                msg for msg in similar_messages 
-                if msg.conversation_id == search_params.conversation_id
-            ]
-        
-        # Convert messages to dict for response
-        result = []
-        for msg in similar_messages:
-            # Get the conversation to check if it belongs to the user
-            conversation = db.query(Conversation).filter(
-                Conversation.id == msg.conversation_id
-            ).first()
-            
-            # Only include messages from conversations owned by the user
-            if conversation and conversation.user_id == user.id:
-                result.append({
-                    "id": msg.id,
-                    "conversation_id": msg.conversation_id,
-                    "role": msg.role,
-                    "content": msg.content,
-                    "created_at": msg.created_at.isoformat(),
-                })
-        
-        return result
-    
+        db.add(message)
+        db.commit()
+        db.refresh(message)
+
+        # Always add the embedding generation task
+        background_tasks.add_task(update_message_embedding, message, db)
+
+        return {
+            "success": True,
+            "data": {
+                "id": message.id,
+                "created_at": message.created_at.isoformat()
+            },
+            "message": "Message saved successfully"
+        }
+
+    except Exception as e:
+        logger.error(f"Error saving message: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error saving message: {str(e)}")
+
+@router.post("/v1/message/search", response_model=List[dict])
+async def search_similar_messages(
+    request: Request,
+    search_params: MessageSearchRequest,
+    user: User = Depends(verify_api_key)
+):
+    """
+    Search for messages similar to the given message in the specified conversation.
+    Returns the top k most similar messages.
+    """
+    db = request.state.db
+
+    try:
+        # Check if conversation exists and belongs to user
+        conversation = db.query(Conversation).filter(
+            Conversation.id == search_params.conversation_id,
+            Conversation.user_id == user.id
+        ).first()
+
+        if not conversation:
+            raise HTTPException(status_code=404, detail="Conversation not found or not authorized")
+
+        # Generate embedding for the query message
+        query_embedding = await generate_embedding(search_params.message)
+
+        # Use raw SQL to perform vector similarity search within the conversation
+        result = db.execute(
+            """
+            SELECT id, conversation_id, role, content, created_at, 
+                   embedding <-> :query_embedding AS distance
+            FROM messages
+            WHERE conversation_id = :conversation_id
+              AND embedding IS NOT NULL
+            ORDER BY distance
+            LIMIT :limit
+            """,
+            {
+                "query_embedding": query_embedding,
+                "conversation_id": search_params.conversation_id,
+                "limit": search_params.k
+            }
+        ).all()
+        return [row.id for row in result]
+
     except Exception as e:
         logger.error(f"Error searching similar messages: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error searching messages: {str(e)}")
-
-@router.post("/v1/messages/generate-embeddings", response_model=dict)
-async def generate_embeddings(
-    request: Request,
-    user: User = Depends(verify_api_key)
-):
-    """
-    Generate embeddings for all messages that don't have them yet.
-    This is an admin-only endpoint.
-    """
-    # Check if user has admin privileges (you may want to implement a proper admin check)
-    if user.username != "admin":
-        raise HTTPException(status_code=403, detail="Admin privileges required")
-    
-    db = request.state.db
-    
-    try:
-        # Update embeddings for all messages
-        updated_count = await update_all_messages_embeddings(db)
-        
-        return {
-            "status": "success",
-            "updated_count": updated_count,
-            "message": f"Successfully updated embeddings for {updated_count} messages"
-        }
-    
-    except Exception as e:
-        logger.error(f"Error generating embeddings: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error generating embeddings: {str(e)}")
-
-@router.post("/v1/messages/{message_id}/generate-embedding", response_model=dict)
-async def generate_message_embedding(
-    request: Request,
-    message_id: str,
-    user: User = Depends(verify_api_key)
-):
-    """
-    Generate embedding for a specific message.
-    """
-    db = request.state.db
-    
-    # Find the message
-    message = db.query(Message).filter(Message.id == message_id).first()
-    if not message:
-        raise HTTPException(status_code=404, detail="Message not found")
-    
-    # Check if the message belongs to a conversation owned by the user
-    conversation = db.query(Conversation).filter(
-        Conversation.id == message.conversation_id
-    ).first()
-    
-    if not conversation or conversation.user_id != user.id:
-        raise HTTPException(status_code=403, detail="Not authorized to access this message")
-    
-    try:
-        # Update the message embedding
-        await update_message_embedding(message, db)
-        
-        return {
-            "status": "success",
-            "message": f"Successfully generated embedding for message {message_id}"
-        }
-    
-    except Exception as e:
-        logger.error(f"Error generating embedding for message {message_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error generating embedding: {str(e)}")
-
-@router.get("/v1/conversation/list", response_model=List[dict])
-async def get_user_conversations(
-    request: Request,
-    user: User = Depends(verify_api_key)
-):
-    db = request.state.db
-    try:
-        # 使用JOIN一次性获取所有会话及其消息
-        query = db.query(
-            Conversation, Message
-        ).outerjoin(
-            Message, Conversation.id == Message.conversation_id
-        ).filter(
-            Conversation.user_id == user.id,
-            Conversation.status != "deleted"
-        ).order_by(
-            Conversation.created_at.desc(),
-            Message.created_at.asc()
-        ).all()
-        
-        # 使用字典整理数据，避免多次查询
-        conversations_map = {}
-        
-        for conversation, message in query:
-            # 如果会话不在字典中，添加它
-            if conversation.id not in conversations_map:
-                conversations_map[conversation.id] = {
-                    "id": conversation.id,
-                    "created_at": conversation.created_at.isoformat(),
-                    "messages": []
-                }
-            
-            # 如果有消息，添加到对应会话
-            if message:
-                conversations_map[conversation.id]["messages"].append({
-                    "id": message.id,
-                    "role": message.role,
-                    "content": message.content,
-                    "timestamp": message.created_at.isoformat()
-                })
-        
-        # 转换为列表并返回
-        result = list(conversations_map.values())
-        return result
-    except Exception as e:
-        logger.error(f"Error fetching user conversations: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error fetching conversations: {str(e)}")
