@@ -478,17 +478,50 @@ const Sidepanel = () => {
       >
         <div className="max-w-3xl mx-auto p-4">
           {messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16">
-              <h1 className="text-3xl font-semibold text-gray-800 tracking-tight mb-4">
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "64px 0",
+              }}
+            >
+              <h1
+                style={{
+                  fontSize: "28px",
+                  fontWeight: 600,
+                  color: "#1f2937",
+                  marginBottom: "16px",
+                  letterSpacing: "-0.025em",
+                }}
+              >
                 Welcome to MIZU
               </h1>
-              <p className="text-base text-gray-600 text-center mb-8 leading-relaxed max-w-md">
+              <p
+                style={{
+                  fontSize: "16px",
+                  color: "#4b5563",
+                  textAlign: "center",
+                  marginBottom: "32px",
+                  lineHeight: "1.6",
+                  maxWidth: "450px",
+                }}
+              >
                 Start a new conversation to explore the AI's capabilities.
-                <br className="hidden sm:block" />
+                <br />
                 Ask a question, get help, or brainstorm ideas.
               </p>
               {!apiKey && (
-                <p className="text-sm text-gray-500 text-center max-w-sm leading-relaxed">
+                <p
+                  style={{
+                    fontSize: "14px",
+                    color: "#6b7280",
+                    textAlign: "center",
+                    maxWidth: "400px",
+                    lineHeight: "1.5",
+                  }}
+                >
                   You haven't set up your API key yet. Click the settings icon
                   in the top right corner to add your key for full
                   functionality.
@@ -543,7 +576,13 @@ const Sidepanel = () => {
         />
       )}
 
-      {showSettings && <Settings apiKey={apiKey} setApiKey={handleSetApiKey} />}
+      {showSettings && (
+        <Settings
+          apiKey={apiKey}
+          setApiKey={handleSetApiKey}
+          onClose={() => toggleSettings(false)}
+        />
+      )}
     </div>
   );
 };

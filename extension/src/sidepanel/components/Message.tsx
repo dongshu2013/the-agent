@@ -11,38 +11,63 @@ interface MessageProps {
 export default function Message({ message }: MessageProps) {
   const isUser = message.role === "user";
   const isLoading = message.isLoading === true;
-
-  console.log("isUser🍷", isUser);
+  const isError = message.role === "error";
 
   return (
-    <div className="mb-4">
+    <div style={{ marginBottom: "16px" }}>
       {/* 用户消息靠右，AI消息靠左 */}
       <div
         style={{
           display: "flex",
           justifyContent: isUser ? "flex-end" : "flex-start",
-          // backgroundColor: isUser ? "#a4f4fd" : "#fff",
+          marginLeft: isUser ? "20%" : "0",
+          marginRight: !isUser ? "20%" : "0",
         }}
       >
         {/* AI头像只在AI消息时显示，且在左侧 */}
-        {!isUser && (
-          <div className="flex-shrink-0 mr-2">
-            <img src={aiIcon} alt="AI" className="w-6 h-6" />
+        {!isUser && !isError && (
+          <div style={{ flexShrink: 0, marginRight: "8px" }}>
+            <img
+              src={aiIcon}
+              alt="AI"
+              style={{ width: "24px", height: "24px" }}
+            />
           </div>
         )}
 
         {/* 消息内容容器 */}
         <div
-          className={`flex flex-col ${isUser ? "items-end" : "items-start"}`}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: isUser ? "flex-end" : "flex-start",
+            maxWidth: "100%",
+          }}
         >
           {/* 消息内容 */}
           <div
-            className={`inline-block max-w-[80%] px-4 py-2 ${
-              isUser ? "text-right" : "text-left"
-            }`}
+            style={{
+              display: "inline-block",
+              maxWidth: "100%",
+              padding: "10px 16px",
+              textAlign: isUser ? "left" : "left",
+              fontSize: "15px",
+              lineHeight: "1.5",
+              backgroundColor: isUser
+                ? "#f2f2f2"
+                : isError
+                  ? "#fee2e2"
+                  : "transparent",
+              borderRadius: "18px",
+              boxShadow: isUser ? "0 1px 2px rgba(0, 0, 0, 0.05)" : "none",
+              color: isError ? "#b91c1c" : "#333333",
+              wordBreak: "break-word",
+            }}
           >
             {isLoading ? (
-              <div className="flex items-center space-x-2">
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "8px" }}
+              >
                 <LoadingBrain />
               </div>
             ) : (

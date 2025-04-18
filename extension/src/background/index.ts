@@ -43,15 +43,7 @@ async function initializeConfig() {
 
 // 设置面板行为
 chrome.runtime.onInstalled.addListener(async () => {
-  // 初始化配置
   await initializeConfig();
-
-  // 设置侧边面板在点击扩展图标时打开
-  if (chrome.sidePanel) {
-    chrome.sidePanel
-      .setPanelBehavior({ openPanelOnActionClick: true })
-      .catch((error) => console.error("Error setting panel behavior:", error));
-  }
 
   // 添加右键菜单
   chrome.contextMenus.create({
@@ -59,24 +51,53 @@ chrome.runtime.onInstalled.addListener(async () => {
     title: "Analyze with MIZU",
     contexts: ["selection"],
   });
-
-  console.log("MIZU Agent Extension installed successfully");
 });
 
-// 添加点击处理程序作为备用
-chrome.action.onClicked.addListener((tab) => {
-  // 当点击扩展图标时强制打开侧边面板
-  try {
-    if (chrome.sidePanel) {
-      // 检查是否可以为此窗口打开侧边面板
-      if (tab.windowId) {
-        chrome.sidePanel.open({ windowId: tab.windowId });
-      }
+// 检查并设置扩展图标点击事件
+if (chrome.action) {
+  chrome.action.onClicked.addListener(async (tab) => {
+    console.log("Extension icon clicked", tab);
+
+    if (!tab?.id) {
+      console.error("Invalid tab id");
+      return;
     }
-  } catch (error) {
-    console.error("Error opening side panel:", error);
-  }
-});
+
+    try {
+      // 检查是否支持侧边栏
+      if (chrome.sidePanel) {
+        try {
+          // 尝试使用侧边栏
+          await chrome.sidePanel.setOptions({
+            enabled: true,
+            path: "sidepanel.html",
+          });
+          await chrome.sidePanel.open({ windowId: tab.windowId });
+          console.log("Side panel opened successfully");
+          return;
+        } catch (sidePanelError) {
+          console.error("Failed to open side panel:", sidePanelError);
+        }
+      }
+
+      // 如果侧边栏不可用或打开失败，使用弹出窗口
+      console.log("Falling back to popup window");
+      await chrome.windows.create({
+        url: chrome.runtime.getURL("sidepanel.html"),
+        type: "popup",
+        width: 400,
+        height: 600,
+        top: 20,
+        left: screen.availWidth - 420,
+      });
+      console.log("Popup window opened successfully");
+    } catch (error) {
+      console.error("Error in extension click handler:", error);
+    }
+  });
+} else {
+  console.error("chrome.action API is not available");
+}
 
 // 处理来自侧边面板的消息
 chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
@@ -171,18 +192,22 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
   }
 });
 
-// 处理右键菜单点击
+// 更新右键菜单点击处理程序以保持一致性
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (info.menuItemId === "mizu-agent" && info.selectionText) {
-    // 打开侧边面板并发送选中的文本
-    if (tab?.windowId && chrome.sidePanel) {
-      chrome.sidePanel.open({ windowId: tab.windowId }).then(() => {
-        // 发送选中的文本到侧边面板
-        chrome.runtime.sendMessage({
-          name: "selected-text",
-          text: info.selectionText,
+  if (info.menuItemId === "mizu-agent" && info.selectionText && tab?.windowId) {
+    // 使用 windowId 打开侧边栏
+    chrome.sidePanel
+      .setOptions({
+        enabled: true,
+        path: "sidepanel.html",
+      })
+      .then(() => {
+        chrome.sidePanel.open({ windowId: tab.windowId }).then(() => {
+          chrome.runtime.sendMessage({
+            name: "selected-text",
+            text: info.selectionText,
+          });
         });
       });
-    }
   }
 });

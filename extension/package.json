@@ -1,7 +1,7 @@
 {
   "name": "mizu-agent",
   "version": "1.0.0",
-  "description": "Mizu Agent - AI Powered Chrome Extension",
+  "description": "MIZU Agent - AI Powered Chrome Extension",
   "scripts": {
     "dev": "plasmo dev",
     "build": "plasmo build",
