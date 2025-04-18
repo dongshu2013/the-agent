@@ -35,12 +35,13 @@ model conversations {
 }
 
 model messages {
-  id              String        @id @default(uuid())
-  conversation    conversations @relation(fields: [conversation_id], references: [id])
+  id              String                       @id @default(uuid())
+  conversation    conversations                @relation(fields: [conversation_id], references: [id])
   conversation_id String
   role            String // "system", "user", "assistant", or "tooling"
   content         Json // Array of text_message or image_message objects
-  created_at      DateTime      @default(now())
+  embedding       Unsupported("vector(1536)")? // OpenAI embedding vector (added via raw SQL)
+  created_at      DateTime                     @default(now())
 }
 
 // Types for reference (not actual models):

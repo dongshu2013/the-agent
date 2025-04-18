@@ -15,6 +15,11 @@ from sqlalchemy.orm import Session
 from edge_agent.core.config import settings
 from edge_agent.utils.database import get_db
 from edge_agent.models.database import User, Conversation, Message
+from edge_agent.utils.embeddings import (
+    update_message_embedding,
+    update_all_messages_embeddings,
+    find_similar_messages
+)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("chat_route")
@@ -75,6 +80,11 @@ class ConversationResponse(BaseModel):
 class SaveMessageRequest(BaseModel):
     conversation_id: str
     message: ChatMessage
+
+class SimilaritySearchRequest(BaseModel):
+    query: str
+    limit: int = 5
+    conversation_id: Optional[str] = None
 
 router = APIRouter(tags=["chat"])
 
@@ -262,6 +272,122 @@ async def stream_chat_response(params: ChatCompletionCreateParam):
         }
         yield f"data: {json.dumps(error_response)}\n\n"
         yield "data: [DONE]\n\n"
+
+@router.post("/v1/messages/search", response_model=List[dict])
+async def search_similar_messages(
+    request: Request,
+    search_params: SimilaritySearchRequest,
+    user: User = Depends(verify_api_key)
+):
+    """
+    Search for messages similar to the query text using vector similarity.
+    """
+    db = request.state.db
+    
+    try:
+        # Find similar messages
+        similar_messages = await find_similar_messages(
+            query_text=search_params.query,
+            limit=search_params.limit,
+            db=db
+        )
+        
+        # Filter by conversation_id if provided
+        if search_params.conversation_id:
+            similar_messages = [
+                msg for msg in similar_messages 
+                if msg.conversation_id == search_params.conversation_id
+            ]
+        
+        # Convert messages to dict for response
+        result = []
+        for msg in similar_messages:
+            # Get the conversation to check if it belongs to the user
+            conversation = db.query(Conversation).filter(
+                Conversation.id == msg.conversation_id
+            ).first()
+            
+            # Only include messages from conversations owned by the user
+            if conversation and conversation.user_id == user.id:
+                result.append({
+                    "id": msg.id,
+                    "conversation_id": msg.conversation_id,
+                    "role": msg.role,
+                    "content": msg.content,
+                    "created_at": msg.created_at.isoformat(),
+                })
+        
+        return result
+    
+    except Exception as e:
+        logger.error(f"Error searching similar messages: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error searching messages: {str(e)}")
+
+@router.post("/v1/messages/generate-embeddings", response_model=dict)
+async def generate_embeddings(
+    request: Request,
+    user: User = Depends(verify_api_key)
+):
+    """
+    Generate embeddings for all messages that don't have them yet.
+    This is an admin-only endpoint.
+    """
+    # Check if user has admin privileges (you may want to implement a proper admin check)
+    if user.username != "admin":
+        raise HTTPException(status_code=403, detail="Admin privileges required")
+    
+    db = request.state.db
+    
+    try:
+        # Update embeddings for all messages
+        updated_count = await update_all_messages_embeddings(db)
+        
+        return {
+            "status": "success",
+            "updated_count": updated_count,
+            "message": f"Successfully updated embeddings for {updated_count} messages"
+        }
+    
+    except Exception as e:
+        logger.error(f"Error generating embeddings: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating embeddings: {str(e)}")
+
+@router.post("/v1/messages/{message_id}/generate-embedding", response_model=dict)
+async def generate_message_embedding(
+    request: Request,
+    message_id: str,
+    user: User = Depends(verify_api_key)
+):
+    """
+    Generate embedding for a specific message.
+    """
+    db = request.state.db
+    
+    # Find the message
+    message = db.query(Message).filter(Message.id == message_id).first()
+    if not message:
+        raise HTTPException(status_code=404, detail="Message not found")
+    
+    # Check if the message belongs to a conversation owned by the user
+    conversation = db.query(Conversation).filter(
+        Conversation.id == message.conversation_id
+    ).first()
+    
+    if not conversation or conversation.user_id != user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to access this message")
+    
+    try:
+        # Update the message embedding
+        await update_message_embedding(message, db)
+        
+        return {
+            "status": "success",
+            "message": f"Successfully generated embedding for message {message_id}"
+        }
+    
+    except Exception as e:
+        logger.error(f"Error generating embedding for message {message_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating embedding: {str(e)}")
 
 @router.get("/v1/conversation/list", response_model=List[dict])
 async def get_user_conversations(
