@@ -4,7 +4,6 @@
 
 import {
   sendChatRequest,
-  ChatRequest,
   AVAILABLE_TOOLS,
   createConversationApi,
   deleteConversationApi,
@@ -12,30 +11,7 @@ import {
   saveMessageApi,
 } from "./api";
 
-// 消息类型定义
-export interface MessageType {
-  id?: string; // 改为可选，因为新消息创建时还没有ID
-  role: string;
-  content: string;
-  timestamp: Date;
-  isLoading?: boolean;
-  type?: string; // 用于错误消息
-}
-
-// 会话类型定义
-export interface Conversation {
-  id: string;
-  title: string;
-  messages: MessageType[];
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-// 缓存接口定义
-interface CacheData<T> {
-  data: T;
-  timestamp: number;
-}
+import { Message, Conversation, ChatRequest, CacheData } from "../types";
 
 // 缓存管理器
 class CacheManager {
@@ -202,12 +178,11 @@ export const deleteConversation = async (id: string): Promise<void> => {
 };
 
 // 添加用户消息
-export const addUserMessage = async (content: string): Promise<MessageType> => {
+export const addUserMessage = async (content: string): Promise<Message> => {
   try {
-    const message: MessageType = {
+    const message: Message = {
       role: "user",
       content,
-      timestamp: new Date(),
     };
     return message;
   } catch (error) {
@@ -216,14 +191,13 @@ export const addUserMessage = async (content: string): Promise<MessageType> => {
   }
 };
 
-// 添加助手消息
 export const addAssistantMessage = async (
-  content: string
-): Promise<MessageType> => {
+  content: string | null
+): Promise<Message> => {
   try {
-    const message: MessageType = {
+    const message: Message = {
       role: "assistant",
-      content,
+      content: content || "no response",
       timestamp: new Date(),
     };
     return message;
@@ -277,7 +251,7 @@ export const sendMessage = async (
     updateMessageCache(conversation.id, conversation.messages);
 
     // 将消息转换为API请求格式
-    const messages = conversation.messages.map((msg: MessageType) => ({
+    const messages = conversation.messages.map((msg: Message) => ({
       role: msg.role,
       content: msg.content,
     }));
@@ -336,15 +310,13 @@ export const sendMessage = async (
 };
 
 // 消息缓存管理函数
-export const getCachedMessages = (
-  conversationId: string
-): MessageType[] | null => {
-  return cacheManager.get<MessageType[]>(`messages_${conversationId}`);
+export const getCachedMessages = (conversationId: string): Message[] | null => {
+  return cacheManager.get<Message[]>(`messages_${conversationId}`);
 };
 
 export const updateMessageCache = (
   conversationId: string,
-  messages: MessageType[]
+  messages: Message[]
 ): void => {
   cacheManager.set(`messages_${conversationId}`, messages);
 };

@@ -1,18 +1,23 @@
-import { MessageType } from "../../services/chat";
+import { Message as MessageType } from "../../types";
 import LoadingBrain from "./LoadingBrain";
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import "highlight.js/styles/github.css";
 
-interface MessageProps {
+interface Props {
   message: MessageType;
+  isLatestResponse?: boolean;
 }
 
-export default function Message({ message }: MessageProps) {
+export default function MessageComponent({
+  message,
+  isLatestResponse = false,
+}: Props) {
   const isUser = message.role === "user";
   const isLoading = message.isLoading === true;
   const isError = message.role === "error";
   const [copySuccess, setCopySuccess] = useState(false);
   const [contentRendered, setContentRendered] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   // 当消息内容加载完成后，设置contentRendered为true
   useEffect(() => {
@@ -37,8 +42,27 @@ export default function Message({ message }: MessageProps) {
       });
   };
 
+  // 判断是否应该显示复制按钮
+  const shouldShowCopyButton = () => {
+    if (isLoading) return false;
+    if (isError) return false;
+    if (!message.content) return false;
+
+    // 对于最新的AI响应，只要渲染完成就显示
+    if (isLatestResponse && !isUser) {
+      return contentRendered;
+    }
+
+    // 对于其他消息，只在悬停时显示
+    return isHovered;
+  };
+
   return (
-    <div style={{ marginBottom: !isUser ? "40px" : "16px" }}>
+    <div
+      style={{ marginBottom: !isUser ? "64px" : "16px" }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       {/* 用户消息靠右，AI消息靠左 */}
       <div
         style={{
@@ -88,7 +112,6 @@ export default function Message({ message }: MessageProps) {
               <div
                 style={{
                   whiteSpace: "pre-wrap",
-                  padding: !isUser ? "0 16px" : "0",
                 }}
               >
                 {message.content || ""}
@@ -96,14 +119,15 @@ export default function Message({ message }: MessageProps) {
             )}
           </div>
 
-          {/* 复制按钮 - 仅在AI消息渲染完成后显示 */}
-          {!isUser && !isLoading && !isError && contentRendered && (
+          {/* 复制按钮 - 根据条件显示 */}
+          {shouldShowCopyButton() && (
             <button
               onClick={handleCopy}
               style={{
                 position: "absolute",
                 bottom: "-30px",
-                left: "0",
+                left: isUser ? "auto" : "0",
+                right: isUser ? "0" : "auto",
                 width: "30px",
                 height: "30px",
                 display: "flex",
@@ -115,6 +139,9 @@ export default function Message({ message }: MessageProps) {
                 cursor: "pointer",
                 boxShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
                 transition: "all 0.2s",
+                opacity: isLatestResponse && !isUser ? 1 : isHovered ? 1 : 0,
+                pointerEvents:
+                  (isLatestResponse && !isUser) || isHovered ? "auto" : "none", // 当不可见时禁用交互
               }}
               title="Copy to clipboard"
             >

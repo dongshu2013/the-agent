@@ -2,28 +2,37 @@
   "manifest_version": 3,
   "name": "MIZU Agent",
   "version": "1.0.0",
-  "description": "A Chrome extension that provides AI assistance",
+  "description": "AI-powered browser assistant",
   "permissions": [
-    "sidePanel",
     "storage",
-    "contextMenus",
-    "tabs"
+    "sidePanel",
+    "tabs",
+    "contextMenus"
   ],
+  "action": {
+    "default_popup": "src/popup/popup.html"
+  },
   "side_panel": {
     "default_path": "sidepanel.html"
   },
-  "action": {
-    "default_icon": "icon.png",
-    "default_title": "MIZU Agent"
-  },
   "background": {
-    "service_worker": "background/index.js",
+    "service_worker": "background/index.ts",
     "type": "module"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content/index.ts"
+      ]
+    }
+  ],
   "icons": {
-    "16": "icon16.png",
-    "48": "icon48.png",
-    "128": "icon128.png"
+    "16": "assets/icon16.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
   },
   "host_permissions": [
     "https://*/*",

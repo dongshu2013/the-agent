@@ -2,7 +2,13 @@
  * API Service - Handles communication with our backend server
  */
 
-import { MessageType } from "./chat";
+import {
+  Message,
+  ChatRequest,
+  ChatResponse,
+  CreateConversationResponse,
+  SaveMessageResponse,
+} from "../types";
 
 export const AVAILABLE_TOOLS: any[] = [];
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
@@ -21,51 +27,6 @@ export const handleAuthError = () => {
     error: `Authentication failed. Please obtain an API key from ${API_KEY_URL}`,
   };
 };
-
-// Chat request interface
-export interface ChatRequest {
-  model?: string;
-  messages: Array<{
-    role: string;
-    content: string;
-  }>;
-  max_tokens?: number;
-  stream?: boolean;
-}
-
-// Chat response interface
-export interface ChatResponse {
-  success: boolean;
-  data?: any;
-  error?: string;
-  tool_calls?: Array<{
-    name: string;
-    arguments: Record<string, any>;
-  }>;
-}
-
-// 创建会话响应接口
-export interface CreateConversationResponse {
-  success: boolean;
-  data?: {
-    id: string;
-    title?: string;
-  };
-  error?: string;
-}
-
-// 保存消息响应接口
-export interface SaveMessageResponse {
-  success: boolean;
-  data?: {
-    id: string;
-    conversation_id: string;
-    role: string;
-    content: string;
-    created_at: string;
-  };
-  error?: string;
-}
 
 // 添加调试日志函数
 const debug = (message: string, data?: any) => {
@@ -433,7 +394,7 @@ export const getConversationsApi = async (
  */
 export const saveMessageApi = async (
   conversationId: string,
-  message: MessageType
+  message: Message
 ): Promise<SaveMessageResponse> => {
   try {
     const API_ENDPOINT = "/v1/message/save";

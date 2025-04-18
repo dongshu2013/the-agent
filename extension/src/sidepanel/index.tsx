@@ -7,9 +7,8 @@ import Message from "./components/Message";
 import InputArea from "./components/InputArea";
 import Settings from "./components/Settings";
 import ConversationList from "./components/ConversationList";
+import { Message as MessageType, Conversation } from "../types";
 import {
-  MessageType,
-  Conversation,
   createNewConversation,
   selectConversation as selectConv,
   deleteConversation as deleteConv,
@@ -17,6 +16,7 @@ import {
 } from "../services/chat";
 import { Storage } from "@plasmohq/storage";
 import { saveMessageApi } from "../services/api";
+import { generateMemory } from "../services/memory";
 import { env } from "../utils/env";
 
 const Sidepanel = () => {
@@ -36,7 +36,7 @@ const Sidepanel = () => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [showApiKeyAlert, setShowApiKeyAlert] = useState(false);
   const [apiKeyRedirectUrl, setApiKeyRedirectUrl] = useState(
-    "https://the-agent-production.up.railway.app/profile"
+    `${env.SERVER_URL}/profile`
   );
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -83,24 +83,38 @@ const Sidepanel = () => {
   useEffect(() => {
     const initializeConversation = async () => {
       try {
+        // 如果没有对话列表，先获取对话列表
         if (!conversations || conversations.length === 0) {
-          const newConv = await createNewConversation();
-          setConversations([newConv]);
-          setCurrentConversationId(newConv.id);
-          setMessages([]);
+          const loadedConversations = await getConversations();
+
+          // 如果服务器上也没有对话，才创建新对话
+          if (!loadedConversations || loadedConversations.length === 0) {
+            const newConv = await createNewConversation();
+            setConversations([newConv]);
+            setCurrentConversationId(newConv.id);
+            setMessages([]);
+          } else {
+            // 如果服务器上有对话，使用第一个对话
+            setConversations(loadedConversations);
+            setCurrentConversationId(loadedConversations[0].id);
+            setMessages(loadedConversations[0].messages || []);
+          }
         } else if (currentConversationId) {
+          // 如果有当前对话ID，找到对应的对话
           const currentConv = conversations.find(
             (c) => c.id === currentConversationId
           );
           if (currentConv) {
-            setMessages(currentConv.messages);
+            setMessages(currentConv.messages || []);
           } else if (conversations.length > 0) {
+            // 如果找不到当前对话，使用第一个对话
             setCurrentConversationId(conversations[0].id);
-            setMessages(conversations[0].messages);
+            setMessages(conversations[0].messages || []);
           }
         } else if (conversations.length > 0) {
+          // 如果没有当前对话ID但有对话列表，使用第一个对话
           setCurrentConversationId(conversations[0].id);
-          setMessages(conversations[0].messages);
+          setMessages(conversations[0].messages || []);
         }
       } catch (error) {
         // 处理初始化会话时的错误
@@ -227,22 +241,34 @@ const Sidepanel = () => {
       // Create new AbortController
       abortControllerRef.current = new AbortController();
 
+      // 1. 构建记忆 (memory construction)
+      console.log("Generating memory for prompt:", currentPrompt);
+      const memory = await generateMemory(
+        currentConversationId,
+        currentPrompt,
+        {
+          strategy: 2, // 使用策略2: 最近消息 + 语义相关
+          systemPrompt: env.SYSTEM_PROMPT,
+        }
+      );
+
+      console.log("Generated memory context:", memory);
+
       // Instantiate OpenAI client
       const client = new OpenAI({
         apiKey: apiKey,
-        baseURL: env.API_URL,
+        baseURL: env.BACKEND_URL,
         dangerouslyAllowBrowser: true,
       });
 
-      const messagesForApi = [
-        { role: "user" as const, content: currentPrompt },
-      ];
-
-      // Call OpenAI compatible API
+      // Call OpenAI compatible API with memory context
       const stream = await client.chat.completions.create(
         {
-          model: env.OPENAI_MODEL,
-          messages: messagesForApi,
+          model: env.DEFAULT_MODEL,
+          messages: memory.map((msg) => ({
+            role: msg.role as any,
+            content: msg.content,
+          })),
           stream: true,
         },
         { signal: abortControllerRef.current?.signal }
@@ -341,9 +367,9 @@ const Sidepanel = () => {
         // 刷新会话列表
         const refreshedConversations = await getConversations();
         setConversations(refreshedConversations);
-        console.log("会话列表已刷新");
+        console.log("Conversations refreshed");
       } catch (error) {
-        console.error("刷新会话列表失败:", error);
+        console.error("Failed to refresh conversations:", error);
         handleApiError(error);
       } finally {
         setIsLoading(false);
@@ -524,7 +550,7 @@ const Sidepanel = () => {
               fontWeight: 600,
             }}
           >
-            需要登录获取API Key才能使用完整功能
+            You need to login to get API Key to use the full functionality
           </div>
           <button
             onClick={handleGetApiKey}
@@ -539,7 +565,7 @@ const Sidepanel = () => {
               fontWeight: 500,
             }}
           >
-            前往获取API Key
+            Go to get API Key
           </button>
           <button
             onClick={() => setShowApiKeyAlert(false)}
@@ -553,7 +579,7 @@ const Sidepanel = () => {
               color: "#6b7280",
             }}
           >
-            暂不
+            Not now
           </button>
         </div>
       )}
@@ -647,12 +673,19 @@ const Sidepanel = () => {
             </div>
           ) : (
             <div className="space-y-6">
-              {messages.map((message, index) => (
-                <div key={message.id || index}>
-                  <Message message={message} />
-                </div>
-              ))}
-              <div ref={messagesEndRef} />
+              <div className="messages-container">
+                {messages.map((message, index) => (
+                  <Message
+                    key={message.id || index}
+                    message={message}
+                    isLatestResponse={
+                      index === messages.length - 1 &&
+                      message.role === "assistant"
+                    }
+                  />
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
             </div>
           )}
         </div>

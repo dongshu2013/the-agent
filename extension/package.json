@@ -1,5 +1,6 @@
 {
   "name": "mizu-agent",
+  "displayName": "MIZU Agent",
   "version": "1.0.0",
   "description": "MIZU Agent - AI Powered Chrome Extension",
   "scripts": {

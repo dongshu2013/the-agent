@@ -16,7 +16,6 @@ const Settings: React.FC<SettingsProps> = ({ apiKey, setApiKey, onClose }) => {
     storage.get("apiKey").then((key) => {
       if (key) {
         setTempApiKey(key);
-        setApiKey(key);
       }
     });
   }, []);
@@ -28,6 +27,11 @@ const Settings: React.FC<SettingsProps> = ({ apiKey, setApiKey, onClose }) => {
       setApiKey(tempApiKey);
       setSaveStatus("Saved successfully!");
       setTimeout(() => setSaveStatus(""), 2000);
+
+      // Also save to localStorage for API requests
+      localStorage.setItem("apiKey", tempApiKey);
+
+      onClose();
     } catch (error) {
       setSaveStatus("Failed to save");
       setTimeout(() => setSaveStatus(""), 2000);
