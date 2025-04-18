@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 
 interface InputAreaProps {
   prompt: string;
@@ -17,6 +17,9 @@ export default function InputArea({
   isStreaming,
   onPauseStream,
 }: InputAreaProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault(); // 阻止默认的换行行为
@@ -54,16 +57,25 @@ export default function InputArea({
             alignItems: "center",
             position: "relative",
             borderRadius: "12px",
-            border: "1px solid #e5e7eb",
+            border: `1px solid ${isHovered || isFocused ? "#2563eb" : "#e5e7eb"}`,
             background: "#ffffff",
             overflow: "hidden",
+            boxShadow:
+              isHovered || isFocused
+                ? "0 0 0 3px rgba(37, 99, 235, 0.1)"
+                : "none",
+            transition: "all 0.2s ease",
           }}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
         >
           <textarea
             ref={textareaRef}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={handleKeyDown}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             disabled={isLoading}
             placeholder="send message..."
             rows={1}

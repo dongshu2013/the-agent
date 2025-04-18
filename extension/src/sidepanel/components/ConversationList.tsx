@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Conversation } from "../../services/chat";
 
 interface ConversationListProps {
@@ -16,6 +16,24 @@ const ConversationList = ({
   deleteConversation,
   setShowConversationList,
 }: ConversationListProps) => {
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+
+  const handleDeleteClick = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConfirmDelete(id);
+  };
+
+  const handleConfirmDelete = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    deleteConversation(id, e);
+    setConfirmDelete(null);
+  };
+
+  const handleCancelDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setConfirmDelete(null);
+  };
+
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 50 }}>
       {/* 会话列表容器 */}
@@ -144,10 +162,7 @@ const ConversationList = ({
                       : "New Chat"}
                   </span>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteConversation(conversation.id, e);
-                    }}
+                    onClick={(e) => handleDeleteClick(conversation.id, e)}
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -202,6 +217,96 @@ const ConversationList = ({
           )}
         </div>
       </div>
+
+      {/* 删除确认弹窗 */}
+      {confirmDelete && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 100,
+          }}
+          onClick={handleCancelDelete}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: "8px",
+              padding: "24px",
+              width: "90%",
+              maxWidth: "400px",
+              boxShadow:
+                "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3
+              style={{
+                fontSize: "18px",
+                fontWeight: 600,
+                color: "#111827",
+                marginBottom: "12px",
+              }}
+            >
+              Delete Conversation
+            </h3>
+            <p
+              style={{
+                fontSize: "14px",
+                color: "#4b5563",
+                marginBottom: "20px",
+              }}
+            >
+              Are you sure you want to delete this conversation? This action
+              cannot be undone.
+            </p>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "12px",
+              }}
+            >
+              <button
+                onClick={handleCancelDelete}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "6px",
+                  backgroundColor: "#e5e7eb",
+                  border: "none",
+                  color: "#374151",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={(e) => handleConfirmDelete(confirmDelete, e)}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "6px",
+                  backgroundColor: "#ef4444",
+                  border: "none",
+                  color: "white",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

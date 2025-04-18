@@ -10,7 +10,6 @@ export default function Message({ message }: MessageProps) {
   const isUser = message.role === "user";
   const isLoading = message.isLoading === true;
   const isError = message.role === "error";
-  const [isCopyHovered, setIsCopyHovered] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
 
   const handleCopy = () => {
@@ -47,10 +46,6 @@ export default function Message({ message }: MessageProps) {
             maxWidth: "100%",
             position: "relative",
           }}
-          onMouseEnter={() =>
-            !isUser && !isLoading && !isError && setIsCopyHovered(true)
-          }
-          onMouseLeave={() => setIsCopyHovered(false)}
         >
           {/* 消息内容 */}
           <div
@@ -83,14 +78,14 @@ export default function Message({ message }: MessageProps) {
             )}
           </div>
 
-          {/* 复制按钮 - 仅在AI消息悬停时显示，不适用于用户消息、错误消息和加载中消息 */}
-          {!isUser && !isLoading && !isError && isCopyHovered && (
+          {/* 复制按钮 - 始终显示在AI消息的左下角 */}
+          {!isUser && !isLoading && !isError && (
             <button
               onClick={handleCopy}
               style={{
                 position: "absolute",
-                top: "8px",
-                right: "8px",
+                bottom: "-30px",
+                left: "0",
                 width: "30px",
                 height: "30px",
                 display: "flex",
