@@ -90,6 +90,18 @@ const generateId = (): string => {
   return crypto.randomUUID();
 };
 
+// 处理API错误
+const handleApiError = (error: any): never => {
+  console.error("API Error:", error);
+
+  // 向控制台输出详细的错误信息
+  if (typeof error === "object" && error !== null) {
+    console.error("Error details:", JSON.stringify(error, null, 2));
+  }
+
+  throw error; // 直接向上传递错误
+};
+
 // 获取所有会话
 export const getConversations = async (): Promise<Conversation[]> => {
   try {
@@ -102,7 +114,7 @@ export const getConversations = async (): Promise<Conversation[]> => {
 
     const response = await getConversationsApi();
     if (!response.success || !response.data) {
-      throw new Error(response.error || "Failed to fetch conversations");
+      return handleApiError(response.error || "Failed to fetch conversations");
     }
 
     const conversations: Conversation[] = response.data.map((conv: any) => ({
@@ -131,7 +143,7 @@ export const createNewConversation = async (): Promise<Conversation> => {
   try {
     const response = await createConversationApi();
     if (!response.success || !response.data) {
-      throw new Error(response.error || "Failed to create conversation");
+      return handleApiError(response.error || "Failed to create conversation");
     }
 
     const newConversation: Conversation = {
@@ -175,7 +187,7 @@ export const deleteConversation = async (id: string): Promise<void> => {
   try {
     const response = await deleteConversationApi(id);
     if (!response.success) {
-      throw new Error(response.error || "Failed to delete conversation");
+      return handleApiError(response.error || "Failed to delete conversation");
     }
 
     // 清除所有相关缓存
@@ -252,7 +264,7 @@ export const sendMessage = async (
       userMessage
     );
     if (!saveUserMessageResponse.success) {
-      throw new Error(
+      return handleApiError(
         saveUserMessageResponse.error || "Failed to save user message"
       );
     }
@@ -288,7 +300,7 @@ export const sendMessage = async (
     // 发送请求
     const response = await sendChatRequest(request, apiKey);
     if (!response.success || !response.data) {
-      throw new Error(response.error || "Failed to get model response");
+      return handleApiError(response.error || "Failed to get model response");
     }
 
     // 获取响应内容
@@ -303,7 +315,7 @@ export const sendMessage = async (
       assistantMessage
     );
     if (!saveAssistantMessageResponse.success) {
-      throw new Error(
+      return handleApiError(
         saveAssistantMessageResponse.error || "Failed to save assistant message"
       );
     }

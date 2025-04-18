@@ -34,6 +34,10 @@ const Sidepanel = () => {
   >("currentConversationId", null);
   const [showConversationList, setShowConversationList] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [showApiKeyAlert, setShowApiKeyAlert] = useState(false);
+  const [apiKeyRedirectUrl, setApiKeyRedirectUrl] = useState(
+    "https://the-agent-production.up.railway.app/profile"
+  );
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Reference to the messages end
@@ -44,27 +48,63 @@ const Sidepanel = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // 处理API错误
+  const handleApiError = (error: any) => {
+    console.error("API Error in UI:", error);
+
+    // 检查错误信息中是否包含身份验证失败
+    if (
+      typeof error === "string" &&
+      (error.includes("Authentication failed") ||
+        error.includes("API key") ||
+        error.includes("403") ||
+        error.includes("401"))
+    ) {
+      // 显示API Key提示
+      setShowApiKeyAlert(true);
+    }
+
+    // 显示错误消息
+    setMessages((prev) => [
+      ...prev.filter((m: MessageType) => m.role !== "error"),
+      {
+        id: crypto.randomUUID(),
+        role: "error",
+        content:
+          typeof error === "string"
+            ? error
+            : "An error occurred. Please try again.",
+        timestamp: new Date(),
+      },
+    ]);
+  };
+
   // Initialize or load current conversation
   useEffect(() => {
     const initializeConversation = async () => {
-      if (!conversations || conversations.length === 0) {
-        const newConv = await createNewConversation();
-        setConversations([newConv]);
-        setCurrentConversationId(newConv.id);
-        setMessages([]);
-      } else if (currentConversationId) {
-        const currentConv = conversations.find(
-          (c) => c.id === currentConversationId
-        );
-        if (currentConv) {
-          setMessages(currentConv.messages);
+      try {
+        if (!conversations || conversations.length === 0) {
+          const newConv = await createNewConversation();
+          setConversations([newConv]);
+          setCurrentConversationId(newConv.id);
+          setMessages([]);
+        } else if (currentConversationId) {
+          const currentConv = conversations.find(
+            (c) => c.id === currentConversationId
+          );
+          if (currentConv) {
+            setMessages(currentConv.messages);
+          } else if (conversations.length > 0) {
+            setCurrentConversationId(conversations[0].id);
+            setMessages(conversations[0].messages);
+          }
         } else if (conversations.length > 0) {
           setCurrentConversationId(conversations[0].id);
           setMessages(conversations[0].messages);
         }
-      } else if (conversations.length > 0) {
-        setCurrentConversationId(conversations[0].id);
-        setMessages(conversations[0].messages);
+      } catch (error) {
+        // 处理初始化会话时的错误
+        handleApiError(error);
       }
     };
 
@@ -85,6 +125,14 @@ const Sidepanel = () => {
           inputElement.focus();
         }
       }
+
+      // 处理API Key缺失消息
+      if (request.name === "api-key-missing") {
+        setShowApiKeyAlert(true);
+        if (request.redirectUrl) {
+          setApiKeyRedirectUrl(request.redirectUrl);
+        }
+      }
     };
 
     chrome.runtime.onMessage.addListener(handleMessages);
@@ -97,9 +145,19 @@ const Sidepanel = () => {
     // init storage and get api key
     const storage = new Storage();
     storage.get("apiKey").then((key) => {
-      if (key) setApiKey(key);
+      if (key) {
+        setApiKey(key);
+      } else {
+        // 如果没有API Key，显示提示
+        setShowApiKeyAlert(true);
+      }
     });
   }, []);
+
+  // 打开登录页面获取API Key
+  const handleGetApiKey = () => {
+    window.open(apiKeyRedirectUrl, "_blank");
+  };
 
   // 修改暂停处理函数
   const handlePauseStream = useCallback(() => {
@@ -114,62 +172,68 @@ const Sidepanel = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!prompt.trim() || !apiKey || !currentConversationId) return;
+    if (!prompt.trim() || !apiKey || !currentConversationId) {
+      if (!apiKey) {
+        // 如果没有API Key，显示提示
+        setShowApiKeyAlert(true);
+      }
+      return;
+    }
 
     const currentPrompt = prompt.trim();
     let assistantMessageId = crypto.randomUUID();
 
-    // Create user message
-    const userMessage: MessageType = {
-      role: "user",
-      content: currentPrompt,
-      timestamp: new Date(),
-    };
-
-    // Save user message to backend first
-    const saveUserMessageResponse = await saveMessageApi(
-      currentConversationId,
-      userMessage
-    );
-    if (!saveUserMessageResponse.success) {
-      throw new Error(
-        saveUserMessageResponse.error || "Failed to save user message"
-      );
-    }
-
-    // Update user message with ID from backend
-    userMessage.id = saveUserMessageResponse.data?.id;
-
-    // Create loading message
-    const loadingMessage: MessageType = {
-      id: assistantMessageId,
-      role: "assistant",
-      content: "",
-      timestamp: new Date(),
-      isLoading: true,
-    };
-
-    // Add user message to the list
-    setMessages((prev: MessageType[]) => [
-      ...prev.filter((m) => m.role !== "error"),
-      userMessage,
-      loadingMessage, // 添加加载中消息
-    ]);
-    setPrompt("");
-    setIsLoading(true);
-    setIsStreaming(true);
-
-    // Create new AbortController
-    abortControllerRef.current = new AbortController();
-
-    // Instantiate OpenAI client
-    const client = new OpenAI({
-      apiKey: apiKey,
-      baseURL: env.API_URL,
-      dangerouslyAllowBrowser: true,
-    });
-
     try {
+      // Create user message
+      const userMessage: MessageType = {
+        role: "user",
+        content: currentPrompt,
+        timestamp: new Date(),
+      };
+
+      // Save user message to backend first
+      const saveUserMessageResponse = await saveMessageApi(
+        currentConversationId,
+        userMessage
+      );
+      if (!saveUserMessageResponse.success) {
+        throw new Error(
+          saveUserMessageResponse.error || "Failed to save user message"
+        );
+      }
+
+      // Update user message with ID from backend
+      userMessage.id = saveUserMessageResponse.data?.id;
+
+      // Create loading message
+      const loadingMessage: MessageType = {
+        id: assistantMessageId,
+        role: "assistant",
+        content: "",
+        timestamp: new Date(),
+        isLoading: true,
+      };
+
+      // Add user message to the list
+      setMessages((prev: MessageType[]) => [
+        ...prev.filter((m) => m.role !== "error"),
+        userMessage,
+        loadingMessage, // 添加加载中消息
+      ]);
+      setPrompt("");
+      setIsLoading(true);
+      setIsStreaming(true);
+
+      // Create new AbortController
+      abortControllerRef.current = new AbortController();
+
+      // Instantiate OpenAI client
+      const client = new OpenAI({
+        apiKey: apiKey,
+        baseURL: env.API_URL,
+        dangerouslyAllowBrowser: true,
+      });
+
       const messagesForApi = [
         { role: "user" as const, content: currentPrompt },
       ];
@@ -239,19 +303,18 @@ const Sidepanel = () => {
         console.log("Stream aborted by user.");
       } else {
         console.error("API Call Error:", error);
-        const errorContent =
+
+        // 使用自定义错误处理函数
+        handleApiError(
           error.response?.data?.error?.message ||
-          error.message ||
-          "An unexpected error occurred. Please check the console.";
-        setMessages((prev: MessageType[]) => [
-          ...prev.filter((m: MessageType) => m.id !== assistantMessageId),
-          {
-            id: crypto.randomUUID(),
-            role: "error",
-            content: errorContent,
-            timestamp: new Date(),
-          },
-        ]);
+            error.message ||
+            "An unexpected error occurred. Please check the console."
+        );
+
+        // 移除加载消息
+        setMessages((prev: MessageType[]) =>
+          prev.filter((m: MessageType) => m.id !== assistantMessageId)
+        );
       }
     } finally {
       setIsLoading(false);
@@ -281,6 +344,7 @@ const Sidepanel = () => {
         console.log("会话列表已刷新");
       } catch (error) {
         console.error("刷新会话列表失败:", error);
+        handleApiError(error);
       } finally {
         setIsLoading(false);
       }
@@ -313,6 +377,8 @@ const Sidepanel = () => {
         setCurrentConversationId(id);
         // 不再自动关闭会话列表
       }
+    } catch (error) {
+      handleApiError(error);
     } finally {
       setIsLoading(false);
     }
@@ -353,16 +419,7 @@ const Sidepanel = () => {
       }
     } catch (error) {
       console.error("Failed to delete conversation:", error);
-      // 显示错误消息
-      setMessages((prev) => [
-        ...prev.filter((m: MessageType) => m.role !== "error"),
-        {
-          id: crypto.randomUUID(),
-          role: "error",
-          content: "Failed to delete conversation. Please try again later.",
-          timestamp: new Date(),
-        },
-      ]);
+      handleApiError(error);
     } finally {
       setIsLoading(false);
     }
@@ -377,6 +434,12 @@ const Sidepanel = () => {
       "Creating new conversation, API key:",
       apiKey ? "Available" : "Not available"
     );
+
+    // 如果没有API Key
+    if (!apiKey) {
+      setShowApiKeyAlert(true);
+      return;
+    }
 
     // 简单的防重复点击处理
     setIsLoading(true);
@@ -401,15 +464,7 @@ const Sidepanel = () => {
       setMessages([]);
     } catch (error) {
       console.error("Failed to create new conversation:", error);
-      // 错误处理 - 在UI中显示错误消息
-      setMessages([
-        {
-          id: crypto.randomUUID(),
-          role: "error",
-          content: "Failed to create new conversation. Please try again later.",
-          timestamp: new Date(),
-        },
-      ]);
+      handleApiError(error);
     } finally {
       // 操作完成后重置加载状态
       setIsLoading(false);
@@ -420,6 +475,7 @@ const Sidepanel = () => {
   const handleSetApiKey = (key: string) => {
     console.log("Setting API key:", key ? "有值" : "无值");
     setApiKey(key);
+    setShowApiKeyAlert(false); // 隐藏API Key提示
     const storage = new Storage();
 
     // 存储到 apiKey 键
@@ -444,16 +500,75 @@ const Sidepanel = () => {
         overflow: "hidden",
       }}
     >
+      {/* API Key缺失提示 */}
+      {showApiKeyAlert && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: "#fff9db",
+            padding: "16px",
+            textAlign: "center",
+            zIndex: 50,
+            borderBottom: "1px solid #ffd43b",
+            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+          }}
+        >
+          <div
+            style={{
+              fontSize: "15px",
+              color: "#664d03",
+              marginBottom: "8px",
+              fontWeight: 600,
+            }}
+          >
+            需要登录获取API Key才能使用完整功能
+          </div>
+          <button
+            onClick={handleGetApiKey}
+            style={{
+              backgroundColor: "#2563eb",
+              color: "white",
+              border: "none",
+              padding: "8px 16px",
+              borderRadius: "4px",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: 500,
+            }}
+          >
+            前往获取API Key
+          </button>
+          <button
+            onClick={() => setShowApiKeyAlert(false)}
+            style={{
+              backgroundColor: "transparent",
+              border: "none",
+              padding: "8px 12px",
+              marginLeft: "8px",
+              cursor: "pointer",
+              fontSize: "14px",
+              color: "#6b7280",
+            }}
+          >
+            暂不
+          </button>
+        </div>
+      )}
+
       {/* 固定的头部组件 */}
       <div
         style={{
           position: "absolute",
-          top: 0,
+          top: showApiKeyAlert ? "86px" : 0,
           left: 0,
           right: 0,
           backgroundColor: "white",
           borderBottom: "1px solid #e5e7eb",
           zIndex: 10,
+          transition: "top 0.3s ease",
         }}
       >
         <Header
@@ -468,13 +583,14 @@ const Sidepanel = () => {
       <div
         style={{
           position: "absolute",
-          top: "50px",
+          top: showApiKeyAlert ? "136px" : "50px",
           bottom: "82px",
           left: 0,
           right: 0,
           overflowY: "auto",
           overflowX: "hidden",
           backgroundColor: "#FFFFFF",
+          transition: "top 0.3s ease",
         }}
       >
         <div className="max-w-3xl mx-auto p-4">

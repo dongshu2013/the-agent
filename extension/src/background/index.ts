@@ -41,6 +41,17 @@ async function initializeConfig() {
   }
 }
 
+// 检查API Key是否存在
+async function checkApiKey() {
+  try {
+    const apiKey = await storage.get("apiKey");
+    return !!apiKey;
+  } catch (error) {
+    console.error("Error checking API key:", error);
+    return false;
+  }
+}
+
 // 设置面板行为
 chrome.runtime.onInstalled.addListener(async () => {
   await initializeConfig();
@@ -64,7 +75,10 @@ if (chrome.action) {
     }
 
     try {
-      // 检查是否支持侧边栏
+      // 首先检查API Key是否存在
+      const hasApiKey = await checkApiKey();
+
+      // 如果检查侧边栏可用并打开
       if (chrome.sidePanel) {
         try {
           // 尝试使用侧边栏
@@ -73,6 +87,18 @@ if (chrome.action) {
             path: "sidepanel.html",
           });
           await chrome.sidePanel.open({ windowId: tab.windowId });
+
+          // 如果API Key不存在，发送消息给侧边栏
+          if (!hasApiKey) {
+            setTimeout(() => {
+              chrome.runtime.sendMessage({
+                name: "api-key-missing",
+                redirectUrl:
+                  "https://the-agent-production.up.railway.app/profile",
+              });
+            }, 500); // 给侧边栏一些时间加载
+          }
+
           console.log("Side panel opened successfully");
           return;
         } catch (sidePanelError) {
@@ -82,7 +108,7 @@ if (chrome.action) {
 
       // 如果侧边栏不可用或打开失败，使用弹出窗口
       console.log("Falling back to popup window");
-      await chrome.windows.create({
+      const popupWindow = await chrome.windows.create({
         url: chrome.runtime.getURL("sidepanel.html"),
         type: "popup",
         width: 400,
@@ -90,6 +116,17 @@ if (chrome.action) {
         top: 20,
         left: screen.availWidth - 420,
       });
+
+      // 如果API Key不存在，发送消息给弹出窗口
+      if (!hasApiKey) {
+        setTimeout(() => {
+          chrome.runtime.sendMessage({
+            name: "api-key-missing",
+            redirectUrl: "https://the-agent-production.up.railway.app/profile",
+          });
+        }, 500); // 给弹出窗口一些时间加载
+      }
+
       console.log("Popup window opened successfully");
     } catch (error) {
       console.error("Error in extension click handler:", error);
@@ -193,8 +230,11 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
 });
 
 // 更新右键菜单点击处理程序以保持一致性
-chrome.contextMenus.onClicked.addListener((info, tab) => {
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === "mizu-agent" && info.selectionText && tab?.windowId) {
+    // 首先检查API Key是否存在
+    const hasApiKey = await checkApiKey();
+
     // 使用 windowId 打开侧边栏
     chrome.sidePanel
       .setOptions({
@@ -207,6 +247,17 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
             name: "selected-text",
             text: info.selectionText,
           });
+
+          // 如果API Key不存在，发送消息给侧边栏
+          if (!hasApiKey) {
+            setTimeout(() => {
+              chrome.runtime.sendMessage({
+                name: "api-key-missing",
+                redirectUrl:
+                  "https://the-agent-production.up.railway.app/profile",
+              });
+            }, 500); // 给侧边栏一些时间加载
+          }
         });
       });
   }

@@ -1,6 +1,7 @@
 import { MessageType } from "../../services/chat";
 import LoadingBrain from "./LoadingBrain";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import "highlight.js/styles/github.css";
 
 interface MessageProps {
   message: MessageType;
@@ -11,6 +12,16 @@ export default function Message({ message }: MessageProps) {
   const isLoading = message.isLoading === true;
   const isError = message.role === "error";
   const [copySuccess, setCopySuccess] = useState(false);
+  const [contentRendered, setContentRendered] = useState(false);
+
+  // 当消息内容加载完成后，设置contentRendered为true
+  useEffect(() => {
+    if (!isLoading && !isUser && message.content) {
+      setContentRendered(true);
+    } else {
+      setContentRendered(false);
+    }
+  }, [isLoading, isUser, message.content]);
 
   const handleCopy = () => {
     if (isLoading || !message.content) return;
@@ -27,7 +38,7 @@ export default function Message({ message }: MessageProps) {
   };
 
   return (
-    <div style={{ marginBottom: "16px" }}>
+    <div style={{ marginBottom: !isUser ? "40px" : "16px" }}>
       {/* 用户消息靠右，AI消息靠左 */}
       <div
         style={{
@@ -74,12 +85,19 @@ export default function Message({ message }: MessageProps) {
                 <LoadingBrain />
               </div>
             ) : (
-              message.content
+              <div
+                style={{
+                  whiteSpace: "pre-wrap",
+                  padding: !isUser ? "0 16px" : "0",
+                }}
+              >
+                {message.content || ""}
+              </div>
             )}
           </div>
 
-          {/* 复制按钮 - 始终显示在AI消息的左下角 */}
-          {!isUser && !isLoading && !isError && (
+          {/* 复制按钮 - 仅在AI消息渲染完成后显示 */}
+          {!isUser && !isLoading && !isError && contentRendered && (
             <button
               onClick={handleCopy}
               style={{

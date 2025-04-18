@@ -6,6 +6,21 @@ import { MessageType } from "./chat";
 
 export const AVAILABLE_TOOLS: any[] = [];
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
+const API_KEY_URL = "https://the-agent-production.up.railway.app/profile";
+
+// 处理授权错误
+export const handleAuthError = () => {
+  // 通知UI层显示API Key获取提示
+  chrome.runtime.sendMessage({
+    name: "api-key-missing",
+    redirectUrl: API_KEY_URL,
+  });
+
+  return {
+    success: false,
+    error: `Authentication failed. Please obtain an API key from ${API_KEY_URL}`,
+  };
+};
 
 // Chat request interface
 export interface ChatRequest {
@@ -113,14 +128,10 @@ export const createConversationApi = async (
       const errorData = await response.json().catch(() => ({}));
       debug("Backend error:", errorData);
 
-      // 如果是认证错误，提供更详细的信息
+      // 如果是认证错误，调用统一处理方法
       if (response.status === 401 || response.status === 403) {
         debug("Authentication error. API key might be invalid or missing");
-        return {
-          success: false,
-          error:
-            "Authentication failed. Please check your API key in settings.",
-        };
+        return handleAuthError();
       }
 
       return {
@@ -209,14 +220,10 @@ export const sendChatRequest = async (
       const errorData = await response.json().catch(() => ({}));
       debug("Backend error:", errorData);
 
-      // 如果是认证错误，提供更详细的信息
+      // 如果是认证错误，调用统一处理方法
       if (response.status === 401 || response.status === 403) {
         debug("Authentication error. API key might be invalid or missing");
-        return {
-          success: false,
-          error:
-            "Authentication failed. Please check your API key in settings.",
-        };
+        return handleAuthError();
       }
 
       return {
@@ -284,7 +291,7 @@ export const deleteConversationApi = async (
     // 打印headers以便调试（不包含API key值）
     debug("Request headers:", {
       ...headers,
-      Authorization: headers["Authorization"] ? "Bearer [REDACTED]" : undefined,
+      Authorization: headers.Authorization ? "Bearer [REDACTED]" : undefined,
     });
 
     // 发送请求到后端
@@ -301,17 +308,10 @@ export const deleteConversationApi = async (
       const errorData = await response.json().catch(() => ({}));
       debug("Backend error:", errorData);
 
-      // 如果是认证错误，提供更详细的信息
+      // 如果是认证错误，调用统一处理方法
       if (response.status === 401 || response.status === 403) {
         debug("Authentication error. API key might be invalid or missing");
-        // 尝试从响应中提取更详细的错误信息
-        const authError = errorData.detail || "Authentication failed";
-        console.error("Authentication error details:", authError, errorData);
-
-        return {
-          success: false,
-          error: `Authentication failed: ${authError}. Please check your API key in settings.`,
-        };
+        return handleAuthError();
       }
 
       return {
@@ -395,17 +395,10 @@ export const getConversationsApi = async (
       const errorData = await response.json().catch(() => ({}));
       debug("Backend error:", errorData);
 
-      // 如果是认证错误，提供更详细的信息
+      // 如果是认证错误，调用统一处理方法
       if (response.status === 401 || response.status === 403) {
         debug("Authentication error. API key might be invalid or missing");
-        // 尝试从响应中提取更详细的错误信息
-        const authError = errorData.detail || "Authentication failed";
-        console.error("Authentication error details:", authError, errorData);
-
-        return {
-          success: false,
-          error: `Authentication failed: ${authError}. Please check your API key in settings.`,
-        };
+        return handleAuthError();
       }
 
       return {
@@ -463,10 +456,7 @@ export const saveMessageApi = async (
       }
     } catch (e) {
       debug("Failed to read API key from localStorage:", e);
-      return {
-        success: false,
-        error: "API key not found. Please check your settings.",
-      };
+      return handleAuthError();
     }
 
     // 打印headers以便调试（不包含API key值）
@@ -500,14 +490,10 @@ export const saveMessageApi = async (
       const errorData = await response.json().catch(() => ({}));
       debug("Backend error:", errorData);
 
-      // 如果是认证错误，提供更详细的信息
+      // 如果是认证错误，调用统一处理方法
       if (response.status === 401 || response.status === 403) {
         debug("Authentication error. API key might be invalid or missing");
-        return {
-          success: false,
-          error:
-            "Authentication failed. Please check your API key in settings.",
-        };
+        return handleAuthError();
       }
 
       return {

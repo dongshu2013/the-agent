@@ -83,7 +83,7 @@ export default function InputArea({
               flex: 1,
               padding: "12px 48px 12px 16px", // 右侧留出空间给按钮
               maxHeight: "80px",
-              minHeight: "44px",
+              minHeight: "35px",
               outline: "none",
               resize: "none",
               border: "none",
@@ -177,17 +177,18 @@ export default function InputArea({
                 }}
               >
                 <svg
-                  style={{ width: "16px", height: "16px", color: "#ffffff" }}
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="currentColor"
+                  stroke="white"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
-                  <path
-                    d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z"
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
+                  <path d="M12 19V5" />
+                  <path d="M5 12L12 5L19 12" />
                 </svg>
               </button>
             )}
