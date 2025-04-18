@@ -278,8 +278,8 @@ async def stream_chat_response(params: ChatCompletionCreateParam):
 async def save_message(
     request: Request,
     message_data: SaveMessageRequest,
-    user: User = Depends(verify_api_key),
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    user: User = Depends(verify_api_key)
 ):
     """
     Save a message to a conversation and generate its embedding.
