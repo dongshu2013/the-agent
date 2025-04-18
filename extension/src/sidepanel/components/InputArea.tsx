@@ -51,11 +51,12 @@ export default function InputArea({
         <div
           style={{
             display: "flex",
-            alignItems: "flex-end",
+            alignItems: "center",
             position: "relative",
-            borderRadius: "8px",
+            borderRadius: "12px",
             border: "1px solid #e5e7eb",
             background: "#ffffff",
+            overflow: "hidden",
           }}
         >
           <textarea
@@ -68,7 +69,7 @@ export default function InputArea({
             rows={1}
             style={{
               flex: 1,
-              padding: "12px 60px 12px 16px", // 右侧留出空间给按钮
+              padding: "12px 48px 12px 16px", // 右侧留出空间给按钮
               maxHeight: "80px",
               minHeight: "44px",
               outline: "none",
@@ -77,7 +78,6 @@ export default function InputArea({
               backgroundColor: "transparent",
               color: "#333333",
               overflowY: "auto",
-              borderRadius: "8px",
               fontSize: "14px",
               lineHeight: "20px",
               boxSizing: "border-box",
@@ -86,8 +86,10 @@ export default function InputArea({
           <div
             style={{
               position: "absolute",
-              right: "12px",
-              bottom: "8px",
+              right: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
             {isStreaming ? (
@@ -98,8 +100,8 @@ export default function InputArea({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  width: "36px",
-                  height: "36px",
+                  width: "32px",
+                  height: "32px",
                   borderRadius: "50%",
                   backgroundColor: "#2563eb",
                   border: "none",
@@ -139,8 +141,8 @@ export default function InputArea({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  width: "36px",
-                  height: "36px",
+                  width: "32px",
+                  height: "32px",
                   borderRadius: "50%",
                   backgroundColor: !prompt.trim() ? "#94a3b8" : "#2563eb",
                   border: "none",
@@ -166,7 +168,7 @@ export default function InputArea({
                 }}
               >
                 <svg
-                  style={{ width: "20px", height: "20px", color: "#ffffff" }}
+                  style={{ width: "16px", height: "16px", color: "#ffffff" }}
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
