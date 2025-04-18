@@ -17,6 +17,7 @@ import {
 } from "../services/chat";
 import { Storage } from "@plasmohq/storage";
 import { saveMessageApi } from "../services/api";
+import { env } from "../utils/env";
 
 const Sidepanel = () => {
   const [apiKey, setApiKey] = useStorage("apiKey");
@@ -164,7 +165,7 @@ const Sidepanel = () => {
     // Instantiate OpenAI client
     const client = new OpenAI({
       apiKey: apiKey,
-      baseURL: "http://localhost:8000/v1",
+      baseURL: env.API_URL,
       dangerouslyAllowBrowser: true,
     });
 
@@ -176,7 +177,7 @@ const Sidepanel = () => {
       // Call OpenAI compatible API
       const stream = await client.chat.completions.create(
         {
-          model: process.env.OPENAI_MODEL || "deepseek-chat",
+          model: env.OPENAI_MODEL,
           messages: messagesForApi,
           stream: true,
         },
