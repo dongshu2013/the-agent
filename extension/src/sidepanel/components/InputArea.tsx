@@ -122,14 +122,11 @@ export default function InputArea({
                 }}
               >
                 <svg
-                  style={{ width: "16px", height: "16px", color: "#ffffff" }}
-                  fill="none"
+                  style={{ width: "14px", height: "14px", color: "#ffffff" }}
+                  fill="currentColor"
                   viewBox="0 0 24 24"
-                  strokeWidth={2}
-                  stroke="currentColor"
                 >
-                  <rect x="6" y="4" width="4" height="16" rx="1" />
-                  <rect x="14" y="4" width="4" height="16" rx="1" />
+                  <rect x="6" y="6" width="12" height="12" rx="1" />
                 </svg>
               </button>
             ) : (

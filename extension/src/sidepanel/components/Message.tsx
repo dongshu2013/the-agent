@@ -57,7 +57,7 @@ export default function Message({ message }: MessageProps) {
             style={{
               display: "inline-block",
               maxWidth: "100%",
-              padding: "10px 16px 10px 0",
+              padding: isUser ? "10px 16px" : "10px 16px 10px 0",
               textAlign: isUser ? "left" : "left",
               fontSize: "15px",
               lineHeight: "1.5",
