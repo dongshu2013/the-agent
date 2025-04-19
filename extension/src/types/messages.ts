@@ -36,11 +36,7 @@ export interface ChatMessage {
 /**
  * Message name for internal message passing
  */
-export type MessageName =
-  | "process-request"
-  | "selected-text"
-  | "focus-input"
-  | "api-key-missing";
+export type MessageName = "selected-text" | "focus-input" | "api-key-missing";
 
 /**
  * Process request message

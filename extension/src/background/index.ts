@@ -1,4 +1,3 @@
-import { sendChatRequest } from "../services/api";
 import { Storage } from "@plasmohq/storage";
 import { ChromeMessage } from "../types";
 import { env } from "../utils/env";
@@ -8,16 +7,16 @@ const storage = new Storage();
 
 // 配置项键名
 const CONFIG_KEYS = {
-  API_TOKEN: "API_TOKEN",
+  API_KEY: "API_KEY",
 };
 
 // 设置默认配置
 async function initializeConfig() {
   try {
-    const apiToken = await storage.get(CONFIG_KEYS.API_TOKEN);
-    if (!apiToken) {
+    const apiKey = await storage.get(CONFIG_KEYS.API_KEY);
+    if (!apiKey) {
       throw new Error(
-        "No API Token found. User needs to provide one in settings."
+        "No API Key found. User needs to provide one in settings."
       );
     }
   } catch (error) {
@@ -26,13 +25,13 @@ async function initializeConfig() {
 }
 
 // 检查API Key是否存在
-async function checkApiKey() {
+async function checkApiKey(): Promise<string | null> {
   try {
-    const apiKey = await storage.get("apiKey");
-    return !!apiKey;
+    const apiKey = await storage.get(CONFIG_KEYS.API_KEY);
+    return apiKey || null;
   } catch (error) {
     console.error("Error checking API key:", error);
-    return false;
+    return null;
   }
 }
 
@@ -60,10 +59,8 @@ if (chrome.action) {
       // 首先检查API Key是否存在
       const hasApiKey = await checkApiKey();
 
-      // 如果检查侧边栏可用并打开
       if (chrome.sidePanel) {
         try {
-          // 尝试使用侧边栏
           await chrome.sidePanel.setOptions({
             enabled: true,
             path: "sidepanel.html",
@@ -71,7 +68,6 @@ if (chrome.action) {
           // @ts-ignore - sidePanel.open is available in Chrome 114+
           await chrome.sidePanel.open({ windowId: tab.windowId });
 
-          // 如果API Key不存在，发送消息给侧边栏
           if (!hasApiKey) {
             setTimeout(() => {
               chrome.runtime.sendMessage({
@@ -107,66 +103,6 @@ if (chrome.action) {
 chrome.runtime.onMessage.addListener(
   (message: ChromeMessage, sender, sendResponse) => {
     console.log("Background script received message:", message);
-
-    // 处理process-request消息
-    if (message.name === "process-request") {
-      const { apiKey, request } = message.body;
-      console.log("Processing request:", { request, hasApiKey: !!apiKey });
-
-      // 使用API服务处理请求
-      (async () => {
-        try {
-          // 发送请求到后端
-          console.log("Preparing chat request with message:", request);
-          const chatRequest = {
-            messages: [
-              {
-                role: "system",
-                content: env.SYSTEM_PROMPT,
-              },
-              {
-                role: "user",
-                content: request,
-              },
-            ],
-          };
-          console.log("Full chat request payload:", chatRequest);
-
-          const response = await sendChatRequest(chatRequest, apiKey);
-          console.log("Raw API response:", response);
-
-          if (!response.success) {
-            console.error("API request failed:", response.error);
-            throw new Error(
-              response.error || "Failed to get response from model"
-            );
-          }
-
-          console.log("Received successful response from backend");
-
-          // 从响应中提取回答内容
-          const result = response.data.choices[0].message.content;
-          console.log("Final chat response:", result);
-
-          // 发送回答给UI
-          sendResponse({
-            result,
-            error: null,
-          });
-        } catch (error) {
-          console.error("Error processing request:", error);
-          sendResponse({
-            result: null,
-            error:
-              error instanceof Error
-                ? error.message
-                : "Unknown error occurred while processing the request",
-          });
-        }
-      })();
-
-      return true; // 用于异步响应
-    }
 
     // 处理配置更新消息
     if (message.name === "update-config") {
@@ -205,7 +141,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         enabled: true,
         path: "sidepanel.html",
       });
-      // @ts-ignore - sidePanel.open is available in Chrome 114+
+      // @ts-ignore - sidePanel.open is  in Chrome 114+
       await chrome.sidePanel.open({ windowId: tab.windowId });
     } catch (error) {
       console.error("Error opening side panel from context menu:", error);

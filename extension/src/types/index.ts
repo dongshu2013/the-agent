@@ -46,14 +46,6 @@ export interface ProcessRequestBody {
 }
 
 /**
- * Process request message from UI to background
- */
-export interface ChromeProcessRequestMessage {
-  name: "process-request";
-  body: ProcessRequestBody;
-}
-
-/**
  * Update config message from UI to background
  */
 export interface ChromeUpdateConfigMessage {
@@ -91,7 +83,6 @@ export interface ChromeFocusInputMessage {
  * Union type of all Chrome messages
  */
 export type ChromeMessage =
-  | ChromeProcessRequestMessage
   | ChromeUpdateConfigMessage
   | ChromeSelectedTextMessage
   | ChromeApiKeyMissingMessage

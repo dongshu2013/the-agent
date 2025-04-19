@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Conversation } from "../../services/chat";
+import { Conversation } from "../../types/conversations";
 
 interface ConversationListProps {
   conversations: Conversation[];

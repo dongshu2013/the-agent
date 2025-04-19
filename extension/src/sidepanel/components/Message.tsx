@@ -87,7 +87,7 @@ export default function MessageComponent({
             style={{
               display: "inline-block",
               maxWidth: "100%",
-              padding: isUser ? "10px 16px" : "10px 16px 10px 0",
+              padding: isUser || isError ? "10px 16px" : "10px 16px 10px 0",
               textAlign: isUser ? "left" : "left",
               fontSize: "15px",
               lineHeight: "1.5",

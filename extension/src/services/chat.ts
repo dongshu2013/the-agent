@@ -1,181 +1,16 @@
 /**
- * 聊天服务 - 管理聊天会话和消息
+ * 聊天服务 - 处理消息和聊天功能
  */
 
-import {
-  sendChatRequest,
-  AVAILABLE_TOOLS,
-  createConversationApi,
-  deleteConversationApi,
-  getConversationsApi,
-  saveMessageApi,
-} from "./api";
-
-import { Message, Conversation, ChatRequest, CacheData } from "../types";
-
-// 缓存管理器
-class CacheManager {
-  private static instance: CacheManager;
-  private cache: Map<string, CacheData<any>>;
-  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5分钟
-
-  private constructor() {
-    this.cache = new Map();
-  }
-
-  static getInstance(): CacheManager {
-    if (!CacheManager.instance) {
-      CacheManager.instance = new CacheManager();
-    }
-    return CacheManager.instance;
-  }
-
-  set<T>(key: string, data: T): void {
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now(),
-    });
-  }
-
-  get<T>(key: string): T | null {
-    const cached = this.cache.get(key);
-    if (!cached) return null;
-
-    if (Date.now() - cached.timestamp > this.CACHE_DURATION) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    return cached.data;
-  }
-
-  delete(key: string): void {
-    this.cache.delete(key);
-  }
-
-  clear(): void {
-    this.cache.clear();
-  }
-}
+import { Message, ChatRequest, SaveMessageResponse } from "../types";
+import OpenAI from "openai";
+import { env } from "../utils/env";
+import { handleApiError, handleAuthError } from "./utils";
+import CacheManager from "./cache";
+import { getCurrentConversation } from "./conversation";
 
 // 获取缓存管理器实例
 const cacheManager = CacheManager.getInstance();
-
-// 生成唯一ID
-const generateId = (): string => {
-  return crypto.randomUUID();
-};
-
-// 处理API错误
-const handleApiError = (error: any): never => {
-  console.error("API Error:", error);
-
-  // 向控制台输出详细的错误信息
-  if (typeof error === "object" && error !== null) {
-    console.error("Error details:", JSON.stringify(error, null, 2));
-  }
-
-  throw error; // 直接向上传递错误
-};
-
-// 获取所有会话
-export const getConversations = async (): Promise<Conversation[]> => {
-  try {
-    const cachedConversations =
-      cacheManager.get<Conversation[]>("conversations");
-    if (cachedConversations) {
-      console.log("Using cached conversations");
-      return cachedConversations;
-    }
-
-    const response = await getConversationsApi();
-    if (!response.success || !response.data) {
-      return handleApiError(response.error || "Failed to fetch conversations");
-    }
-
-    const conversations: Conversation[] = response.data.map((conv: any) => ({
-      id: conv.id,
-      title: conv.title,
-      messages: conv.messages.map((msg: any) => ({
-        id: msg.id,
-        role: msg.role,
-        content: msg.content,
-        timestamp: new Date(msg.timestamp),
-      })),
-      createdAt: new Date(conv.created_at),
-      updatedAt: new Date(conv.updated_at),
-    }));
-
-    cacheManager.set("conversations", conversations);
-    return conversations;
-  } catch (error) {
-    console.error("Error fetching conversations:", error);
-    throw error;
-  }
-};
-
-// 创建新会话
-export const createNewConversation = async (): Promise<Conversation> => {
-  try {
-    const response = await createConversationApi();
-    if (!response.success || !response.data) {
-      return handleApiError(response.error || "Failed to create conversation");
-    }
-
-    const newConversation: Conversation = {
-      id: response.data.id,
-      title: response.data.title || "New Chat",
-      messages: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    cacheManager.delete("conversations");
-    return newConversation;
-  } catch (error) {
-    console.error("Error creating conversation:", error);
-    throw error;
-  }
-};
-
-// 选择会话
-export const selectConversation = async (
-  id: string
-): Promise<Conversation | null> => {
-  try {
-    const conversations = await getConversations();
-    const conversation = conversations.find((c) => c.id === id);
-
-    if (!conversation) {
-      throw new Error("Conversation not found");
-    }
-
-    cacheManager.set(`messages_${id}`, conversation.messages);
-    return conversation;
-  } catch (error) {
-    console.error("Error selecting conversation:", error);
-    throw error;
-  }
-};
-
-// 删除会话
-export const deleteConversation = async (id: string): Promise<void> => {
-  try {
-    const response = await deleteConversationApi(id);
-    if (!response.success) {
-      return handleApiError(response.error || "Failed to delete conversation");
-    }
-
-    // 清除所有相关缓存
-    cacheManager.delete("conversations"); // 清除会话列表缓存
-    cacheManager.delete(`messages_${id}`); // 清除该会话的消息缓存
-
-    console.log(`Conversation ${id} deleted successfully and cache cleared`);
-  } catch (error) {
-    console.error("Error deleting conversation:", error);
-    throw error;
-  }
-};
 
 // 添加用户消息
 export const addUserMessage = async (content: string): Promise<Message> => {
@@ -183,6 +18,7 @@ export const addUserMessage = async (content: string): Promise<Message> => {
     const message: Message = {
       role: "user",
       content,
+      timestamp: new Date(),
     };
     return message;
   } catch (error) {
@@ -191,6 +27,7 @@ export const addUserMessage = async (content: string): Promise<Message> => {
   }
 };
 
+// 添加助手消息
 export const addAssistantMessage = async (
   content: string | null
 ): Promise<Message> => {
@@ -206,18 +43,6 @@ export const addAssistantMessage = async (
     throw error;
   }
 };
-
-// 获取当前会话
-export const getCurrentConversation =
-  async (): Promise<Conversation | null> => {
-    try {
-      const conversations = await getConversations();
-      return conversations[0] || null; // 返回第一个会话作为当前会话
-    } catch (error) {
-      console.error("Error getting current conversation:", error);
-      return null;
-    }
-  };
 
 // 发送消息并获取响应
 export const sendMessage = async (
@@ -260,15 +85,13 @@ export const sendMessage = async (
     if (!messages.some((m: { role: string }) => m.role === "system")) {
       messages.unshift({
         role: "system",
-        content:
-          "You are a helpful AI assistant named MIZU Agent. Answer questions succinctly and professionally. When a user asks about information that requires tools (like weather, time, etc.), identify the need and call the appropriate function.",
+        content: env.SYSTEM_PROMPT,
       });
     }
 
     // 构建请求
     const request: ChatRequest = {
       messages,
-      ...(AVAILABLE_TOOLS.length > 0 ? { tools: AVAILABLE_TOOLS } : {}),
     };
 
     // 发送请求
@@ -304,7 +127,6 @@ export const sendMessage = async (
     return assistantResponse;
   } catch (error) {
     console.error("Failed to send message:", error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
     throw error;
   }
 };
@@ -319,4 +141,121 @@ export const updateMessageCache = (
   messages: Message[]
 ): void => {
   cacheManager.set(`messages_${conversationId}`, messages);
+};
+
+// 发送聊天请求到后端
+export const sendChatRequest = async (
+  request: ChatRequest,
+  apiKey?: string,
+  options: { stream?: boolean; signal?: AbortSignal } = {}
+): Promise<{ success: boolean; data?: any; error?: string }> => {
+  try {
+    const client = new OpenAI({
+      apiKey: apiKey || localStorage.getItem("apiKey") || "",
+      baseURL: env.BACKEND_URL,
+      dangerouslyAllowBrowser: true,
+    });
+
+    const messages = request.messages.map((msg) => ({
+      role: msg.role as "user" | "assistant" | "system",
+      content: msg.content || "",
+    }));
+
+    const response = await client.chat.completions.create(
+      {
+        model: env.DEFAULT_MODEL,
+        messages,
+        ...(request.tools ? { tools: request.tools } : {}),
+        stream: options.stream,
+      },
+      { signal: options.signal }
+    );
+
+    return {
+      success: true,
+      data: response,
+    };
+  } catch (error: any) {
+    console.error("Error in sendChatRequest:", error);
+    return {
+      success: false,
+      error: error.message || "Failed to send chat request",
+    };
+  }
+};
+
+/**
+ * 保存消息（调用后端接口）
+ */
+export const saveMessageApi = async (
+  conversationId: string,
+  message: Message
+): Promise<SaveMessageResponse> => {
+  try {
+    const API_ENDPOINT = "/v1/message/save";
+    const apiKey = localStorage.getItem("apiKey");
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    if (apiKey) {
+      headers["Authorization"] = `Bearer ${apiKey}`;
+    } else {
+      try {
+        const storedApiKey = localStorage.getItem("apiKey");
+        if (storedApiKey) {
+          headers["Authorization"] = `Bearer ${storedApiKey}`;
+        }
+      } catch (e) {}
+    }
+
+    const requestBody = {
+      conversation_id: conversationId,
+      message: {
+        role: message.role,
+        content: message.content,
+      },
+    };
+
+    const response = await fetch(`${env.BACKEND_URL}${API_ENDPOINT}`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+
+      if (response.status === 401 || response.status === 403) {
+        return handleAuthError();
+      }
+
+      return {
+        success: false,
+        error:
+          errorData.detail ||
+          errorData.error?.message ||
+          `API Error: ${response.status} - ${response.statusText}`,
+      };
+    }
+
+    const data = await response.json();
+
+    return {
+      success: true,
+      data: {
+        id: data.id,
+        conversation_id: data.conversation_id,
+        role: data.role,
+        content: data.content,
+        created_at: data.created_at,
+      },
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error occurred",
+    };
+  }
 };

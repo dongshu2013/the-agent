@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useStorage } from "@plasmohq/storage/hook";
-import OpenAI from "openai";
 import "../../style.css";
 import Header from "./components/Header";
 import Message from "./components/Message";
@@ -8,14 +7,14 @@ import InputArea from "./components/InputArea";
 import Settings from "./components/Settings";
 import ConversationList from "./components/ConversationList";
 import { Message as MessageType, Conversation } from "../types";
+import { sendChatRequest, saveMessageApi } from "../services/chat";
 import {
   createNewConversation,
   selectConversation as selectConv,
   deleteConversation as deleteConv,
   getConversations,
-} from "../services/chat";
+} from "../services/conversation";
 import { Storage } from "@plasmohq/storage";
-import { saveMessageApi } from "../services/api";
 import { generateMemory } from "../services/memory";
 import { env } from "../utils/env";
 
@@ -188,7 +187,6 @@ const Sidepanel = () => {
     e.preventDefault();
     if (!prompt.trim() || !apiKey || !currentConversationId) {
       if (!apiKey) {
-        // 如果没有API Key，显示提示
         setShowApiKeyAlert(true);
       }
       return;
@@ -232,7 +230,7 @@ const Sidepanel = () => {
       setMessages((prev: MessageType[]) => [
         ...prev.filter((m) => m.role !== "error"),
         userMessage,
-        loadingMessage, // 添加加载中消息
+        loadingMessage,
       ]);
       setPrompt("");
       setIsLoading(true);
@@ -241,43 +239,37 @@ const Sidepanel = () => {
       // Create new AbortController
       abortControllerRef.current = new AbortController();
 
-      // 1. 构建记忆 (memory construction)
-      console.log("Generating memory for prompt:", currentPrompt);
+      // 1. Generate memory context
       const memory = await generateMemory(
         currentConversationId,
         currentPrompt,
         {
-          strategy: 2, // 使用策略2: 最近消息 + 语义相关
+          strategy: 2,
           systemPrompt: env.SYSTEM_PROMPT,
         }
       );
 
-      console.log("Generated memory context:", memory);
-
-      // Instantiate OpenAI client
-      const client = new OpenAI({
-        apiKey: apiKey,
-        baseURL: env.BACKEND_URL,
-        dangerouslyAllowBrowser: true,
-      });
-
-      // Call OpenAI compatible API with memory context
-      const stream = await client.chat.completions.create(
+      // 2. Send chat request with memory context
+      const response = await sendChatRequest(
         {
-          model: env.DEFAULT_MODEL,
-          messages: memory.map((msg) => ({
-            role: msg.role as any,
-            content: msg.content,
-          })),
-          stream: true,
+          messages: memory,
         },
-        { signal: abortControllerRef.current?.signal }
+        apiKey,
+        {
+          stream: true,
+          signal: abortControllerRef.current?.signal,
+        }
       );
 
+      if (!response.success) {
+        throw new Error(response.error || "Failed to get response from AI");
+      }
+
+      const stream = response.data;
       let accumulatedContent = "";
+
       for await (const chunk of stream) {
         if (abortControllerRef.current === null) {
-          console.log("Stream processing aborted externally.");
           break;
         }
         const content = chunk.choices[0]?.delta?.content || "";
@@ -292,11 +284,9 @@ const Sidepanel = () => {
           );
         }
         if (chunk.choices[0]?.finish_reason === "stop") {
-          console.log("Stream finished.");
           break;
         }
       }
-      console.log("Stream processing complete.");
 
       // Save AI message
       if (accumulatedContent) {
@@ -329,15 +319,11 @@ const Sidepanel = () => {
         console.log("Stream aborted by user.");
       } else {
         console.error("API Call Error:", error);
-
-        // 使用自定义错误处理函数
         handleApiError(
           error.response?.data?.error?.message ||
             error.message ||
             "An unexpected error occurred. Please check the console."
         );
-
-        // 移除加载消息
         setMessages((prev: MessageType[]) =>
           prev.filter((m: MessageType) => m.id !== assistantMessageId)
         );
