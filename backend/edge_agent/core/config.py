@@ -10,7 +10,11 @@ class Settings(BaseSettings):
     # LLM API Configuration
     LLM_API_KEY: str = ""
     LLM_API_URL: str = ""
-    
+
+    # Embedding API Configuration
+    EMBEDDING_API_KEY: str = ""
+    EMBEDDING_API_URL: str = ""
+
     # Default Model
     DEFAULT_MODEL: str = "google/gemini-2.5-pro-exp-03-25:free"
 

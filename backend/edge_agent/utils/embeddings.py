@@ -15,7 +15,10 @@ from edge_agent.models.database import Message
 logger = logging.getLogger("embeddings")
 
 # Initialize OpenAI client
-client = OpenAI(api_key=settings.LLM_API_KEY, base_url=settings.LLM_API_URL)
+client = OpenAI(
+    api_key=settings.EMBEDDING_API_KEY,
+    base_url=settings.EMBEDDING_API_URL
+)
 
 def extract_text_from_content(content: Union[str, List[Dict[str, Any]]]) -> str:
     """
@@ -49,15 +52,22 @@ async def generate_embedding(text: str) -> List[float]:
     """
     Generate an embedding for the given text using OpenAI's embedding API.
     """
+    if not text or text.strip() == "":
+        logger.warning("Empty text provided for embedding generation, returning empty vector")
+        return None
+
     try:
         response = client.embeddings.create(
             input=text,
-            model="text-embedding-ada-002"  # OpenAI's embedding model
+            model="intfloat/multilingual-e5-large",
+            encoding_format="float"
         )
-        return response.data[0].embedding
+        embedding = response.data[0].embedding
+        return embedding
     except Exception as e:
         logger.error(f"Error generating embedding: {str(e)}")
-        raise
+        logger.exception("Full exception details:")
+        return None
 
 async def update_message_embedding(message: Message, db: Session) -> Message:
     """
