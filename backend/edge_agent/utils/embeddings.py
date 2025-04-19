@@ -131,7 +131,7 @@ async def update_message_embedding(message_id: str, db: Session = None) -> Optio
         if session_created:
             db.close()
 
-async def update_all_messages_embeddings(db: Session = None, minutes_threshold: int = 30) -> int:
+async def update_all_messages_embeddings(db: Session = None, minutes_threshold: int = 5) -> int:
     """
     Update embeddings for all messages that don't have them yet and were created
     at least minutes_threshold minutes ago.

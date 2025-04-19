@@ -29,7 +29,7 @@ async def periodic_embedding_update():
             db = SessionLocal()
             try:
                 # Update embeddings for messages created at least 30 minutes ago
-                updated_count = await update_all_messages_embeddings(db, minutes_threshold=30)
+                updated_count = await update_all_messages_embeddings(db, minutes_threshold=5)
                 logger.info(f"Scheduled task updated embeddings for {updated_count} messages")
             finally:
                 db.close()
