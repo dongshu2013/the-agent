@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert
 
+from datetime import datetime
 from edge_agent.core.config import settings
 from edge_agent.utils.database import get_db
 from edge_agent.models.database import User, Conversation, Message
@@ -279,17 +280,6 @@ async def stream_chat_response(params: ChatCompletionCreateParam):
         yield f"data: {json.dumps(error_response)}\n\n"
         yield "data: [DONE]\n\n"
 
-async def get_top_k_related_messages(db: Session, message_text: str, conversation_id: str, k: int = 3):
-    similar_messages = await find_similar_messages(
-        query_text=message_text,
-        conversation_id=conversation_id,
-        limit=k,
-        db=db
-    )
-    # Return the message IDs
-    return [msg.id for msg in similar_messages]
-
-
 @router.post("/v1/message/save", response_model=Dict[str, Any])
 async def save_message(
     request: Request,
@@ -301,7 +291,6 @@ async def save_message(
     Save a message to a conversation and generate its embedding.
     """
     db = request.state.db
-    
     try:
         conversation = db.query(Conversation).filter(
             Conversation.id == message_data.conversation_id,
@@ -315,9 +304,8 @@ async def save_message(
             conversation_id=message_data.conversation_id,
             role=message_data.message.role,
             content=message_data.message.content,
-            created_at=message_data.message.created_at or datetime.now(),
+            created_at=datetime.fromisoformat(message_data.message.created_at),
         ).on_conflict_do_nothing(index_elements=['id'])
-
         db.execute(stmt)
         db.commit()
 
@@ -326,21 +314,21 @@ async def save_message(
         background_tasks.add_task(update_message_embedding, message_data.message.message_id)
 
         # Get top k related messages
+        top_k_messages = []
         if message_data.top_k_related > 0:
-            top_k_messages = await get_top_k_related_messages(
-                db,
-                extract_text_from_content(message_data.message.content),
-                message_data.conversation_id,
-                message_data.top_k_related
+            message_text = extract_text_from_content(message_data.message.content)
+            similar_messages = await find_similar_messages(
+                query_text=message_text,
+                conversation_id=message_data.conversation_id,
+                limit=message_data.top_k_related,
+                db=db
             )
-        else:
-            top_k_messages = []
+            top_k_messages = [msg.id for msg in similar_messages]
 
         return {
             "success": True,
             "top_k_messages": top_k_messages
         }
-
     except Exception as e:
         logger.error(f"Error saving message: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error saving message: {str(e)}")
