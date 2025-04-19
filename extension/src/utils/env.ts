@@ -5,7 +5,7 @@ import { Env } from "../types";
 // Default values (fallbacks)
 const defaultEnv = {
   OPENAI_MODEL: "deepseek-chat",
-  BACKEND_URL: "http://localhost:8000/v1",
+  BACKEND_URL: "http://localhost:8000",
   SYSTEM_PROMPT: "You are a helpful AI assistant named MIZU Agent.",
   SERVER_URL: "https://the-agent-production.up.railway.app",
 };

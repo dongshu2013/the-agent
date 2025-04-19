@@ -257,7 +257,7 @@ const Sidepanel = () => {
       // Instantiate OpenAI client
       const client = new OpenAI({
         apiKey: apiKey,
-        baseURL: env.BACKEND_URL,
+        baseURL: `${env.BACKEND_URL}/v1`,
         dangerouslyAllowBrowser: true,
       });
 
