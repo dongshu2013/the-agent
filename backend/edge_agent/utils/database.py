@@ -10,8 +10,14 @@ from edge_agent.core.config import settings
 
 logger = logging.getLogger("database")
 
+# Fix the DATABASE_URL if it uses postgres:// instead of postgresql://
+database_url = settings.DATABASE_URL
+if database_url.startswith('postgres://'):
+    logger.info("Converting postgres:// to postgresql:// in DATABASE_URL")
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+
 # Create SQLAlchemy engine
-engine = create_engine(settings.DATABASE_URL)
+engine = create_engine(database_url)
 
 # Create sessionmaker
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

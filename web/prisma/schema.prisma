@@ -40,6 +40,7 @@ model messages {
   conversation_id String
   role            String // "system", "user", "assistant", or "tooling"
   content         Json // Array of text_message or image_message objects
+  embedding       Unsupported("vector(1536)")? // OpenAI embedding vector (added via raw SQL)
   created_at      DateTime      @default(now())
 }
 

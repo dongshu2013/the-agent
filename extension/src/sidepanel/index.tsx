@@ -17,6 +17,7 @@ import {
 import { Storage } from "@plasmohq/storage";
 import { generateMemory } from "../services/memory";
 import { env } from "../utils/env";
+import OpenAI from "openai";
 
 const Sidepanel = () => {
   const [apiKey, setApiKey] = useStorage("apiKey");

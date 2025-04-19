@@ -3,9 +3,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import uuid
+from sqlalchemy.dialects.postgresql import ARRAY, FLOAT
 from pgvector.sqlalchemy import Vector
 
-Base = declarative_base()
+from edge_agent.utils.database import Base
 
 def generate_uuid():
     return str(uuid.uuid4())
@@ -51,6 +52,7 @@ class Message(Base):
     conversation_id = Column(String, ForeignKey("conversations.id"), nullable=False)
     role = Column(String, nullable=False)  # "system", "user", "assistant", or "tooling"
     content = Column(JSON, nullable=False)  # Array of text_message or image_message objects
+    embedding = Column(Vector(1024), nullable=True)  # Vector embedding for similarity search
     created_at = Column(DateTime, default=func.now(), nullable=False)
 
     # Relationships

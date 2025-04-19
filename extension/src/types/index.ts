@@ -18,7 +18,6 @@ export interface Env {
   BACKEND_URL: string;
   SYSTEM_PROMPT: string;
   SERVER_URL: string;
-  DEFAULT_MODEL: string;
 }
 /**
  * Default configuration for the background service

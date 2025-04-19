@@ -157,7 +157,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "/Users/coco/project/ai-agent/the-agent/web/src/generated/prisma",
+      "value": "/Users/shudong/code/the-agent/web/src/generated/prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -171,7 +171,7 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "/Users/coco/project/ai-agent/the-agent/web/prisma/schema.prisma",
+    "sourceFilePath": "/Users/shudong/code/the-agent/web/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
@@ -185,16 +185,17 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
+  "postinstall": false,
   "inlineDatasources": {
     "db": {
       "url": {
         "fromEnvVar": "DATABASE_URL",
-        "value": "postgresql://postgres:USOixMMHhiZeoKOXUIMCPoUMIiZzXodQ@switchback.proxy.rlwy.net:48726/railway"
+        "value": null
       }
     }
   },
-  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel users {\n  id              String          @id @default(uuid())\n  username        String          @unique\n  email           String?         @unique\n  api_key         String          @unique @default(uuid())\n  api_key_enabled Boolean         @default(true)\n  conversations   conversations[]\n  created_at      DateTime        @default(now())\n  updated_at      DateTime        @updatedAt\n}\n\nmodel conversations {\n  id         String     @id @default(uuid())\n  user       users      @relation(fields: [user_id], references: [id])\n  user_id    String\n  messages   messages[]\n  created_at DateTime   @default(now())\n  status     String     @default(\"active\") // \"active\" or \"deleted\"\n}\n\nmodel messages {\n  id              String        @id @default(uuid())\n  conversation    conversations @relation(fields: [conversation_id], references: [id])\n  conversation_id String\n  role            String // \"system\", \"user\", \"assistant\", or \"tooling\"\n  content         Json // Array of text_message or image_message objects\n  created_at      DateTime      @default(now())\n}\n\n// Types for reference (not actual models):\n// \n// text_message {\n//   type: \"text\"\n//   text: string,\n// }\n//\n// image_message {\n//   type: \"image_url\",\n//   image_url: {url: string}\n// }\n",
-  "inlineSchemaHash": "92b0dceeb67ad2392e179eee3fa04701d37f5fd5e85cc220f529dfb4f95b3073",
+  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel users {\n  id              String          @id @default(uuid())\n  username        String          @unique\n  email           String?         @unique\n  api_key         String          @unique @default(uuid())\n  api_key_enabled Boolean         @default(true)\n  conversations   conversations[]\n  created_at      DateTime        @default(now())\n  updated_at      DateTime        @updatedAt\n}\n\nmodel conversations {\n  id         String     @id @default(uuid())\n  user       users      @relation(fields: [user_id], references: [id])\n  user_id    String\n  messages   messages[]\n  created_at DateTime   @default(now())\n  status     String     @default(\"active\") // \"active\" or \"deleted\"\n}\n\nmodel messages {\n  id              String                       @id @default(uuid())\n  conversation    conversations                @relation(fields: [conversation_id], references: [id])\n  conversation_id String\n  role            String // \"system\", \"user\", \"assistant\", or \"tooling\"\n  content         Json // Array of text_message or image_message objects\n  embedding       Unsupported(\"vector(1536)\")? // OpenAI embedding vector (added via raw SQL)\n  created_at      DateTime                     @default(now())\n}\n\n// Types for reference (not actual models):\n// \n// text_message {\n//   type: \"text\"\n//   text: string,\n// }\n//\n// image_message {\n//   type: \"image_url\",\n//   image_url: {url: string}\n// }\n",
+  "inlineSchemaHash": "ca3401f715649dea427d075f500a412d317e24bb1b3230d43749e3ed0dc48601",
   "copyEngine": true
 }
 
