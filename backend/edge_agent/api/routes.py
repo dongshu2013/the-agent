@@ -348,9 +348,9 @@ async def search_similar_messages(
             limit=search_params.k,
             db=db
         )
-        
+
         # Return the message IDs
-        return [{"id": message.id, "content": message.content, "role": message.role} for message in similar_messages]
+        return [msg.id for msg in similar_messages]
 
     except Exception as e:
         logger.error(f"Error searching similar messages: {str(e)}")
