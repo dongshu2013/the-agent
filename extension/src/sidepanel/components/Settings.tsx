@@ -1,16 +1,25 @@
 import React, { useState, useEffect } from "react";
 import { Storage } from "@plasmohq/storage";
+import { env } from "../../utils/env";
+import { indexedDB } from "../../utils/db";
 
 interface SettingsProps {
   apiKey: string;
   setApiKey: (key: string) => void;
   onClose: () => void;
+  initialValidationError?: string;
 }
 
-const Settings: React.FC<SettingsProps> = ({ apiKey, setApiKey, onClose }) => {
+const Settings: React.FC<SettingsProps> = ({
+  apiKey,
+  setApiKey,
+  onClose,
+  initialValidationError,
+}) => {
   const [tempApiKey, setTempApiKey] = useState(apiKey);
-  const [saveStatus, setSaveStatus] = useState("");
-  const [showWarning, setShowWarning] = useState(false);
+  const [saveStatus, setSaveStatus] = useState(initialValidationError || "");
+  const [showWarning, setShowWarning] = useState(!!initialValidationError);
+  const [isValidating, setIsValidating] = useState(false);
 
   useEffect(() => {
     const storage = new Storage();
@@ -21,6 +30,13 @@ const Settings: React.FC<SettingsProps> = ({ apiKey, setApiKey, onClose }) => {
     });
   }, []);
 
+  useEffect(() => {
+    if (initialValidationError) {
+      setSaveStatus(initialValidationError);
+      setShowWarning(true);
+    }
+  }, [initialValidationError]);
+
   const handleSave = async () => {
     try {
       if (!tempApiKey?.trim()) {
@@ -29,19 +45,42 @@ const Settings: React.FC<SettingsProps> = ({ apiKey, setApiKey, onClose }) => {
         return;
       }
 
+      setIsValidating(true);
+      setSaveStatus("Validating API key...");
+      const formattedKey = tempApiKey.trim();
+
+      const response = await fetch(`${env.BACKEND_URL}/v1/auth/verify`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${formattedKey}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Invalid or disabled API key");
+      }
+
+      const data = await response.json();
+      if (!data.success) {
+        throw new Error("Invalid or disabled API key");
+      }
+
+      await indexedDB.saveUser(data.user);
+
       const storage = new Storage();
-      await storage.set("apiKey", tempApiKey);
-      setApiKey(tempApiKey);
+      await storage.set("apiKey", formattedKey);
+      setApiKey(formattedKey);
       setSaveStatus("Saved successfully!");
       setTimeout(() => setSaveStatus(""), 2000);
 
-      // Also save to localStorage for API requests
-      localStorage.setItem("apiKey", tempApiKey);
-
       onClose();
     } catch (error) {
-      setSaveStatus("Failed to save");
-      setTimeout(() => setSaveStatus(""), 2000);
+      setSaveStatus("Invalid or disabled API key");
+      setShowWarning(true);
+      setTimeout(() => setSaveStatus(""), 3000);
+    } finally {
+      setIsValidating(false);
     }
   };
 
@@ -53,6 +92,10 @@ const Settings: React.FC<SettingsProps> = ({ apiKey, setApiKey, onClose }) => {
       return;
     }
     onClose();
+  };
+
+  const handleGetApiKey = () => {
+    window.open(`${env.SERVER_URL}/profile`, "_blank");
   };
 
   return (
@@ -143,10 +186,34 @@ const Settings: React.FC<SettingsProps> = ({ apiKey, setApiKey, onClose }) => {
               style={{
                 fontSize: "14px",
                 color: "#4B5563",
-                marginBottom: "20px",
+                marginBottom: "8px",
               }}
             >
               Use this API key to authenticate requests to the MIZU Agent API.
+            </p>
+            <p
+              style={{
+                fontSize: "14px",
+                color: "#4B5563",
+                marginBottom: "20px",
+              }}
+            >
+              Don't have an API key?{" "}
+              <button
+                onClick={handleGetApiKey}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  color: "#2563eb",
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                  display: "inline",
+                  fontSize: "inherit",
+                }}
+              >
+                Get one here
+              </button>
             </p>
             <input
               type="password"
@@ -172,27 +239,33 @@ const Settings: React.FC<SettingsProps> = ({ apiKey, setApiKey, onClose }) => {
             >
               <button
                 onClick={handleSave}
+                disabled={isValidating}
                 style={{
                   width: "100%",
                   padding: "12px",
-                  backgroundColor: "#2563eb",
+                  backgroundColor: isValidating ? "#93C5FD" : "#2563eb",
                   color: "white",
                   border: "none",
                   borderRadius: "8px",
                   fontSize: "14px",
                   fontWeight: 500,
-                  cursor: "pointer",
+                  cursor: isValidating ? "default" : "pointer",
                   transition: "all 0.2s",
                   textAlign: "center",
+                  opacity: isValidating ? 0.7 : 1,
                 }}
                 onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = "#1d4ed8";
+                  if (!isValidating) {
+                    e.currentTarget.style.backgroundColor = "#1d4ed8";
+                  }
                 }}
                 onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = "#2563eb";
+                  if (!isValidating) {
+                    e.currentTarget.style.backgroundColor = "#2563eb";
+                  }
                 }}
               >
-                Save
+                {isValidating ? "Validating..." : "Save"}
               </button>
               {saveStatus && (
                 <span
@@ -200,7 +273,9 @@ const Settings: React.FC<SettingsProps> = ({ apiKey, setApiKey, onClose }) => {
                     fontSize: "14px",
                     color:
                       saveStatus.includes("Failed") ||
-                      saveStatus.includes("Please enter")
+                      saveStatus.includes("Please enter") ||
+                      saveStatus.includes("Invalid") ||
+                      saveStatus.includes("disabled")
                         ? "#DC2626"
                         : "#059669",
                     textAlign: "center",

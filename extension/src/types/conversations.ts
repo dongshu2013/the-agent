@@ -11,9 +11,10 @@ import { Message } from "./messages";
 export interface Conversation {
   id: string;
   title: string;
-  messages: Message[];
-  createdAt: Date;
-  updatedAt: Date;
+  user_id: string;
+  created_at: string;
+  status: string;
+  messages?: Message[];
 }
 
 /**
@@ -32,11 +33,14 @@ export interface ConversationListProps {
  */
 export interface CreateConversationResponse {
   success: boolean;
+  error?: string;
   data?: {
     id: string;
+    user_id: string;
+    created_at: string;
+    status: string;
     title?: string;
   };
-  error?: string;
 }
 
 /**
@@ -45,11 +49,7 @@ export interface CreateConversationResponse {
 export interface SaveMessageResponse {
   success: boolean;
   data?: {
-    id: string;
-    conversation_id: string;
-    role: string;
-    content: string;
-    created_at: string;
+    top_k_messages: string[];
   };
   error?: string;
 }

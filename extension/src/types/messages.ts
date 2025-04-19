@@ -7,12 +7,13 @@
  * Message type for chat display and processing
  */
 export interface Message {
-  id?: string;
-  role: string;
+  message_id: string;
+  role: "user" | "assistant" | "system" | "error";
   content: string;
-  timestamp?: Date;
+  created_at: string;
   isLoading?: boolean;
-  type?: string; // Used for error messages
+  status?: "pending" | "completed" | "error";
+  conversation_id?: string;
 }
 
 /**
@@ -20,18 +21,6 @@ export interface Message {
  * @deprecated Use Message instead
  */
 export type MessageType = Message;
-
-/**
- * Chat message for IndexedDB storage
- */
-export interface ChatMessage {
-  id?: number;
-  role: "user" | "assistant" | "system";
-  content: string;
-  timestamp: number;
-  conversationId: string;
-  status?: "pending" | "completed" | "error";
-}
 
 /**
  * Message name for internal message passing

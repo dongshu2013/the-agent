@@ -107,7 +107,7 @@ const ConversationList = ({
             <nav
               style={{ display: "flex", flexDirection: "column", gap: "8px" }}
             >
-              {conversations.map((conversation) => (
+              {conversations.map((conversation, index) => (
                 <div
                   key={conversation.id}
                   style={{
@@ -128,20 +128,6 @@ const ConversationList = ({
                         : "#4b5563",
                     transition: "all 0.2s",
                   }}
-                  onMouseEnter={(e) => {
-                    const deleteButton =
-                      e.currentTarget.querySelector("button");
-                    if (deleteButton) {
-                      deleteButton.style.opacity = "1";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    const deleteButton =
-                      e.currentTarget.querySelector("button");
-                    if (deleteButton) {
-                      deleteButton.style.opacity = "0";
-                    }
-                  }}
                   onClick={() => {
                     selectConversation(conversation.id);
                     setShowConversationList(false);
@@ -157,47 +143,48 @@ const ConversationList = ({
                       lineHeight: "1.5",
                     }}
                   >
-                    {conversation.messages.length > 0
-                      ? conversation.messages[0].content
+                    {conversation.messages && conversation.messages.length > 0
+                      ? conversation.messages[0].content?.slice(0, 200)
                       : "New Chat"}
                   </span>
-                  <button
-                    onClick={(e) => handleDeleteClick(conversation.id, e)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      width: "28px",
-                      height: "28px",
-                      borderRadius: "4px",
-                      backgroundColor: "transparent",
-                      border: "none",
-                      color: "#6b7280",
-                      cursor: "pointer",
-                      opacity: 0,
-                      transition: "all 0.2s",
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f3f4f6";
-                      e.currentTarget.style.color = "#ef4444";
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent";
-                      e.currentTarget.style.color = "#6b7280";
-                    }}
-                  >
-                    <svg
-                      style={{ width: "18px", height: "18px" }}
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
+                  {index > 0 && (
+                    <button
+                      onClick={(e) => handleDeleteClick(conversation.id, e)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "4px",
+                        backgroundColor: "transparent",
+                        border: "none",
+                        color: "#6b7280",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = "#f3f4f6";
+                        e.currentTarget.style.color = "#ef4444";
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = "transparent";
+                        e.currentTarget.style.color = "#6b7280";
+                      }}
                     >
-                      <path
-                        fillRule="evenodd"
-                        d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  </button>
+                      <svg
+                        style={{ width: "18px", height: "18px" }}
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M8.75 1A2.75 2.75 0 006 3.75v.443c-.795.077-1.584.176-2.365.298a.75.75 0 10.23 1.482l.149-.022.841 10.518A2.75 2.75 0 007.596 19h4.807a2.75 2.75 0 002.742-2.53l.841-10.52.149.023a.75.75 0 00.23-1.482A41.03 41.03 0 0014 4.193V3.75A2.75 2.75 0 0011.25 1h-2.5zM10 4c.84 0 1.673.025 2.5.075V3.75c0-.69-.56-1.25-1.25-1.25h-2.5c-.69 0-1.25.56-1.25 1.25v.325C8.327 4.025 9.16 4 10 4zM8.58 7.72a.75.75 0 00-1.5.06l.3 7.5a.75.75 0 101.5-.06l-.3-7.5zm4.34.06a.75.75 0 10-1.5-.06l-.3 7.5a.75.75 0 101.5.06l.3-7.5z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               ))}
             </nav>

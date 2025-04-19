@@ -18,6 +18,7 @@ export interface ChatRequest {
   max_tokens?: number;
   stream?: boolean;
   tools?: any[];
+  top_k_related?: number;
 }
 
 /**

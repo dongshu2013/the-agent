@@ -2,41 +2,30 @@
  * 会话服务 - 管理会话相关功能
  */
 
-import {
-  Conversation,
-  CreateConversationResponse,
-  Message,
-  ChatRequest,
-  SaveMessageResponse,
-} from "../types";
 import { env } from "../utils/env";
-import { handleAuthError } from "./utils";
-import CacheManager from "./cache";
-import OpenAI from "openai";
+import { indexedDB } from "../utils/db";
+import { getApiKey, handleAuthError } from "./utils";
+import { Conversation } from "../types/conversations";
 
-// 获取缓存管理器实例
-const cacheManager = CacheManager.getInstance();
 /**
  * 创建新会话（调用后端接口）
  */
 export const createConversationApi = async (
   apiKey?: string
-): Promise<CreateConversationResponse> => {
+): Promise<{ success: boolean; data?: Conversation; error?: string }> => {
   try {
     const API_ENDPOINT = "/v1/conversation/create";
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
+    const storedApiKey = getApiKey();
 
     if (apiKey) {
       headers["Authorization"] = `Bearer ${apiKey}`;
+    } else if (storedApiKey) {
+      headers["Authorization"] = `Bearer ${storedApiKey}`;
     } else {
-      try {
-        const storedApiKey = localStorage.getItem("apiKey");
-        if (storedApiKey) {
-          headers["Authorization"] = `Bearer ${storedApiKey}`;
-        }
-      } catch (e) {}
+      return handleAuthError();
     }
 
     const response = await fetch(`${env.BACKEND_URL}${API_ENDPOINT}`, {
@@ -65,6 +54,9 @@ export const createConversationApi = async (
       data: {
         id: data.id || crypto.randomUUID(),
         title: data.title || "New Chat",
+        user_id: data.user_id,
+        created_at: data.created_at,
+        status: data.status,
       },
     };
   } catch (error) {
@@ -137,28 +129,31 @@ export const getConversationsApi = async (
 ): Promise<{ success: boolean; data?: any[]; error?: string }> => {
   try {
     const API_ENDPOINT = "/v1/conversation/list";
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-
-    if (apiKey) {
-      headers["Authorization"] = `Bearer ${apiKey}`;
-    } else {
-      try {
-        const storedApiKey = localStorage.getItem("apiKey");
-        if (storedApiKey) {
-          headers["Authorization"] = `Bearer ${storedApiKey}`;
-        }
-      } catch (e) {}
+    const keyToUse = apiKey || getApiKey();
+    if (!keyToUse) {
+      return handleAuthError();
     }
 
-    const response = await fetch(`${env.BACKEND_URL}${API_ENDPOINT}`, {
+    const formattedKey = keyToUse.trim();
+    if (!formattedKey) {
+      return handleAuthError();
+    }
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${formattedKey}`,
+    };
+
+    const url = `${env.BACKEND_URL}${API_ENDPOINT}`;
+
+    const response = await fetch(url, {
       method: "GET",
       headers,
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+
       if (response.status === 401 || response.status === 403) {
         return handleAuthError();
       }
@@ -186,20 +181,25 @@ export const getConversationsApi = async (
  */
 export const getConversations = async (): Promise<Conversation[]> => {
   try {
-    const cachedConversations =
-      cacheManager.get<Conversation[]>("conversations");
-    if (cachedConversations) {
-      return cachedConversations;
-    }
+    // 从 IndexedDB 获取会话列表
+    // const conversations = await indexedDB.getAllConversations();
+    // if (conversations && conversations.length > 0) {
+    //   return conversations;
+    // }
 
+    // 如果 IndexedDB 中没有数据，从后端获取
     const response = await getConversationsApi();
     if (!response.success || !response.data) {
       throw new Error(response.error || "Failed to fetch conversations");
     }
 
-    const conversations: Conversation[] = response.data.map((conv: any) => ({
+    const newConversations: Conversation[] = response.data.map((conv: any) => ({
       id: conv.id,
-      title: conv.title,
+      title:
+        conv?.title || conv.messages[0]?.content.slice(0, 20) || "New Chat",
+      user_id: conv.user_id,
+      created_at: conv.created_at,
+      status: conv.status,
       messages: conv.messages.map((msg: any) => ({
         id: msg.id,
         role: msg.role,
@@ -210,8 +210,11 @@ export const getConversations = async (): Promise<Conversation[]> => {
       updatedAt: new Date(conv.updated_at),
     }));
 
-    cacheManager.set("conversations", conversations);
-    return conversations;
+    // 保存到 IndexedDB
+    await Promise.all(
+      newConversations.map((conv) => indexedDB.saveConversation(conv))
+    );
+    return newConversations;
   } catch (error) {
     throw error;
   }
@@ -240,17 +243,20 @@ export const createNewConversation = async (): Promise<Conversation> => {
       throw new Error(response.error || "Failed to create conversation");
     }
 
-    const newConversation: Conversation = {
+    const conversation: Conversation = {
       id: response.data.id,
-      title: response.data.title || "New Chat",
-      messages: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      title: response?.data?.title || "New Chat",
+      user_id: response.data.user_id,
+      created_at: response.data.created_at,
+      status: response.data.status,
     };
 
-    cacheManager.delete("conversations");
-    return newConversation;
+    // Save to IndexedDB
+    await indexedDB.saveConversation(conversation);
+
+    return conversation;
   } catch (error) {
+    console.error("Error creating conversation:", error);
     throw error;
   }
 };
@@ -262,14 +268,16 @@ export const selectConversation = async (
   id: string
 ): Promise<Conversation | null> => {
   try {
-    const conversations = await getConversations();
-    const conversation = conversations.find((c) => c.id === id);
-
+    // 从 IndexedDB 获取会话
+    const conversation = await indexedDB.getConversation(id);
     if (!conversation) {
       throw new Error("Conversation not found");
     }
 
-    cacheManager.set(`messages_${id}`, conversation.messages);
+    // 获取会话的消息
+    const messages = await indexedDB.getMessagesByConversation(id);
+    conversation.messages = messages;
+
     return conversation;
   } catch (error) {
     throw error;
@@ -286,9 +294,9 @@ export const deleteConversation = async (id: string): Promise<void> => {
       throw new Error(response.error || "Failed to delete conversation");
     }
 
-    // 清除所有相关缓存
-    cacheManager.delete("conversations"); // 清除会话列表缓存
-    cacheManager.delete(`messages_${id}`); // 清除该会话的消息缓存
+    // 从 IndexedDB 中删除会话和相关的消息
+    await indexedDB.deleteConversation(id);
+    await indexedDB.deleteMessagesByConversation(id);
   } catch (error) {
     throw error;
   }

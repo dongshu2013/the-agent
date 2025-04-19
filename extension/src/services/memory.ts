@@ -1,6 +1,11 @@
 import { getApiKey } from "./utils";
-import { Message, MemoryOptions } from "../types";
+import { Message } from "../types/messages";
 import { env } from "../utils/env";
+
+interface MemoryOptions {
+  systemPrompt?: string;
+  strategy?: number;
+}
 
 /**
  * 生成记忆上下文，用于LLM的输入

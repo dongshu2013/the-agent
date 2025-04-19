@@ -6,8 +6,9 @@ import Message from "./components/Message";
 import InputArea from "./components/InputArea";
 import Settings from "./components/Settings";
 import ConversationList from "./components/ConversationList";
-import { Message as MessageType, Conversation } from "../types";
-import { sendChatRequest, saveMessageApi } from "../services/chat";
+import { Conversation } from "../types/conversations";
+import { Message as MessageType } from "../types/messages";
+import { saveMessageApi, sendChatCompletion } from "../services/chat";
 import {
   createNewConversation,
   selectConversation as selectConv,
@@ -15,8 +16,8 @@ import {
   getConversations,
 } from "../services/conversation";
 import { Storage } from "@plasmohq/storage";
-import { generateMemory } from "../services/memory";
-import { env } from "../utils/env";
+import { indexedDB } from "../utils/db";
+import { getApiKey } from "~/services/utils";
 
 const Sidepanel = () => {
   const [apiKey, setApiKey] = useStorage("apiKey");
@@ -24,6 +25,8 @@ const Sidepanel = () => {
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<MessageType[]>([]);
   const [showSettings, setShowSettings] = useState(false);
+  const [apiKeyValidationError, setApiKeyValidationError] =
+    useState<string>("");
   const [conversations, setConversations] = useStorage<Conversation[]>(
     "conversations",
     []
@@ -33,9 +36,6 @@ const Sidepanel = () => {
   >("currentConversationId", null);
   const [showConversationList, setShowConversationList] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [apiKeyRedirectUrl, setApiKeyRedirectUrl] = useState(
-    `${env.SERVER_URL}/profile`
-  );
   const abortControllerRef = useRef<AbortController | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -49,9 +49,6 @@ const Sidepanel = () => {
 
   // 处理API错误
   const handleApiError = (error: any) => {
-    console.error("API Error in UI:", error);
-
-    // 检查错误信息中是否包含身份验证失败
     if (
       typeof error === "string" &&
       (error.includes("Authentication failed") ||
@@ -59,12 +56,11 @@ const Sidepanel = () => {
         error.includes("403") ||
         error.includes("401"))
     ) {
-      // 显示设置页面而不是Alert
       setShowSettings(true);
     }
 
     // 显示错误消息
-    setMessages((prev) => [
+    setMessages((prev: any) => [
       ...prev.filter((m: MessageType) => m.role !== "error"),
       {
         id: crypto.randomUUID(),
@@ -84,43 +80,32 @@ const Sidepanel = () => {
       if (isInitialized) return;
 
       try {
-        // 从storage获取API Key
-        const storage = new Storage();
-        const storedApiKey = await storage.get("apiKey");
-
-        // 设置初始化状态
+        const storedApiKey = getApiKey();
         setIsInitialized(true);
 
         if (!storedApiKey) {
-          // 如果没有API Key，显示设置页面
           setShowSettings(true);
           return;
         }
 
-        // 设置API Key
         setApiKey(storedApiKey);
-        // 同时存储到 localStorage 以便API请求使用
-        localStorage.setItem("apiKey", storedApiKey);
-
         setIsLoading(true);
         try {
-          // 获取会话列表
           const loadedConversations = await getConversations();
 
           if (loadedConversations && loadedConversations.length > 0) {
-            // 如果有会话，设置第一个为当前会话
             setConversations(loadedConversations);
             setCurrentConversationId(loadedConversations[0].id);
             setMessages(loadedConversations[0].messages || []);
           } else {
-            // 如果没有会话，创建新会话
             const newConv = await createNewConversation();
             setConversations([newConv]);
             setCurrentConversationId(newConv.id);
             setMessages([]);
           }
         } catch (error) {
-          console.error("Failed to load or create conversation:", error);
+          setApiKeyValidationError("Invalid or disabled API key");
+          setShowSettings(true);
           handleApiError(error);
         } finally {
           setIsLoading(false);
@@ -133,14 +118,31 @@ const Sidepanel = () => {
     };
 
     initializeApp();
-  }, []);
+  }, [apiKey, isInitialized]);
 
   // 监听API Key变化
   useEffect(() => {
-    if (isInitialized && !apiKey) {
-      setShowSettings(true);
-      setShowConversationList(false);
-    }
+    const validateAndInitialize = async () => {
+      if (isInitialized && !apiKey) {
+        setShowSettings(true);
+        setShowConversationList(false);
+        return;
+      }
+
+      if (isInitialized && apiKey) {
+        try {
+          // 使用获取会话列表来验证API Key
+          await getConversations();
+          // 清除错误状态
+          setApiKeyValidationError("");
+        } catch (error) {
+          setApiKeyValidationError("Invalid or disabled API key");
+          setShowSettings(true);
+        }
+      }
+    };
+
+    validateAndInitialize();
   }, [apiKey, isInitialized]);
 
   useEffect(() => {
@@ -161,9 +163,6 @@ const Sidepanel = () => {
       // 处理API Key缺失消息 - 显示设置页面而不是Alert
       if (request.name === "api-key-missing") {
         setShowSettings(true);
-        if (request.redirectUrl) {
-          setApiKeyRedirectUrl(request.redirectUrl);
-        }
       }
     };
 
@@ -172,11 +171,6 @@ const Sidepanel = () => {
       chrome.runtime.onMessage.removeListener(handleMessages);
     };
   }, []);
-
-  // 打开登录页面获取API Key
-  const handleGetApiKey = () => {
-    window.open(apiKeyRedirectUrl, "_blank");
-  };
 
   // 修改暂停处理函数
   const handlePauseStream = useCallback(() => {
@@ -199,45 +193,39 @@ const Sidepanel = () => {
     }
 
     const currentPrompt = prompt.trim();
-    let assistantMessageId = crypto.randomUUID();
+    const userMessageId = crypto.randomUUID();
+    const assistantMessageId = crypto.randomUUID();
 
     try {
       // Create user message
-      const userMessage: MessageType = {
+      const userMessage = {
+        message_id: userMessageId,
         role: "user",
         content: currentPrompt,
-        timestamp: new Date(),
-      };
-
-      // Save user message to backend first
-      const saveUserMessageResponse = await saveMessageApi(
-        currentConversationId,
-        userMessage
-      );
-      if (!saveUserMessageResponse.success) {
-        throw new Error(
-          saveUserMessageResponse.error || "Failed to save user message"
-        );
-      }
-
-      // Update user message with ID from backend
-      userMessage.id = saveUserMessageResponse.data?.id;
+        created_at: new Date().toISOString(),
+        conversation_id: currentConversationId,
+      } as MessageType;
 
       // Create loading message
-      const loadingMessage: MessageType = {
-        id: assistantMessageId,
+      const loadingMessage = {
+        message_id: assistantMessageId,
         role: "assistant",
         content: "",
-        timestamp: new Date(),
+        created_at: new Date().toISOString(),
+        conversation_id: currentConversationId,
         isLoading: true,
-      };
+      } as MessageType;
 
-      // Add user message to the list
+      // 2. Add messages to the list
       setMessages((prev: MessageType[]) => [
         ...prev.filter((m) => m.role !== "error"),
         userMessage,
         loadingMessage,
       ]);
+
+      // 1. Save user message to IndexedDB
+      await indexedDB.saveMessage(userMessage);
+
       setPrompt("");
       setIsLoading(true);
       setIsStreaming(true);
@@ -245,20 +233,44 @@ const Sidepanel = () => {
       // Create new AbortController
       abortControllerRef.current = new AbortController();
 
-      // 1. Generate memory context
-      const memory = await generateMemory(
-        currentConversationId,
-        currentPrompt,
-        {
-          strategy: 2,
-          systemPrompt: env.SYSTEM_PROMPT,
-        }
+      // 2. Save user message to backend and get related messages
+      const saveResponse = await saveMessageApi({
+        conversation_id: currentConversationId,
+        message: userMessage,
+        top_k_related: 3,
+      });
+
+      if (!saveResponse.success) {
+        throw new Error(saveResponse.error || "Failed to save message");
+      }
+
+      // 3. Get related messages with context
+      const relatedMessages = await indexedDB.getRelatedMessagesWithContext(
+        saveResponse.data?.top_k_messages || [],
+        currentConversationId
       );
 
-      // 2. Send chat request with memory context
-      const response = await sendChatRequest(
+      // 4. Get recent messages
+      const recentMessages = await indexedDB.getRecentMessages(
+        currentConversationId,
+        10
+      );
+
+      // 5. Combine all messages for memory context
+      const memory = [...relatedMessages, ...recentMessages, userMessage].sort(
+        (a, b) =>
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      );
+
+      // 6. Send chat request with memory context
+      const response = await sendChatCompletion(
         {
-          messages: memory,
+          messages: memory.map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+            message_id: msg.message_id,
+            created_at: msg.created_at,
+          })),
         },
         apiKey,
         {
@@ -283,7 +295,7 @@ const Sidepanel = () => {
           accumulatedContent += content;
           setMessages((prev: MessageType[]) =>
             prev.map((msg: MessageType) =>
-              msg.id === assistantMessageId
+              msg.message_id === assistantMessageId
                 ? { ...msg, content: accumulatedContent, isLoading: false }
                 : msg
             )
@@ -294,28 +306,28 @@ const Sidepanel = () => {
         }
       }
 
-      // Save AI message
+      // Save AI message to IndexedDB
       if (accumulatedContent) {
-        const aiMessageResponse = await saveMessageApi(currentConversationId, {
+        const aiMessage = {
+          message_id: assistantMessageId,
           role: "assistant",
           content: accumulatedContent,
-          timestamp: new Date(),
+          created_at: new Date().toISOString(),
+          conversation_id: currentConversationId,
+        } as MessageType;
+
+        // 先保存到 IndexedDB
+        await indexedDB.saveMessage(aiMessage);
+        await saveMessageApi({
+          conversation_id: currentConversationId,
+          message: aiMessage,
         });
 
-        if (!aiMessageResponse.success) {
-          throw new Error("Failed to save AI message");
-        }
-
-        // Update the loading message with the final content and ID
+        // Update the loading message with the final content
         setMessages((prev: MessageType[]) =>
           prev.map((msg: MessageType) =>
-            msg.id === assistantMessageId
-              ? {
-                  ...msg,
-                  id: aiMessageResponse.data?.id,
-                  content: accumulatedContent,
-                  isLoading: false,
-                }
+            msg.message_id === assistantMessageId
+              ? { ...msg, content: accumulatedContent, isLoading: false }
               : msg
           )
         );
@@ -331,7 +343,7 @@ const Sidepanel = () => {
             "An unexpected error occurred. Please check the console."
         );
         setMessages((prev: MessageType[]) =>
-          prev.filter((m: MessageType) => m.id !== assistantMessageId)
+          prev.filter((m: MessageType) => m.message_id !== assistantMessageId)
         );
       }
     } finally {
@@ -353,25 +365,20 @@ const Sidepanel = () => {
   };
 
   const toggleConversationList = async (value?: boolean) => {
-    // 根据参数或当前状态确定新状态
     const willShow = value !== undefined ? value : !showConversationList;
 
     if (willShow) {
       try {
         setIsLoading(true);
-        // 刷新会话列表
         const refreshedConversations = await getConversations();
         setConversations(refreshedConversations);
-        console.log("Conversations refreshed");
       } catch (error) {
-        console.error("Failed to refresh conversations:", error);
         handleApiError(error);
       } finally {
         setIsLoading(false);
       }
     }
 
-    // 切换显示状态
     setShowConversationList(willShow);
     if (willShow) {
       setShowSettings(false);
@@ -394,7 +401,7 @@ const Sidepanel = () => {
     try {
       const conversation = await selectConv(id);
       if (conversation) {
-        setMessages(conversation.messages);
+        setMessages(conversation.messages || []);
         setCurrentConversationId(id);
         // 不再自动关闭会话列表
       }
@@ -428,7 +435,7 @@ const Sidepanel = () => {
         if (remaining.length > 0) {
           const conversation = await selectConv(remaining[0].id);
           if (conversation) {
-            setMessages(conversation.messages);
+            setMessages(conversation.messages || []);
             setCurrentConversationId(remaining[0].id);
           }
         } else {
@@ -492,7 +499,6 @@ const Sidepanel = () => {
     }
   };
 
-  // 更新设置API密钥的函数
   const handleSetApiKey = async (key: string) => {
     try {
       if (!key) {
@@ -501,7 +507,6 @@ const Sidepanel = () => {
 
       const storage = new Storage();
       await storage.set("apiKey", key);
-      localStorage.setItem("apiKey", key);
       setApiKey(key);
 
       if (!currentConversationId) {
@@ -622,7 +627,7 @@ const Sidepanel = () => {
               <div className="messages-container">
                 {messages.map((message, index) => (
                   <Message
-                    key={message.id || index}
+                    key={message.message_id || index}
                     message={message}
                     isLatestResponse={
                       index === messages.length - 1 &&
@@ -677,6 +682,7 @@ const Sidepanel = () => {
           apiKey={apiKey}
           setApiKey={handleSetApiKey}
           onClose={() => toggleSettings(false)}
+          initialValidationError={apiKeyValidationError}
         />
       )}
     </div>

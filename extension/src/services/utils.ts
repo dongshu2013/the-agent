@@ -16,21 +16,18 @@ export const getApiKey = (): string | null => {
   }
 };
 
-// 处理授权错误
 export const handleAuthError = () => {
-  // 通知UI层显示API Key获取提示
   chrome.runtime.sendMessage({
     name: "api-key-missing",
-    redirectUrl: env.SERVER_URL,
+    redirectUrl: env.BACKEND_URL,
   });
 
   return {
     success: false,
-    error: `Authentication failed. Please obtain an API key from ${env.SERVER_URL}`,
+    error: `Authentication failed. Please obtain an API key from ${env.BACKEND_URL}`,
   };
 };
 
-// 处理API错误
 export const handleApiError = (error: any): never => {
   console.error("API Error:", error);
   if (typeof error === "object" && error !== null) {

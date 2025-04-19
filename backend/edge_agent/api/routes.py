@@ -39,6 +39,7 @@ async def verify_api_key(
     """
     db = request.state.db
     api_key = credentials.credentials
+    logger.info(f"api_key: {api_key}")
     user = db.query(User).filter(User.api_key == api_key, User.api_key_enabled == True).first()
     if not user:
         raise HTTPException(status_code=401, detail="Invalid or disabled API key")
@@ -332,3 +333,22 @@ async def save_message(
     except Exception as e:
         logger.error(f"Error saving message: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error saving message: {str(e)}")
+
+@router.get("/v1/auth/verify", response_model=Dict[str, Any])
+async def verify_auth(
+    request: Request,
+    user: User = Depends(verify_api_key)
+):
+    """
+    Verify the API key and return user information.
+    """
+    return {
+        "success": True,    
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "api_key_enabled": user.api_key_enabled,
+    "api_key": user.api_key
+        }
+    }
