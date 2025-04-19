@@ -89,8 +89,7 @@ class SimilaritySearchRequest(BaseModel):
 
 class SaveMessageRequest(BaseModel):
     conversation_id: str
-    role: str
-    content: Union[str, List[Dict[str, Any]]]
+    message: ChatMessage
 
 router = APIRouter(tags=["chat"])
 
@@ -296,8 +295,8 @@ async def save_message(
         
         message = Message(
             conversation_id=message_data.conversation_id,
-            role=message_data.role,
-            content=message_data.content
+            role=message_data.message.role,
+            content=message_data.message.content
         )
         db.add(message)
         db.commit()
