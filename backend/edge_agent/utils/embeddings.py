@@ -19,6 +19,7 @@ client = OpenAI(
     api_key=settings.EMBEDDING_API_KEY,
     base_url=settings.EMBEDDING_API_URL
 )
+EMBEDDING_MODEL = "intfloat/multilingual-e5-large" # 1024 dimensions
 
 def extract_text_from_content(content: Union[str, List[Dict[str, Any]]]) -> str:
     """
@@ -59,10 +60,9 @@ async def generate_embedding(text: str) -> Optional[List[float]]:
     try:
         response = client.embeddings.create(
             input=text,
-            model="text-embedding-3-small",
+            model=EMBEDDING_MODEL,
             encoding_format="float"
         )
-        
         embedding = response.data[0].embedding
         return embedding
     except Exception as e:
