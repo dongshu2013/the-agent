@@ -34,7 +34,7 @@ def extract_text_from_content(content: Union[str, List[Dict[str, Any]]]) -> str:
             content = json.loads(content)
         except json.JSONDecodeError:
             return content
-    
+
     # If content is a list of content objects
     text_parts = []
     for item in content:

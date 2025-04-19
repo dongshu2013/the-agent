@@ -11,6 +11,7 @@ import asyncio
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
+from sqlalchemy.dialects.postgresql import insert
 
 from edge_agent.core.config import settings
 from edge_agent.utils.database import get_db
@@ -87,9 +88,14 @@ class SimilaritySearchRequest(BaseModel):
     limit: int = 5
     conversation_id: Optional[str] = None
 
+class ChatMessageWithId(ChatMessage):
+    message_id: str
+    created_at: str
+
 class SaveMessageRequest(BaseModel):
     conversation_id: str
-    message: ChatMessage
+    message: ChatMessageWithId
+    top_k_related: int = 0
 
 router = APIRouter(tags=["chat"])
 
@@ -273,6 +279,17 @@ async def stream_chat_response(params: ChatCompletionCreateParam):
         yield f"data: {json.dumps(error_response)}\n\n"
         yield "data: [DONE]\n\n"
 
+async def get_top_k_related_messages(db: Session, message_text: str, conversation_id: str, k: int = 3):
+    similar_messages = await find_similar_messages(
+        query_text=message_text,
+        conversation_id=conversation_id,
+        limit=k,
+        db=db
+    )
+    # Return the message IDs
+    return [msg.id for msg in similar_messages]
+
+
 @router.post("/v1/message/save", response_model=Dict[str, Any])
 async def save_message(
     request: Request,
@@ -292,66 +309,38 @@ async def save_message(
         ).first()
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation not found or not authorized")
-        
-        message = Message(
+
+        stmt = insert(Message).values(
+            id=message_data.message.message_id,
             conversation_id=message_data.conversation_id,
             role=message_data.message.role,
-            content=message_data.message.content
-        )
-        db.add(message)
+            content=message_data.message.content,
+            created_at=message_data.message.created_at or datetime.now(),
+        ).on_conflict_do_nothing(index_elements=['id'])
+
+        db.execute(stmt)
         db.commit()
-        db.refresh(message)
 
         # Add the embedding generation task with just the message ID
         # This avoids issues with detached SQLAlchemy objects
-        background_tasks.add_task(update_message_embedding, message.id)
+        background_tasks.add_task(update_message_embedding, message_data.message.message_id)
+
+        # Get top k related messages
+        if message_data.top_k_related > 0:
+            top_k_messages = await get_top_k_related_messages(
+                db,
+                extract_text_from_content(message_data.message.content),
+                message_data.conversation_id,
+                message_data.top_k_related
+            )
+        else:
+            top_k_messages = []
 
         return {
             "success": True,
-            "data": {
-                "id": message.id,
-                "created_at": message.created_at.isoformat()
-            },
-            "message": "Message saved successfully"
+            "top_k_messages": top_k_messages
         }
 
     except Exception as e:
         logger.error(f"Error saving message: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error saving message: {str(e)}")
-
-@router.post("/v1/message/search", response_model=List[dict])
-async def search_similar_messages(
-    request: Request,
-    search_params: MessageSearchRequest,
-    user: User = Depends(verify_api_key)
-):
-    """
-    Search for messages similar to the given message in the specified conversation.
-    Returns the top k most similar messages.
-    """
-    db = request.state.db
-
-    try:
-        # Check if conversation exists and belongs to user
-        conversation = db.query(Conversation).filter(
-            Conversation.id == search_params.conversation_id,
-            Conversation.user_id == user.id
-        ).first()
-
-        if not conversation:
-            raise HTTPException(status_code=404, detail="Conversation not found or not authorized")
-
-        # Use the improved find_similar_messages function
-        similar_messages = await find_similar_messages(
-            query_text=search_params.message,
-            conversation_id=search_params.conversation_id,
-            limit=search_params.k,
-            db=db
-        )
-
-        # Return the message IDs
-        return [msg.id for msg in similar_messages]
-
-    except Exception as e:
-        logger.error(f"Error searching similar messages: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error searching messages: {str(e)}")
