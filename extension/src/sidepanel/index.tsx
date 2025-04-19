@@ -17,7 +17,6 @@ import {
 import { Storage } from "@plasmohq/storage";
 import { generateMemory } from "../services/memory";
 import { env } from "../utils/env";
-import OpenAI from "openai";
 
 const Sidepanel = () => {
   const [apiKey, setApiKey] = useStorage("apiKey");
@@ -34,11 +33,11 @@ const Sidepanel = () => {
   >("currentConversationId", null);
   const [showConversationList, setShowConversationList] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
-  const [showApiKeyAlert, setShowApiKeyAlert] = useState(false);
   const [apiKeyRedirectUrl, setApiKeyRedirectUrl] = useState(
     `${env.SERVER_URL}/profile`
   );
   const abortControllerRef = useRef<AbortController | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Reference to the messages end
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -60,8 +59,8 @@ const Sidepanel = () => {
         error.includes("403") ||
         error.includes("401"))
     ) {
-      // 显示API Key提示
-      setShowApiKeyAlert(true);
+      // 显示设置页面而不是Alert
+      setShowSettings(true);
     }
 
     // 显示错误消息
@@ -79,51 +78,70 @@ const Sidepanel = () => {
     ]);
   };
 
-  // Initialize or load current conversation
+  // 初始化检查API Key和会话
   useEffect(() => {
-    const initializeConversation = async () => {
+    const initializeApp = async () => {
+      if (isInitialized) return;
+
       try {
-        // 如果没有对话列表，先获取对话列表
-        if (!conversations || conversations.length === 0) {
+        // 从storage获取API Key
+        const storage = new Storage();
+        const storedApiKey = await storage.get("apiKey");
+
+        // 设置初始化状态
+        setIsInitialized(true);
+
+        if (!storedApiKey) {
+          // 如果没有API Key，显示设置页面
+          setShowSettings(true);
+          return;
+        }
+
+        // 设置API Key
+        setApiKey(storedApiKey);
+        // 同时存储到 localStorage 以便API请求使用
+        localStorage.setItem("apiKey", storedApiKey);
+
+        setIsLoading(true);
+        try {
+          // 获取会话列表
           const loadedConversations = await getConversations();
 
-          // 如果服务器上也没有对话，才创建新对话
-          if (!loadedConversations || loadedConversations.length === 0) {
+          if (loadedConversations && loadedConversations.length > 0) {
+            // 如果有会话，设置第一个为当前会话
+            setConversations(loadedConversations);
+            setCurrentConversationId(loadedConversations[0].id);
+            setMessages(loadedConversations[0].messages || []);
+          } else {
+            // 如果没有会话，创建新会话
             const newConv = await createNewConversation();
             setConversations([newConv]);
             setCurrentConversationId(newConv.id);
             setMessages([]);
-          } else {
-            // 如果服务器上有对话，使用第一个对话
-            setConversations(loadedConversations);
-            setCurrentConversationId(loadedConversations[0].id);
-            setMessages(loadedConversations[0].messages || []);
           }
-        } else if (currentConversationId) {
-          // 如果有当前对话ID，找到对应的对话
-          const currentConv = conversations.find(
-            (c) => c.id === currentConversationId
-          );
-          if (currentConv) {
-            setMessages(currentConv.messages || []);
-          } else if (conversations.length > 0) {
-            // 如果找不到当前对话，使用第一个对话
-            setCurrentConversationId(conversations[0].id);
-            setMessages(conversations[0].messages || []);
-          }
-        } else if (conversations.length > 0) {
-          // 如果没有当前对话ID但有对话列表，使用第一个对话
-          setCurrentConversationId(conversations[0].id);
-          setMessages(conversations[0].messages || []);
+        } catch (error) {
+          console.error("Failed to load or create conversation:", error);
+          handleApiError(error);
+        } finally {
+          setIsLoading(false);
         }
       } catch (error) {
-        // 处理初始化会话时的错误
+        console.error("Failed to initialize app:", error);
         handleApiError(error);
+        setIsLoading(false);
       }
     };
 
-    initializeConversation();
-  }, [currentConversationId, conversations]);
+    initializeApp();
+  }, []);
+
+  // 监听API Key变化
+  useEffect(() => {
+    if (isInitialized && !apiKey) {
+      setShowSettings(true);
+      setShowConversationList(false);
+    }
+  }, [apiKey, isInitialized]);
 
   useEffect(() => {
     const handleMessages = (request: any) => {
@@ -140,9 +158,9 @@ const Sidepanel = () => {
         }
       }
 
-      // 处理API Key缺失消息
+      // 处理API Key缺失消息 - 显示设置页面而不是Alert
       if (request.name === "api-key-missing") {
-        setShowApiKeyAlert(true);
+        setShowSettings(true);
         if (request.redirectUrl) {
           setApiKeyRedirectUrl(request.redirectUrl);
         }
@@ -153,19 +171,6 @@ const Sidepanel = () => {
     return () => {
       chrome.runtime.onMessage.removeListener(handleMessages);
     };
-  }, []);
-
-  useEffect(() => {
-    // init storage and get api key
-    const storage = new Storage();
-    storage.get("apiKey").then((key) => {
-      if (key) {
-        setApiKey(key);
-      } else {
-        // 如果没有API Key，显示提示
-        setShowApiKeyAlert(true);
-      }
-    });
   }, []);
 
   // 打开登录页面获取API Key
@@ -188,7 +193,7 @@ const Sidepanel = () => {
     e.preventDefault();
     if (!prompt.trim() || !apiKey || !currentConversationId) {
       if (!apiKey) {
-        setShowApiKeyAlert(true);
+        setShowSettings(true);
       }
       return;
     }
@@ -338,6 +343,9 @@ const Sidepanel = () => {
 
   // UI toggle handlers
   const toggleSettings = (value: boolean) => {
+    if (!value && !apiKey) {
+      return;
+    }
     setShowSettings(value);
     if (value) {
       setShowConversationList(false);
@@ -450,7 +458,7 @@ const Sidepanel = () => {
 
     // 如果没有API Key
     if (!apiKey) {
-      setShowApiKeyAlert(true);
+      setShowSettings(true);
       return;
     }
 
@@ -484,23 +492,34 @@ const Sidepanel = () => {
     }
   };
 
-  // 更新设置API密钥的函数，保存到存储中
-  const handleSetApiKey = (key: string) => {
-    console.log("Setting API key:", key ? "有值" : "无值");
-    setApiKey(key);
-    setShowApiKeyAlert(false); // 隐藏API Key提示
-    const storage = new Storage();
-
-    // 存储到 apiKey 键
-    storage.set("apiKey", key).then(() => {
-      console.log("API key saved to storage");
-    });
-
-    // 同时存储到 localStorage 以便API请求使用
+  // 更新设置API密钥的函数
+  const handleSetApiKey = async (key: string) => {
     try {
+      if (!key) {
+        throw new Error("API key cannot be empty");
+      }
+
+      const storage = new Storage();
+      await storage.set("apiKey", key);
       localStorage.setItem("apiKey", key);
+      setApiKey(key);
+
+      if (!currentConversationId) {
+        setIsLoading(true);
+        try {
+          const newConv = await createNewConversation();
+          setConversations([newConv]);
+          setCurrentConversationId(newConv.id);
+          setMessages([]);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+
+      setShowSettings(false);
     } catch (e) {
-      console.warn("Failed to save API key to localStorage:", e);
+      console.error("Failed to save API key:", e);
+      handleApiError(e);
     }
   };
 
@@ -513,76 +532,16 @@ const Sidepanel = () => {
         overflow: "hidden",
       }}
     >
-      {/* API Key缺失提示 */}
-      {showApiKeyAlert && (
-        <div
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            backgroundColor: "#fff9db",
-            padding: "16px",
-            textAlign: "center",
-            zIndex: 50,
-            borderBottom: "1px solid #ffd43b",
-            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-          }}
-        >
-          <div
-            style={{
-              fontSize: "15px",
-              color: "#664d03",
-              marginBottom: "8px",
-              fontWeight: 600,
-              lineHeight: "1.5",
-            }}
-          >
-            You need to login to get API Key to use the full functionality
-          </div>
-          <button
-            onClick={handleGetApiKey}
-            style={{
-              backgroundColor: "#2563eb",
-              color: "white",
-              border: "none",
-              padding: "8px 16px",
-              borderRadius: "4px",
-              cursor: "pointer",
-              fontSize: "14px",
-              fontWeight: 500,
-            }}
-          >
-            Go to get API Key
-          </button>
-          <button
-            onClick={() => setShowApiKeyAlert(false)}
-            style={{
-              backgroundColor: "transparent",
-              border: "none",
-              padding: "8px 12px",
-              marginLeft: "8px",
-              cursor: "pointer",
-              fontSize: "14px",
-              color: "#6b7280",
-            }}
-          >
-            Not now
-          </button>
-        </div>
-      )}
-
       {/* 固定的头部组件 */}
       <div
         style={{
           position: "absolute",
-          top: showApiKeyAlert ? "86px" : 0,
+          top: 0,
           left: 0,
           right: 0,
           backgroundColor: "white",
           borderBottom: "1px solid #e5e7eb",
           zIndex: 10,
-          transition: "top 0.3s ease",
         }}
       >
         <Header
@@ -597,14 +556,13 @@ const Sidepanel = () => {
       <div
         style={{
           position: "absolute",
-          top: showApiKeyAlert ? "136px" : "50px",
+          top: "50px",
           bottom: "82px",
           left: 0,
           right: 0,
           overflowY: "auto",
           overflowX: "hidden",
           backgroundColor: "#FFFFFF",
-          transition: "top 0.3s ease",
         }}
       >
         <div className="max-w-3xl mx-auto p-4">

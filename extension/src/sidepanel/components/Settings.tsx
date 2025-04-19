@@ -10,6 +10,7 @@ interface SettingsProps {
 const Settings: React.FC<SettingsProps> = ({ apiKey, setApiKey, onClose }) => {
   const [tempApiKey, setTempApiKey] = useState(apiKey);
   const [saveStatus, setSaveStatus] = useState("");
+  const [showWarning, setShowWarning] = useState(false);
 
   useEffect(() => {
     const storage = new Storage();
@@ -22,6 +23,12 @@ const Settings: React.FC<SettingsProps> = ({ apiKey, setApiKey, onClose }) => {
 
   const handleSave = async () => {
     try {
+      if (!tempApiKey?.trim()) {
+        setSaveStatus("API key cannot be empty");
+        setTimeout(() => setSaveStatus(""), 2000);
+        return;
+      }
+
       const storage = new Storage();
       await storage.set("apiKey", tempApiKey);
       setApiKey(tempApiKey);
@@ -36,6 +43,16 @@ const Settings: React.FC<SettingsProps> = ({ apiKey, setApiKey, onClose }) => {
       setSaveStatus("Failed to save");
       setTimeout(() => setSaveStatus(""), 2000);
     }
+  };
+
+  const handleClose = () => {
+    if (!tempApiKey?.trim()) {
+      setShowWarning(true);
+      setSaveStatus("Please enter an API key before closing");
+      setTimeout(() => setSaveStatus(""), 3000);
+      return;
+    }
+    onClose();
   };
 
   return (
@@ -67,7 +84,7 @@ const Settings: React.FC<SettingsProps> = ({ apiKey, setApiKey, onClose }) => {
             Settings
           </h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             style={{
               display: "flex",
               alignItems: "center",
@@ -81,9 +98,11 @@ const Settings: React.FC<SettingsProps> = ({ apiKey, setApiKey, onClose }) => {
               cursor: "pointer",
               transition: "all 0.2s",
             }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = "#f3f4f6";
+            }}
             onMouseOut={(e) => {
               e.currentTarget.style.backgroundColor = "transparent";
-              e.currentTarget.style.color = "#6b7280";
             }}
           >
             <svg
@@ -132,14 +151,17 @@ const Settings: React.FC<SettingsProps> = ({ apiKey, setApiKey, onClose }) => {
             <input
               type="password"
               value={tempApiKey || ""}
-              onChange={(e) => setTempApiKey(e.target.value)}
+              onChange={(e) => {
+                setTempApiKey(e.target.value);
+                setShowWarning(false);
+              }}
               placeholder="Enter your API key"
               style={{
                 width: "100%",
                 padding: "12px",
                 fontSize: "14px",
                 borderRadius: "8px",
-                border: "1px solid #D1D5DB",
+                border: `1px solid ${showWarning ? "#DC2626" : "#D1D5DB"}`,
                 marginBottom: "20px",
                 outline: "none",
                 boxSizing: "border-box",
@@ -176,9 +198,11 @@ const Settings: React.FC<SettingsProps> = ({ apiKey, setApiKey, onClose }) => {
                 <span
                   style={{
                     fontSize: "14px",
-                    color: saveStatus.includes("Failed")
-                      ? "#DC2626"
-                      : "#059669",
+                    color:
+                      saveStatus.includes("Failed") ||
+                      saveStatus.includes("Please enter")
+                        ? "#DC2626"
+                        : "#059669",
                     textAlign: "center",
                   }}
                 >

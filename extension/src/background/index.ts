@@ -47,53 +47,29 @@ chrome.runtime.onInstalled.addListener(async () => {
   });
 });
 
+// 打开侧边栏
+async function openSidePanel(tab: chrome.tabs.Tab) {
+  if (!tab?.id) {
+    console.error("Invalid tab id");
+    return;
+  }
+
+  try {
+    await chrome.sidePanel.setOptions({
+      enabled: true,
+      path: "sidepanel.html",
+    });
+    // @ts-ignore - sidePanel.open is available in Chrome 114+
+    await chrome.sidePanel.open({ windowId: tab.windowId });
+  } catch (error) {
+    console.error("Failed to open side panel:", error);
+  }
+}
+
 // 检查并设置扩展图标点击事件
 if (chrome.action) {
   chrome.action.onClicked.addListener(async (tab) => {
-    if (!tab?.id) {
-      console.error("Invalid tab id");
-      return;
-    }
-
-    try {
-      // 首先检查API Key是否存在
-      const hasApiKey = await checkApiKey();
-
-      if (chrome.sidePanel) {
-        try {
-          await chrome.sidePanel.setOptions({
-            enabled: true,
-            path: "sidepanel.html",
-          });
-          // @ts-ignore - sidePanel.open is available in Chrome 114+
-          await chrome.sidePanel.open({ windowId: tab.windowId });
-
-          if (!hasApiKey) {
-            setTimeout(() => {
-              chrome.runtime.sendMessage({
-                name: "api-key-missing",
-                redirectUrl: `${env.SERVER_URL}/profile`,
-              });
-            }, 500);
-          }
-          return;
-        } catch (sidePanelError) {
-          console.error("Failed to open side panel:", sidePanelError);
-        }
-      }
-
-      // 如果API Key不存在，发送消息给弹出窗口
-      if (!hasApiKey) {
-        setTimeout(() => {
-          chrome.runtime.sendMessage({
-            name: "api-key-missing",
-            redirectUrl: `${env.SERVER_URL}/profile`,
-          });
-        }, 500);
-      }
-    } catch (error) {
-      console.error("Error in extension click handler:", error);
-    }
+    await openSidePanel(tab);
   });
 } else {
   console.error("chrome.action API is not available");
@@ -136,15 +112,6 @@ chrome.runtime.onMessage.addListener(
 // 更新右键菜单点击处理程序
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (info.menuItemId === "mizu-agent" && info.selectionText && tab?.windowId) {
-    try {
-      await chrome.sidePanel.setOptions({
-        enabled: true,
-        path: "sidepanel.html",
-      });
-      // @ts-ignore - sidePanel.open is  in Chrome 114+
-      await chrome.sidePanel.open({ windowId: tab.windowId });
-    } catch (error) {
-      console.error("Error opening side panel from context menu:", error);
-    }
+    await openSidePanel(tab);
   }
 });
