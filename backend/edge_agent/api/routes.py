@@ -302,8 +302,9 @@ async def save_message(
         db.commit()
         db.refresh(message)
 
-        # Always add the embedding generation task
-        background_tasks.add_task(update_message_embedding, message, db)
+        # Add the embedding generation task with just the message ID
+        # This avoids issues with detached SQLAlchemy objects
+        background_tasks.add_task(update_message_embedding, message.id)
 
         return {
             "success": True,
@@ -340,27 +341,16 @@ async def search_similar_messages(
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation not found or not authorized")
 
-        # Generate embedding for the query message
-        query_embedding = await generate_embedding(search_params.message)
-
-        # Use raw SQL to perform vector similarity search within the conversation
-        result = db.execute(
-            """
-            SELECT id, conversation_id, role, content, created_at, 
-                   embedding <-> :query_embedding AS distance
-            FROM messages
-            WHERE conversation_id = :conversation_id
-              AND embedding IS NOT NULL
-            ORDER BY distance
-            LIMIT :limit
-            """,
-            {
-                "query_embedding": query_embedding,
-                "conversation_id": search_params.conversation_id,
-                "limit": search_params.k
-            }
-        ).all()
-        return [row.id for row in result]
+        # Use the improved find_similar_messages function
+        similar_messages = await find_similar_messages(
+            query_text=search_params.message,
+            conversation_id=search_params.conversation_id,
+            limit=search_params.k,
+            db=db
+        )
+        
+        # Return the message IDs
+        return [{"id": message.id, "content": message.content, "role": message.role} for message in similar_messages]
 
     except Exception as e:
         logger.error(f"Error searching similar messages: {str(e)}")
