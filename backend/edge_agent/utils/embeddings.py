@@ -102,40 +102,51 @@ async def update_all_messages_embeddings(db: Session) -> int:
     
     return updated_count
 
-async def find_similar_messages(query_text: str, limit: int = 5, db: Session = None) -> List[Message]:
+async def find_similar_messages(query_text: str, conversation_id: Optional[str] = None, limit: int = 5, db: Session = None) -> List[Message]:
     """
     Find messages similar to the query text using vector similarity search.
+    If conversation_id is provided, only search within that conversation.
     """
     # Generate embedding for the query text
     query_embedding = await generate_embedding(query_text)
+
+    # Build the query
+    query = """
+    SELECT id, conversation_id, role, content, created_at, 
+           embedding <=> :query_embedding AS distance
+    FROM messages
+    WHERE embedding IS NOT NULL
+    """
+
+    params = {
+        "query_embedding": query_embedding,
+        "limit": limit
+    }
+
+    # Add conversation filter if provided
+    if conversation_id:
+        query += " AND conversation_id = :conversation_id"
+        params["conversation_id"] = conversation_id
     
-    # Use raw SQL to perform the similarity search
-    # This requires the pgvector extension to be installed
-    result = db.execute(
-        """
-        SELECT id, conversation_id, role, content, created_at, 
-               embedding <-> :query_embedding AS distance
-        FROM messages
-        WHERE embedding IS NOT NULL
-        ORDER BY distance
-        LIMIT :limit
-        """,
-        {
-            "query_embedding": query_embedding,
-            "limit": limit
-        }
-    )
+    # Add ordering and limit
+    query += """
+    ORDER BY distance
+    LIMIT :limit
+    """
+
+    # Execute the query
+    result = db.execute(query, params)
     
     # Convert the result to Message objects
     messages = []
     for row in result:
+        # Create a Message object from the row
         message = Message(
             id=row.id,
             conversation_id=row.conversation_id,
             role=row.role,
             content=row.content,
-            created_at=row.created_at,
-            embedding=row.embedding
+            created_at=row.created_at
         )
         messages.append(message)
     
