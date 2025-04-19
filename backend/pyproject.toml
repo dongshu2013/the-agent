@@ -23,6 +23,8 @@ dependencies = [
     "aiohttp>=3.8.4",
     "sqlalchemy>=2.0.0",
     "psycopg2-binary>=2.9.0",
+    "pgvector>=0.4.0",
+    "alembic>=1.13.1",
 ]
 
 [project.optional-dependencies]
@@ -34,6 +36,9 @@ dev = [
     "mypy==1.14.1",
     "pre-commit==3.8.0",
 ]
+
+[project.scripts]
+migrate = "edge_agent.scripts.migrate:main"
 
 [tool.setuptools]
 packages = ["edge_agent"]

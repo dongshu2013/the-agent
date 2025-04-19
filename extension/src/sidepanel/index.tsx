@@ -534,6 +534,7 @@ const Sidepanel = () => {
               color: "#664d03",
               marginBottom: "8px",
               fontWeight: 600,
+              lineHeight: "1.5",
             }}
           >
             You need to login to get API Key to use the full functionality
