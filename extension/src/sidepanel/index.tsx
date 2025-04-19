@@ -264,7 +264,7 @@ const Sidepanel = () => {
       // Call OpenAI compatible API with memory context
       const stream = await client.chat.completions.create(
         {
-          model: env.DEFAULT_MODEL,
+          model: env.OPENAI_MODEL,
           messages: memory.map((msg) => ({
             role: msg.role as any,
             content: msg.content,

@@ -2,6 +2,7 @@
  * API Service - Handles communication with our backend server
  */
 
+import { env } from "../utils/env";
 import {
   Message,
   ChatRequest,
@@ -11,7 +12,6 @@ import {
 } from "../types";
 
 export const AVAILABLE_TOOLS: any[] = [];
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
 const API_KEY_URL = "https://the-agent-production.up.railway.app/profile";
 
 // 处理授权错误
@@ -43,7 +43,7 @@ export const createConversationApi = async (
     const API_ENDPOINT = "/v1/conversation/create";
 
     debug(
-      `Creating new conversation via backend: ${BACKEND_URL}${API_ENDPOINT}`
+      `Creating new conversation via backend: ${env.BACKEND_URL}${API_ENDPOINT}`
     );
 
     // 构建请求头
@@ -76,7 +76,7 @@ export const createConversationApi = async (
     });
 
     // 发送请求到后端
-    const response = await fetch(`${BACKEND_URL}${API_ENDPOINT}`, {
+    const response = await fetch(`${env.BACKEND_URL}${API_ENDPOINT}`, {
       method: "POST",
       headers,
       body: JSON.stringify({}), // 空请求体，由后端生成ID
@@ -137,7 +137,7 @@ export const sendChatRequest = async (
     const API_ENDPOINT = "/v1/chat/completions";
 
     // Send request to our backend server
-    debug(`Sending request to backend: ${BACKEND_URL}${API_ENDPOINT}`);
+    debug(`Sending request to backend: ${env.BACKEND_URL}${API_ENDPOINT}`);
 
     // 准备请求体 - 直接发送完整请求结构
     const body = {
@@ -168,7 +168,7 @@ export const sendChatRequest = async (
     debug("Backend request payload:", body);
 
     // 发送请求到后端
-    const response = await fetch(`${BACKEND_URL}${API_ENDPOINT}`, {
+    const response = await fetch(`${env.BACKEND_URL}${API_ENDPOINT}`, {
       method: "POST",
       headers,
       body: JSON.stringify(body),
@@ -224,7 +224,7 @@ export const deleteConversationApi = async (
   try {
     const API_ENDPOINT = `/v1/conversation/delete/${conversationId}`;
 
-    debug(`Deleting conversation via backend: ${BACKEND_URL}${API_ENDPOINT}`);
+    debug(`Deleting conversation via backend: ${env.BACKEND_URL}${API_ENDPOINT}`);
 
     // 构建请求头
     const headers: Record<string, string> = {
@@ -256,7 +256,7 @@ export const deleteConversationApi = async (
     });
 
     // 发送请求到后端
-    const response = await fetch(`${BACKEND_URL}${API_ENDPOINT}`, {
+    const response = await fetch(`${env.BACKEND_URL}${API_ENDPOINT}`, {
       method: "POST",
       headers,
       body: JSON.stringify({}), // 空请求体
@@ -311,7 +311,7 @@ export const getConversationsApi = async (
     const API_ENDPOINT = "/v1/conversation/list";
 
     debug(
-      `Fetching user conversations from backend: ${BACKEND_URL}${API_ENDPOINT}`
+      `Fetching user conversations from backend: ${env.BACKEND_URL}${API_ENDPOINT}`
     );
 
     // 构建请求头
@@ -344,7 +344,7 @@ export const getConversationsApi = async (
     });
 
     // 发送请求到后端
-    const response = await fetch(`${BACKEND_URL}${API_ENDPOINT}`, {
+    const response = await fetch(`${env.BACKEND_URL}${API_ENDPOINT}`, {
       method: "GET",
       headers,
     });
@@ -399,7 +399,7 @@ export const saveMessageApi = async (
   try {
     const API_ENDPOINT = "/v1/message/save";
 
-    debug(`Saving message via backend: ${BACKEND_URL}${API_ENDPOINT}`);
+    debug(`Saving message via backend: ${env.BACKEND_URL}${API_ENDPOINT}`);
 
     // 构建请求头
     const headers: Record<string, string> = {
@@ -438,7 +438,7 @@ export const saveMessageApi = async (
     debug("Request body:", requestBody);
 
     // 发送请求到后端
-    const response = await fetch(`${BACKEND_URL}${API_ENDPOINT}`, {
+    const response = await fetch(`${env.BACKEND_URL}${API_ENDPOINT}`, {
       method: "POST",
       headers,
       body: JSON.stringify(requestBody),
