@@ -18,12 +18,10 @@ export const createConversationApi = async (
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
-    const storedApiKey = getApiKey();
+    const keyToUse = apiKey || (await getApiKey());
 
-    if (apiKey) {
-      headers["Authorization"] = `Bearer ${apiKey}`;
-    } else if (storedApiKey) {
-      headers["Authorization"] = `Bearer ${storedApiKey}`;
+    if (keyToUse) {
+      headers["Authorization"] = `Bearer ${keyToUse}`;
     } else {
       return handleAuthError();
     }
@@ -79,16 +77,12 @@ export const deleteConversationApi = async (
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
+    const keyToUse = apiKey || (await getApiKey());
 
-    if (apiKey) {
-      headers["Authorization"] = `Bearer ${apiKey}`;
+    if (keyToUse) {
+      headers["Authorization"] = `Bearer ${keyToUse}`;
     } else {
-      try {
-        const storedApiKey = localStorage.getItem("apiKey");
-        if (storedApiKey) {
-          headers["Authorization"] = `Bearer ${storedApiKey}`;
-        }
-      } catch (e) {}
+      return handleAuthError();
     }
 
     const response = await fetch(`${env.BACKEND_URL}${API_ENDPOINT}`, {
@@ -129,7 +123,7 @@ export const getConversationsApi = async (
 ): Promise<{ success: boolean; data?: any[]; error?: string }> => {
   try {
     const API_ENDPOINT = "/v1/conversation/list";
-    const keyToUse = apiKey || getApiKey();
+    const keyToUse = apiKey || (await getApiKey());
     if (!keyToUse) {
       return handleAuthError();
     }
@@ -181,13 +175,6 @@ export const getConversationsApi = async (
  */
 export const getConversations = async (): Promise<Conversation[]> => {
   try {
-    // 从 IndexedDB 获取会话列表
-    // const conversations = await indexedDB.getAllConversations();
-    // if (conversations && conversations.length > 0) {
-    //   return conversations;
-    // }
-
-    // 如果 IndexedDB 中没有数据，从后端获取
     const response = await getConversationsApi();
     if (!response.success || !response.data) {
       throw new Error(response.error || "Failed to fetch conversations");

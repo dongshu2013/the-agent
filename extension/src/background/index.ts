@@ -1,4 +1,6 @@
 import { Storage } from "@plasmohq/storage";
+import { TabToolkit } from "../tools/tab-toolkit";
+
 // 初始化存储
 const storage = new Storage();
 
@@ -21,6 +23,7 @@ async function openSidePanel(tab: chrome.tabs.Tab) {
 
   try {
     await chrome.sidePanel.setOptions({
+      tabId: tab.id,
       enabled: true,
       path: "sidepanel.html",
     });
@@ -40,9 +43,47 @@ if (chrome.action) {
   console.error("chrome.action API is not available");
 }
 
-// 处理来自侧边面板的消息
 chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
   console.log("Background script received message:", message);
+
+  // 处理工具调用消息
+  if (message.name === "execute-tool") {
+    const { tool, params } = message.body;
+
+    import("../tools/tab-toolkit")
+      .then((module) => {
+        const TabToolkit = module.TabToolkit;
+        const methodName = tool.replace("TabToolkit_", "");
+
+        switch (methodName) {
+          case "openTab":
+            return TabToolkit.openTab(params.url);
+          case "closeTab":
+            return TabToolkit.closeTab(params.tabId);
+          case "findTab":
+            return TabToolkit.findTab(params);
+          case "switchToTab":
+            return TabToolkit.switchToTab(params.tabId);
+          case "waitForTabLoad":
+            return TabToolkit.waitForTabLoad(params.tabId, params.timeout);
+          case "getCurrentActiveTab":
+            return TabToolkit.getCurrentActiveTab();
+          case "handleTwitterSequence":
+            return TabToolkit.handleTwitterSequence();
+          default:
+            throw new Error(`Tool ${tool} not implemented in TabToolkit`);
+        }
+      })
+      .then((result) => {
+        sendResponse({ success: true, result });
+      })
+      .catch((error) => {
+        console.error("Error executing tool in background:", error);
+        sendResponse({ success: false, error: error.message || String(error) });
+      });
+
+    return true;
+  }
 
   // 处理配置更新消息
   if (message.name === "update-config") {

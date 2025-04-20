@@ -8,30 +8,53 @@ export class TabToolkit {
   /**
    * Open a new tab with a specific URL
    */
-  static openTab(url: string): Promise<WebInteractionResult> {
-    return new Promise((resolve) => {
-      chrome.tabs.create({ url }, (tab) => {
-        if (chrome.runtime.lastError) {
-          resolve({
-            success: false,
-            error: chrome.runtime.lastError.message
-          });
-        } else if (tab && tab.id) {
+  static async openTab(url: string): Promise<WebInteractionResult> {
+    try {
+      console.log("TabToolkit.openTab called with URL:", url);
+
+      if (!url) {
+        throw new Error("URL is required");
+      }
+
+      // Ensure URL has protocol
+      if (!url.startsWith("http://") && !url.startsWith("https://")) {
+        url = "https://" + url;
+      }
+
+      return new Promise((resolve) => {
+        chrome.tabs.create({ url }, (tab) => {
+          if (chrome.runtime.lastError) {
+            resolve({
+              success: false,
+              error: chrome.runtime.lastError.message,
+            });
+            return;
+          }
+
+          if (!tab || !tab.id) {
+            console.error("Failed to create tab: no tab ID returned");
+            resolve({
+              success: false,
+              error: "Failed to create tab: no tab ID returned",
+            });
+            return;
+          }
+
           resolve({
             success: true,
             data: {
               tabId: tab.id,
-              url: tab.url
-            }
+              url: tab.url,
+            },
           });
-        } else {
-          resolve({
-            success: false,
-            error: 'Failed to create tab'
-          });
-        }
+        });
       });
-    });
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
   }
 
   /**
@@ -43,12 +66,12 @@ export class TabToolkit {
         if (chrome.runtime.lastError) {
           resolve({
             success: false,
-            error: chrome.runtime.lastError.message
+            error: chrome.runtime.lastError.message,
           });
         } else {
           resolve({
             success: true,
-            data: { tabId }
+            data: { tabId },
           });
         }
       });
@@ -58,43 +81,41 @@ export class TabToolkit {
   /**
    * Find a tab by URL or title
    */
-  static findTab(
-    query: { 
-      url?: string | RegExp, 
-      title?: string | RegExp 
-    }
-  ): Promise<WebInteractionResult> {
+  static findTab(query: {
+    url?: string | RegExp;
+    title?: string | RegExp;
+  }): Promise<WebInteractionResult> {
     return new Promise((resolve) => {
       chrome.tabs.query({}, (tabs) => {
-        const matchingTabs = tabs.filter(tab => {
-          const urlMatch = query.url 
-            ? (typeof query.url === 'string' 
-              ? tab.url === query.url 
-              : query.url.test(tab.url || ''))
+        const matchingTabs = tabs.filter((tab) => {
+          const urlMatch = query.url
+            ? typeof query.url === "string"
+              ? tab.url === query.url
+              : query.url.test(tab.url || "")
             : true;
-          
+
           const titleMatch = query.title
-            ? (typeof query.title === 'string'
+            ? typeof query.title === "string"
               ? tab.title === query.title
-              : query.title.test(tab.title || ''))
+              : query.title.test(tab.title || "")
             : true;
-          
+
           return urlMatch && titleMatch;
         });
 
         if (matchingTabs.length > 0) {
           resolve({
             success: true,
-            data: matchingTabs.map(tab => ({
+            data: matchingTabs.map((tab) => ({
               tabId: tab.id,
               url: tab.url,
-              title: tab.title
-            }))
+              title: tab.title,
+            })),
           });
         } else {
           resolve({
             success: false,
-            error: 'No matching tabs found'
+            error: "No matching tabs found",
           });
         }
       });
@@ -110,7 +131,7 @@ export class TabToolkit {
         if (chrome.runtime.lastError) {
           resolve({
             success: false,
-            error: chrome.runtime.lastError.message
+            error: chrome.runtime.lastError.message,
           });
         } else if (tab) {
           // Focus the window containing the tab
@@ -119,14 +140,14 @@ export class TabToolkit {
               success: true,
               data: {
                 tabId: tab.id,
-                url: tab.url
-              }
+                url: tab.url,
+              },
             });
           });
         } else {
           resolve({
             success: false,
-            error: 'Failed to switch to tab'
+            error: "Failed to switch to tab",
           });
         }
       });
@@ -136,7 +157,10 @@ export class TabToolkit {
   /**
    * Wait for a tab to load
    */
-  static waitForTabLoad(tabId: number, timeout: number = 10000): Promise<WebInteractionResult> {
+  static waitForTabLoad(
+    tabId: number,
+    timeout: number = 10000
+  ): Promise<WebInteractionResult> {
     return new Promise((resolve) => {
       const startTime = Date.now();
 
@@ -145,23 +169,23 @@ export class TabToolkit {
           if (chrome.runtime.lastError) {
             resolve({
               success: false,
-              error: chrome.runtime.lastError.message
+              error: chrome.runtime.lastError.message,
             });
             return;
           }
 
-          if (tab.status === 'complete') {
+          if (tab.status === "complete") {
             resolve({
               success: true,
               data: {
                 tabId: tab.id,
-                url: tab.url
-              }
+                url: tab.url,
+              },
             });
           } else if (Date.now() - startTime > timeout) {
             resolve({
               success: false,
-              error: 'Tab load timeout'
+              error: "Tab load timeout",
             });
           } else {
             // Retry after a short delay
@@ -186,13 +210,13 @@ export class TabToolkit {
             data: {
               tabId: tabs[0].id,
               url: tabs[0].url,
-              title: tabs[0].title
-            }
+              title: tabs[0].title,
+            },
           });
         } else {
           resolve({
             success: false,
-            error: 'No active tab found'
+            error: "No active tab found",
           });
         }
       });
@@ -206,24 +230,24 @@ export class TabToolkit {
    * @param height Optional height of the popup (default: 600)
    */
   static createPopupWindow(
-    url: string, 
-    width: number = 400, 
+    url: string,
+    width: number = 400,
     height: number = 600
   ): Promise<WebInteractionResult> {
     return new Promise((resolve) => {
       const createData: chrome.windows.CreateData = {
         url,
-        type: 'popup',
+        type: "popup",
         width,
         height,
-        focused: true
+        focused: true,
       };
 
       chrome.windows.create(createData, (window) => {
         if (chrome.runtime.lastError) {
           resolve({
             success: false,
-            error: chrome.runtime.lastError.message
+            error: chrome.runtime.lastError.message,
           });
         } else if (window && window.tabs && window.tabs[0]?.id) {
           resolve({
@@ -231,13 +255,13 @@ export class TabToolkit {
             data: {
               windowId: window.id,
               tabId: window.tabs[0].id,
-              url: window.tabs[0].url
-            }
+              url: window.tabs[0].url,
+            },
           });
         } else {
           resolve({
             success: false,
-            error: 'Failed to create popup window'
+            error: "Failed to create popup window",
           });
         }
       });
@@ -253,15 +277,78 @@ export class TabToolkit {
         if (chrome.runtime.lastError) {
           resolve({
             success: false,
-            error: chrome.runtime.lastError.message
+            error: chrome.runtime.lastError.message,
           });
         } else {
           resolve({
             success: true,
-            data: { windowId }
+            data: { windowId },
           });
         }
       });
     });
+  }
+
+  /**
+   * Handle Twitter tab sequence
+   */
+  static async handleTwitterSequence(): Promise<WebInteractionResult> {
+    try {
+      // Step 1: Open Twitter tab
+      const openResult = await TabToolkit.openTab("https://twitter.com");
+      if (!openResult.success || !openResult.data?.tabId) {
+        return {
+          success: false,
+          error: "Failed to open Twitter tab",
+        };
+      }
+      const twitterTabId = openResult.data.tabId;
+
+      // Step 2: Wait for the tab to load
+      await TabToolkit.waitForTabLoad(twitterTabId);
+
+      // Step 3: Get current active tab (to switch back to later)
+      const currentTabResult = await TabToolkit.getCurrentActiveTab();
+      if (!currentTabResult.success || !currentTabResult.data?.tabId) {
+        return {
+          success: false,
+          error: "Failed to get current tab",
+        };
+      }
+      const originalTabId = currentTabResult.data.tabId;
+
+      // Step 4: Switch to original tab
+      await TabToolkit.switchToTab(originalTabId);
+
+      // Step 5: Wait a moment (for demonstration)
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Step 6: Switch back to Twitter tab
+      await TabToolkit.switchToTab(twitterTabId);
+
+      // Step 7: Wait a moment (for demonstration)
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Step 8: Close Twitter tab
+      const closeResult = await TabToolkit.closeTab(twitterTabId);
+      if (!closeResult.success) {
+        return {
+          success: false,
+          error: "Failed to close Twitter tab",
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          message: "Twitter tab sequence completed successfully",
+        },
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: `Twitter sequence failed: ${error.message}`,
+      };
+    }
   }
 }

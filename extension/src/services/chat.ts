@@ -9,6 +9,7 @@ import { env } from "../utils/env";
 import { handleAuthError, getApiKey } from "./utils";
 import { indexedDB } from "../utils/db";
 import { ChatRequest } from "../types/api";
+import { getToolDescriptions } from "../tools/tool-descriptions";
 
 // 发送聊天请求到后端
 export const sendChatCompletion = async (
@@ -17,17 +18,32 @@ export const sendChatCompletion = async (
   options: { stream?: boolean; signal?: AbortSignal } = {}
 ): Promise<{ success: boolean; data?: any; error?: string }> => {
   try {
+    const apiKeyToUse = apiKey || (await getApiKey());
+    if (!apiKeyToUse) {
+      return handleAuthError();
+    }
     const client = new OpenAI({
-      apiKey: apiKey || getApiKey() || "",
+      apiKey: apiKeyToUse,
       baseURL: env.BACKEND_URL + "/v1",
       dangerouslyAllowBrowser: true,
     });
+
+    // 获取工具描述
+    const tools = getToolDescriptions().map((tool) => ({
+      type: "function" as const,
+      function: {
+        name: tool.name,
+        description: tool.description,
+        parameters: tool.parameters,
+      },
+    }));
 
     const response = await client.chat.completions.create(
       {
         model: env.OPENAI_MODEL,
         messages: request.messages as OpenAI.Chat.ChatCompletionMessageParam[],
-        ...(request.tools ? { tools: request.tools } : {}),
+        tools: tools,
+        tool_choice: "auto",
         stream: options.stream,
       },
       { signal: options.signal }
@@ -38,7 +54,6 @@ export const sendChatCompletion = async (
       data: response,
     };
   } catch (error: any) {
-    console.error("Error in sendChatRequest:", error);
     return {
       success: false,
       error: error.message || "Failed to send chat request",
@@ -53,23 +68,25 @@ export const saveMessageApi = async ({
   conversation_id,
   message,
   top_k_related = 0,
+  apiKey,
 }: {
   conversation_id: string;
   message: Message;
   top_k_related?: number;
+  apiKey?: string;
 }): Promise<SaveMessageResponse> => {
   try {
     const API_ENDPOINT = "/v1/message/save";
-    const apiKey = getApiKey();
+    const apiKeyToUse = apiKey || (await getApiKey());
+    if (!apiKeyToUse) {
+      return handleAuthError();
+    }
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
 
-    if (!apiKey) {
-      throw new Error("No API key found");
-    }
-    headers["Authorization"] = `Bearer ${apiKey}`;
+    headers["Authorization"] = `Bearer ${apiKeyToUse}`;
     const requestBody = {
       conversation_id: conversation_id,
       message: message,

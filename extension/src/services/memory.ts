@@ -27,8 +27,15 @@ export async function generateMemory(
         {
           role: "system",
           content: options.systemPrompt || "You are a helpful AI assistant.",
+          message_id: crypto.randomUUID(),
+          created_at: new Date().toISOString(),
         },
-        { role: "user", content: currentMessage },
+        {
+          role: "user",
+          content: currentMessage,
+          message_id: crypto.randomUUID(),
+          created_at: new Date().toISOString(),
+        },
       ];
     }
 
@@ -63,8 +70,15 @@ export async function generateMemory(
       {
         role: "system",
         content: options.systemPrompt || "You are a helpful AI assistant.",
+        message_id: crypto.randomUUID(),
+        created_at: new Date().toISOString(),
       },
-      { role: "user", content: currentMessage },
+      {
+        role: "user",
+        content: currentMessage,
+        message_id: crypto.randomUUID(),
+        created_at: new Date().toISOString(),
+      },
     ];
   }
 }

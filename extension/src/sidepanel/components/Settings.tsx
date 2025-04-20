@@ -1,33 +1,33 @@
 import React, { useState, useEffect } from "react";
-import { Storage } from "@plasmohq/storage";
 import { env } from "../../utils/env";
 import { indexedDB } from "../../utils/db";
+import { getApiKey } from "~/services/utils";
 
 interface SettingsProps {
-  apiKey: string;
   setApiKey: (key: string) => void;
   onClose: () => void;
   initialValidationError?: string;
 }
 
 const Settings: React.FC<SettingsProps> = ({
-  apiKey,
   setApiKey,
   onClose,
   initialValidationError,
 }) => {
-  const [tempApiKey, setTempApiKey] = useState(apiKey);
+  const [tempApiKey, setTempApiKey] = useState("");
   const [saveStatus, setSaveStatus] = useState(initialValidationError || "");
   const [showWarning, setShowWarning] = useState(!!initialValidationError);
   const [isValidating, setIsValidating] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
 
   useEffect(() => {
-    const storage = new Storage();
-    storage.get("apiKey").then((key) => {
+    const initApiKey = async () => {
+      const key = await getApiKey();
       if (key) {
         setTempApiKey(key);
       }
-    });
+    };
+    initApiKey();
   }, []);
 
   useEffect(() => {
@@ -48,6 +48,7 @@ const Settings: React.FC<SettingsProps> = ({
       setIsValidating(true);
       setSaveStatus("Validating API key...");
       const formattedKey = tempApiKey.trim();
+      console.log("formattedKey", formattedKey);
 
       const response = await fetch(`${env.BACKEND_URL}/v1/auth/verify`, {
         method: "GET",
@@ -65,12 +66,8 @@ const Settings: React.FC<SettingsProps> = ({
       if (!data.success) {
         throw new Error("Invalid or disabled API key");
       }
-
-      await indexedDB.saveUser(data.user);
-
-      const storage = new Storage();
-      await storage.set("apiKey", formattedKey);
       setApiKey(formattedKey);
+      await indexedDB.saveUser(data.user);
       setSaveStatus("Saved successfully!");
       setTimeout(() => setSaveStatus(""), 2000);
 
@@ -215,25 +212,78 @@ const Settings: React.FC<SettingsProps> = ({
                 Get one here
               </button>
             </p>
-            <input
-              type="password"
-              value={tempApiKey || ""}
-              onChange={(e) => {
-                setTempApiKey(e.target.value);
-                setShowWarning(false);
-              }}
-              placeholder="Enter your API key"
-              style={{
-                width: "100%",
-                padding: "12px",
-                fontSize: "14px",
-                borderRadius: "8px",
-                border: `1px solid ${showWarning ? "#DC2626" : "#D1D5DB"}`,
-                marginBottom: "20px",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
-            />
+            <div style={{ position: "relative" }}>
+              <input
+                type={showApiKey ? "text" : "password"}
+                value={tempApiKey || ""}
+                onChange={(e) => {
+                  setTempApiKey(e.target.value);
+                  setShowWarning(false);
+                }}
+                placeholder="Enter your API key"
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  paddingRight: "40px", // 为按钮留出空间
+                  fontSize: "14px",
+                  borderRadius: "8px",
+                  border: `1px solid ${showWarning ? "#DC2626" : "#D1D5DB"}`,
+                  marginBottom: "20px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+              <button
+                onClick={() => setShowApiKey(!showApiKey)}
+                style={{
+                  position: "absolute",
+                  right: "12px",
+                  top: "12px", // 固定顶部距离
+                  background: "none",
+                  border: "none",
+                  padding: "0",
+                  width: "20px",
+                  height: "20px",
+                  cursor: "pointer",
+                  color: "#6B7280",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                type="button"
+                title={showApiKey ? "Hide API key" : "Show API key"}
+              >
+                {showApiKey ? (
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                ) : (
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                )}
+              </button>
+            </div>
             <div
               style={{ display: "flex", flexDirection: "column", gap: "12px" }}
             >

@@ -162,18 +162,6 @@ class IndexedDB {
       message.message_id = crypto.randomUUID();
     }
 
-    // 确保消息有所有必需的字段
-    if (
-      !message.role ||
-      !message.content ||
-      !message.created_at ||
-      !message.conversation_id ||
-      !message.message_id
-    ) {
-      console.error("Message missing required fields:", message);
-      throw new Error("Message missing required fields");
-    }
-
     const db = await this.openDB();
     return new Promise((resolve, reject) => {
       const transaction = db.transaction(this.stores.messages, "readwrite");

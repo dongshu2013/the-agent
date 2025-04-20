@@ -1,7 +1,6 @@
-import { Message as MessageType } from "../../types";
+import { Message as MessageType } from "../../types/messages";
 import LoadingBrain from "./LoadingBrain";
 import { useState, useEffect } from "react";
-import "highlight.js/styles/github.css";
 
 interface Props {
   message: MessageType;
@@ -12,21 +11,25 @@ export default function MessageComponent({
   message,
   isLatestResponse = false,
 }: Props) {
-  const isUser = message.role === "user";
-  const isLoading = message.isLoading === true;
-  const isError = message.role === "error";
+  const isUser = message?.role === "user";
+  const isLoading = message?.isLoading === true;
+  const isError = message?.status === "error";
   const [copySuccess, setCopySuccess] = useState(false);
   const [contentRendered, setContentRendered] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-  // 当消息内容加载完成后，设置contentRendered为true
   useEffect(() => {
-    if (!isLoading && !isUser && message.content) {
+    if (!isLoading && !isUser && message?.content) {
       setContentRendered(true);
     } else {
       setContentRendered(false);
     }
-  }, [isLoading, isUser, message.content]);
+  }, [isLoading, isUser, message?.content]);
+
+  if (!message) {
+    console.warn("Message component received null or undefined message");
+    return null;
+  }
 
   const handleCopy = () => {
     if (isLoading || !message.content) return;
@@ -42,19 +45,70 @@ export default function MessageComponent({
       });
   };
 
-  // 判断是否应该显示复制按钮
   const shouldShowCopyButton = () => {
     if (isLoading) return false;
     if (isError) return false;
     if (!message.content) return false;
 
-    // 对于最新的AI响应，只要渲染完成就显示
     if (isLatestResponse && !isUser) {
       return contentRendered;
     }
 
-    // 对于其他消息，只在悬停时显示
     return isHovered;
+  };
+
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <LoadingBrain />
+        </div>
+      );
+    }
+
+    if (isUser || isError) {
+      return (
+        <div style={{ whiteSpace: "pre-wrap" }}>{message.content || ""}</div>
+      );
+    }
+
+    const content = message.content || "";
+
+    // 简单的 markdown 转换
+    const processedContent = content
+      // 处理代码块
+      .replace(/```(\w+)?\n([\s\S]*?)```/g, (_, lang, code) => {
+        return `<pre><code class="language-${lang || ""}">${code}</code></pre>`;
+      })
+      // 处理行内代码
+      .replace(/`([^`]+)`/g, "<code>$1</code>")
+      // 处理粗体
+      .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+      // 处理斜体
+      .replace(/\*([^*]+)\*/g, "<em>$1</em>")
+      // 处理链接
+      .replace(
+        /\[([^\]]+)\]\(([^)]+)\)/g,
+        '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
+      )
+      // 处理列表
+      .replace(/^\s*[-*]\s+(.+)$/gm, "<li>$1</li>")
+      // 处理标题
+      .replace(/^#\s+(.+)$/gm, "<h1>$1</h1>")
+      .replace(/^##\s+(.+)$/gm, "<h2>$1</h2>")
+      .replace(/^###\s+(.+)$/gm, "<h3>$1</h3>")
+      // 处理引用
+      .replace(/^>\s+(.+)$/gm, "<blockquote>$1</blockquote>")
+      // 处理换行
+      .replace(/\n/g, "<br>");
+
+    return (
+      <div
+        className="markdown-content"
+        style={{ width: "100%" }}
+        dangerouslySetInnerHTML={{ __html: processedContent }}
+      />
+    );
   };
 
   return (
@@ -63,7 +117,6 @@ export default function MessageComponent({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* 用户消息靠右，AI消息靠左 */}
       <div
         style={{
           display: "flex",
@@ -72,7 +125,6 @@ export default function MessageComponent({
           marginRight: !isUser ? "15%" : "0",
         }}
       >
-        {/* 消息内容容器 */}
         <div
           style={{
             display: "flex",
@@ -82,13 +134,12 @@ export default function MessageComponent({
             position: "relative",
           }}
         >
-          {/* 消息内容 */}
           <div
             style={{
               display: "inline-block",
               maxWidth: "100%",
               padding: isUser || isError ? "10px 16px" : "10px 16px 10px 0",
-              textAlign: isUser ? "left" : "left",
+              textAlign: "left",
               fontSize: "15px",
               lineHeight: "1.5",
               backgroundColor: isUser
@@ -102,24 +153,9 @@ export default function MessageComponent({
               wordBreak: "break-word",
             }}
           >
-            {isLoading ? (
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "8px" }}
-              >
-                <LoadingBrain />
-              </div>
-            ) : (
-              <div
-                style={{
-                  whiteSpace: "pre-wrap",
-                }}
-              >
-                {message.content || ""}
-              </div>
-            )}
+            {renderContent()}
           </div>
 
-          {/* 复制按钮 - 根据条件显示 */}
           {shouldShowCopyButton() && (
             <button
               onClick={handleCopy}
@@ -141,7 +177,7 @@ export default function MessageComponent({
                 transition: "all 0.2s",
                 opacity: isLatestResponse && !isUser ? 1 : isHovered ? 1 : 0,
                 pointerEvents:
-                  (isLatestResponse && !isUser) || isHovered ? "auto" : "none", // 当不可见时禁用交互
+                  (isLatestResponse && !isUser) || isHovered ? "auto" : "none",
               }}
               title="Copy to clipboard"
             >

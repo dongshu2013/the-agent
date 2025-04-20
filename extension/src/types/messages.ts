@@ -8,7 +8,7 @@
  */
 export interface Message {
   message_id: string;
-  role: "user" | "assistant" | "system" | "error";
+  role: "user" | "assistant" | "system" | "tool";
   content: string;
   created_at: string;
   isLoading?: boolean;
