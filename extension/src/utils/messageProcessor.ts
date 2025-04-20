@@ -97,5 +97,5 @@ export const isUserMessage = (message: Message): boolean => {
  * @returns boolean indicating if the message is an error message
  */
 export const isErrorMessage = (message: Message): boolean => {
-  return message?.role === "error";
+  return message?.status === "error";
 };
