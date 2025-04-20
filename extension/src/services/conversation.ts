@@ -175,6 +175,15 @@ export const getConversationsApi = async (
  */
 export const getConversations = async (): Promise<Conversation[]> => {
   try {
+    // 首先尝试从 IndexedDB 获取会话列表
+    const localConversations = await indexedDB.getAllConversations();
+    if (localConversations && localConversations.length > 0) {
+      console.log("Using conversations from IndexedDB", localConversations);
+      return localConversations;
+    }
+
+    // 如果 IndexedDB 中没有数据，则从 API 获取
+    console.log("No conversations in IndexedDB, fetching from API");
     const response = await getConversationsApi();
     if (!response.success || !response.data) {
       throw new Error(response.error || "Failed to fetch conversations");
@@ -201,8 +210,16 @@ export const getConversations = async (): Promise<Conversation[]> => {
     await Promise.all(
       newConversations.map((conv) => indexedDB.saveConversation(conv))
     );
+
     return newConversations;
   } catch (error) {
+    console.error("Error in getConversations:", error);
+    // 如果 API 调用失败，返回 IndexedDB 中的数据（如果有的话）
+    const fallbackConversations = await indexedDB.getAllConversations();
+    if (fallbackConversations && fallbackConversations.length > 0) {
+      console.log("Using fallback conversations from IndexedDB");
+      return fallbackConversations;
+    }
     throw error;
   }
 };

@@ -95,32 +95,22 @@ const Sidepanel = () => {
         setIsLoading(true);
 
         try {
-          // 添加重试逻辑
-          let retryCount = 0;
-          const maxRetries = 3;
-          let loadedConversations = null;
-
-          while (retryCount < maxRetries) {
-            try {
-              loadedConversations = await getConversations();
-              break;
-            } catch (error) {
-              retryCount++;
-              if (retryCount === maxRetries) {
-                throw error;
-              }
-              // 等待后重试
-              await new Promise((resolve) =>
-                setTimeout(resolve, 1000 * retryCount)
-              );
-            }
-          }
-
+          const loadedConversations = await getConversations();
           if (loadedConversations && loadedConversations.length > 0) {
             setConversations(loadedConversations);
             const firstConversation = loadedConversations[0];
             setCurrentConversationId(firstConversation.id);
-            setMessages(firstConversation.messages || []);
+
+            // 加载当前会话的消息并按时间排序
+            const currentMessages = await indexedDB.getMessagesByConversation(
+              firstConversation.id
+            );
+            const sortedMessages = currentMessages.sort(
+              (a, b) =>
+                new Date(a.created_at).getTime() -
+                new Date(b.created_at).getTime()
+            );
+            setMessages(sortedMessages || []);
           } else {
             // 如果没有会话，创建新会话
             const newConv = await createNewConversation();
@@ -222,6 +212,7 @@ const Sidepanel = () => {
     const currentPrompt = prompt.trim();
     const userMessageId = crypto.randomUUID();
     const assistantMessageId = crypto.randomUUID();
+    let toolCallStarted = false;
     let isToolCallComplete = false;
 
     const userMessage: MessageType = {
@@ -246,20 +237,10 @@ const Sidepanel = () => {
     setPrompt("");
     setIsLoading(true);
     setIsStreaming(true);
-
-    // 显示 user + assistant(loading)
-    setMessages((prev) => [...prev, userMessage, loadingMessage]);
-
-    // 保存 user message
-    try {
-      await indexedDB.saveMessage(userMessage);
-    } catch (error) {
-      console.error("Failed to save user message:", error);
-      handleApiError("Failed to save message to local database");
-      return;
-    }
-
     abortControllerRef.current = new AbortController();
+
+    setMessages((prev) => [...prev, userMessage, loadingMessage]);
+    await indexedDB.saveMessage(userMessage);
 
     try {
       const saveResponse = await saveMessageApi({
@@ -307,28 +288,24 @@ const Sidepanel = () => {
 
       const stream = response.data;
       let accumulatedContent = "";
-      let lastUpdateTime = Date.now();
-      let toolCallStarted = false;
 
       for await (const chunk of stream) {
         if (abortControllerRef.current === null) break;
 
-        const content = chunk.choices[0]?.delta?.content || "";
+        const content = chunk.choices[0]?.delta?.content;
         if (content) {
           accumulatedContent += content;
 
-          const now = Date.now();
-          if (now - lastUpdateTime >= 100) {
-            console.log("Updating message content:", accumulatedContent); // 添加日志
-            setMessages((prev) =>
-              prev.map((msg) =>
-                msg.message_id === assistantMessageId
-                  ? { ...msg, content: accumulatedContent }
-                  : msg
-              )
-            );
-            lastUpdateTime = now;
-          }
+          setMessages((msg: MessageType[]) =>
+            msg.map((msg: MessageType) =>
+              msg.message_id === assistantMessageId
+                ? { ...msg, content: accumulatedContent, isLoading: false }
+                : msg
+            )
+          );
+        }
+        if (chunk.choices[0]?.finish_reason === "stop") {
+          break;
         }
 
         // 处理工具调用
@@ -396,13 +373,11 @@ const Sidepanel = () => {
 
       console.log("Final AI message:", aiMessage); // 添加日志
 
-      try {
-        await indexedDB.saveMessage(aiMessage);
-      } catch (error) {
-        console.error("Failed to save AI message:", error);
-      }
-
-      // 确保最后一次更新
+      await indexedDB.saveMessage(aiMessage);
+      await saveMessageApi({
+        conversation_id: currentConversationId,
+        message: aiMessage,
+      });
       setMessages((prev) => {
         console.log("Previous messages:", prev); // 添加日志
         return prev.map((msg) =>
@@ -463,8 +438,16 @@ const Sidepanel = () => {
     if (willShow) {
       try {
         setIsLoading(true);
-        const refreshedConversations = await getConversations();
-        setConversations(refreshedConversations);
+        // 如果已经打开过会话列表，优先从缓存获取
+        if (conversations && conversations.length > 0) {
+          console.log("Using cached conversations");
+          setConversations(conversations);
+        } else {
+          // 如果缓存中没有，则从接口获取
+          console.log("No cached conversations, fetching from API");
+          const refreshedConversations = await getConversations();
+          setConversations(refreshedConversations);
+        }
       } catch (error) {
         handleApiError(error);
       } finally {
@@ -494,7 +477,13 @@ const Sidepanel = () => {
     try {
       const conversation = await selectConv(id);
       if (conversation) {
-        setMessages(conversation.messages || []);
+        // 从 IndexedDB 获取消息并按时间排序
+        const messages = await indexedDB.getMessagesByConversation(id);
+        const sortedMessages = messages.sort(
+          (a, b) =>
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        );
+        setMessages(sortedMessages);
         setCurrentConversationId(id);
       }
     } catch (error) {
