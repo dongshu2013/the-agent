@@ -1,5 +1,3 @@
-import React from "react";
-
 const Popup = () => {
   const openSidePanel = async () => {
     try {

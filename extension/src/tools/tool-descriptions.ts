@@ -193,29 +193,29 @@ export const getToolDescriptions = (): ToolDescription[] => {
         },
       },
     },
-    {
-      name: "TabToolkit_handleTwitterSequence",
-      description: "Handle a sequence of tab operations for Twitter",
-      parameters: {
-        type: "object",
-        properties: {},
-        required: [],
-      },
-      returns: {
-        type: "object",
-        description: "Result of the Twitter sequence operation",
-        properties: {
-          success: {
-            type: "boolean",
-            description: "Whether the sequence was completed successfully",
-          },
-          error: {
-            type: "string",
-            description: "Error message if the sequence failed",
-          },
-        },
-      },
-    },
+    // {
+    //   name: "TabToolkit_handleTwitterSequence",
+    //   description: "Handle a sequence of tab operations for Twitter",
+    //   parameters: {
+    //     type: "object",
+    //     properties: {},
+    //     required: [],
+    //   },
+    //   returns: {
+    //     type: "object",
+    //     description: "Result of the Twitter sequence operation",
+    //     properties: {
+    //       success: {
+    //         type: "boolean",
+    //         description: "Whether the sequence was completed successfully",
+    //       },
+    //       error: {
+    //         type: "string",
+    //         description: "Error message if the sequence failed",
+    //       },
+    //     },
+    //   },
+    // },
 
     // Web Toolkit Tools
     {

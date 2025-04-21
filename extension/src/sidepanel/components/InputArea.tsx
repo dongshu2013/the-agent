@@ -76,7 +76,7 @@ export default function InputArea({
             onKeyDown={handleKeyDown}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
-            disabled={isLoading}
+            disabled={isLoading && !isStreaming}
             placeholder="send message..."
             rows={1}
             style={{

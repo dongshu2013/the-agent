@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useStorage } from "@plasmohq/storage/hook";
-import "../../style.css";
+import "../style.css";
 import Header from "./components/Header";
 import Message from "./components/Message";
 import InputArea from "./components/InputArea";
@@ -19,7 +19,6 @@ import { Storage } from "@plasmohq/storage";
 import { indexedDB } from "../utils/db";
 import { getApiKey } from "~/services/utils";
 import { toolExecutor } from "../services/tool-executor";
-import { ToolCallResult } from "../types/api";
 
 const Sidepanel = () => {
   const [apiKey, setApiKey] = useStorage("apiKey");
@@ -43,6 +42,12 @@ const Sidepanel = () => {
 
   // Reference to the messages end
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    chrome.runtime.sendMessage({ name: "ping" }, (res) => {
+      console.log("从 background 返回的响应：", res);
+    });
+  }, []);
 
   // Auto-scroll to the bottom
   useEffect(() => {
@@ -197,8 +202,8 @@ const Sidepanel = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
-      setIsStreaming(false); // 只重置流状态
-      // 移除 setIsLoading(false) 因为我们不需要重置加载状态
+      setIsStreaming(false);
+      setIsLoading(false);
     }
   }, []);
 
@@ -212,8 +217,6 @@ const Sidepanel = () => {
     const currentPrompt = prompt.trim();
     const userMessageId = crypto.randomUUID();
     const assistantMessageId = crypto.randomUUID();
-    let toolCallStarted = false;
-    let isToolCallComplete = false;
 
     const userMessage: MessageType = {
       message_id: userMessageId,
@@ -280,34 +283,30 @@ const Sidepanel = () => {
         memoryMessages += `${userMessage.role}: ${userMessage.content}\n`;
       }
 
-      const response = await sendChatCompletion(
+      const stream = await sendChatCompletion(
         {
           messages: [
             {
               role: "user",
-              content: memoryMessages,
+              content: currentPrompt,
             },
           ],
         },
         apiKey,
         {
-          stream: true,
+          // stream:  true,
           signal: abortControllerRef.current?.signal,
         }
       );
 
-      if (!response.success)
-        throw new Error(response.error || "AI response failed");
-
-      const stream = response.data;
-      let accumulatedContent = "";
+      let accumulatedContent = ``;
 
       for await (const chunk of stream) {
         if (abortControllerRef.current === null) break;
 
         const content = chunk.choices[0]?.delta?.content;
         if (content) {
-          accumulatedContent += content;
+          accumulatedContent = `${accumulatedContent}${content}`;
 
           setMessages((msg: MessageType[]) =>
             msg.map((msg: MessageType) =>
@@ -317,59 +316,51 @@ const Sidepanel = () => {
             )
           );
         }
-        if (chunk.choices[0]?.finish_reason === "stop") {
-          break;
-        }
-
-        // 处理工具调用
-        try {
-          const hasToolCall = chunk.choices[0]?.delta?.tool_calls;
-
-          if (hasToolCall && !toolCallStarted) {
-            toolCallStarted = true;
-            console.log("Tool call started"); // 添加日志
-            setMessages((prev) =>
-              prev.map((msg) =>
-                msg.message_id === assistantMessageId
-                  ? { ...msg, status: "pending", isLoading: true }
-                  : msg
-              )
-            );
-          }
-
-          toolExecutor.processStreamingToolCalls(chunk);
-          if (toolExecutor.isToolCallComplete(chunk)) {
-            console.log("Tool call completed"); // 添加日志
-            isToolCallComplete = true;
-            break;
-          }
-        } catch (error) {
-          console.error("Tool execution error:", error);
-        }
-
-        if (chunk.choices[0]?.finish_reason === "stop") {
-          console.log("Stream finished with stop reason"); // 添加日志
-          break;
-        }
       }
 
-      // 处理工具调用结果
-      if (isToolCallComplete) {
-        try {
-          const results = await toolExecutor.processCompletedToolCalls();
-          if (results) {
-            console.log("Tool results:", results); // 添加日志
-            accumulatedContent += "\n\n" + results;
-            setMessages((prev) =>
-              prev.map((msg) =>
+      // tool call
+      const completion = await stream.finalChatCompletion();
+      if (completion.choices[0]?.message?.tool_calls) {
+        console.log("Final AI message:", completion);
+        const toolCalls = completion.choices[0]?.message?.tool_calls;
+        const result = await toolExecutor.executeToolCalls(toolCalls);
+        console.log("Tool call result:", result);
+        // accumulatedContent += result;
+
+        const aiContent = await sendChatCompletion(
+          {
+            messages: [
+              {
+                role: "user",
+                content: `## currentPrompt: ${currentPrompt}\n ## completed tool call result: ${result}`,
+              },
+              {
+                role: "system",
+                content: `generate a new prompt based on the current prompt and the completed tool call result`,
+              },
+            ],
+          },
+          apiKey,
+          {
+            signal: abortControllerRef.current?.signal,
+          }
+        );
+
+        for await (const chunk of aiContent) {
+          if (abortControllerRef.current === null) break;
+
+          const content = chunk.choices[0]?.delta?.content;
+          if (content) {
+            accumulatedContent = `${accumulatedContent}${content}`;
+
+            setMessages((msg: MessageType[]) =>
+              msg.map((msg: MessageType) =>
                 msg.message_id === assistantMessageId
-                  ? { ...msg, content: accumulatedContent }
+                  ? { ...msg, content: accumulatedContent, isLoading: false }
                   : msg
               )
             );
           }
-        } catch (error) {
-          console.error("Failed to process tool results:", error);
         }
       }
 
@@ -380,20 +371,15 @@ const Sidepanel = () => {
         content: accumulatedContent,
         created_at: new Date().toISOString(),
         conversation_id: currentConversationId,
-        status: "completed",
-        isLoading: false,
       };
-
-      console.log("Final AI message:", aiMessage); // 添加日志
 
       await indexedDB.saveMessage(aiMessage);
       await saveMessageApi({
         conversation_id: currentConversationId,
         message: aiMessage,
       });
-      setMessages((prev) => {
-        console.log("Previous messages:", prev); // 添加日志
-        return prev.map((msg) =>
+      setMessages((prev: any) => {
+        return prev.map((msg: any) =>
           msg.message_id === assistantMessageId
             ? {
                 ...msg,
@@ -404,6 +390,7 @@ const Sidepanel = () => {
             : msg
         );
       });
+      setIsStreaming(false);
     } catch (error: any) {
       console.error("Error in handleSubmit:", error); // 添加日志
       if (error.name === "AbortError") {

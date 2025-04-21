@@ -10,17 +10,6 @@ export class TabToolkit {
    */
   static async openTab(url: string): Promise<WebInteractionResult> {
     try {
-      console.log("TabToolkit.openTab called with URL:", url);
-
-      if (!url) {
-        throw new Error("URL is required");
-      }
-
-      // Ensure URL has protocol
-      if (!url.startsWith("http://") && !url.startsWith("https://")) {
-        url = "https://" + url;
-      }
-
       return new Promise((resolve) => {
         chrome.tabs.create({ url }, (tab) => {
           if (chrome.runtime.lastError) {
@@ -32,7 +21,6 @@ export class TabToolkit {
           }
 
           if (!tab || !tab.id) {
-            console.error("Failed to create tab: no tab ID returned");
             resolve({
               success: false,
               error: "Failed to create tab: no tab ID returned",
@@ -292,63 +280,63 @@ export class TabToolkit {
   /**
    * Handle Twitter tab sequence
    */
-  static async handleTwitterSequence(): Promise<WebInteractionResult> {
-    try {
-      // Step 1: Open Twitter tab
-      const openResult = await TabToolkit.openTab("https://twitter.com");
-      if (!openResult.success || !openResult.data?.tabId) {
-        return {
-          success: false,
-          error: "Failed to open Twitter tab",
-        };
-      }
-      const twitterTabId = openResult.data.tabId;
+  // static async handleTwitterSequence(): Promise<WebInteractionResult> {
+  //   try {
+  //     // Step 1: Open Twitter tab
+  //     const openResult = await TabToolkit.openTab("https://twitter.com");
+  //     if (!openResult.success || !openResult.data?.tabId) {
+  //       return {
+  //         success: false,
+  //         error: "Failed to open Twitter tab",
+  //       };
+  //     }
+  //     const twitterTabId = openResult.data.tabId;
 
-      // Step 2: Wait for the tab to load
-      await TabToolkit.waitForTabLoad(twitterTabId);
+  //     // Step 2: Wait for the tab to load
+  //     await TabToolkit.waitForTabLoad(twitterTabId);
 
-      // Step 3: Get current active tab (to switch back to later)
-      const currentTabResult = await TabToolkit.getCurrentActiveTab();
-      if (!currentTabResult.success || !currentTabResult.data?.tabId) {
-        return {
-          success: false,
-          error: "Failed to get current tab",
-        };
-      }
-      const originalTabId = currentTabResult.data.tabId;
+  //     // Step 3: Get current active tab (to switch back to later)
+  //     const currentTabResult = await TabToolkit.getCurrentActiveTab();
+  //     if (!currentTabResult.success || !currentTabResult.data?.tabId) {
+  //       return {
+  //         success: false,
+  //         error: "Failed to get current tab",
+  //       };
+  //     }
+  //     const originalTabId = currentTabResult.data.tabId;
 
-      // Step 4: Switch to original tab
-      await TabToolkit.switchToTab(originalTabId);
+  //     // Step 4: Switch to original tab
+  //     await TabToolkit.switchToTab(originalTabId);
 
-      // Step 5: Wait a moment (for demonstration)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+  //     // Step 5: Wait a moment (for demonstration)
+  //     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Step 6: Switch back to Twitter tab
-      await TabToolkit.switchToTab(twitterTabId);
+  //     // Step 6: Switch back to Twitter tab
+  //     await TabToolkit.switchToTab(twitterTabId);
 
-      // Step 7: Wait a moment (for demonstration)
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+  //     // Step 7: Wait a moment (for demonstration)
+  //     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Step 8: Close Twitter tab
-      const closeResult = await TabToolkit.closeTab(twitterTabId);
-      if (!closeResult.success) {
-        return {
-          success: false,
-          error: "Failed to close Twitter tab",
-        };
-      }
+  //     // Step 8: Close Twitter tab
+  //     const closeResult = await TabToolkit.closeTab(twitterTabId);
+  //     if (!closeResult.success) {
+  //       return {
+  //         success: false,
+  //         error: "Failed to close Twitter tab",
+  //       };
+  //     }
 
-      return {
-        success: true,
-        data: {
-          message: "Twitter tab sequence completed successfully",
-        },
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: `Twitter sequence failed: ${error.message}`,
-      };
-    }
-  }
+  //     return {
+  //       success: true,
+  //       data: {
+  //         message: "Twitter tab sequence completed successfully",
+  //       },
+  //     };
+  //   } catch (error: any) {
+  //     return {
+  //       success: false,
+  //       error: `Twitter sequence failed: ${error.message}`,
+  //     };
+  //   }
+  // }
 }

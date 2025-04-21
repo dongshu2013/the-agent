@@ -16,7 +16,7 @@ export const sendChatCompletion = async (
   request: ChatRequest,
   apiKey?: string,
   options: { stream?: boolean; signal?: AbortSignal } = {}
-): Promise<{ success: boolean; data?: any; error?: string }> => {
+): Promise<any> => {
   try {
     const apiKeyToUse = apiKey || (await getApiKey());
     if (!apiKeyToUse) {
@@ -38,26 +38,17 @@ export const sendChatCompletion = async (
       },
     }));
 
-    const response = await client.chat.completions.create(
+    return await client.beta.chat.completions.stream(
       {
         model: env.OPENAI_MODEL,
         messages: request.messages as OpenAI.Chat.ChatCompletionMessageParam[],
         tools: tools,
         tool_choice: "auto",
-        stream: options.stream,
       },
       { signal: options.signal }
     );
-
-    return {
-      success: true,
-      data: response,
-    };
   } catch (error: any) {
-    return {
-      success: false,
-      error: error.message || "Failed to send chat request",
-    };
+    throw new Error(error.message || "Failed to send chat request");
   }
 };
 

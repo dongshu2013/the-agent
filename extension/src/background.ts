@@ -1,20 +1,12 @@
 import { Storage } from "@plasmohq/storage";
-import { TabToolkit } from "../tools/tab-toolkit";
-
-// 初始化存储
+import { TabToolkit } from "./tools/tab-toolkit";
 const storage = new Storage();
 
-// 设置面板行为
 chrome.runtime.onInstalled.addListener(async () => {
-  // 添加右键菜单
-  chrome.contextMenus.create({
-    id: "mizu-agent",
-    title: "Analyze with MIZU",
-    contexts: ["selection"],
-  });
+  // 检查 chrome.contextMenus 是否可用
+  console.log("Extension installed");
 });
 
-// 打开侧边栏
 async function openSidePanel(tab: chrome.tabs.Tab) {
   if (!tab?.id) {
     console.error("Invalid tab id");
@@ -34,8 +26,8 @@ async function openSidePanel(tab: chrome.tabs.Tab) {
   }
 }
 
-// 检查并设置扩展图标点击事件
-if (chrome.action) {
+// 检查 chrome.action 是否存在
+if (typeof chrome !== "undefined" && chrome.action) {
   chrome.action.onClicked.addListener(async (tab) => {
     await openSidePanel(tab);
   });
@@ -46,41 +38,45 @@ if (chrome.action) {
 chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
   console.log("Background script received message:", message);
 
+  if (message.name === "ping") {
+    console.log("Background script received ping");
+    sendResponse({ success: true, message: "ping" });
+  }
+
   // 处理工具调用消息
   if (message.name === "execute-tool") {
-    const { tool, params } = message.body;
+    const { name, arguments: params } = message.body;
+    console.log("Executing tool:", name, "with params:", params);
 
-    import("../tools/tab-toolkit")
-      .then((module) => {
-        const TabToolkit = module.TabToolkit;
-        const methodName = tool.replace("TabToolkit_", "");
-
-        switch (methodName) {
-          case "openTab":
-            return TabToolkit.openTab(params.url);
-          case "closeTab":
-            return TabToolkit.closeTab(params.tabId);
-          case "findTab":
-            return TabToolkit.findTab(params);
-          case "switchToTab":
-            return TabToolkit.switchToTab(params.tabId);
-          case "waitForTabLoad":
-            return TabToolkit.waitForTabLoad(params.tabId, params.timeout);
-          case "getCurrentActiveTab":
-            return TabToolkit.getCurrentActiveTab();
-          case "handleTwitterSequence":
-            return TabToolkit.handleTwitterSequence();
-          default:
-            throw new Error(`Tool ${tool} not implemented in TabToolkit`);
+    (async () => {
+      try {
+        // 检查 chrome.tabs 是否可用
+        if (!chrome?.tabs) {
+          throw new Error("chrome.tabs API is not available");
         }
-      })
-      .then((result) => {
-        sendResponse({ success: true, result });
-      })
-      .catch((error) => {
+        const toolNoolName = name.replace("TabToolkit_", "");
+
+        switch (toolNoolName) {
+          case "openTab":
+            const result = await TabToolkit.openTab(params.url);
+            sendResponse(result);
+            return true;
+          case "closeTab":
+            const closeResult = await TabToolkit.closeTab(params.tabId);
+            sendResponse(closeResult);
+            return true;
+
+          default:
+            sendResponse({
+              success: false,
+              error: `Tool ${name} not implemented in background script`,
+            });
+        }
+      } catch (error: any) {
         console.error("Error executing tool in background:", error);
         sendResponse({ success: false, error: error.message || String(error) });
-      });
+      }
+    })();
 
     return true;
   }
@@ -110,12 +106,5 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
   if (message.name === "selected-text") {
     // 处理选中的文本
     console.log("Selected text received");
-  }
-});
-
-// 更新右键菜单点击处理程序
-chrome.contextMenus.onClicked.addListener(async (info, tab) => {
-  if (info.menuItemId === "mizu-agent" && info.selectionText && tab?.windowId) {
-    await openSidePanel(tab);
   }
 });
