@@ -262,19 +262,32 @@ const Sidepanel = () => {
         10
       );
 
-      const memory = [...relatedMessages, ...recentMessages, userMessage].sort(
-        (a, b) =>
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      );
+      let memoryMessages = ``;
+      if (relatedMessages.length > 0) {
+        memoryMessages += `Related messages:\n`;
+        relatedMessages.forEach((msg) => {
+          memoryMessages += `${msg.role}: ${msg.content}\n`;
+        });
+      }
+      if (recentMessages.length > 0) {
+        memoryMessages += `Recent messages:\n`;
+        recentMessages.forEach((msg) => {
+          memoryMessages += `${msg.role}: ${msg.content}\n`;
+        });
+      }
+      if (userMessage) {
+        memoryMessages += `User message:\n`;
+        memoryMessages += `${userMessage.role}: ${userMessage.content}\n`;
+      }
 
       const response = await sendChatCompletion(
         {
-          messages: memory.map((msg) => ({
-            role: msg.role,
-            content: msg.content,
-            message_id: msg.message_id,
-            created_at: msg.created_at,
-          })),
+          messages: [
+            {
+              role: "user",
+              content: memoryMessages,
+            },
+          ],
         },
         apiKey,
         {

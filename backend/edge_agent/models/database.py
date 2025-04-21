@@ -57,25 +57,8 @@ class Message(Base):
 
     # Relationships
     conversation = relationship("Conversation", back_populates="messages")
-    embedding = relationship("MessageEmbedding", back_populates="message", uselist=False, cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Message(id={self.id}, role={self.role})>"
 
 
-class MessageEmbedding(Base):
-    """
-    Stores vector embeddings for messages to enable semantic search
-    """
-    __tablename__ = "message_embeddings"
-    
-    id = Column(String, primary_key=True, default=generate_uuid)
-    message_id = Column(String, ForeignKey("messages.id"), nullable=False, unique=True)
-    embedding = Column(Vector(1536), nullable=False)  # Using OpenAI ada-002 embeddings (1536 dimensions)
-    created_at = Column(DateTime, default=func.now(), nullable=False)
-    
-    # Relationship
-    message = relationship("Message", back_populates="embedding")
-    
-    def __repr__(self):
-        return f"<MessageEmbedding(message_id={self.message_id})>"
