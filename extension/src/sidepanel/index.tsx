@@ -19,7 +19,6 @@ import { Storage } from "@plasmohq/storage";
 import { indexedDB } from "../utils/db";
 import { getApiKey } from "~/services/utils";
 import { toolExecutor } from "../services/tool-executor";
-import { ToolCallResult } from "../types/api";
 
 const Sidepanel = () => {
   const [apiKey, setApiKey] = useStorage("apiKey");
@@ -280,6 +279,7 @@ const Sidepanel = () => {
         memoryMessages += `${userMessage.role}: ${userMessage.content}\n`;
       }
 
+      // Send chat completion request
       const response = await sendChatCompletion(
         {
           messages: [
