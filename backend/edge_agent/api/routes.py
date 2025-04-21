@@ -300,21 +300,19 @@ async def save_message(
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation not found or not authorized")
 
-        stmt = insert(Message).values(
+        # 保存消息
+        message = Message(
             id=message_data.message.message_id,
             conversation_id=message_data.conversation_id,
             role=message_data.message.role,
             content=message_data.message.content,
             created_at=datetime.fromisoformat(message_data.message.created_at),
-        ).on_conflict_do_nothing(index_elements=['id'])
-        db.execute(stmt)
+        )
+        db.add(message)
         db.commit()
+        db.refresh(message)
 
-        # Add the embedding generation task with just the message ID
-        # This avoids issues with detached SQLAlchemy objects
-        background_tasks.add_task(update_message_embedding, message_data.message.message_id)
-
-        # Get top k related messages
+        # 获取 top k 相关消息
         top_k_messages = []
         if message_data.top_k_related > 0:
             message_text = extract_text_from_content(message_data.message.content)
@@ -325,6 +323,9 @@ async def save_message(
                 db=db
             )
             top_k_messages = [msg.id for msg in similar_messages]
+
+        # 在后台任务中生成嵌入
+        background_tasks.add_task(update_message_embedding, message.id)
 
         return {
             "success": True,
