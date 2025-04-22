@@ -1,4 +1,3 @@
-import { sendChatCompletion } from "~/services/chat";
 import { indexedDB } from "../utils/db";
 
 export interface WebInteractionResult {
@@ -81,36 +80,14 @@ export class TabToolkit {
     });
   }
 
-  static async listTabs(): Promise<WebInteractionResult> {
-    return new Promise((resolve) => {
-      chrome.tabs.query({}, async (tabs) => {
-        const tablist = await sendChatCompletion({
-          messages: [
-            {
-              role: "user",
-              content: `请根据以下标签页列表，返回一个包含所有标签页信息的列表：${JSON.stringify(tabs)}`,
-            },
-          ],
-        });
-        console.log("tablist 🍒", tablist);
-        resolve({
-          success: true,
-          data: tabs,
-        });
-      });
-    });
-  }
-
   /**
    * Find a tab by URL or title
    */
-  static async findTab(query: {
+  static async listTabs(query: {
     url?: string | RegExp;
     title?: string | RegExp;
   }): Promise<WebInteractionResult> {
     try {
-      // const tablist = await this.listTabs();
-      // 首先从当前标签页中查找
       const currentTabs = await new Promise<chrome.tabs.Tab[]>((resolve) => {
         chrome.tabs.query({ currentWindow: true }, (tabs) => {
           console.log("tabs 🍒", tabs);
@@ -119,56 +96,44 @@ export class TabToolkit {
       });
 
       const matchingCurrentTabs = currentTabs.filter((tab) => {
-        const urlMatch = query.url
-          ? typeof query.url === "string"
-            ? tab.url === query.url
-            : query.url.test(tab.url || "")
-          : true;
+        // 处理URL匹配
+        let urlMatch = true;
+        if (query.url) {
+          const tabUrl = tab.url || "";
+          const normalizedTabUrl = tabUrl.replace("twitter.com", "x.com");
+          if (typeof query.url === "string") {
+            const normalizedQueryUrl = query.url.replace(
+              "twitter.com",
+              "x.com"
+            );
+            urlMatch = normalizedTabUrl.includes(normalizedQueryUrl);
+          } else {
+            urlMatch = query.url.test(tabUrl);
+          }
+        }
 
-        const titleMatch = query.title
-          ? typeof query.title === "string"
-            ? tab.title === query.title
-            : query.title.test(tab.title || "")
-          : true;
+        // 处理标题匹配
+        let titleMatch = true;
+        if (query.title) {
+          const tabTitle = tab.title || "";
+          if (typeof query.title === "string") {
+            // 不区分大小写的部分匹配
+            titleMatch = tabTitle
+              .toLowerCase()
+              .includes(query.title.toLowerCase());
+          } else {
+            titleMatch = query.title.test(tabTitle);
+          }
+        }
 
         return urlMatch && titleMatch;
       });
 
-      // 如果找到当前标签页，直接返回
       if (matchingCurrentTabs.length > 0) {
         return {
           success: true,
           data: matchingCurrentTabs.map((tab) => ({
             tabId: tab.id,
-            url: tab.url,
-            title: tab.title,
-          })),
-        };
-      }
-
-      // 如果没有找到当前标签页，从 IndexedDB 中查找历史记录
-      const dbTabs = await indexedDB.getAllTabs();
-      const matchingDbTabs = dbTabs.filter((tab) => {
-        const urlMatch = query.url
-          ? typeof query.url === "string"
-            ? tab.url === query.url
-            : query.url.test(tab.url || "")
-          : true;
-
-        const titleMatch = query.title
-          ? typeof query.title === "string"
-            ? tab.title === query.title
-            : query.title.test(tab.title || "")
-          : true;
-
-        return urlMatch && titleMatch;
-      });
-
-      if (matchingDbTabs.length > 0) {
-        return {
-          success: true,
-          data: matchingDbTabs.map((tab) => ({
-            tabId: tab.tabId,
             url: tab.url,
             title: tab.title,
           })),
@@ -245,6 +210,7 @@ export class TabToolkit {
               data: {
                 tabId: tab.id,
                 url: tab.url,
+                title: tab.title,
               },
             });
           } else if (Date.now() - startTime > timeout) {

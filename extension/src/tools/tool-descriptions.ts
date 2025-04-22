@@ -71,18 +71,18 @@ export const getToolDescriptions = (): ToolDescription[] => {
       },
     },
     {
-      name: "TabToolkit_findTab",
-      description: "Find tabs by URL or title",
+      name: "TabToolkit_listTabs",
+      description: "List all tabs",
       parameters: {
         type: "object",
         properties: {
           url: {
             type: "string",
-            description: "Exact URL to match",
+            description: "list tabs by exact URL to match",
           },
           title: {
             type: "string",
-            description: "Exact title to match",
+            description: "list tabs by exact title to match",
           },
         },
       },
@@ -95,15 +95,15 @@ export const getToolDescriptions = (): ToolDescription[] => {
             properties: {
               tabId: {
                 type: "number",
-                description: "The ID of the tab",
+                description: "tab ID",
               },
               url: {
                 type: "string",
-                description: "The URL of the tab",
+                description: "tab url",
               },
               title: {
-                type: "string",
-                description: "The title of the tab",
+                type: "string", 
+                description: "tab title",
               },
             },
           },

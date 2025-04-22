@@ -29,6 +29,12 @@ async function openSidePanel(tab: chrome.tabs.Tab) {
 // 检查 chrome.action 是否存在
 if (typeof chrome !== "undefined" && chrome.action) {
   chrome.action.onClicked.addListener(async (tab) => {
+    if (tab.id) {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ["content-script.js"],
+      });
+    }
     await openSidePanel(tab);
   });
 } else {
@@ -61,9 +67,9 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
             const result = await TabToolkit.openTab(params.url);
             sendResponse(result);
             return true;
-          case "findTab":
-            const findResult = await TabToolkit.findTab(params);
-            sendResponse(findResult);
+          case "listTabs":
+            const listResult = await TabToolkit.listTabs(params);
+            sendResponse(listResult);
             return true;
           case "closeTab":
             const closeResult = await TabToolkit.closeTab(params.tabId);

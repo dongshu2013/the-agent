@@ -43,12 +43,6 @@ const Sidepanel = () => {
   // Reference to the messages end
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    chrome.runtime.sendMessage({ name: "ping" }, (res) => {
-      console.log("从 background 返回的响应：", res);
-    });
-  }, []);
-
   // Auto-scroll to the bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -265,78 +259,51 @@ const Sidepanel = () => {
         10
       );
 
-      let memoryMessages = ``;
+      let newPrompt = ``;
       if (relatedMessages.length > 0) {
-        memoryMessages += `Related messages:\n`;
+        newPrompt += `Related messages:\n`;
         relatedMessages.forEach((msg) => {
-          memoryMessages += `${msg.role}: ${msg.content}\n`;
+          newPrompt += `${msg.role}: ${msg.content}\n`;
         });
       }
       if (recentMessages.length > 0) {
-        memoryMessages += `Recent messages:\n`;
+        newPrompt += `Recent messages:\n`;
         recentMessages.forEach((msg) => {
-          memoryMessages += `${msg.role}: ${msg.content}\n`;
+          newPrompt += `${msg.role}: ${msg.content}\n`;
         });
       }
-      if (userMessage) {
-        memoryMessages += `User message:\n`;
-        memoryMessages += `${userMessage.role}: ${userMessage.content}\n`;
+      if (newPrompt.length > 0) {
+        newPrompt = `
+        User Request: ${currentPrompt}\n
+        Memory: ${newPrompt}
+        `;
       }
 
-      const stream = await sendChatCompletion(
-        {
-          messages: [
-            {
-              role: "user",
-              content: currentPrompt,
-            },
-          ],
-        },
-        apiKey,
-        {
-          // stream:  true,
-          signal: abortControllerRef.current?.signal,
+      let accumulatedContent = "";
+      let toolCallCount = 0;
+      const MAX_TOOL_CALLS = 5;
+
+      const processResponse = async (
+        userContent: string,
+        toolCallHistory = "",
+        lastResult = ""
+      ) => {
+        if (toolCallCount >= MAX_TOOL_CALLS) {
+          return accumulatedContent;
         }
-      );
 
-      let accumulatedContent = ``;
+        const promptContent = `You are an AI assistant.
 
-      for await (const chunk of stream) {
-        if (abortControllerRef.current === null) break;
+User Request: ${userContent}
+${toolCallHistory ? `Previous Actions:\n${toolCallHistory}\n` : ""}
+${lastResult ? `Last Result: ${lastResult}` : ""}`;
 
-        const content = chunk.choices[0]?.delta?.content;
-        if (content) {
-          accumulatedContent = `${accumulatedContent}${content}`;
-
-          setMessages((msg: MessageType[]) =>
-            msg.map((msg: MessageType) =>
-              msg.message_id === assistantMessageId
-                ? { ...msg, content: accumulatedContent, isLoading: false }
-                : msg
-            )
-          );
-        }
-      }
-
-      // tool call
-      const completion = await stream.finalChatCompletion();
-      if (completion.choices[0]?.message?.tool_calls) {
-        console.log("Final AI message:", completion);
-        const toolCalls = completion.choices[0]?.message?.tool_calls;
-        const result = await toolExecutor.executeToolCalls(toolCalls);
-        console.log("Tool call result:", result);
-        // accumulatedContent += result;
-
-        const aiContent = await sendChatCompletion(
+        const stream = await sendChatCompletion(
           {
             messages: [
               {
                 role: "user",
-                content: `## currentPrompt: ${currentPrompt}\n ## completed tool call result: ${result}`,
-              },
-              {
-                role: "system",
-                content: `generate a new prompt based on the current prompt and the completed tool call result`,
+                content: promptContent,
               },
             ],
           },
@@ -346,29 +313,68 @@ const Sidepanel = () => {
           }
         );
 
-        for await (const chunk of aiContent) {
+        let currentResponse = "";
+        for await (const chunk of stream) {
           if (abortControllerRef.current === null) break;
 
           const content = chunk.choices[0]?.delta?.content;
           if (content) {
-            accumulatedContent = `${accumulatedContent}${content}`;
-
+            currentResponse += content;
+            const newContent = accumulatedContent
+              ? `${accumulatedContent}\n${currentResponse}`
+              : currentResponse;
             setMessages((msg: MessageType[]) =>
               msg.map((msg: MessageType) =>
                 msg.message_id === assistantMessageId
-                  ? { ...msg, content: accumulatedContent, isLoading: false }
+                  ? { ...msg, content: newContent, isLoading: true }
                   : msg
               )
             );
           }
         }
-      }
 
-      // 最终写入 AI message
+        const completion = await stream.finalChatCompletion();
+        const toolCalls = completion.choices[0]?.message?.tool_calls;
+
+        if (toolCalls && toolCalls.length > 0) {
+          toolCallCount++;
+
+          const result = await toolExecutor.executeToolCalls(toolCalls);
+
+          const toolCallInfo = `\nTool Call ${toolCallCount}:
+- Actions: ${toolCalls.map((t: { function: { name: string } }) => t.function.name).join(", ")}
+- Result: ${result}`;
+
+          accumulatedContent = accumulatedContent
+            ? `${accumulatedContent}${toolCallInfo}`
+            : toolCallInfo;
+
+          setMessages((msg: MessageType[]) =>
+            msg.map((msg: MessageType) =>
+              msg.message_id === assistantMessageId
+                ? { ...msg, content: accumulatedContent, isLoading: true }
+                : msg
+            )
+          );
+
+          return processResponse(
+            userContent,
+            toolCallHistory + toolCallInfo,
+            result
+          );
+        }
+
+        return currentResponse || "操作已完成。";
+      };
+
+      // start processing response
+      const finalContent = await processResponse(newPrompt);
+
+      // save final AI message
       const aiMessage: MessageType = {
         message_id: assistantMessageId,
         role: "assistant",
-        content: accumulatedContent,
+        content: finalContent,
         created_at: new Date().toISOString(),
         conversation_id: currentConversationId,
       };
@@ -378,21 +384,21 @@ const Sidepanel = () => {
         conversation_id: currentConversationId,
         message: aiMessage,
       });
+
       setMessages((prev: any) => {
         return prev.map((msg: any) =>
           msg.message_id === assistantMessageId
             ? {
                 ...msg,
-                content: accumulatedContent,
+                content: finalContent,
                 status: "completed",
                 isLoading: false,
               }
             : msg
         );
       });
-      setIsStreaming(false);
     } catch (error: any) {
-      console.error("Error in handleSubmit:", error); // 添加日志
+      console.error("Error in handleSubmit:", error);
       if (error.name === "AbortError") {
         console.warn("Stream aborted.");
         setMessages((prev) =>
