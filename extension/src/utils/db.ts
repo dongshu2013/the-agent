@@ -15,6 +15,7 @@ class IndexedDB {
   private stores = {
     conversations: "conversations",
     messages: "messages",
+    tabs: "tabs",
   };
 
   private async openDB(): Promise<IDBDatabase> {
@@ -48,6 +49,17 @@ class IndexedDB {
             unique: false,
           });
           messageStore.createIndex("created_at", "created_at", {
+            unique: false,
+          });
+        }
+
+        // Create tabs store
+        if (!db.objectStoreNames.contains(this.stores.tabs)) {
+          const tabStore = db.createObjectStore(this.stores.tabs, {
+            keyPath: "tabId",
+            autoIncrement: false,
+          });
+          tabStore.createIndex("created_at", "created_at", {
             unique: false,
           });
         }
@@ -285,6 +297,51 @@ class IndexedDB {
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
     return messages.slice(0, limit);
+  }
+
+  // Tab operations
+  async saveTab(tab: {
+    tabId: number;
+    url: string;
+    title?: string;
+    type: "openTab" | "closeTab";
+  }): Promise<void> {
+    const db = await this.openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(this.stores.tabs, "readwrite");
+      const store = transaction.objectStore(this.stores.tabs);
+      const request = store.put({
+        ...tab,
+        created_at: new Date().toISOString(),
+      });
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getTab(tabId: number): Promise<any> {
+    const db = await this.openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(this.stores.tabs, "readonly");
+      const store = transaction.objectStore(this.stores.tabs);
+      const request = store.get(tabId);
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async getAllTabs(): Promise<any[]> {
+    const db = await this.openDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(this.stores.tabs, "readonly");
+      const store = transaction.objectStore(this.stores.tabs);
+      const request = store.getAll();
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
   }
 }
 

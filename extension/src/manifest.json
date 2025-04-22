@@ -8,17 +8,18 @@
     "sidePanel",
     "tabs",
     "contextMenus",
-    "activeTab"
+    "activeTab",
+    "scripting",
+    "<all_urls>"
   ],
+  "background": {
+    "service_worker": "background/index.ts"
+  },
   "action": {
     "default_popup": "src/popup/popup.html"
   },
   "side_panel": {
     "default_path": "sidepanel.html"
-  },
-  "background": {
-    "service_worker": "background/index.ts",
-    "type": "module"
   },
   "content_scripts": [
     {
@@ -37,6 +38,19 @@
   },
   "host_permissions": [
     "https://*/*",
-    "http://*/*"
+    "http://*/*",
+    "<all_urls>"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "sidepanel.html",
+        "*.js",
+        "*.css"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
   ]
 }

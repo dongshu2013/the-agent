@@ -7,24 +7,12 @@ interface Props {
   isLatestResponse?: boolean;
 }
 
-export default function MessageComponent({
-  message,
-  isLatestResponse = false,
-}: Props) {
+export default function MessageComponent({ message }: Props) {
   const isUser = message?.role === "user";
   const isLoading = message?.isLoading === true;
   const isError = message?.status === "error";
   const [copySuccess, setCopySuccess] = useState(false);
-  const [contentRendered, setContentRendered] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-
-  useEffect(() => {
-    if (!isLoading && !isUser && message?.content) {
-      setContentRendered(true);
-    } else {
-      setContentRendered(false);
-    }
-  }, [isLoading, isUser, message?.content]);
 
   if (!message) {
     console.warn("Message component received null or undefined message");
@@ -50,10 +38,10 @@ export default function MessageComponent({
     if (isError) return false;
     if (!message.content) return false;
 
-    if (isLatestResponse && !isUser) {
-      return contentRendered;
-    }
+    // AI 回复的复制按钮始终显示
+    if (!isUser) return true;
 
+    // 用户消息的复制按钮只在 hover 时显示
     return isHovered;
   };
 
@@ -113,7 +101,7 @@ export default function MessageComponent({
 
   return (
     <div
-      style={{ marginBottom: !isUser ? "64px" : "16px" }}
+      style={{ marginBottom: !isUser ? "32px" : "32px" }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -169,15 +157,15 @@ export default function MessageComponent({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: "rgba(255, 255, 255, 0.9)",
-                border: "1px solid rgba(0, 0, 0, 0.1)",
+                border: "none",
+                backgroundColor: "transparent",
+                padding: 0,
                 borderRadius: "4px",
                 cursor: "pointer",
                 boxShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
                 transition: "all 0.2s",
-                opacity: isLatestResponse && !isUser ? 1 : isHovered ? 1 : 0,
-                pointerEvents:
-                  (isLatestResponse && !isUser) || isHovered ? "auto" : "none",
+                opacity: !isUser ? 1 : isHovered ? 1 : 0,
+                pointerEvents: !isUser ? "auto" : isHovered ? "auto" : "none",
               }}
               title="Copy to clipboard"
             >
