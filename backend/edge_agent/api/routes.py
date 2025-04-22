@@ -45,11 +45,24 @@ async def verify_api_key(
         raise HTTPException(status_code=401, detail="Invalid or disabled API key")
     return user
 
+class ToolCallFunction(BaseModel):
+    name: str
+    arguments: str
+
+class ToolCall(BaseModel):
+    function: ToolCallFunction
+    id: str
+
 class ChatMessage(BaseModel):
     role: str
-    content: str
-    toolCallId: Optional[str] = None # tool call ID
-    name: Optional[str] = None # tool name
+    content: Optional[str] = None  # Required for save_message endpoint
+    toolCalls: Optional[List[ToolCall]] = None
+    toolCallId: Optional[str] = None
+    name: Optional[str] = None
+
+class ChatMessageWithId(ChatMessage):
+    message_id: str
+    created_at: str
 
 class ChatCompletionCreateParam(BaseModel):
     """
@@ -91,10 +104,6 @@ class SimilaritySearchRequest(BaseModel):
     query: str
     limit: int = 5
     conversation_id: Optional[str] = None
-
-class ChatMessageWithId(ChatMessage):
-    message_id: str
-    created_at: str
 
 class SaveMessageRequest(BaseModel):
     conversation_id: str

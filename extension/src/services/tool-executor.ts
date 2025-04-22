@@ -98,7 +98,7 @@ export class ToolExecutor {
   async executeToolCall(toolCall: ToolCall): Promise<string> {
     try {
       const result = await this.executeTool(toolCall);
-      return JSON.stringify(result);
+      return `Function call success: ${JSON.stringify(result)}`;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       return `Error: ${message}`;
