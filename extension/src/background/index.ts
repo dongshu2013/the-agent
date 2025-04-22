@@ -1,5 +1,5 @@
 import { Storage } from "@plasmohq/storage";
-import { TabToolkit } from "./tools/tab-toolkit";
+import { TabToolkit } from "../tools/tab-toolkit";
 const storage = new Storage();
 
 chrome.runtime.onInstalled.addListener(async () => {
@@ -61,11 +61,27 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
             const result = await TabToolkit.openTab(params.url);
             sendResponse(result);
             return true;
+          case "findTab":
+            const findResult = await TabToolkit.findTab(params);
+            sendResponse(findResult);
+            return true;
           case "closeTab":
             const closeResult = await TabToolkit.closeTab(params.tabId);
             sendResponse(closeResult);
             return true;
-
+          case "switchToTab":
+            const switchResult = await TabToolkit.switchToTab(params.tabId);
+            sendResponse(switchResult);
+            return true;
+          case "waitForTabLoad":
+            const waitForResult = await TabToolkit.waitForTabLoad(params.tabId);
+            sendResponse(waitForResult);
+            return true;
+          case "getCurrentActiveTab":
+            const getCurrentActiveTabResult =
+              await TabToolkit.getCurrentActiveTab();
+            sendResponse(getCurrentActiveTabResult);
+            return true;
           default:
             sendResponse({
               success: false,

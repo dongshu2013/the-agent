@@ -398,7 +398,12 @@ const Sidepanel = () => {
         setMessages((prev) =>
           prev.map((msg) =>
             msg.message_id === assistantMessageId
-              ? { ...msg, status: "error", error: "Stream aborted" }
+              ? {
+                  ...msg,
+                  status: "error",
+                  error: "Stream aborted",
+                  isLoading: false,
+                }
               : msg
           )
         );
@@ -409,7 +414,12 @@ const Sidepanel = () => {
         setMessages((prev) =>
           prev.map((msg) =>
             msg.message_id === assistantMessageId
-              ? { ...msg, status: "error", error: error.message }
+              ? {
+                  ...msg,
+                  status: "error",
+                  error: error.message,
+                  isLoading: false,
+                }
               : msg
           )
         );
@@ -700,20 +710,18 @@ const Sidepanel = () => {
               )}
             </div>
           ) : (
-            <div className="space-y-6">
-              <div className="messages-container">
-                {messages.map((message, index) => (
-                  <Message
-                    key={message.message_id || index}
-                    message={message}
-                    isLatestResponse={
-                      index === messages.length - 1 &&
-                      message.role === "assistant"
-                    }
-                  />
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
+            <div style={{ paddingBottom: "32px" }}>
+              {messages.map((message, index) => (
+                <Message
+                  key={message.message_id || index}
+                  message={message}
+                  isLatestResponse={
+                    index === messages.length - 1 &&
+                    message.role === "assistant"
+                  }
+                />
+              ))}
+              <div ref={messagesEndRef} />
             </div>
           )}
         </div>

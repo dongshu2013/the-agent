@@ -9,10 +9,11 @@
     "tabs",
     "contextMenus",
     "activeTab",
-    "scripting"
+    "scripting",
+    "<all_urls>"
   ],
   "background": {
-    "service_worker": "background.ts"
+    "service_worker": "background/index.ts"
   },
   "action": {
     "default_popup": "src/popup/popup.html"
@@ -37,7 +38,8 @@
   },
   "host_permissions": [
     "https://*/*",
-    "http://*/*"
+    "http://*/*",
+    "<all_urls>"
   ],
   "web_accessible_resources": [
     {

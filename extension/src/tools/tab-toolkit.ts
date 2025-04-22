@@ -1,3 +1,6 @@
+import { sendChatCompletion } from "~/services/chat";
+import { indexedDB } from "../utils/db";
+
 export interface WebInteractionResult {
   success: boolean;
   data?: any;
@@ -11,7 +14,7 @@ export class TabToolkit {
   static async openTab(url: string): Promise<WebInteractionResult> {
     try {
       return new Promise((resolve) => {
-        chrome.tabs.create({ url }, (tab) => {
+        chrome.tabs.create({ url }, async (tab) => {
           if (chrome.runtime.lastError) {
             resolve({
               success: false,
@@ -26,6 +29,18 @@ export class TabToolkit {
               error: "Failed to create tab: no tab ID returned",
             });
             return;
+          }
+
+          // 保存到标签页表
+          try {
+            await indexedDB.saveTab({
+              tabId: tab.id,
+              url: tab.url || "",
+              title: tab.title,
+              type: "openTab",
+            });
+          } catch (error) {
+            console.error("Failed to save tab info to IndexedDB:", error);
           }
 
           resolve({
@@ -66,48 +81,110 @@ export class TabToolkit {
     });
   }
 
+  static async listTabs(): Promise<WebInteractionResult> {
+    return new Promise((resolve) => {
+      chrome.tabs.query({}, async (tabs) => {
+        const tablist = await sendChatCompletion({
+          messages: [
+            {
+              role: "user",
+              content: `请根据以下标签页列表，返回一个包含所有标签页信息的列表：${JSON.stringify(tabs)}`,
+            },
+          ],
+        });
+        console.log("tablist 🍒", tablist);
+        resolve({
+          success: true,
+          data: tabs,
+        });
+      });
+    });
+  }
+
   /**
    * Find a tab by URL or title
    */
-  static findTab(query: {
+  static async findTab(query: {
     url?: string | RegExp;
     title?: string | RegExp;
   }): Promise<WebInteractionResult> {
-    return new Promise((resolve) => {
-      chrome.tabs.query({}, (tabs) => {
-        const matchingTabs = tabs.filter((tab) => {
-          const urlMatch = query.url
-            ? typeof query.url === "string"
-              ? tab.url === query.url
-              : query.url.test(tab.url || "")
-            : true;
-
-          const titleMatch = query.title
-            ? typeof query.title === "string"
-              ? tab.title === query.title
-              : query.title.test(tab.title || "")
-            : true;
-
-          return urlMatch && titleMatch;
+    try {
+      // const tablist = await this.listTabs();
+      // 首先从当前标签页中查找
+      const currentTabs = await new Promise<chrome.tabs.Tab[]>((resolve) => {
+        chrome.tabs.query({ currentWindow: true }, (tabs) => {
+          console.log("tabs 🍒", tabs);
+          resolve(tabs);
         });
-
-        if (matchingTabs.length > 0) {
-          resolve({
-            success: true,
-            data: matchingTabs.map((tab) => ({
-              tabId: tab.id,
-              url: tab.url,
-              title: tab.title,
-            })),
-          });
-        } else {
-          resolve({
-            success: false,
-            error: "No matching tabs found",
-          });
-        }
       });
-    });
+
+      const matchingCurrentTabs = currentTabs.filter((tab) => {
+        const urlMatch = query.url
+          ? typeof query.url === "string"
+            ? tab.url === query.url
+            : query.url.test(tab.url || "")
+          : true;
+
+        const titleMatch = query.title
+          ? typeof query.title === "string"
+            ? tab.title === query.title
+            : query.title.test(tab.title || "")
+          : true;
+
+        return urlMatch && titleMatch;
+      });
+
+      // 如果找到当前标签页，直接返回
+      if (matchingCurrentTabs.length > 0) {
+        return {
+          success: true,
+          data: matchingCurrentTabs.map((tab) => ({
+            tabId: tab.id,
+            url: tab.url,
+            title: tab.title,
+          })),
+        };
+      }
+
+      // 如果没有找到当前标签页，从 IndexedDB 中查找历史记录
+      const dbTabs = await indexedDB.getAllTabs();
+      const matchingDbTabs = dbTabs.filter((tab) => {
+        const urlMatch = query.url
+          ? typeof query.url === "string"
+            ? tab.url === query.url
+            : query.url.test(tab.url || "")
+          : true;
+
+        const titleMatch = query.title
+          ? typeof query.title === "string"
+            ? tab.title === query.title
+            : query.title.test(tab.title || "")
+          : true;
+
+        return urlMatch && titleMatch;
+      });
+
+      if (matchingDbTabs.length > 0) {
+        return {
+          success: true,
+          data: matchingDbTabs.map((tab) => ({
+            tabId: tab.tabId,
+            url: tab.url,
+            title: tab.title,
+          })),
+        };
+      }
+
+      return {
+        success: false,
+        error: "No matching tabs found",
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
   }
 
   /**

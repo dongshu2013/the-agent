@@ -23,7 +23,6 @@ export class ToolExecutor {
       TabToolkit_switchToTab: TabToolkit.switchToTab,
       TabToolkit_waitForTabLoad: TabToolkit.waitForTabLoad,
       TabToolkit_getCurrentActiveTab: TabToolkit.getCurrentActiveTab,
-      TabToolkit_handleTwitterSequence: TabToolkit.handleTwitterSequence,
       WebToolkit_findElement: this.webToolkit.findElement.bind(this.webToolkit),
       WebToolkit_clickElement: this.webToolkit.clickElement.bind(
         this.webToolkit
