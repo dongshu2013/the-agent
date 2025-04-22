@@ -7,16 +7,14 @@ import {
   CreateConversationResponse,
   SaveMessageResponse,
 } from "./conversations";
+import { ChatMessage } from "./messages";
 
 /**
  * Chat request interface
  */
 export interface ChatRequest {
   model?: string;
-  messages: {
-    role: string;
-    content: string;
-  }[];
+  messages: ChatMessage[];
   max_tokens?: number;
   stream?: boolean;
   tools?: any[];

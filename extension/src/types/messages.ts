@@ -3,13 +3,16 @@
  * Defines all message-related interfaces used in the application
  */
 
+export interface ChatMessage {
+  role: "user" | "assistant" | "system" | "tool";
+  content: string;
+}
+
 /**
  * Message type for chat display and processing
  */
-export interface Message {
+export interface Message extends ChatMessage {
   message_id: string;
-  role: "user" | "assistant" | "system" | "tool";
-  content: string;
   created_at: string;
   isLoading?: boolean;
   status?: "pending" | "completed" | "error";
