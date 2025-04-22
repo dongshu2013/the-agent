@@ -19,7 +19,7 @@ export class ToolExecutor {
     this.toolMap = {
       TabToolkit_openTab: TabToolkit.openTab,
       TabToolkit_closeTab: TabToolkit.closeTab,
-      TabToolkit_findTab: TabToolkit.findTab,
+      TabToolkit_listTabs: TabToolkit.listTabs,
       TabToolkit_switchToTab: TabToolkit.switchToTab,
       TabToolkit_waitForTabLoad: TabToolkit.waitForTabLoad,
       TabToolkit_getCurrentActiveTab: TabToolkit.getCurrentActiveTab,
@@ -61,48 +61,24 @@ export class ToolExecutor {
     return new Promise((resolve, reject) => {
       const params = this.parseToolParams(toolCall);
 
-      if (
-        toolCall.function.name === "TabToolkit_openTab" &&
-        !this.isValidUrl(params?.url)
-      ) {
-        reject(new Error("Invalid URL parameter for TabToolkit_openTab"));
-        return;
-      }
-
       const message = {
         name: "execute-tool",
         body: { name: toolCall.function.name, arguments: params },
       };
 
-      console.log("[ToolExecutor] Sending message to background:", message);
-      console.log("[ToolExecutor] Chrome runtime available:", !!chrome.runtime);
-
       chrome.runtime.sendMessage(message, (response) => {
-        console.log("[ToolExecutor] Message sent, waiting for response...");
-
         if (chrome.runtime.lastError) {
-          console.error(
-            "[ToolExecutor] Chrome runtime error:",
-            chrome.runtime.lastError
-          );
           reject(chrome.runtime.lastError);
           return;
         }
 
         if (!response) {
-          console.error(
-            "[ToolExecutor] No response received from background script"
-          );
           reject(new Error("No response received from background script"));
           return;
         }
 
-        console.log(
-          "[ToolExecutor] Received response from background:",
-          response
-        );
         response.success
-          ? resolve(response.result)
+          ? resolve(response.data)
           : reject(new Error(response.error || "Unknown error"));
       });
     });
@@ -117,10 +93,6 @@ export class ToolExecutor {
       console.error("Error parsing tool arguments:", error);
       return {};
     }
-  }
-
-  private isValidUrl(url: any): boolean {
-    return typeof url === "string" && url.trim().length > 0;
   }
 
   async executeToolCalls(toolCalls: ToolCall[]): Promise<string> {

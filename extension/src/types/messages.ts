@@ -13,10 +13,22 @@ export interface ChatMessage {
  */
 export interface Message extends ChatMessage {
   message_id: string;
+  role: "user" | "assistant" | "tool";
+  content: string;
   created_at: string;
-  isLoading?: boolean;
+  conversation_id: string;
   status?: "pending" | "completed" | "error";
-  conversation_id?: string;
+  error?: string;
+  isLoading?: boolean;
+  tool_calls?: Array<{
+    id: string;
+    type: string;
+    function: {
+      name: string;
+      arguments: string;
+    };
+  }>;
+  tool_call_id?: string;
 }
 
 /**

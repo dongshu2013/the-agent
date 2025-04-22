@@ -28,7 +28,7 @@ export const sendChatCompletion = async (
       dangerouslyAllowBrowser: true,
     });
 
-    // 获取工具描述
+    // get tool descriptions
     const tools = getToolDescriptions().map((tool) => ({
       type: "function" as const,
       function: {

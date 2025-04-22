@@ -3,6 +3,19 @@
   "displayName": "MIZU Agent",
   "version": "1.0.0",
   "description": "MIZU Agent - AI Powered Chrome Extension",
+  "manifest": {
+    "permissions": [
+      "storage",
+      "sidePanel",
+      "tabs",
+      "activeTab",
+      "scripting",
+      "webNavigation"
+    ],
+    "host_permissions": [
+      "<all_urls>"
+    ]
+  },
   "scripts": {
     "dev": "plasmo dev",
     "build": "plasmo build",
