@@ -48,6 +48,8 @@ async def verify_api_key(
 class ChatMessage(BaseModel):
     role: str
     content: str
+    toolCallId: Optional[str] = None # tool call ID
+    name: Optional[str] = None # tool name
 
 class ChatCompletionCreateParam(BaseModel):
     """

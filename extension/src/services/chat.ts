@@ -38,7 +38,7 @@ export const sendChatCompletion = async (
       },
     }));
 
-    return await client.beta.chat.completions.stream(
+    return client.beta.chat.completions.stream(
       {
         model: env.OPENAI_MODEL,
         messages: request.messages as OpenAI.Chat.ChatCompletionMessageParam[],

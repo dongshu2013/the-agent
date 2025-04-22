@@ -95,37 +95,13 @@ export class ToolExecutor {
     }
   }
 
-  async executeToolCalls(toolCalls: ToolCall[]): Promise<string> {
-    const results = [];
-
+  async executeToolCall(toolCall: ToolCall): Promise<string> {
     try {
-      for (const toolCall of toolCalls) {
-        try {
-          const result = await this.executeTool(toolCall);
-          results.push({
-            name: toolCall.function.name,
-            success: true,
-            result,
-          });
-        } catch (error) {
-          results.push({
-            name: toolCall.function.name,
-            success: false,
-            error: error instanceof Error ? error.message : String(error),
-          });
-        }
-      }
-
-      return results
-        .map((result) =>
-          result.success
-            ? `Tool "${result.name}" succeeded: ${JSON.stringify(result.result)}`
-            : `Tool "${result.name}" failed: ${result.error}`
-        )
-        .join("\n");
+      const result = await this.executeTool(toolCall);
+      return JSON.stringify(result);
     } catch (error) {
-      console.error("Error executing tool calls:", error);
-      throw error;
+      const message = error instanceof Error ? error.message : String(error);
+      return `Error: ${message}`;
     }
   }
 }

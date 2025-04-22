@@ -7,7 +7,7 @@ import InputArea from "./components/InputArea";
 import Settings from "./components/Settings";
 import ConversationList from "./components/ConversationList";
 import { Conversation } from "../types/conversations";
-import { Message as MessageType } from "../types/messages";
+import { ChatMessage, Message as MessageType } from "../types/messages";
 import { saveMessageApi, sendChatCompletion } from "../services/chat";
 import {
   createNewConversation,
@@ -18,7 +18,8 @@ import {
 import { Storage } from "@plasmohq/storage";
 import { indexedDB } from "../utils/db";
 import { getApiKey } from "~/services/utils";
-import { toolExecutor } from "../services/tool-executor";
+import { ToolCall, toolExecutor } from "../services/tool-executor";
+import { ToolCallMessage } from "~/types/tools";
 
 const Sidepanel = () => {
   const [apiKey, setApiKey] = useStorage("apiKey");
@@ -283,92 +284,70 @@ const Sidepanel = () => {
       let toolCallCount = 0;
       const MAX_TOOL_CALLS = 5;
 
-      const processResponse = async (
-        userContent: string,
-        toolCallHistory = "",
-        lastResult = ""
+      const processRequest = async (
+        inputMessages: ChatMessage[],
       ) => {
-        if (toolCallCount >= MAX_TOOL_CALLS) {
-          return accumulatedContent;
-        }
-
-        const promptContent = `You are an AI assistant. Based on the user's request and previous actions, determine to continue or stop, and summarize the result.
-
-User Request: ${userContent}
-${toolCallHistory ? `Previous Actions:\n${toolCallHistory}\n` : ""}
-${lastResult ? `Last Result: ${lastResult}` : ""}`;
-
-        const stream = await sendChatCompletion(
-          {
-            messages: [
-              {
-                role: "user",
-                content: promptContent,
-              },
-            ],
-          },
-          apiKey,
-          {
-            signal: abortControllerRef.current?.signal,
+        while (true) {
+          console.log("Processing request with messages:", inputMessages);
+          const stream = await sendChatCompletion(
+            {messages: inputMessages},
+            apiKey,
+            {
+              signal: abortControllerRef.current?.signal,
+            }
+          );
+          let currentResponse = "";
+          for await (const chunk of stream) {
+            if (abortControllerRef.current === null) {
+              break;
+            }
+            const content = chunk.choices[0]?.delta?.content;
+            if (content) {
+              currentResponse += content;
+              setMessages((msg: MessageType[]) =>
+                msg.map((msg: MessageType) =>
+                  msg.message_id === assistantMessageId
+                    ? { ...msg, content, isLoading: true }
+                    : msg
+                )
+              );
+            }
           }
-        );
+          const resp = await stream.finalChatCompletion();
+          accumulatedContent += resp.choices[0].message.content;
+          inputMessages.push(resp.choices[0].message);
 
-        let currentResponse = "";
-        for await (const chunk of stream) {
-          if (abortControllerRef.current === null) break;
+          const toolCalls = resp.choices[0].message.tool_calls;
+          if (toolCalls) {
+            if (toolCallCount >= MAX_TOOL_CALLS) {
+              return accumulatedContent;
+            }
 
-          const content = chunk.choices[0]?.delta?.content;
-          if (content) {
-            currentResponse += content;
-            const newContent = accumulatedContent
-              ? `${accumulatedContent}\n${currentResponse}`
-              : currentResponse;
-            setMessages((msg: MessageType[]) =>
-              msg.map((msg: MessageType) =>
-                msg.message_id === assistantMessageId
-                  ? { ...msg, content: newContent, isLoading: true }
-                  : msg
-              )
+            toolCallCount += toolCalls.length;
+            await Promise.all<ChatMessage>(
+              toolCalls.map(async (toolCall: ToolCall) => {
+                inputMessages.push({
+                  role: 'tool',
+                  toolCallId: toolCall.id,
+                  name: toolCall.function.name,
+                  content: await toolExecutor.executeToolCall(toolCall),
+                });
+              })
             );
+          } else {
+            break;
           }
         }
-
-        const completion = await stream.finalChatCompletion();
-        const toolCalls = completion.choices[0]?.message?.tool_calls;
-
-        if (toolCalls && toolCalls.length > 0) {
-          toolCallCount++;
-
-          const result = await toolExecutor.executeToolCalls(toolCalls);
-
-          const toolCallInfo = `\nTool Call ${toolCallCount}:
-- Actions: ${toolCalls.map((t: { function: { name: string } }) => t.function.name).join(", ")}
-- Result: ${result}`;
-
-          accumulatedContent = accumulatedContent
-            ? `${accumulatedContent}${toolCallInfo}`
-            : toolCallInfo;
-
-          setMessages((msg: MessageType[]) =>
-            msg.map((msg: MessageType) =>
-              msg.message_id === assistantMessageId
-                ? { ...msg, content: accumulatedContent, isLoading: true }
-                : msg
-            )
-          );
-
-          return processResponse(
-            userContent,
-            toolCallHistory + toolCallInfo,
-            result
-          );
-        }
-
-        return currentResponse;
+        return accumulatedContent;
       };
 
       // start processing response
-      const finalContent = await processResponse(newPrompt);
+      const finalContent = await processRequest([
+        {
+          role: "user",
+          content: newPrompt,
+        },
+      ]);
 
       // save final AI message
       const aiMessage: MessageType = {

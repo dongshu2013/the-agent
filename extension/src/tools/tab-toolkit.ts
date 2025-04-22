@@ -1,5 +1,3 @@
-import { indexedDB } from "../utils/db";
-
 export interface WebInteractionResult {
   success: boolean;
   data?: any;
@@ -28,27 +26,15 @@ export class TabToolkit {
               error: "Failed to create tab: no tab ID returned",
             });
             return;
-          }
-
-          // 保存到标签页表
-          try {
-            await indexedDB.saveTab({
-              tabId: tab.id,
-              url: tab.url || "",
-              title: tab.title,
-              type: "openTab",
+          } else {
+            resolve({
+              success: true,
+              data: {
+                tabId: tab.id,
+                url: tab.url,
+              },
             });
-          } catch (error) {
-            console.error("Failed to save tab info to IndexedDB:", error);
           }
-
-          resolve({
-            success: true,
-            data: {
-              tabId: tab.id,
-              url: tab.url,
-            },
-          });
         });
       });
     } catch (error) {
