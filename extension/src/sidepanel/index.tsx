@@ -292,7 +292,7 @@ const Sidepanel = () => {
           return accumulatedContent;
         }
 
-        const promptContent = `You are an AI assistant.
+        const promptContent = `You are an AI assistant. Based on the user's request and previous actions, determine to continue or stop, and summarize the result.
 
 User Request: ${userContent}
 ${toolCallHistory ? `Previous Actions:\n${toolCallHistory}\n` : ""}
@@ -364,7 +364,7 @@ ${lastResult ? `Last Result: ${lastResult}` : ""}`;
           );
         }
 
-        return currentResponse || "操作已完成。";
+        return currentResponse;
       };
 
       // start processing response
