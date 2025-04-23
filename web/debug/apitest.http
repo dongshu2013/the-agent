@@ -1,0 +1,26 @@
+@baseUrl = http://localhost:3000
+@apiKey = f3692275-60af-41d0-b9a5-158b4294ed5a
+
+### ping api
+POST {{baseUrl}}/api/ping
+Content-Type: application/json
+Authorization: Bearer {{apiKey}}
+
+{
+  "message": "hello"
+}
+
+### /tg/import_groups
+POST {{baseUrl}}/api/tg/import_groups
+Content-Type: application/json
+Authorization: Bearer {{apiKey}}
+
+{
+  "chats": [
+    {
+      "data_type": "channel",
+      "data_id": "-1001791111111"
+    }
+  ]
+}
+  
