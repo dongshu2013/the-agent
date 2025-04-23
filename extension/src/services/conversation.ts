@@ -37,6 +37,7 @@ export const createConversationApi = async (
       if (response.status === 401 || response.status === 403) {
         return handleAuthError();
       }
+
       return {
         success: false,
         error:
@@ -95,6 +96,11 @@ export const deleteConversationApi = async (
       const errorData = await response.json().catch(() => ({}));
       if (response.status === 401 || response.status === 403) {
         return handleAuthError();
+      }
+      if (response.status === 404) {
+        return {
+          success: true,
+        };
       }
       return {
         success: false,

@@ -225,7 +225,7 @@ async def delete_conversation(
         }
     except Exception as e:
         logger.error(f"Error deleting conversation: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error deleting conversation: {str(e)}")
+        raise HTTPException(status_code=e.status_code, detail=f"Error deleting conversation: {str(e)}")
 
 @router.post("/v1/chat/completions")
 async def chat_completion(
