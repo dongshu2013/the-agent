@@ -75,32 +75,9 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
             const closeResult = await TabToolkit.closeTab(params.tabId);
             sendResponse(closeResult);
             return true;
-          case "switchToTab":
-            // const switchResult = await TabToolkit.switchToTab(params.tabId);
-            chrome.tabs.update(
-              params.tabId,
-              {
-                active: true,
-              },
-              (tab) => {
-                console.log("tab 🍒🍒", tab);
-                if (chrome.runtime.lastError) {
-                  sendResponse({
-                    success: false,
-                    error: chrome.runtime.lastError.message,
-                  });
-                } else if (tab) {
-                  sendResponse({
-                    success: true,
-                    data: {
-                      tabId: tab.id,
-                      url: tab.url,
-                    },
-                  });
-                }
-              }
-            );
-
+          case "switchTab":
+            const switchResult = await TabToolkit.switchToTab(params.tabId);
+            sendResponse(switchResult);
             return true;
           case "waitForTabLoad":
             const waitForResult = await TabToolkit.waitForTabLoad(params.tabId);
