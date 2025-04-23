@@ -18,8 +18,26 @@ Authorization: Bearer {{apiKey}}
 {
   "chats": [
     {
-      "data_type": "channel",
+      "data_type": "telegram_group",
       "data_id": "-1001791111111"
+    }
+  ]
+}
+
+### /tg/import_messages
+POST {{baseUrl}}/api/tg/import_messages
+Content-Type: application/json
+Authorization: Bearer {{apiKey}}
+
+{
+  "messages": [
+    {
+      "message_id": "1234567890",
+      "data_type": "telegram_group",
+      "data_id": "-1001791111111",
+      "message_text": "Hello, world!",
+      "message_timestamp": 1672531200,
+      "sender_id": "1234567890"
     }
   ]
 }
