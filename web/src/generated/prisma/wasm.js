@@ -142,12 +142,58 @@ exports.Prisma.MessagesScalarFieldEnum = {
   created_at: 'created_at'
 };
 
+exports.Prisma.Tg_channelsScalarFieldEnum = {
+  id: 'id',
+  channel_id: 'channel_id',
+  user_id: 'user_id',
+  data_type: 'data_type',
+  data_id: 'data_id',
+  metadata: 'metadata',
+  is_public: 'is_public',
+  is_free: 'is_free',
+  subscription_fee: 'subscription_fee',
+  last_synced_at: 'last_synced_at',
+  status: 'status',
+  created_at: 'created_at',
+  updated_at: 'updated_at'
+};
+
+exports.Prisma.Tg_messagesScalarFieldEnum = {
+  id: 'id',
+  message_id: 'message_id',
+  channel_id: 'channel_id',
+  chat_id: 'chat_id',
+  message_text: 'message_text',
+  message_timestamp: 'message_timestamp',
+  sender_id: 'sender_id',
+  sender: 'sender',
+  reply_to: 'reply_to',
+  topic_id: 'topic_id',
+  buttons: 'buttons',
+  reactions: 'reactions',
+  is_pinned: 'is_pinned',
+  media_type: 'media_type',
+  media_file_id: 'media_file_id',
+  media_url: 'media_url',
+  media_metadata: 'media_metadata',
+  created_at: 'created_at',
+  updated_at: 'updated_at',
+  send_username: 'send_username',
+  send_firstname: 'send_firstname',
+  send_lastname: 'send_lastname'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
 };
 
 exports.Prisma.JsonNullValueInput = {
+  JsonNull: Prisma.JsonNull
+};
+
+exports.Prisma.NullableJsonNullValueInput = {
+  DbNull: Prisma.DbNull,
   JsonNull: Prisma.JsonNull
 };
 
@@ -171,7 +217,9 @@ exports.Prisma.JsonNullValueFilter = {
 exports.Prisma.ModelName = {
   users: 'users',
   conversations: 'conversations',
-  messages: 'messages'
+  messages: 'messages',
+  tg_channels: 'tg_channels',
+  tg_messages: 'tg_messages'
 };
 
 /**
