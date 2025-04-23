@@ -75,7 +75,7 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
             const closeResult = await TabToolkit.closeTab(params.tabId);
             sendResponse(closeResult);
             return true;
-          case "switchTab":
+          case "switchToTab":
             const switchResult = await TabToolkit.switchToTab(params.tabId);
             sendResponse(switchResult);
             return true;

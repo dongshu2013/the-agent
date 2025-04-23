@@ -72,6 +72,7 @@ export class TabToolkit {
   static async listTabs(): Promise<WebInteractionResult> {
     return new Promise((resolve, reject) => {
       chrome.tabs.query({ currentWindow: true }, (tabs) => {
+        console.log("listTabs 🍒", tabs);
         if (chrome.runtime.lastError) {
           reject({
             success: false,
@@ -95,6 +96,7 @@ export class TabToolkit {
    * Switch to a specific tab
    */
   static switchToTab(tabId: number): Promise<WebInteractionResult> {
+    console.log("switchToTab 🍒", tabId);
     return new Promise((resolve) => {
       chrome.tabs.update(tabId, { active: true }, (tab) => {
         console.log("tab 🍒", tab);
