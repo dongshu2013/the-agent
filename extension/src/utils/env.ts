@@ -2,7 +2,7 @@ import { Env } from "../types/index";
 
 // Default values (fallbacks)
 const defaultEnv = {
-  OPENAI_MODEL: "google/gemini-2.5-pro-preview-03-25",
+  OPENAI_MODEL: "deepseek-chat",
   BACKEND_URL: "http://localhost:8000",
   SYSTEM_PROMPT: `You are MIZU Agent, a helpful AI assistant that can interact with the browser.
 When users request browser actions like opening pages, clicking elements, or filling forms, you should use the available tools rather than just describing what to do.
