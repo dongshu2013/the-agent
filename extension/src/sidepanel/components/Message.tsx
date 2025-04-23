@@ -46,7 +46,7 @@ export default function MessageComponent({ message }: Props) {
   };
 
   const renderContent = () => {
-    if (isLoading) {
+    if (isLoading && !message.content) {
       return (
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <LoadingBrain />

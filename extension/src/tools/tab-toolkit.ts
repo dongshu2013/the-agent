@@ -108,7 +108,6 @@ export class TabToolkit {
         } else if (tab) {
           // Focus the window containing the tab
           chrome.windows.update(tab.windowId, { focused: true }, () => {
-            console.log("window 🍒", window);
             resolve({
               success: true,
               data: {

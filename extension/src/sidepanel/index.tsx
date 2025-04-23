@@ -280,11 +280,11 @@ const Sidepanel = () => {
         `;
       }
 
-      let accumulatedContent = "";
       let toolCallCount = 0;
       const MAX_TOOL_CALLS = 5;
 
       const processRequest = async (inputMessages: ChatMessage[]) => {
+        let accumulatedContent = "";
         while (true) {
           console.log("Processing request with messages:", inputMessages);
           const stream = await sendChatCompletion(
@@ -294,44 +294,61 @@ const Sidepanel = () => {
               signal: abortControllerRef.current?.signal,
             }
           );
+
           let currentResponse = "";
           for await (const chunk of stream) {
             if (abortControllerRef.current === null) {
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.message_id === assistantMessageId
+                    ? { ...msg, content: "Stream aborted", isLoading: false }
+                    : msg
+                )
+              );
               break;
             }
+
             const content = chunk.choices[0]?.delta?.content;
             if (content) {
               currentResponse += content;
-              setMessages((msg: MessageType[]) =>
-                msg.map((msg: MessageType) =>
+
+              setMessages((prev) =>
+                prev.map((msg) =>
                   msg.message_id === assistantMessageId
-                    ? { ...msg, content, isLoading: true }
+                    ? { ...msg, content: currentResponse, isLoading: true }
                     : msg
                 )
               );
             }
           }
+
           const resp = await stream.finalChatCompletion();
-          accumulatedContent += resp.choices[0].message.content;
+          accumulatedContent += currentResponse;
           inputMessages.push(resp.choices[0].message);
 
           const toolCalls = resp.choices[0].message.tool_calls;
           if (toolCalls) {
             if (toolCallCount >= MAX_TOOL_CALLS) {
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.message_id === assistantMessageId
+                    ? { ...msg, content: accumulatedContent, isLoading: false }
+                    : msg
+                )
+              );
               return accumulatedContent;
             }
 
             toolCallCount += toolCalls.length;
-            await Promise.all<ChatMessage>(
+            await Promise.all(
               toolCalls.map(async (toolCall: ToolCall) => {
+                const toolResult = await toolExecutor.executeToolCall(toolCall);
                 inputMessages.push({
                   role: "tool",
                   name: toolCall.function.name,
-                  content: await toolExecutor.executeToolCall(toolCall),
+                  content: toolResult,
                   ...(env.OPENAI_MODEL === "google/gemini-2.5-pro-preview-03-25"
-                    ? {
-                        toolCallId: toolCall.id,
-                      }
+                    ? { toolCallId: toolCall.id }
                     : {
                         tool_call_id: toolCall.id,
                         tool_calls: [
@@ -346,6 +363,13 @@ const Sidepanel = () => {
               })
             );
           } else {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.message_id === assistantMessageId
+                  ? { ...msg, content: accumulatedContent, isLoading: false }
+                  : msg
+              )
+            );
             break;
           }
         }
@@ -367,6 +391,7 @@ const Sidepanel = () => {
         content: finalContent,
         created_at: new Date().toISOString(),
         conversation_id: currentConversationId,
+        status: "completed",
       };
 
       await indexedDB.saveMessage(aiMessage);
@@ -397,6 +422,7 @@ const Sidepanel = () => {
               ? {
                   ...msg,
                   status: "error",
+                  content: "Stream aborted",
                   error: "Stream aborted",
                   isLoading: false,
                 }
@@ -405,13 +431,22 @@ const Sidepanel = () => {
         );
       } else {
         console.error("Chat Error:", error);
-        handleApiError(error.message || "Unexpected error");
+        if (
+          typeof error === "string" &&
+          (error.includes("Authentication failed") ||
+            error.includes("API key") ||
+            error.includes("403") ||
+            error.includes("401"))
+        ) {
+          setShowSettings(true);
+        }
 
         setMessages((prev) =>
           prev.map((msg) =>
             msg.message_id === assistantMessageId
               ? {
                   ...msg,
+                  content: "Stream aborted",
                   status: "error",
                   error: error.message,
                   isLoading: false,
