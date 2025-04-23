@@ -245,7 +245,7 @@ export default function ProfilePage() {
         <div className="mt-8 bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
           <div className="px-4 py-5 sm:px-6">
             <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-              Data Sources
+              Manage Your Data
             </h3>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Connect your data sources to enhance your MIZU Agent experience
