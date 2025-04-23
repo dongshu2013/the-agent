@@ -19,7 +19,6 @@ import { Storage } from "@plasmohq/storage";
 import { indexedDB } from "../utils/db";
 import { getApiKey } from "~/services/utils";
 import { ToolCall, toolExecutor } from "../services/tool-executor";
-import { ToolCallMessage } from "~/types/tools";
 
 const Sidepanel = () => {
   const [apiKey, setApiKey] = useStorage("apiKey");
@@ -284,13 +283,11 @@ const Sidepanel = () => {
       let toolCallCount = 0;
       const MAX_TOOL_CALLS = 5;
 
-      const processRequest = async (
-        inputMessages: ChatMessage[],
-      ) => {
+      const processRequest = async (inputMessages: ChatMessage[]) => {
         while (true) {
           console.log("Processing request with messages:", inputMessages);
           const stream = await sendChatCompletion(
-            {messages: inputMessages},
+            { messages: inputMessages },
             apiKey,
             {
               signal: abortControllerRef.current?.signal,
@@ -327,7 +324,7 @@ const Sidepanel = () => {
             await Promise.all<ChatMessage>(
               toolCalls.map(async (toolCall: ToolCall) => {
                 inputMessages.push({
-                  role: 'tool',
+                  role: "tool",
                   toolCallId: toolCall.id,
                   name: toolCall.function.name,
                   content: await toolExecutor.executeToolCall(toolCall),
