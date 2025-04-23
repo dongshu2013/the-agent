@@ -275,6 +275,7 @@ const Sidepanel = () => {
       }
       if (newPrompt.length > 0) {
         newPrompt = `
+        Please follow the user's request and use the memory to help you answer the question.
         User Request: ${currentPrompt}\n
         Memory: ${newPrompt}
         `;
@@ -326,7 +327,7 @@ const Sidepanel = () => {
               setMessages((prev) =>
                 prev.map((msg) =>
                   msg.message_id === assistantMessageId
-                    ? { ...msg, content: accumulatedContent, isLoading: false }
+                    ? { ...msg, content: accumulatedContent, isLoading: true }
                     : msg
                 )
               );
@@ -337,21 +338,7 @@ const Sidepanel = () => {
             await Promise.all(
               toolCalls.map(async (toolCall: ToolCall) => {
                 const toolResult = await toolExecutor.executeToolCall(toolCall);
-                executedCount++;
-                if (executedCount < 1) {
-                  accumulatedContent += `Recive response from tool call. \n\`\`\` >>> Executing tool call... \`\`\``;
-                }
-                setMessages((prev) =>
-                  prev.map((msg) =>
-                    msg.message_id === assistantMessageId
-                      ? {
-                          ...msg,
-                          content: accumulatedContent,
-                          isLoading: true,
-                        }
-                      : msg
-                  )
-                );
+                accumulatedContent += `Recived request tool call:\n <div style="background-color: #f0f0f0; padding: 8px; border-radius: 8px; margin: 4px 0; font-size: 14px; line-height: 1.6;"> >>> Executing tool call: ${toolCall.function.name.replace("TabToolkit_", "")}</div> \n`;
                 inputMessages.push({
                   role: "tool",
                   name: toolCall.function.name,
@@ -369,6 +356,17 @@ const Sidepanel = () => {
                         ],
                       }),
                 });
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.message_id === assistantMessageId
+                      ? {
+                          ...msg,
+                          content: accumulatedContent,
+                          isLoading: true,
+                        }
+                      : msg
+                  )
+                );
               })
             );
           } else {
@@ -448,7 +446,7 @@ const Sidepanel = () => {
             msg.message_id === assistantMessageId
               ? {
                   ...msg,
-                  content: "Stream aborted",
+                  content: "Network error",
                   status: "error",
                   error: error.message,
                   isLoading: false,

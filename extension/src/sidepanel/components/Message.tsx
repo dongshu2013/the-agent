@@ -66,7 +66,7 @@ export default function MessageComponent({ message }: Props) {
     const processedContent = content
       // 处理代码块
       .replace(/```(\w+)?\n([\s\S]*?)```/g, (_, lang, code) => {
-        return `<pre style="background-color: #f6f8fa; padding: 8px; border-radius: 4px; margin: 4px 0; font-size: 13px; line-height: 1.3;"><code class="language-${lang || ""}" style="font-family: monospace; white-space: pre;">${code.trim()}</code></pre>`;
+        return `<pre style="background-color: #f6f8fa; padding: 6px 8px; border-radius: 4px; margin: 2px 0; font-size: 13px; line-height: 1.2; font-family: monospace;"><code class="language-${lang || ""}" style="white-space: pre;">${code.trim()}</code></pre>`;
       })
       // 处理行内代码
       .replace(
