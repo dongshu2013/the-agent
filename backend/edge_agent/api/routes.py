@@ -52,12 +52,15 @@ class ToolCallFunction(BaseModel):
 class ToolCall(BaseModel):
     function: ToolCallFunction
     id: str
+    type: Optional[str] = None
 
 class ChatMessage(BaseModel):
     role: str
     content: Optional[str] = None  # Required for save_message endpoint
     toolCalls: Optional[List[ToolCall]] = None
     toolCallId: Optional[str] = None
+    tool_call_id: Optional[str] = None
+    tool_calls: Optional[List[ToolCall]] = None
     name: Optional[str] = None
 
 class ChatMessageWithId(ChatMessage):
@@ -262,7 +265,7 @@ async def chat_completion(
             }
         }
         return JSONResponse(
-            status_code=500,
+            status_code=e.status_code,
             content=error_response
         )
 

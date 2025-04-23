@@ -69,73 +69,26 @@ export class TabToolkit {
   /**
    * Find a tab by URL or title
    */
-  static async listTabs(query: {
-    url?: string | RegExp;
-    title?: string | RegExp;
-  }): Promise<WebInteractionResult> {
-    try {
-      const currentTabs = await new Promise<chrome.tabs.Tab[]>((resolve) => {
-        chrome.tabs.query({ currentWindow: true }, (tabs) => {
-          console.log("tabs 🍒", tabs);
-          resolve(tabs);
-        });
-      });
-
-      const matchingCurrentTabs = currentTabs.filter((tab) => {
-        // 处理URL匹配
-        let urlMatch = true;
-        if (query.url) {
-          const tabUrl = tab.url || "";
-          const normalizedTabUrl = tabUrl.replace("twitter.com", "x.com");
-          if (typeof query.url === "string") {
-            const normalizedQueryUrl = query.url.replace(
-              "twitter.com",
-              "x.com"
-            );
-            urlMatch = normalizedTabUrl.includes(normalizedQueryUrl);
-          } else {
-            urlMatch = query.url.test(tabUrl);
-          }
+  static async listTabs(): Promise<WebInteractionResult> {
+    return new Promise((resolve, reject) => {
+      chrome.tabs.query({ currentWindow: true }, (tabs) => {
+        if (chrome.runtime.lastError) {
+          reject({
+            success: false,
+            error: chrome.runtime.lastError.message,
+          });
+        } else {
+          resolve({
+            success: true,
+            data: tabs.map((tab) => ({
+              tabId: tab.id,
+              url: tab.url,
+              title: tab.title,
+            })),
+          });
         }
-
-        // 处理标题匹配
-        let titleMatch = true;
-        if (query.title) {
-          const tabTitle = tab.title || "";
-          if (typeof query.title === "string") {
-            // 不区分大小写的部分匹配
-            titleMatch = tabTitle
-              .toLowerCase()
-              .includes(query.title.toLowerCase());
-          } else {
-            titleMatch = query.title.test(tabTitle);
-          }
-        }
-
-        return urlMatch && titleMatch;
       });
-
-      if (matchingCurrentTabs.length > 0) {
-        return {
-          success: true,
-          data: matchingCurrentTabs.map((tab) => ({
-            tabId: tab.id,
-            url: tab.url,
-            title: tab.title,
-          })),
-        };
-      }
-
-      return {
-        success: false,
-        error: "No matching tabs found",
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
+    });
   }
 
   /**
@@ -144,6 +97,7 @@ export class TabToolkit {
   static switchToTab(tabId: number): Promise<WebInteractionResult> {
     return new Promise((resolve) => {
       chrome.tabs.update(tabId, { active: true }, (tab) => {
+        console.log("tab 🍒", tab);
         if (chrome.runtime.lastError) {
           resolve({
             success: false,
@@ -152,6 +106,7 @@ export class TabToolkit {
         } else if (tab) {
           // Focus the window containing the tab
           chrome.windows.update(tab.windowId, { focused: true }, () => {
+            console.log("window 🍒", window);
             resolve({
               success: true,
               data: {
@@ -161,6 +116,7 @@ export class TabToolkit {
             });
           });
         } else {
+          console.log("Failed to switch to tab");
           resolve({
             success: false,
             error: "Failed to switch to tab",

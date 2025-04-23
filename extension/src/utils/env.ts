@@ -2,7 +2,7 @@ import { Env } from "../types/index";
 
 // Default values (fallbacks)
 const defaultEnv = {
-  OPENAI_MODEL: "deepseek-chat",
+  OPENAI_MODEL: "google/gemini-2.5-pro-preview-03-25",
   BACKEND_URL: "http://localhost:8000",
   SYSTEM_PROMPT: `You are MIZU Agent, a helpful AI assistant that can interact with the browser.
 When users request browser actions like opening pages, clicking elements, or filling forms, you should use the available tools rather than just describing what to do.
@@ -20,7 +20,7 @@ Always format tool calls as a JSON array, like this:
 // Try to get values from process.env, fallback to defaults
 export const env: Env = {
   OPENAI_MODEL:
-    process.env.PLASMO_PUBLIC_OPENAI_MODEL || defaultEnv.OPENAI_MODEL,
+    process.env.PLASMO_PUBLIC_DEFAULT_MODEL || defaultEnv.OPENAI_MODEL,
   SYSTEM_PROMPT:
     process.env.PLASMO_PUBLIC_SYSTEM_PROMPT || defaultEnv.SYSTEM_PROMPT,
   BACKEND_URL: process.env.PLASMO_PUBLIC_BACKEND_URL || defaultEnv.BACKEND_URL,

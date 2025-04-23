@@ -2,7 +2,7 @@
 export interface ToolDescription {
   name: string;
   description: string;
-  parameters: {
+  parameters?: {
     type: string;
     properties: Record<string, any>;
     required?: string[];
@@ -73,19 +73,6 @@ export const getToolDescriptions = (): ToolDescription[] => {
     {
       name: "TabToolkit_listTabs",
       description: "List all tabs",
-      parameters: {
-        type: "object",
-        properties: {
-          url: {
-            type: "string",
-            description: "list tabs by exact URL to match",
-          },
-          title: {
-            type: "string",
-            description: "list tabs by exact title to match",
-          },
-        },
-      },
       returns: {
         type: "array",
         description: "List of matching tabs",
@@ -102,7 +89,7 @@ export const getToolDescriptions = (): ToolDescription[] => {
                 description: "tab url",
               },
               title: {
-                type: "string", 
+                type: "string",
                 description: "tab title",
               },
             },
@@ -111,7 +98,7 @@ export const getToolDescriptions = (): ToolDescription[] => {
       },
     },
     {
-      name: "TabToolkit_switchTab",
+      name: "TabToolkit_switchToTab",
       description: "Switch to a specific tab by its ID",
       parameters: {
         type: "object",

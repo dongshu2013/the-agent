@@ -68,7 +68,7 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
             sendResponse(result);
             return true;
           case "listTabs":
-            const listResult = await TabToolkit.listTabs(params);
+            const listResult = await TabToolkit.listTabs();
             sendResponse(listResult);
             return true;
           case "closeTab":
@@ -76,8 +76,31 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
             sendResponse(closeResult);
             return true;
           case "switchToTab":
-            const switchResult = await TabToolkit.switchToTab(params.tabId);
-            sendResponse(switchResult);
+            // const switchResult = await TabToolkit.switchToTab(params.tabId);
+            chrome.tabs.update(
+              params.tabId,
+              {
+                active: true,
+              },
+              (tab) => {
+                console.log("tab 🍒🍒", tab);
+                if (chrome.runtime.lastError) {
+                  sendResponse({
+                    success: false,
+                    error: chrome.runtime.lastError.message,
+                  });
+                } else if (tab) {
+                  sendResponse({
+                    success: true,
+                    data: {
+                      tabId: tab.id,
+                      url: tab.url,
+                    },
+                  });
+                }
+              }
+            );
+
             return true;
           case "waitForTabLoad":
             const waitForResult = await TabToolkit.waitForTabLoad(params.tabId);

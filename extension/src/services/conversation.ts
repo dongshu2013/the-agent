@@ -304,7 +304,6 @@ export const deleteConversation = async (id: string): Promise<void> => {
       throw new Error(response.error || "Failed to delete conversation");
     }
 
-    // 从 IndexedDB 中删除会话和相关的消息
     await indexedDB.deleteConversation(id);
     await indexedDB.deleteMessagesByConversation(id);
   } catch (error) {

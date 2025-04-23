@@ -5,24 +5,11 @@
 
 export interface ChatMessage {
   role: "user" | "assistant" | "system" | "tool";
-  content: string;
+  content?: string;
   toolCallId?: string; // toolcall
   name?: string; // toolcall
-}
-
-/**
- * Message type for chat display and processing
- */
-export interface Message extends ChatMessage {
-  message_id: string;
-  role: "user" | "assistant" | "tool";
-  content: string;
-  created_at: string;
-  conversation_id: string;
-  status?: "pending" | "completed" | "error";
-  error?: string;
-  isLoading?: boolean;
-  tool_calls?: Array<{
+  tool_call_id?: string; // toolcall
+  toolCalls?: Array<{
     id: string;
     type: string;
     function: {
@@ -30,7 +17,18 @@ export interface Message extends ChatMessage {
       arguments: string;
     };
   }>;
-  tool_call_id?: string;
+}
+
+/**
+ * Message type for chat display and processing
+ */
+export interface Message extends ChatMessage {
+  message_id: string;
+  created_at: string;
+  conversation_id: string;
+  status?: "pending" | "completed" | "error";
+  error?: string;
+  isLoading?: boolean;
 }
 
 /**

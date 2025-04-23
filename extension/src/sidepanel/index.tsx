@@ -19,6 +19,7 @@ import { Storage } from "@plasmohq/storage";
 import { indexedDB } from "../utils/db";
 import { getApiKey } from "~/services/utils";
 import { ToolCall, toolExecutor } from "../services/tool-executor";
+import { env } from "~/utils/env";
 
 const Sidepanel = () => {
   const [apiKey, setApiKey] = useStorage("apiKey");
@@ -325,9 +326,22 @@ const Sidepanel = () => {
               toolCalls.map(async (toolCall: ToolCall) => {
                 inputMessages.push({
                   role: "tool",
-                  toolCallId: toolCall.id,
                   name: toolCall.function.name,
                   content: await toolExecutor.executeToolCall(toolCall),
+                  ...(env.OPENAI_MODEL === "google/gemini-2.5-pro-preview-03-25"
+                    ? {
+                        toolCallId: toolCall.id,
+                      }
+                    : {
+                        tool_call_id: toolCall.id,
+                        tool_calls: [
+                          {
+                            id: toolCall.id,
+                            type: toolCall.type,
+                            function: toolCall.function,
+                          },
+                        ],
+                      }),
                 });
               })
             );
