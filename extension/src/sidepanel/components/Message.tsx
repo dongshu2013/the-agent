@@ -66,10 +66,13 @@ export default function MessageComponent({ message }: Props) {
     const processedContent = content
       // 处理代码块
       .replace(/```(\w+)?\n([\s\S]*?)```/g, (_, lang, code) => {
-        return `<pre><code class="language-${lang || ""}">${code}</code></pre>`;
+        return `<pre style="background-color: #f6f8fa; padding: 8px; border-radius: 4px; margin: 4px 0; font-size: 13px; line-height: 1.3;"><code class="language-${lang || ""}" style="font-family: monospace; white-space: pre;">${code.trim()}</code></pre>`;
       })
       // 处理行内代码
-      .replace(/`([^`]+)`/g, "<code>$1</code>")
+      .replace(
+        /`([^`]+)`/g,
+        '<code style="background-color: #f6f8fa; padding: 2px 4px; border-radius: 3px; font-family: monospace; font-size: 13px;">\$1</code>'
+      )
       // 处理粗体
       .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
       // 处理斜体
@@ -77,16 +80,28 @@ export default function MessageComponent({ message }: Props) {
       // 处理链接
       .replace(
         /\[([^\]]+)\]\(([^)]+)\)/g,
-        '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
+        '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #0366d6; text-decoration: none;">$1</a>'
       )
       // 处理列表
-      .replace(/^\s*[-*]\s+(.+)$/gm, "<li>$1</li>")
+      .replace(/^\s*[-*]\s+(.+)$/gm, "<li style='margin-left: 20px;'>$1</li>")
       // 处理标题
-      .replace(/^#\s+(.+)$/gm, "<h1>$1</h1>")
-      .replace(/^##\s+(.+)$/gm, "<h2>$1</h2>")
-      .replace(/^###\s+(.+)$/gm, "<h3>$1</h3>")
+      .replace(
+        /^#\s+(.+)$/gm,
+        "<h1 style='font-size: 1.5em; margin: 16px 0;'>$1</h1>"
+      )
+      .replace(
+        /^##\s+(.+)$/gm,
+        "<h2 style='font-size: 1.3em; margin: 14px 0;'>$2</h2>"
+      )
+      .replace(
+        /^###\s+(.+)$/gm,
+        "<h3 style='font-size: 1.1em; margin: 12px 0;'>$3</h3>"
+      )
       // 处理引用
-      .replace(/^>\s+(.+)$/gm, "<blockquote>$1</blockquote>")
+      .replace(
+        /^>\s+(.+)$/gm,
+        "<blockquote style='border-left: 3px solid #e1e4e8; margin: 8px 0; padding-left: 16px; color: #6a737d;'>$1</blockquote>"
+      )
       // 处理换行
       .replace(/\n/g, "<br>");
 

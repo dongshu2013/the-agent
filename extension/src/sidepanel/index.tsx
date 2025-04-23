@@ -282,6 +282,7 @@ const Sidepanel = () => {
 
       let toolCallCount = 0;
       const MAX_TOOL_CALLS = 5;
+      let executedCount = 0;
 
       const processRequest = async (inputMessages: ChatMessage[]) => {
         let accumulatedContent = "";
@@ -298,13 +299,6 @@ const Sidepanel = () => {
           let currentResponse = "";
           for await (const chunk of stream) {
             if (abortControllerRef.current === null) {
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.message_id === assistantMessageId
-                    ? { ...msg, content: "Stream aborted", isLoading: false }
-                    : msg
-                )
-              );
               break;
             }
 
@@ -343,6 +337,21 @@ const Sidepanel = () => {
             await Promise.all(
               toolCalls.map(async (toolCall: ToolCall) => {
                 const toolResult = await toolExecutor.executeToolCall(toolCall);
+                executedCount++;
+                if (executedCount < 1) {
+                  accumulatedContent += `Recive response from tool call. \n\`\`\` >>> Executing tool call... \`\`\``;
+                }
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.message_id === assistantMessageId
+                      ? {
+                          ...msg,
+                          content: accumulatedContent,
+                          isLoading: true,
+                        }
+                      : msg
+                  )
+                );
                 inputMessages.push({
                   role: "tool",
                   name: toolCall.function.name,
@@ -363,13 +372,6 @@ const Sidepanel = () => {
               })
             );
           } else {
-            setMessages((prev) =>
-              prev.map((msg) =>
-                msg.message_id === assistantMessageId
-                  ? { ...msg, content: accumulatedContent, isLoading: false }
-                  : msg
-              )
-            );
             break;
           }
         }
