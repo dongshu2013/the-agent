@@ -28,6 +28,16 @@ export type conversations = $Result.DefaultSelection<Prisma.$conversationsPayloa
  * 
  */
 export type messages = $Result.DefaultSelection<Prisma.$messagesPayload>
+/**
+ * Model tg_channels
+ * 
+ */
+export type tg_channels = $Result.DefaultSelection<Prisma.$tg_channelsPayload>
+/**
+ * Model tg_messages
+ * 
+ */
+export type tg_messages = $Result.DefaultSelection<Prisma.$tg_messagesPayload>
 
 /**
  * ##  Prisma Client ʲˢ
@@ -183,6 +193,26 @@ export class PrismaClient<
     * ```
     */
   get messages(): Prisma.messagesDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.tg_channels`: Exposes CRUD operations for the **tg_channels** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Tg_channels
+    * const tg_channels = await prisma.tg_channels.findMany()
+    * ```
+    */
+  get tg_channels(): Prisma.tg_channelsDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.tg_messages`: Exposes CRUD operations for the **tg_messages** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Tg_messages
+    * const tg_messages = await prisma.tg_messages.findMany()
+    * ```
+    */
+  get tg_messages(): Prisma.tg_messagesDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -625,7 +655,9 @@ export namespace Prisma {
   export const ModelName: {
     users: 'users',
     conversations: 'conversations',
-    messages: 'messages'
+    messages: 'messages',
+    tg_channels: 'tg_channels',
+    tg_messages: 'tg_messages'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -644,7 +676,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "users" | "conversations" | "messages"
+      modelProps: "users" | "conversations" | "messages" | "tg_channels" | "tg_messages"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -870,6 +902,154 @@ export namespace Prisma {
           }
         }
       }
+      tg_channels: {
+        payload: Prisma.$tg_channelsPayload<ExtArgs>
+        fields: Prisma.tg_channelsFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.tg_channelsFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tg_channelsPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.tg_channelsFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tg_channelsPayload>
+          }
+          findFirst: {
+            args: Prisma.tg_channelsFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tg_channelsPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.tg_channelsFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tg_channelsPayload>
+          }
+          findMany: {
+            args: Prisma.tg_channelsFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tg_channelsPayload>[]
+          }
+          create: {
+            args: Prisma.tg_channelsCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tg_channelsPayload>
+          }
+          createMany: {
+            args: Prisma.tg_channelsCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.tg_channelsCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tg_channelsPayload>[]
+          }
+          delete: {
+            args: Prisma.tg_channelsDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tg_channelsPayload>
+          }
+          update: {
+            args: Prisma.tg_channelsUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tg_channelsPayload>
+          }
+          deleteMany: {
+            args: Prisma.tg_channelsDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.tg_channelsUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.tg_channelsUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tg_channelsPayload>[]
+          }
+          upsert: {
+            args: Prisma.tg_channelsUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tg_channelsPayload>
+          }
+          aggregate: {
+            args: Prisma.Tg_channelsAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateTg_channels>
+          }
+          groupBy: {
+            args: Prisma.tg_channelsGroupByArgs<ExtArgs>
+            result: $Utils.Optional<Tg_channelsGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.tg_channelsCountArgs<ExtArgs>
+            result: $Utils.Optional<Tg_channelsCountAggregateOutputType> | number
+          }
+        }
+      }
+      tg_messages: {
+        payload: Prisma.$tg_messagesPayload<ExtArgs>
+        fields: Prisma.tg_messagesFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.tg_messagesFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tg_messagesPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.tg_messagesFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tg_messagesPayload>
+          }
+          findFirst: {
+            args: Prisma.tg_messagesFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tg_messagesPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.tg_messagesFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tg_messagesPayload>
+          }
+          findMany: {
+            args: Prisma.tg_messagesFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tg_messagesPayload>[]
+          }
+          create: {
+            args: Prisma.tg_messagesCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tg_messagesPayload>
+          }
+          createMany: {
+            args: Prisma.tg_messagesCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.tg_messagesCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tg_messagesPayload>[]
+          }
+          delete: {
+            args: Prisma.tg_messagesDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tg_messagesPayload>
+          }
+          update: {
+            args: Prisma.tg_messagesUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tg_messagesPayload>
+          }
+          deleteMany: {
+            args: Prisma.tg_messagesDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.tg_messagesUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.tg_messagesUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tg_messagesPayload>[]
+          }
+          upsert: {
+            args: Prisma.tg_messagesUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$tg_messagesPayload>
+          }
+          aggregate: {
+            args: Prisma.Tg_messagesAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateTg_messages>
+          }
+          groupBy: {
+            args: Prisma.tg_messagesGroupByArgs<ExtArgs>
+            result: $Utils.Optional<Tg_messagesGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.tg_messagesCountArgs<ExtArgs>
+            result: $Utils.Optional<Tg_messagesCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -957,6 +1137,8 @@ export namespace Prisma {
     users?: usersOmit
     conversations?: conversationsOmit
     messages?: messagesOmit
+    tg_channels?: tg_channelsOmit
+    tg_messages?: tg_messagesOmit
   }
 
   /* Types for Logging */
@@ -1105,6 +1287,37 @@ export namespace Prisma {
    */
   export type ConversationsCountOutputTypeCountMessagesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: messagesWhereInput
+  }
+
+
+  /**
+   * Count Type Tg_channelsCountOutputType
+   */
+
+  export type Tg_channelsCountOutputType = {
+    messages: number
+  }
+
+  export type Tg_channelsCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    messages?: boolean | Tg_channelsCountOutputTypeCountMessagesArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * Tg_channelsCountOutputType without action
+   */
+  export type Tg_channelsCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Tg_channelsCountOutputType
+     */
+    select?: Tg_channelsCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * Tg_channelsCountOutputType without action
+   */
+  export type Tg_channelsCountOutputTypeCountMessagesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: tg_messagesWhereInput
   }
 
 
@@ -4338,6 +4551,2515 @@ export namespace Prisma {
 
 
   /**
+   * Model tg_channels
+   */
+
+  export type AggregateTg_channels = {
+    _count: Tg_channelsCountAggregateOutputType | null
+    _avg: Tg_channelsAvgAggregateOutputType | null
+    _sum: Tg_channelsSumAggregateOutputType | null
+    _min: Tg_channelsMinAggregateOutputType | null
+    _max: Tg_channelsMaxAggregateOutputType | null
+  }
+
+  export type Tg_channelsAvgAggregateOutputType = {
+    id: number | null
+    subscription_fee: Decimal | null
+  }
+
+  export type Tg_channelsSumAggregateOutputType = {
+    id: number | null
+    subscription_fee: Decimal | null
+  }
+
+  export type Tg_channelsMinAggregateOutputType = {
+    id: number | null
+    channel_id: string | null
+    user_id: string | null
+    data_type: string | null
+    data_id: string | null
+    is_public: boolean | null
+    is_free: boolean | null
+    subscription_fee: Decimal | null
+    last_synced_at: Date | null
+    status: string | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type Tg_channelsMaxAggregateOutputType = {
+    id: number | null
+    channel_id: string | null
+    user_id: string | null
+    data_type: string | null
+    data_id: string | null
+    is_public: boolean | null
+    is_free: boolean | null
+    subscription_fee: Decimal | null
+    last_synced_at: Date | null
+    status: string | null
+    created_at: Date | null
+    updated_at: Date | null
+  }
+
+  export type Tg_channelsCountAggregateOutputType = {
+    id: number
+    channel_id: number
+    user_id: number
+    data_type: number
+    data_id: number
+    metadata: number
+    is_public: number
+    is_free: number
+    subscription_fee: number
+    last_synced_at: number
+    status: number
+    created_at: number
+    updated_at: number
+    _all: number
+  }
+
+
+  export type Tg_channelsAvgAggregateInputType = {
+    id?: true
+    subscription_fee?: true
+  }
+
+  export type Tg_channelsSumAggregateInputType = {
+    id?: true
+    subscription_fee?: true
+  }
+
+  export type Tg_channelsMinAggregateInputType = {
+    id?: true
+    channel_id?: true
+    user_id?: true
+    data_type?: true
+    data_id?: true
+    is_public?: true
+    is_free?: true
+    subscription_fee?: true
+    last_synced_at?: true
+    status?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type Tg_channelsMaxAggregateInputType = {
+    id?: true
+    channel_id?: true
+    user_id?: true
+    data_type?: true
+    data_id?: true
+    is_public?: true
+    is_free?: true
+    subscription_fee?: true
+    last_synced_at?: true
+    status?: true
+    created_at?: true
+    updated_at?: true
+  }
+
+  export type Tg_channelsCountAggregateInputType = {
+    id?: true
+    channel_id?: true
+    user_id?: true
+    data_type?: true
+    data_id?: true
+    metadata?: true
+    is_public?: true
+    is_free?: true
+    subscription_fee?: true
+    last_synced_at?: true
+    status?: true
+    created_at?: true
+    updated_at?: true
+    _all?: true
+  }
+
+  export type Tg_channelsAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which tg_channels to aggregate.
+     */
+    where?: tg_channelsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of tg_channels to fetch.
+     */
+    orderBy?: tg_channelsOrderByWithRelationInput | tg_channelsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: tg_channelsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` tg_channels from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` tg_channels.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned tg_channels
+    **/
+    _count?: true | Tg_channelsCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: Tg_channelsAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: Tg_channelsSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: Tg_channelsMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: Tg_channelsMaxAggregateInputType
+  }
+
+  export type GetTg_channelsAggregateType<T extends Tg_channelsAggregateArgs> = {
+        [P in keyof T & keyof AggregateTg_channels]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateTg_channels[P]>
+      : GetScalarType<T[P], AggregateTg_channels[P]>
+  }
+
+
+
+
+  export type tg_channelsGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: tg_channelsWhereInput
+    orderBy?: tg_channelsOrderByWithAggregationInput | tg_channelsOrderByWithAggregationInput[]
+    by: Tg_channelsScalarFieldEnum[] | Tg_channelsScalarFieldEnum
+    having?: tg_channelsScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: Tg_channelsCountAggregateInputType | true
+    _avg?: Tg_channelsAvgAggregateInputType
+    _sum?: Tg_channelsSumAggregateInputType
+    _min?: Tg_channelsMinAggregateInputType
+    _max?: Tg_channelsMaxAggregateInputType
+  }
+
+  export type Tg_channelsGroupByOutputType = {
+    id: number
+    channel_id: string
+    user_id: string
+    data_type: string
+    data_id: string
+    metadata: JsonValue
+    is_public: boolean
+    is_free: boolean
+    subscription_fee: Decimal
+    last_synced_at: Date
+    status: string
+    created_at: Date
+    updated_at: Date
+    _count: Tg_channelsCountAggregateOutputType | null
+    _avg: Tg_channelsAvgAggregateOutputType | null
+    _sum: Tg_channelsSumAggregateOutputType | null
+    _min: Tg_channelsMinAggregateOutputType | null
+    _max: Tg_channelsMaxAggregateOutputType | null
+  }
+
+  type GetTg_channelsGroupByPayload<T extends tg_channelsGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<Tg_channelsGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof Tg_channelsGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], Tg_channelsGroupByOutputType[P]>
+            : GetScalarType<T[P], Tg_channelsGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type tg_channelsSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    channel_id?: boolean
+    user_id?: boolean
+    data_type?: boolean
+    data_id?: boolean
+    metadata?: boolean
+    is_public?: boolean
+    is_free?: boolean
+    subscription_fee?: boolean
+    last_synced_at?: boolean
+    status?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+    messages?: boolean | tg_channels$messagesArgs<ExtArgs>
+    _count?: boolean | Tg_channelsCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["tg_channels"]>
+
+  export type tg_channelsSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    channel_id?: boolean
+    user_id?: boolean
+    data_type?: boolean
+    data_id?: boolean
+    metadata?: boolean
+    is_public?: boolean
+    is_free?: boolean
+    subscription_fee?: boolean
+    last_synced_at?: boolean
+    status?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }, ExtArgs["result"]["tg_channels"]>
+
+  export type tg_channelsSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    channel_id?: boolean
+    user_id?: boolean
+    data_type?: boolean
+    data_id?: boolean
+    metadata?: boolean
+    is_public?: boolean
+    is_free?: boolean
+    subscription_fee?: boolean
+    last_synced_at?: boolean
+    status?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }, ExtArgs["result"]["tg_channels"]>
+
+  export type tg_channelsSelectScalar = {
+    id?: boolean
+    channel_id?: boolean
+    user_id?: boolean
+    data_type?: boolean
+    data_id?: boolean
+    metadata?: boolean
+    is_public?: boolean
+    is_free?: boolean
+    subscription_fee?: boolean
+    last_synced_at?: boolean
+    status?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+  }
+
+  export type tg_channelsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "channel_id" | "user_id" | "data_type" | "data_id" | "metadata" | "is_public" | "is_free" | "subscription_fee" | "last_synced_at" | "status" | "created_at" | "updated_at", ExtArgs["result"]["tg_channels"]>
+  export type tg_channelsInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    messages?: boolean | tg_channels$messagesArgs<ExtArgs>
+    _count?: boolean | Tg_channelsCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type tg_channelsIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type tg_channelsIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+
+  export type $tg_channelsPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "tg_channels"
+    objects: {
+      messages: Prisma.$tg_messagesPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: number
+      channel_id: string
+      user_id: string
+      data_type: string
+      data_id: string
+      metadata: Prisma.JsonValue
+      is_public: boolean
+      is_free: boolean
+      subscription_fee: Prisma.Decimal
+      last_synced_at: Date
+      status: string
+      created_at: Date
+      updated_at: Date
+    }, ExtArgs["result"]["tg_channels"]>
+    composites: {}
+  }
+
+  type tg_channelsGetPayload<S extends boolean | null | undefined | tg_channelsDefaultArgs> = $Result.GetResult<Prisma.$tg_channelsPayload, S>
+
+  type tg_channelsCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<tg_channelsFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: Tg_channelsCountAggregateInputType | true
+    }
+
+  export interface tg_channelsDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['tg_channels'], meta: { name: 'tg_channels' } }
+    /**
+     * Find zero or one Tg_channels that matches the filter.
+     * @param {tg_channelsFindUniqueArgs} args - Arguments to find a Tg_channels
+     * @example
+     * // Get one Tg_channels
+     * const tg_channels = await prisma.tg_channels.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends tg_channelsFindUniqueArgs>(args: SelectSubset<T, tg_channelsFindUniqueArgs<ExtArgs>>): Prisma__tg_channelsClient<$Result.GetResult<Prisma.$tg_channelsPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Tg_channels that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {tg_channelsFindUniqueOrThrowArgs} args - Arguments to find a Tg_channels
+     * @example
+     * // Get one Tg_channels
+     * const tg_channels = await prisma.tg_channels.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends tg_channelsFindUniqueOrThrowArgs>(args: SelectSubset<T, tg_channelsFindUniqueOrThrowArgs<ExtArgs>>): Prisma__tg_channelsClient<$Result.GetResult<Prisma.$tg_channelsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Tg_channels that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {tg_channelsFindFirstArgs} args - Arguments to find a Tg_channels
+     * @example
+     * // Get one Tg_channels
+     * const tg_channels = await prisma.tg_channels.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends tg_channelsFindFirstArgs>(args?: SelectSubset<T, tg_channelsFindFirstArgs<ExtArgs>>): Prisma__tg_channelsClient<$Result.GetResult<Prisma.$tg_channelsPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Tg_channels that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {tg_channelsFindFirstOrThrowArgs} args - Arguments to find a Tg_channels
+     * @example
+     * // Get one Tg_channels
+     * const tg_channels = await prisma.tg_channels.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends tg_channelsFindFirstOrThrowArgs>(args?: SelectSubset<T, tg_channelsFindFirstOrThrowArgs<ExtArgs>>): Prisma__tg_channelsClient<$Result.GetResult<Prisma.$tg_channelsPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Tg_channels that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {tg_channelsFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Tg_channels
+     * const tg_channels = await prisma.tg_channels.findMany()
+     * 
+     * // Get first 10 Tg_channels
+     * const tg_channels = await prisma.tg_channels.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const tg_channelsWithIdOnly = await prisma.tg_channels.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends tg_channelsFindManyArgs>(args?: SelectSubset<T, tg_channelsFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$tg_channelsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Tg_channels.
+     * @param {tg_channelsCreateArgs} args - Arguments to create a Tg_channels.
+     * @example
+     * // Create one Tg_channels
+     * const Tg_channels = await prisma.tg_channels.create({
+     *   data: {
+     *     // ... data to create a Tg_channels
+     *   }
+     * })
+     * 
+     */
+    create<T extends tg_channelsCreateArgs>(args: SelectSubset<T, tg_channelsCreateArgs<ExtArgs>>): Prisma__tg_channelsClient<$Result.GetResult<Prisma.$tg_channelsPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Tg_channels.
+     * @param {tg_channelsCreateManyArgs} args - Arguments to create many Tg_channels.
+     * @example
+     * // Create many Tg_channels
+     * const tg_channels = await prisma.tg_channels.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends tg_channelsCreateManyArgs>(args?: SelectSubset<T, tg_channelsCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Tg_channels and returns the data saved in the database.
+     * @param {tg_channelsCreateManyAndReturnArgs} args - Arguments to create many Tg_channels.
+     * @example
+     * // Create many Tg_channels
+     * const tg_channels = await prisma.tg_channels.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Tg_channels and only return the `id`
+     * const tg_channelsWithIdOnly = await prisma.tg_channels.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends tg_channelsCreateManyAndReturnArgs>(args?: SelectSubset<T, tg_channelsCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$tg_channelsPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Tg_channels.
+     * @param {tg_channelsDeleteArgs} args - Arguments to delete one Tg_channels.
+     * @example
+     * // Delete one Tg_channels
+     * const Tg_channels = await prisma.tg_channels.delete({
+     *   where: {
+     *     // ... filter to delete one Tg_channels
+     *   }
+     * })
+     * 
+     */
+    delete<T extends tg_channelsDeleteArgs>(args: SelectSubset<T, tg_channelsDeleteArgs<ExtArgs>>): Prisma__tg_channelsClient<$Result.GetResult<Prisma.$tg_channelsPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Tg_channels.
+     * @param {tg_channelsUpdateArgs} args - Arguments to update one Tg_channels.
+     * @example
+     * // Update one Tg_channels
+     * const tg_channels = await prisma.tg_channels.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends tg_channelsUpdateArgs>(args: SelectSubset<T, tg_channelsUpdateArgs<ExtArgs>>): Prisma__tg_channelsClient<$Result.GetResult<Prisma.$tg_channelsPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Tg_channels.
+     * @param {tg_channelsDeleteManyArgs} args - Arguments to filter Tg_channels to delete.
+     * @example
+     * // Delete a few Tg_channels
+     * const { count } = await prisma.tg_channels.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends tg_channelsDeleteManyArgs>(args?: SelectSubset<T, tg_channelsDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Tg_channels.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {tg_channelsUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Tg_channels
+     * const tg_channels = await prisma.tg_channels.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends tg_channelsUpdateManyArgs>(args: SelectSubset<T, tg_channelsUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Tg_channels and returns the data updated in the database.
+     * @param {tg_channelsUpdateManyAndReturnArgs} args - Arguments to update many Tg_channels.
+     * @example
+     * // Update many Tg_channels
+     * const tg_channels = await prisma.tg_channels.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Tg_channels and only return the `id`
+     * const tg_channelsWithIdOnly = await prisma.tg_channels.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends tg_channelsUpdateManyAndReturnArgs>(args: SelectSubset<T, tg_channelsUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$tg_channelsPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Tg_channels.
+     * @param {tg_channelsUpsertArgs} args - Arguments to update or create a Tg_channels.
+     * @example
+     * // Update or create a Tg_channels
+     * const tg_channels = await prisma.tg_channels.upsert({
+     *   create: {
+     *     // ... data to create a Tg_channels
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Tg_channels we want to update
+     *   }
+     * })
+     */
+    upsert<T extends tg_channelsUpsertArgs>(args: SelectSubset<T, tg_channelsUpsertArgs<ExtArgs>>): Prisma__tg_channelsClient<$Result.GetResult<Prisma.$tg_channelsPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Tg_channels.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {tg_channelsCountArgs} args - Arguments to filter Tg_channels to count.
+     * @example
+     * // Count the number of Tg_channels
+     * const count = await prisma.tg_channels.count({
+     *   where: {
+     *     // ... the filter for the Tg_channels we want to count
+     *   }
+     * })
+    **/
+    count<T extends tg_channelsCountArgs>(
+      args?: Subset<T, tg_channelsCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], Tg_channelsCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Tg_channels.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {Tg_channelsAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends Tg_channelsAggregateArgs>(args: Subset<T, Tg_channelsAggregateArgs>): Prisma.PrismaPromise<GetTg_channelsAggregateType<T>>
+
+    /**
+     * Group by Tg_channels.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {tg_channelsGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends tg_channelsGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: tg_channelsGroupByArgs['orderBy'] }
+        : { orderBy?: tg_channelsGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, tg_channelsGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetTg_channelsGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the tg_channels model
+   */
+  readonly fields: tg_channelsFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for tg_channels.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__tg_channelsClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    messages<T extends tg_channels$messagesArgs<ExtArgs> = {}>(args?: Subset<T, tg_channels$messagesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$tg_messagesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the tg_channels model
+   */
+  interface tg_channelsFieldRefs {
+    readonly id: FieldRef<"tg_channels", 'Int'>
+    readonly channel_id: FieldRef<"tg_channels", 'String'>
+    readonly user_id: FieldRef<"tg_channels", 'String'>
+    readonly data_type: FieldRef<"tg_channels", 'String'>
+    readonly data_id: FieldRef<"tg_channels", 'String'>
+    readonly metadata: FieldRef<"tg_channels", 'Json'>
+    readonly is_public: FieldRef<"tg_channels", 'Boolean'>
+    readonly is_free: FieldRef<"tg_channels", 'Boolean'>
+    readonly subscription_fee: FieldRef<"tg_channels", 'Decimal'>
+    readonly last_synced_at: FieldRef<"tg_channels", 'DateTime'>
+    readonly status: FieldRef<"tg_channels", 'String'>
+    readonly created_at: FieldRef<"tg_channels", 'DateTime'>
+    readonly updated_at: FieldRef<"tg_channels", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * tg_channels findUnique
+   */
+  export type tg_channelsFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_channels
+     */
+    select?: tg_channelsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_channels
+     */
+    omit?: tg_channelsOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_channelsInclude<ExtArgs> | null
+    /**
+     * Filter, which tg_channels to fetch.
+     */
+    where: tg_channelsWhereUniqueInput
+  }
+
+  /**
+   * tg_channels findUniqueOrThrow
+   */
+  export type tg_channelsFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_channels
+     */
+    select?: tg_channelsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_channels
+     */
+    omit?: tg_channelsOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_channelsInclude<ExtArgs> | null
+    /**
+     * Filter, which tg_channels to fetch.
+     */
+    where: tg_channelsWhereUniqueInput
+  }
+
+  /**
+   * tg_channels findFirst
+   */
+  export type tg_channelsFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_channels
+     */
+    select?: tg_channelsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_channels
+     */
+    omit?: tg_channelsOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_channelsInclude<ExtArgs> | null
+    /**
+     * Filter, which tg_channels to fetch.
+     */
+    where?: tg_channelsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of tg_channels to fetch.
+     */
+    orderBy?: tg_channelsOrderByWithRelationInput | tg_channelsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for tg_channels.
+     */
+    cursor?: tg_channelsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` tg_channels from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` tg_channels.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of tg_channels.
+     */
+    distinct?: Tg_channelsScalarFieldEnum | Tg_channelsScalarFieldEnum[]
+  }
+
+  /**
+   * tg_channels findFirstOrThrow
+   */
+  export type tg_channelsFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_channels
+     */
+    select?: tg_channelsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_channels
+     */
+    omit?: tg_channelsOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_channelsInclude<ExtArgs> | null
+    /**
+     * Filter, which tg_channels to fetch.
+     */
+    where?: tg_channelsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of tg_channels to fetch.
+     */
+    orderBy?: tg_channelsOrderByWithRelationInput | tg_channelsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for tg_channels.
+     */
+    cursor?: tg_channelsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` tg_channels from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` tg_channels.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of tg_channels.
+     */
+    distinct?: Tg_channelsScalarFieldEnum | Tg_channelsScalarFieldEnum[]
+  }
+
+  /**
+   * tg_channels findMany
+   */
+  export type tg_channelsFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_channels
+     */
+    select?: tg_channelsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_channels
+     */
+    omit?: tg_channelsOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_channelsInclude<ExtArgs> | null
+    /**
+     * Filter, which tg_channels to fetch.
+     */
+    where?: tg_channelsWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of tg_channels to fetch.
+     */
+    orderBy?: tg_channelsOrderByWithRelationInput | tg_channelsOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing tg_channels.
+     */
+    cursor?: tg_channelsWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` tg_channels from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` tg_channels.
+     */
+    skip?: number
+    distinct?: Tg_channelsScalarFieldEnum | Tg_channelsScalarFieldEnum[]
+  }
+
+  /**
+   * tg_channels create
+   */
+  export type tg_channelsCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_channels
+     */
+    select?: tg_channelsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_channels
+     */
+    omit?: tg_channelsOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_channelsInclude<ExtArgs> | null
+    /**
+     * The data needed to create a tg_channels.
+     */
+    data: XOR<tg_channelsCreateInput, tg_channelsUncheckedCreateInput>
+  }
+
+  /**
+   * tg_channels createMany
+   */
+  export type tg_channelsCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many tg_channels.
+     */
+    data: tg_channelsCreateManyInput | tg_channelsCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * tg_channels createManyAndReturn
+   */
+  export type tg_channelsCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_channels
+     */
+    select?: tg_channelsSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_channels
+     */
+    omit?: tg_channelsOmit<ExtArgs> | null
+    /**
+     * The data used to create many tg_channels.
+     */
+    data: tg_channelsCreateManyInput | tg_channelsCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * tg_channels update
+   */
+  export type tg_channelsUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_channels
+     */
+    select?: tg_channelsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_channels
+     */
+    omit?: tg_channelsOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_channelsInclude<ExtArgs> | null
+    /**
+     * The data needed to update a tg_channels.
+     */
+    data: XOR<tg_channelsUpdateInput, tg_channelsUncheckedUpdateInput>
+    /**
+     * Choose, which tg_channels to update.
+     */
+    where: tg_channelsWhereUniqueInput
+  }
+
+  /**
+   * tg_channels updateMany
+   */
+  export type tg_channelsUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update tg_channels.
+     */
+    data: XOR<tg_channelsUpdateManyMutationInput, tg_channelsUncheckedUpdateManyInput>
+    /**
+     * Filter which tg_channels to update
+     */
+    where?: tg_channelsWhereInput
+    /**
+     * Limit how many tg_channels to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * tg_channels updateManyAndReturn
+   */
+  export type tg_channelsUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_channels
+     */
+    select?: tg_channelsSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_channels
+     */
+    omit?: tg_channelsOmit<ExtArgs> | null
+    /**
+     * The data used to update tg_channels.
+     */
+    data: XOR<tg_channelsUpdateManyMutationInput, tg_channelsUncheckedUpdateManyInput>
+    /**
+     * Filter which tg_channels to update
+     */
+    where?: tg_channelsWhereInput
+    /**
+     * Limit how many tg_channels to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * tg_channels upsert
+   */
+  export type tg_channelsUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_channels
+     */
+    select?: tg_channelsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_channels
+     */
+    omit?: tg_channelsOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_channelsInclude<ExtArgs> | null
+    /**
+     * The filter to search for the tg_channels to update in case it exists.
+     */
+    where: tg_channelsWhereUniqueInput
+    /**
+     * In case the tg_channels found by the `where` argument doesn't exist, create a new tg_channels with this data.
+     */
+    create: XOR<tg_channelsCreateInput, tg_channelsUncheckedCreateInput>
+    /**
+     * In case the tg_channels was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<tg_channelsUpdateInput, tg_channelsUncheckedUpdateInput>
+  }
+
+  /**
+   * tg_channels delete
+   */
+  export type tg_channelsDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_channels
+     */
+    select?: tg_channelsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_channels
+     */
+    omit?: tg_channelsOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_channelsInclude<ExtArgs> | null
+    /**
+     * Filter which tg_channels to delete.
+     */
+    where: tg_channelsWhereUniqueInput
+  }
+
+  /**
+   * tg_channels deleteMany
+   */
+  export type tg_channelsDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which tg_channels to delete
+     */
+    where?: tg_channelsWhereInput
+    /**
+     * Limit how many tg_channels to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * tg_channels.messages
+   */
+  export type tg_channels$messagesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_messages
+     */
+    select?: tg_messagesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_messages
+     */
+    omit?: tg_messagesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_messagesInclude<ExtArgs> | null
+    where?: tg_messagesWhereInput
+    orderBy?: tg_messagesOrderByWithRelationInput | tg_messagesOrderByWithRelationInput[]
+    cursor?: tg_messagesWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: Tg_messagesScalarFieldEnum | Tg_messagesScalarFieldEnum[]
+  }
+
+  /**
+   * tg_channels without action
+   */
+  export type tg_channelsDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_channels
+     */
+    select?: tg_channelsSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_channels
+     */
+    omit?: tg_channelsOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_channelsInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model tg_messages
+   */
+
+  export type AggregateTg_messages = {
+    _count: Tg_messagesCountAggregateOutputType | null
+    _avg: Tg_messagesAvgAggregateOutputType | null
+    _sum: Tg_messagesSumAggregateOutputType | null
+    _min: Tg_messagesMinAggregateOutputType | null
+    _max: Tg_messagesMaxAggregateOutputType | null
+  }
+
+  export type Tg_messagesAvgAggregateOutputType = {
+    id: number | null
+    message_timestamp: number | null
+  }
+
+  export type Tg_messagesSumAggregateOutputType = {
+    id: number | null
+    message_timestamp: bigint | null
+  }
+
+  export type Tg_messagesMinAggregateOutputType = {
+    id: number | null
+    message_id: string | null
+    channel_id: string | null
+    chat_id: string | null
+    message_text: string | null
+    message_timestamp: bigint | null
+    sender_id: string | null
+    reply_to: string | null
+    topic_id: string | null
+    is_pinned: boolean | null
+    media_type: string | null
+    media_file_id: string | null
+    media_url: string | null
+    created_at: Date | null
+    updated_at: Date | null
+    send_username: string | null
+    send_firstname: string | null
+    send_lastname: string | null
+  }
+
+  export type Tg_messagesMaxAggregateOutputType = {
+    id: number | null
+    message_id: string | null
+    channel_id: string | null
+    chat_id: string | null
+    message_text: string | null
+    message_timestamp: bigint | null
+    sender_id: string | null
+    reply_to: string | null
+    topic_id: string | null
+    is_pinned: boolean | null
+    media_type: string | null
+    media_file_id: string | null
+    media_url: string | null
+    created_at: Date | null
+    updated_at: Date | null
+    send_username: string | null
+    send_firstname: string | null
+    send_lastname: string | null
+  }
+
+  export type Tg_messagesCountAggregateOutputType = {
+    id: number
+    message_id: number
+    channel_id: number
+    chat_id: number
+    message_text: number
+    message_timestamp: number
+    sender_id: number
+    sender: number
+    reply_to: number
+    topic_id: number
+    buttons: number
+    reactions: number
+    is_pinned: number
+    media_type: number
+    media_file_id: number
+    media_url: number
+    media_metadata: number
+    created_at: number
+    updated_at: number
+    send_username: number
+    send_firstname: number
+    send_lastname: number
+    _all: number
+  }
+
+
+  export type Tg_messagesAvgAggregateInputType = {
+    id?: true
+    message_timestamp?: true
+  }
+
+  export type Tg_messagesSumAggregateInputType = {
+    id?: true
+    message_timestamp?: true
+  }
+
+  export type Tg_messagesMinAggregateInputType = {
+    id?: true
+    message_id?: true
+    channel_id?: true
+    chat_id?: true
+    message_text?: true
+    message_timestamp?: true
+    sender_id?: true
+    reply_to?: true
+    topic_id?: true
+    is_pinned?: true
+    media_type?: true
+    media_file_id?: true
+    media_url?: true
+    created_at?: true
+    updated_at?: true
+    send_username?: true
+    send_firstname?: true
+    send_lastname?: true
+  }
+
+  export type Tg_messagesMaxAggregateInputType = {
+    id?: true
+    message_id?: true
+    channel_id?: true
+    chat_id?: true
+    message_text?: true
+    message_timestamp?: true
+    sender_id?: true
+    reply_to?: true
+    topic_id?: true
+    is_pinned?: true
+    media_type?: true
+    media_file_id?: true
+    media_url?: true
+    created_at?: true
+    updated_at?: true
+    send_username?: true
+    send_firstname?: true
+    send_lastname?: true
+  }
+
+  export type Tg_messagesCountAggregateInputType = {
+    id?: true
+    message_id?: true
+    channel_id?: true
+    chat_id?: true
+    message_text?: true
+    message_timestamp?: true
+    sender_id?: true
+    sender?: true
+    reply_to?: true
+    topic_id?: true
+    buttons?: true
+    reactions?: true
+    is_pinned?: true
+    media_type?: true
+    media_file_id?: true
+    media_url?: true
+    media_metadata?: true
+    created_at?: true
+    updated_at?: true
+    send_username?: true
+    send_firstname?: true
+    send_lastname?: true
+    _all?: true
+  }
+
+  export type Tg_messagesAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which tg_messages to aggregate.
+     */
+    where?: tg_messagesWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of tg_messages to fetch.
+     */
+    orderBy?: tg_messagesOrderByWithRelationInput | tg_messagesOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: tg_messagesWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` tg_messages from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` tg_messages.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned tg_messages
+    **/
+    _count?: true | Tg_messagesCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: Tg_messagesAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: Tg_messagesSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: Tg_messagesMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: Tg_messagesMaxAggregateInputType
+  }
+
+  export type GetTg_messagesAggregateType<T extends Tg_messagesAggregateArgs> = {
+        [P in keyof T & keyof AggregateTg_messages]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateTg_messages[P]>
+      : GetScalarType<T[P], AggregateTg_messages[P]>
+  }
+
+
+
+
+  export type tg_messagesGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: tg_messagesWhereInput
+    orderBy?: tg_messagesOrderByWithAggregationInput | tg_messagesOrderByWithAggregationInput[]
+    by: Tg_messagesScalarFieldEnum[] | Tg_messagesScalarFieldEnum
+    having?: tg_messagesScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: Tg_messagesCountAggregateInputType | true
+    _avg?: Tg_messagesAvgAggregateInputType
+    _sum?: Tg_messagesSumAggregateInputType
+    _min?: Tg_messagesMinAggregateInputType
+    _max?: Tg_messagesMaxAggregateInputType
+  }
+
+  export type Tg_messagesGroupByOutputType = {
+    id: number
+    message_id: string
+    channel_id: string
+    chat_id: string
+    message_text: string
+    message_timestamp: bigint
+    sender_id: string | null
+    sender: JsonValue | null
+    reply_to: string | null
+    topic_id: string | null
+    buttons: JsonValue | null
+    reactions: JsonValue | null
+    is_pinned: boolean
+    media_type: string | null
+    media_file_id: string | null
+    media_url: string | null
+    media_metadata: JsonValue | null
+    created_at: Date
+    updated_at: Date
+    send_username: string | null
+    send_firstname: string | null
+    send_lastname: string | null
+    _count: Tg_messagesCountAggregateOutputType | null
+    _avg: Tg_messagesAvgAggregateOutputType | null
+    _sum: Tg_messagesSumAggregateOutputType | null
+    _min: Tg_messagesMinAggregateOutputType | null
+    _max: Tg_messagesMaxAggregateOutputType | null
+  }
+
+  type GetTg_messagesGroupByPayload<T extends tg_messagesGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<Tg_messagesGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof Tg_messagesGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], Tg_messagesGroupByOutputType[P]>
+            : GetScalarType<T[P], Tg_messagesGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type tg_messagesSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    message_id?: boolean
+    channel_id?: boolean
+    chat_id?: boolean
+    message_text?: boolean
+    message_timestamp?: boolean
+    sender_id?: boolean
+    sender?: boolean
+    reply_to?: boolean
+    topic_id?: boolean
+    buttons?: boolean
+    reactions?: boolean
+    is_pinned?: boolean
+    media_type?: boolean
+    media_file_id?: boolean
+    media_url?: boolean
+    media_metadata?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+    send_username?: boolean
+    send_firstname?: boolean
+    send_lastname?: boolean
+    channels?: boolean | tg_channelsDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["tg_messages"]>
+
+  export type tg_messagesSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    message_id?: boolean
+    channel_id?: boolean
+    chat_id?: boolean
+    message_text?: boolean
+    message_timestamp?: boolean
+    sender_id?: boolean
+    sender?: boolean
+    reply_to?: boolean
+    topic_id?: boolean
+    buttons?: boolean
+    reactions?: boolean
+    is_pinned?: boolean
+    media_type?: boolean
+    media_file_id?: boolean
+    media_url?: boolean
+    media_metadata?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+    send_username?: boolean
+    send_firstname?: boolean
+    send_lastname?: boolean
+    channels?: boolean | tg_channelsDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["tg_messages"]>
+
+  export type tg_messagesSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    message_id?: boolean
+    channel_id?: boolean
+    chat_id?: boolean
+    message_text?: boolean
+    message_timestamp?: boolean
+    sender_id?: boolean
+    sender?: boolean
+    reply_to?: boolean
+    topic_id?: boolean
+    buttons?: boolean
+    reactions?: boolean
+    is_pinned?: boolean
+    media_type?: boolean
+    media_file_id?: boolean
+    media_url?: boolean
+    media_metadata?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+    send_username?: boolean
+    send_firstname?: boolean
+    send_lastname?: boolean
+    channels?: boolean | tg_channelsDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["tg_messages"]>
+
+  export type tg_messagesSelectScalar = {
+    id?: boolean
+    message_id?: boolean
+    channel_id?: boolean
+    chat_id?: boolean
+    message_text?: boolean
+    message_timestamp?: boolean
+    sender_id?: boolean
+    sender?: boolean
+    reply_to?: boolean
+    topic_id?: boolean
+    buttons?: boolean
+    reactions?: boolean
+    is_pinned?: boolean
+    media_type?: boolean
+    media_file_id?: boolean
+    media_url?: boolean
+    media_metadata?: boolean
+    created_at?: boolean
+    updated_at?: boolean
+    send_username?: boolean
+    send_firstname?: boolean
+    send_lastname?: boolean
+  }
+
+  export type tg_messagesOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "message_id" | "channel_id" | "chat_id" | "message_text" | "message_timestamp" | "sender_id" | "sender" | "reply_to" | "topic_id" | "buttons" | "reactions" | "is_pinned" | "media_type" | "media_file_id" | "media_url" | "media_metadata" | "created_at" | "updated_at" | "send_username" | "send_firstname" | "send_lastname", ExtArgs["result"]["tg_messages"]>
+  export type tg_messagesInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    channels?: boolean | tg_channelsDefaultArgs<ExtArgs>
+  }
+  export type tg_messagesIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    channels?: boolean | tg_channelsDefaultArgs<ExtArgs>
+  }
+  export type tg_messagesIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    channels?: boolean | tg_channelsDefaultArgs<ExtArgs>
+  }
+
+  export type $tg_messagesPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "tg_messages"
+    objects: {
+      channels: Prisma.$tg_channelsPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: number
+      message_id: string
+      channel_id: string
+      chat_id: string
+      message_text: string
+      message_timestamp: bigint
+      sender_id: string | null
+      sender: Prisma.JsonValue | null
+      reply_to: string | null
+      topic_id: string | null
+      buttons: Prisma.JsonValue | null
+      reactions: Prisma.JsonValue | null
+      is_pinned: boolean
+      media_type: string | null
+      media_file_id: string | null
+      media_url: string | null
+      media_metadata: Prisma.JsonValue | null
+      created_at: Date
+      updated_at: Date
+      send_username: string | null
+      send_firstname: string | null
+      send_lastname: string | null
+    }, ExtArgs["result"]["tg_messages"]>
+    composites: {}
+  }
+
+  type tg_messagesGetPayload<S extends boolean | null | undefined | tg_messagesDefaultArgs> = $Result.GetResult<Prisma.$tg_messagesPayload, S>
+
+  type tg_messagesCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<tg_messagesFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: Tg_messagesCountAggregateInputType | true
+    }
+
+  export interface tg_messagesDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['tg_messages'], meta: { name: 'tg_messages' } }
+    /**
+     * Find zero or one Tg_messages that matches the filter.
+     * @param {tg_messagesFindUniqueArgs} args - Arguments to find a Tg_messages
+     * @example
+     * // Get one Tg_messages
+     * const tg_messages = await prisma.tg_messages.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends tg_messagesFindUniqueArgs>(args: SelectSubset<T, tg_messagesFindUniqueArgs<ExtArgs>>): Prisma__tg_messagesClient<$Result.GetResult<Prisma.$tg_messagesPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Tg_messages that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {tg_messagesFindUniqueOrThrowArgs} args - Arguments to find a Tg_messages
+     * @example
+     * // Get one Tg_messages
+     * const tg_messages = await prisma.tg_messages.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends tg_messagesFindUniqueOrThrowArgs>(args: SelectSubset<T, tg_messagesFindUniqueOrThrowArgs<ExtArgs>>): Prisma__tg_messagesClient<$Result.GetResult<Prisma.$tg_messagesPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Tg_messages that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {tg_messagesFindFirstArgs} args - Arguments to find a Tg_messages
+     * @example
+     * // Get one Tg_messages
+     * const tg_messages = await prisma.tg_messages.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends tg_messagesFindFirstArgs>(args?: SelectSubset<T, tg_messagesFindFirstArgs<ExtArgs>>): Prisma__tg_messagesClient<$Result.GetResult<Prisma.$tg_messagesPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Tg_messages that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {tg_messagesFindFirstOrThrowArgs} args - Arguments to find a Tg_messages
+     * @example
+     * // Get one Tg_messages
+     * const tg_messages = await prisma.tg_messages.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends tg_messagesFindFirstOrThrowArgs>(args?: SelectSubset<T, tg_messagesFindFirstOrThrowArgs<ExtArgs>>): Prisma__tg_messagesClient<$Result.GetResult<Prisma.$tg_messagesPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Tg_messages that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {tg_messagesFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Tg_messages
+     * const tg_messages = await prisma.tg_messages.findMany()
+     * 
+     * // Get first 10 Tg_messages
+     * const tg_messages = await prisma.tg_messages.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const tg_messagesWithIdOnly = await prisma.tg_messages.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends tg_messagesFindManyArgs>(args?: SelectSubset<T, tg_messagesFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$tg_messagesPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Tg_messages.
+     * @param {tg_messagesCreateArgs} args - Arguments to create a Tg_messages.
+     * @example
+     * // Create one Tg_messages
+     * const Tg_messages = await prisma.tg_messages.create({
+     *   data: {
+     *     // ... data to create a Tg_messages
+     *   }
+     * })
+     * 
+     */
+    create<T extends tg_messagesCreateArgs>(args: SelectSubset<T, tg_messagesCreateArgs<ExtArgs>>): Prisma__tg_messagesClient<$Result.GetResult<Prisma.$tg_messagesPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Tg_messages.
+     * @param {tg_messagesCreateManyArgs} args - Arguments to create many Tg_messages.
+     * @example
+     * // Create many Tg_messages
+     * const tg_messages = await prisma.tg_messages.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends tg_messagesCreateManyArgs>(args?: SelectSubset<T, tg_messagesCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Tg_messages and returns the data saved in the database.
+     * @param {tg_messagesCreateManyAndReturnArgs} args - Arguments to create many Tg_messages.
+     * @example
+     * // Create many Tg_messages
+     * const tg_messages = await prisma.tg_messages.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Tg_messages and only return the `id`
+     * const tg_messagesWithIdOnly = await prisma.tg_messages.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends tg_messagesCreateManyAndReturnArgs>(args?: SelectSubset<T, tg_messagesCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$tg_messagesPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Tg_messages.
+     * @param {tg_messagesDeleteArgs} args - Arguments to delete one Tg_messages.
+     * @example
+     * // Delete one Tg_messages
+     * const Tg_messages = await prisma.tg_messages.delete({
+     *   where: {
+     *     // ... filter to delete one Tg_messages
+     *   }
+     * })
+     * 
+     */
+    delete<T extends tg_messagesDeleteArgs>(args: SelectSubset<T, tg_messagesDeleteArgs<ExtArgs>>): Prisma__tg_messagesClient<$Result.GetResult<Prisma.$tg_messagesPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Tg_messages.
+     * @param {tg_messagesUpdateArgs} args - Arguments to update one Tg_messages.
+     * @example
+     * // Update one Tg_messages
+     * const tg_messages = await prisma.tg_messages.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends tg_messagesUpdateArgs>(args: SelectSubset<T, tg_messagesUpdateArgs<ExtArgs>>): Prisma__tg_messagesClient<$Result.GetResult<Prisma.$tg_messagesPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Tg_messages.
+     * @param {tg_messagesDeleteManyArgs} args - Arguments to filter Tg_messages to delete.
+     * @example
+     * // Delete a few Tg_messages
+     * const { count } = await prisma.tg_messages.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends tg_messagesDeleteManyArgs>(args?: SelectSubset<T, tg_messagesDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Tg_messages.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {tg_messagesUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Tg_messages
+     * const tg_messages = await prisma.tg_messages.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends tg_messagesUpdateManyArgs>(args: SelectSubset<T, tg_messagesUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Tg_messages and returns the data updated in the database.
+     * @param {tg_messagesUpdateManyAndReturnArgs} args - Arguments to update many Tg_messages.
+     * @example
+     * // Update many Tg_messages
+     * const tg_messages = await prisma.tg_messages.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Tg_messages and only return the `id`
+     * const tg_messagesWithIdOnly = await prisma.tg_messages.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends tg_messagesUpdateManyAndReturnArgs>(args: SelectSubset<T, tg_messagesUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$tg_messagesPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Tg_messages.
+     * @param {tg_messagesUpsertArgs} args - Arguments to update or create a Tg_messages.
+     * @example
+     * // Update or create a Tg_messages
+     * const tg_messages = await prisma.tg_messages.upsert({
+     *   create: {
+     *     // ... data to create a Tg_messages
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Tg_messages we want to update
+     *   }
+     * })
+     */
+    upsert<T extends tg_messagesUpsertArgs>(args: SelectSubset<T, tg_messagesUpsertArgs<ExtArgs>>): Prisma__tg_messagesClient<$Result.GetResult<Prisma.$tg_messagesPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Tg_messages.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {tg_messagesCountArgs} args - Arguments to filter Tg_messages to count.
+     * @example
+     * // Count the number of Tg_messages
+     * const count = await prisma.tg_messages.count({
+     *   where: {
+     *     // ... the filter for the Tg_messages we want to count
+     *   }
+     * })
+    **/
+    count<T extends tg_messagesCountArgs>(
+      args?: Subset<T, tg_messagesCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], Tg_messagesCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Tg_messages.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {Tg_messagesAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends Tg_messagesAggregateArgs>(args: Subset<T, Tg_messagesAggregateArgs>): Prisma.PrismaPromise<GetTg_messagesAggregateType<T>>
+
+    /**
+     * Group by Tg_messages.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {tg_messagesGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends tg_messagesGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: tg_messagesGroupByArgs['orderBy'] }
+        : { orderBy?: tg_messagesGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, tg_messagesGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetTg_messagesGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the tg_messages model
+   */
+  readonly fields: tg_messagesFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for tg_messages.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__tg_messagesClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    channels<T extends tg_channelsDefaultArgs<ExtArgs> = {}>(args?: Subset<T, tg_channelsDefaultArgs<ExtArgs>>): Prisma__tg_channelsClient<$Result.GetResult<Prisma.$tg_channelsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the tg_messages model
+   */
+  interface tg_messagesFieldRefs {
+    readonly id: FieldRef<"tg_messages", 'Int'>
+    readonly message_id: FieldRef<"tg_messages", 'String'>
+    readonly channel_id: FieldRef<"tg_messages", 'String'>
+    readonly chat_id: FieldRef<"tg_messages", 'String'>
+    readonly message_text: FieldRef<"tg_messages", 'String'>
+    readonly message_timestamp: FieldRef<"tg_messages", 'BigInt'>
+    readonly sender_id: FieldRef<"tg_messages", 'String'>
+    readonly sender: FieldRef<"tg_messages", 'Json'>
+    readonly reply_to: FieldRef<"tg_messages", 'String'>
+    readonly topic_id: FieldRef<"tg_messages", 'String'>
+    readonly buttons: FieldRef<"tg_messages", 'Json'>
+    readonly reactions: FieldRef<"tg_messages", 'Json'>
+    readonly is_pinned: FieldRef<"tg_messages", 'Boolean'>
+    readonly media_type: FieldRef<"tg_messages", 'String'>
+    readonly media_file_id: FieldRef<"tg_messages", 'String'>
+    readonly media_url: FieldRef<"tg_messages", 'String'>
+    readonly media_metadata: FieldRef<"tg_messages", 'Json'>
+    readonly created_at: FieldRef<"tg_messages", 'DateTime'>
+    readonly updated_at: FieldRef<"tg_messages", 'DateTime'>
+    readonly send_username: FieldRef<"tg_messages", 'String'>
+    readonly send_firstname: FieldRef<"tg_messages", 'String'>
+    readonly send_lastname: FieldRef<"tg_messages", 'String'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * tg_messages findUnique
+   */
+  export type tg_messagesFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_messages
+     */
+    select?: tg_messagesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_messages
+     */
+    omit?: tg_messagesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_messagesInclude<ExtArgs> | null
+    /**
+     * Filter, which tg_messages to fetch.
+     */
+    where: tg_messagesWhereUniqueInput
+  }
+
+  /**
+   * tg_messages findUniqueOrThrow
+   */
+  export type tg_messagesFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_messages
+     */
+    select?: tg_messagesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_messages
+     */
+    omit?: tg_messagesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_messagesInclude<ExtArgs> | null
+    /**
+     * Filter, which tg_messages to fetch.
+     */
+    where: tg_messagesWhereUniqueInput
+  }
+
+  /**
+   * tg_messages findFirst
+   */
+  export type tg_messagesFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_messages
+     */
+    select?: tg_messagesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_messages
+     */
+    omit?: tg_messagesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_messagesInclude<ExtArgs> | null
+    /**
+     * Filter, which tg_messages to fetch.
+     */
+    where?: tg_messagesWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of tg_messages to fetch.
+     */
+    orderBy?: tg_messagesOrderByWithRelationInput | tg_messagesOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for tg_messages.
+     */
+    cursor?: tg_messagesWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` tg_messages from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` tg_messages.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of tg_messages.
+     */
+    distinct?: Tg_messagesScalarFieldEnum | Tg_messagesScalarFieldEnum[]
+  }
+
+  /**
+   * tg_messages findFirstOrThrow
+   */
+  export type tg_messagesFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_messages
+     */
+    select?: tg_messagesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_messages
+     */
+    omit?: tg_messagesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_messagesInclude<ExtArgs> | null
+    /**
+     * Filter, which tg_messages to fetch.
+     */
+    where?: tg_messagesWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of tg_messages to fetch.
+     */
+    orderBy?: tg_messagesOrderByWithRelationInput | tg_messagesOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for tg_messages.
+     */
+    cursor?: tg_messagesWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` tg_messages from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` tg_messages.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of tg_messages.
+     */
+    distinct?: Tg_messagesScalarFieldEnum | Tg_messagesScalarFieldEnum[]
+  }
+
+  /**
+   * tg_messages findMany
+   */
+  export type tg_messagesFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_messages
+     */
+    select?: tg_messagesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_messages
+     */
+    omit?: tg_messagesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_messagesInclude<ExtArgs> | null
+    /**
+     * Filter, which tg_messages to fetch.
+     */
+    where?: tg_messagesWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of tg_messages to fetch.
+     */
+    orderBy?: tg_messagesOrderByWithRelationInput | tg_messagesOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing tg_messages.
+     */
+    cursor?: tg_messagesWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` tg_messages from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` tg_messages.
+     */
+    skip?: number
+    distinct?: Tg_messagesScalarFieldEnum | Tg_messagesScalarFieldEnum[]
+  }
+
+  /**
+   * tg_messages create
+   */
+  export type tg_messagesCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_messages
+     */
+    select?: tg_messagesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_messages
+     */
+    omit?: tg_messagesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_messagesInclude<ExtArgs> | null
+    /**
+     * The data needed to create a tg_messages.
+     */
+    data: XOR<tg_messagesCreateInput, tg_messagesUncheckedCreateInput>
+  }
+
+  /**
+   * tg_messages createMany
+   */
+  export type tg_messagesCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many tg_messages.
+     */
+    data: tg_messagesCreateManyInput | tg_messagesCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * tg_messages createManyAndReturn
+   */
+  export type tg_messagesCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_messages
+     */
+    select?: tg_messagesSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_messages
+     */
+    omit?: tg_messagesOmit<ExtArgs> | null
+    /**
+     * The data used to create many tg_messages.
+     */
+    data: tg_messagesCreateManyInput | tg_messagesCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_messagesIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * tg_messages update
+   */
+  export type tg_messagesUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_messages
+     */
+    select?: tg_messagesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_messages
+     */
+    omit?: tg_messagesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_messagesInclude<ExtArgs> | null
+    /**
+     * The data needed to update a tg_messages.
+     */
+    data: XOR<tg_messagesUpdateInput, tg_messagesUncheckedUpdateInput>
+    /**
+     * Choose, which tg_messages to update.
+     */
+    where: tg_messagesWhereUniqueInput
+  }
+
+  /**
+   * tg_messages updateMany
+   */
+  export type tg_messagesUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update tg_messages.
+     */
+    data: XOR<tg_messagesUpdateManyMutationInput, tg_messagesUncheckedUpdateManyInput>
+    /**
+     * Filter which tg_messages to update
+     */
+    where?: tg_messagesWhereInput
+    /**
+     * Limit how many tg_messages to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * tg_messages updateManyAndReturn
+   */
+  export type tg_messagesUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_messages
+     */
+    select?: tg_messagesSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_messages
+     */
+    omit?: tg_messagesOmit<ExtArgs> | null
+    /**
+     * The data used to update tg_messages.
+     */
+    data: XOR<tg_messagesUpdateManyMutationInput, tg_messagesUncheckedUpdateManyInput>
+    /**
+     * Filter which tg_messages to update
+     */
+    where?: tg_messagesWhereInput
+    /**
+     * Limit how many tg_messages to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_messagesIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * tg_messages upsert
+   */
+  export type tg_messagesUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_messages
+     */
+    select?: tg_messagesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_messages
+     */
+    omit?: tg_messagesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_messagesInclude<ExtArgs> | null
+    /**
+     * The filter to search for the tg_messages to update in case it exists.
+     */
+    where: tg_messagesWhereUniqueInput
+    /**
+     * In case the tg_messages found by the `where` argument doesn't exist, create a new tg_messages with this data.
+     */
+    create: XOR<tg_messagesCreateInput, tg_messagesUncheckedCreateInput>
+    /**
+     * In case the tg_messages was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<tg_messagesUpdateInput, tg_messagesUncheckedUpdateInput>
+  }
+
+  /**
+   * tg_messages delete
+   */
+  export type tg_messagesDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_messages
+     */
+    select?: tg_messagesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_messages
+     */
+    omit?: tg_messagesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_messagesInclude<ExtArgs> | null
+    /**
+     * Filter which tg_messages to delete.
+     */
+    where: tg_messagesWhereUniqueInput
+  }
+
+  /**
+   * tg_messages deleteMany
+   */
+  export type tg_messagesDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which tg_messages to delete
+     */
+    where?: tg_messagesWhereInput
+    /**
+     * Limit how many tg_messages to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * tg_messages without action
+   */
+  export type tg_messagesDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the tg_messages
+     */
+    select?: tg_messagesSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the tg_messages
+     */
+    omit?: tg_messagesOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: tg_messagesInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -4385,6 +7107,53 @@ export namespace Prisma {
   export type MessagesScalarFieldEnum = (typeof MessagesScalarFieldEnum)[keyof typeof MessagesScalarFieldEnum]
 
 
+  export const Tg_channelsScalarFieldEnum: {
+    id: 'id',
+    channel_id: 'channel_id',
+    user_id: 'user_id',
+    data_type: 'data_type',
+    data_id: 'data_id',
+    metadata: 'metadata',
+    is_public: 'is_public',
+    is_free: 'is_free',
+    subscription_fee: 'subscription_fee',
+    last_synced_at: 'last_synced_at',
+    status: 'status',
+    created_at: 'created_at',
+    updated_at: 'updated_at'
+  };
+
+  export type Tg_channelsScalarFieldEnum = (typeof Tg_channelsScalarFieldEnum)[keyof typeof Tg_channelsScalarFieldEnum]
+
+
+  export const Tg_messagesScalarFieldEnum: {
+    id: 'id',
+    message_id: 'message_id',
+    channel_id: 'channel_id',
+    chat_id: 'chat_id',
+    message_text: 'message_text',
+    message_timestamp: 'message_timestamp',
+    sender_id: 'sender_id',
+    sender: 'sender',
+    reply_to: 'reply_to',
+    topic_id: 'topic_id',
+    buttons: 'buttons',
+    reactions: 'reactions',
+    is_pinned: 'is_pinned',
+    media_type: 'media_type',
+    media_file_id: 'media_file_id',
+    media_url: 'media_url',
+    media_metadata: 'media_metadata',
+    created_at: 'created_at',
+    updated_at: 'updated_at',
+    send_username: 'send_username',
+    send_firstname: 'send_firstname',
+    send_lastname: 'send_lastname'
+  };
+
+  export type Tg_messagesScalarFieldEnum = (typeof Tg_messagesScalarFieldEnum)[keyof typeof Tg_messagesScalarFieldEnum]
+
+
   export const SortOrder: {
     asc: 'asc',
     desc: 'desc'
@@ -4398,6 +7167,14 @@ export namespace Prisma {
   };
 
   export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
+
+
+  export const NullableJsonNullValueInput: {
+    DbNull: typeof DbNull,
+    JsonNull: typeof JsonNull
+  };
+
+  export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
   export const QueryMode: {
@@ -4490,6 +7267,48 @@ export namespace Prisma {
    * Reference to a field of type 'Int[]'
    */
   export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Decimal'
+   */
+  export type DecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal'>
+    
+
+
+  /**
+   * Reference to a field of type 'Decimal[]'
+   */
+  export type ListDecimalFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Decimal[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'BigInt'
+   */
+  export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt'>
+    
+
+
+  /**
+   * Reference to a field of type 'BigInt[]'
+   */
+  export type ListBigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt[]'>
+    
+
+
+  /**
+   * Reference to a field of type 'Float'
+   */
+  export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+  /**
+   * Reference to a field of type 'Float[]'
+   */
+  export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
     
   /**
    * Deep Input Types
@@ -4667,6 +7486,247 @@ export namespace Prisma {
     role?: StringWithAggregatesFilter<"messages"> | string
     content?: JsonWithAggregatesFilter<"messages">
     created_at?: DateTimeWithAggregatesFilter<"messages"> | Date | string
+  }
+
+  export type tg_channelsWhereInput = {
+    AND?: tg_channelsWhereInput | tg_channelsWhereInput[]
+    OR?: tg_channelsWhereInput[]
+    NOT?: tg_channelsWhereInput | tg_channelsWhereInput[]
+    id?: IntFilter<"tg_channels"> | number
+    channel_id?: StringFilter<"tg_channels"> | string
+    user_id?: StringFilter<"tg_channels"> | string
+    data_type?: StringFilter<"tg_channels"> | string
+    data_id?: StringFilter<"tg_channels"> | string
+    metadata?: JsonFilter<"tg_channels">
+    is_public?: BoolFilter<"tg_channels"> | boolean
+    is_free?: BoolFilter<"tg_channels"> | boolean
+    subscription_fee?: DecimalFilter<"tg_channels"> | Decimal | DecimalJsLike | number | string
+    last_synced_at?: DateTimeFilter<"tg_channels"> | Date | string
+    status?: StringFilter<"tg_channels"> | string
+    created_at?: DateTimeFilter<"tg_channels"> | Date | string
+    updated_at?: DateTimeFilter<"tg_channels"> | Date | string
+    messages?: Tg_messagesListRelationFilter
+  }
+
+  export type tg_channelsOrderByWithRelationInput = {
+    id?: SortOrder
+    channel_id?: SortOrder
+    user_id?: SortOrder
+    data_type?: SortOrder
+    data_id?: SortOrder
+    metadata?: SortOrder
+    is_public?: SortOrder
+    is_free?: SortOrder
+    subscription_fee?: SortOrder
+    last_synced_at?: SortOrder
+    status?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+    messages?: tg_messagesOrderByRelationAggregateInput
+  }
+
+  export type tg_channelsWhereUniqueInput = Prisma.AtLeast<{
+    id?: number
+    channel_id?: string
+    user_id_data_id?: tg_channelsUser_idData_idCompoundUniqueInput
+    AND?: tg_channelsWhereInput | tg_channelsWhereInput[]
+    OR?: tg_channelsWhereInput[]
+    NOT?: tg_channelsWhereInput | tg_channelsWhereInput[]
+    user_id?: StringFilter<"tg_channels"> | string
+    data_type?: StringFilter<"tg_channels"> | string
+    data_id?: StringFilter<"tg_channels"> | string
+    metadata?: JsonFilter<"tg_channels">
+    is_public?: BoolFilter<"tg_channels"> | boolean
+    is_free?: BoolFilter<"tg_channels"> | boolean
+    subscription_fee?: DecimalFilter<"tg_channels"> | Decimal | DecimalJsLike | number | string
+    last_synced_at?: DateTimeFilter<"tg_channels"> | Date | string
+    status?: StringFilter<"tg_channels"> | string
+    created_at?: DateTimeFilter<"tg_channels"> | Date | string
+    updated_at?: DateTimeFilter<"tg_channels"> | Date | string
+    messages?: Tg_messagesListRelationFilter
+  }, "id" | "channel_id" | "user_id_data_id">
+
+  export type tg_channelsOrderByWithAggregationInput = {
+    id?: SortOrder
+    channel_id?: SortOrder
+    user_id?: SortOrder
+    data_type?: SortOrder
+    data_id?: SortOrder
+    metadata?: SortOrder
+    is_public?: SortOrder
+    is_free?: SortOrder
+    subscription_fee?: SortOrder
+    last_synced_at?: SortOrder
+    status?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+    _count?: tg_channelsCountOrderByAggregateInput
+    _avg?: tg_channelsAvgOrderByAggregateInput
+    _max?: tg_channelsMaxOrderByAggregateInput
+    _min?: tg_channelsMinOrderByAggregateInput
+    _sum?: tg_channelsSumOrderByAggregateInput
+  }
+
+  export type tg_channelsScalarWhereWithAggregatesInput = {
+    AND?: tg_channelsScalarWhereWithAggregatesInput | tg_channelsScalarWhereWithAggregatesInput[]
+    OR?: tg_channelsScalarWhereWithAggregatesInput[]
+    NOT?: tg_channelsScalarWhereWithAggregatesInput | tg_channelsScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<"tg_channels"> | number
+    channel_id?: StringWithAggregatesFilter<"tg_channels"> | string
+    user_id?: StringWithAggregatesFilter<"tg_channels"> | string
+    data_type?: StringWithAggregatesFilter<"tg_channels"> | string
+    data_id?: StringWithAggregatesFilter<"tg_channels"> | string
+    metadata?: JsonWithAggregatesFilter<"tg_channels">
+    is_public?: BoolWithAggregatesFilter<"tg_channels"> | boolean
+    is_free?: BoolWithAggregatesFilter<"tg_channels"> | boolean
+    subscription_fee?: DecimalWithAggregatesFilter<"tg_channels"> | Decimal | DecimalJsLike | number | string
+    last_synced_at?: DateTimeWithAggregatesFilter<"tg_channels"> | Date | string
+    status?: StringWithAggregatesFilter<"tg_channels"> | string
+    created_at?: DateTimeWithAggregatesFilter<"tg_channels"> | Date | string
+    updated_at?: DateTimeWithAggregatesFilter<"tg_channels"> | Date | string
+  }
+
+  export type tg_messagesWhereInput = {
+    AND?: tg_messagesWhereInput | tg_messagesWhereInput[]
+    OR?: tg_messagesWhereInput[]
+    NOT?: tg_messagesWhereInput | tg_messagesWhereInput[]
+    id?: IntFilter<"tg_messages"> | number
+    message_id?: StringFilter<"tg_messages"> | string
+    channel_id?: StringFilter<"tg_messages"> | string
+    chat_id?: StringFilter<"tg_messages"> | string
+    message_text?: StringFilter<"tg_messages"> | string
+    message_timestamp?: BigIntFilter<"tg_messages"> | bigint | number
+    sender_id?: StringNullableFilter<"tg_messages"> | string | null
+    sender?: JsonNullableFilter<"tg_messages">
+    reply_to?: StringNullableFilter<"tg_messages"> | string | null
+    topic_id?: StringNullableFilter<"tg_messages"> | string | null
+    buttons?: JsonNullableFilter<"tg_messages">
+    reactions?: JsonNullableFilter<"tg_messages">
+    is_pinned?: BoolFilter<"tg_messages"> | boolean
+    media_type?: StringNullableFilter<"tg_messages"> | string | null
+    media_file_id?: StringNullableFilter<"tg_messages"> | string | null
+    media_url?: StringNullableFilter<"tg_messages"> | string | null
+    media_metadata?: JsonNullableFilter<"tg_messages">
+    created_at?: DateTimeFilter<"tg_messages"> | Date | string
+    updated_at?: DateTimeFilter<"tg_messages"> | Date | string
+    send_username?: StringNullableFilter<"tg_messages"> | string | null
+    send_firstname?: StringNullableFilter<"tg_messages"> | string | null
+    send_lastname?: StringNullableFilter<"tg_messages"> | string | null
+    channels?: XOR<Tg_channelsScalarRelationFilter, tg_channelsWhereInput>
+  }
+
+  export type tg_messagesOrderByWithRelationInput = {
+    id?: SortOrder
+    message_id?: SortOrder
+    channel_id?: SortOrder
+    chat_id?: SortOrder
+    message_text?: SortOrder
+    message_timestamp?: SortOrder
+    sender_id?: SortOrderInput | SortOrder
+    sender?: SortOrderInput | SortOrder
+    reply_to?: SortOrderInput | SortOrder
+    topic_id?: SortOrderInput | SortOrder
+    buttons?: SortOrderInput | SortOrder
+    reactions?: SortOrderInput | SortOrder
+    is_pinned?: SortOrder
+    media_type?: SortOrderInput | SortOrder
+    media_file_id?: SortOrderInput | SortOrder
+    media_url?: SortOrderInput | SortOrder
+    media_metadata?: SortOrderInput | SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+    send_username?: SortOrderInput | SortOrder
+    send_firstname?: SortOrderInput | SortOrder
+    send_lastname?: SortOrderInput | SortOrder
+    channels?: tg_channelsOrderByWithRelationInput
+  }
+
+  export type tg_messagesWhereUniqueInput = Prisma.AtLeast<{
+    id?: number
+    channel_id_message_id?: tg_messagesChannel_idMessage_idCompoundUniqueInput
+    AND?: tg_messagesWhereInput | tg_messagesWhereInput[]
+    OR?: tg_messagesWhereInput[]
+    NOT?: tg_messagesWhereInput | tg_messagesWhereInput[]
+    message_id?: StringFilter<"tg_messages"> | string
+    channel_id?: StringFilter<"tg_messages"> | string
+    chat_id?: StringFilter<"tg_messages"> | string
+    message_text?: StringFilter<"tg_messages"> | string
+    message_timestamp?: BigIntFilter<"tg_messages"> | bigint | number
+    sender_id?: StringNullableFilter<"tg_messages"> | string | null
+    sender?: JsonNullableFilter<"tg_messages">
+    reply_to?: StringNullableFilter<"tg_messages"> | string | null
+    topic_id?: StringNullableFilter<"tg_messages"> | string | null
+    buttons?: JsonNullableFilter<"tg_messages">
+    reactions?: JsonNullableFilter<"tg_messages">
+    is_pinned?: BoolFilter<"tg_messages"> | boolean
+    media_type?: StringNullableFilter<"tg_messages"> | string | null
+    media_file_id?: StringNullableFilter<"tg_messages"> | string | null
+    media_url?: StringNullableFilter<"tg_messages"> | string | null
+    media_metadata?: JsonNullableFilter<"tg_messages">
+    created_at?: DateTimeFilter<"tg_messages"> | Date | string
+    updated_at?: DateTimeFilter<"tg_messages"> | Date | string
+    send_username?: StringNullableFilter<"tg_messages"> | string | null
+    send_firstname?: StringNullableFilter<"tg_messages"> | string | null
+    send_lastname?: StringNullableFilter<"tg_messages"> | string | null
+    channels?: XOR<Tg_channelsScalarRelationFilter, tg_channelsWhereInput>
+  }, "id" | "channel_id_message_id">
+
+  export type tg_messagesOrderByWithAggregationInput = {
+    id?: SortOrder
+    message_id?: SortOrder
+    channel_id?: SortOrder
+    chat_id?: SortOrder
+    message_text?: SortOrder
+    message_timestamp?: SortOrder
+    sender_id?: SortOrderInput | SortOrder
+    sender?: SortOrderInput | SortOrder
+    reply_to?: SortOrderInput | SortOrder
+    topic_id?: SortOrderInput | SortOrder
+    buttons?: SortOrderInput | SortOrder
+    reactions?: SortOrderInput | SortOrder
+    is_pinned?: SortOrder
+    media_type?: SortOrderInput | SortOrder
+    media_file_id?: SortOrderInput | SortOrder
+    media_url?: SortOrderInput | SortOrder
+    media_metadata?: SortOrderInput | SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+    send_username?: SortOrderInput | SortOrder
+    send_firstname?: SortOrderInput | SortOrder
+    send_lastname?: SortOrderInput | SortOrder
+    _count?: tg_messagesCountOrderByAggregateInput
+    _avg?: tg_messagesAvgOrderByAggregateInput
+    _max?: tg_messagesMaxOrderByAggregateInput
+    _min?: tg_messagesMinOrderByAggregateInput
+    _sum?: tg_messagesSumOrderByAggregateInput
+  }
+
+  export type tg_messagesScalarWhereWithAggregatesInput = {
+    AND?: tg_messagesScalarWhereWithAggregatesInput | tg_messagesScalarWhereWithAggregatesInput[]
+    OR?: tg_messagesScalarWhereWithAggregatesInput[]
+    NOT?: tg_messagesScalarWhereWithAggregatesInput | tg_messagesScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<"tg_messages"> | number
+    message_id?: StringWithAggregatesFilter<"tg_messages"> | string
+    channel_id?: StringWithAggregatesFilter<"tg_messages"> | string
+    chat_id?: StringWithAggregatesFilter<"tg_messages"> | string
+    message_text?: StringWithAggregatesFilter<"tg_messages"> | string
+    message_timestamp?: BigIntWithAggregatesFilter<"tg_messages"> | bigint | number
+    sender_id?: StringNullableWithAggregatesFilter<"tg_messages"> | string | null
+    sender?: JsonNullableWithAggregatesFilter<"tg_messages">
+    reply_to?: StringNullableWithAggregatesFilter<"tg_messages"> | string | null
+    topic_id?: StringNullableWithAggregatesFilter<"tg_messages"> | string | null
+    buttons?: JsonNullableWithAggregatesFilter<"tg_messages">
+    reactions?: JsonNullableWithAggregatesFilter<"tg_messages">
+    is_pinned?: BoolWithAggregatesFilter<"tg_messages"> | boolean
+    media_type?: StringNullableWithAggregatesFilter<"tg_messages"> | string | null
+    media_file_id?: StringNullableWithAggregatesFilter<"tg_messages"> | string | null
+    media_url?: StringNullableWithAggregatesFilter<"tg_messages"> | string | null
+    media_metadata?: JsonNullableWithAggregatesFilter<"tg_messages">
+    created_at?: DateTimeWithAggregatesFilter<"tg_messages"> | Date | string
+    updated_at?: DateTimeWithAggregatesFilter<"tg_messages"> | Date | string
+    send_username?: StringNullableWithAggregatesFilter<"tg_messages"> | string | null
+    send_firstname?: StringNullableWithAggregatesFilter<"tg_messages"> | string | null
+    send_lastname?: StringNullableWithAggregatesFilter<"tg_messages"> | string | null
   }
 
   export type usersCreateInput = {
@@ -4848,6 +7908,290 @@ export namespace Prisma {
     role?: StringFieldUpdateOperationsInput | string
     content?: JsonNullValueInput | InputJsonValue
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type tg_channelsCreateInput = {
+    channel_id: string
+    user_id: string
+    data_type: string
+    data_id: string
+    metadata?: JsonNullValueInput | InputJsonValue
+    is_public?: boolean
+    is_free?: boolean
+    subscription_fee?: Decimal | DecimalJsLike | number | string
+    last_synced_at?: Date | string
+    status?: string
+    created_at?: Date | string
+    updated_at?: Date | string
+    messages?: tg_messagesCreateNestedManyWithoutChannelsInput
+  }
+
+  export type tg_channelsUncheckedCreateInput = {
+    id?: number
+    channel_id: string
+    user_id: string
+    data_type: string
+    data_id: string
+    metadata?: JsonNullValueInput | InputJsonValue
+    is_public?: boolean
+    is_free?: boolean
+    subscription_fee?: Decimal | DecimalJsLike | number | string
+    last_synced_at?: Date | string
+    status?: string
+    created_at?: Date | string
+    updated_at?: Date | string
+    messages?: tg_messagesUncheckedCreateNestedManyWithoutChannelsInput
+  }
+
+  export type tg_channelsUpdateInput = {
+    channel_id?: StringFieldUpdateOperationsInput | string
+    user_id?: StringFieldUpdateOperationsInput | string
+    data_type?: StringFieldUpdateOperationsInput | string
+    data_id?: StringFieldUpdateOperationsInput | string
+    metadata?: JsonNullValueInput | InputJsonValue
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_free?: BoolFieldUpdateOperationsInput | boolean
+    subscription_fee?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    last_synced_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    status?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    messages?: tg_messagesUpdateManyWithoutChannelsNestedInput
+  }
+
+  export type tg_channelsUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    channel_id?: StringFieldUpdateOperationsInput | string
+    user_id?: StringFieldUpdateOperationsInput | string
+    data_type?: StringFieldUpdateOperationsInput | string
+    data_id?: StringFieldUpdateOperationsInput | string
+    metadata?: JsonNullValueInput | InputJsonValue
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_free?: BoolFieldUpdateOperationsInput | boolean
+    subscription_fee?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    last_synced_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    status?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    messages?: tg_messagesUncheckedUpdateManyWithoutChannelsNestedInput
+  }
+
+  export type tg_channelsCreateManyInput = {
+    id?: number
+    channel_id: string
+    user_id: string
+    data_type: string
+    data_id: string
+    metadata?: JsonNullValueInput | InputJsonValue
+    is_public?: boolean
+    is_free?: boolean
+    subscription_fee?: Decimal | DecimalJsLike | number | string
+    last_synced_at?: Date | string
+    status?: string
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type tg_channelsUpdateManyMutationInput = {
+    channel_id?: StringFieldUpdateOperationsInput | string
+    user_id?: StringFieldUpdateOperationsInput | string
+    data_type?: StringFieldUpdateOperationsInput | string
+    data_id?: StringFieldUpdateOperationsInput | string
+    metadata?: JsonNullValueInput | InputJsonValue
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_free?: BoolFieldUpdateOperationsInput | boolean
+    subscription_fee?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    last_synced_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    status?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type tg_channelsUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    channel_id?: StringFieldUpdateOperationsInput | string
+    user_id?: StringFieldUpdateOperationsInput | string
+    data_type?: StringFieldUpdateOperationsInput | string
+    data_id?: StringFieldUpdateOperationsInput | string
+    metadata?: JsonNullValueInput | InputJsonValue
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_free?: BoolFieldUpdateOperationsInput | boolean
+    subscription_fee?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    last_synced_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    status?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type tg_messagesCreateInput = {
+    message_id: string
+    chat_id: string
+    message_text: string
+    message_timestamp: bigint | number
+    sender_id?: string | null
+    sender?: NullableJsonNullValueInput | InputJsonValue
+    reply_to?: string | null
+    topic_id?: string | null
+    buttons?: NullableJsonNullValueInput | InputJsonValue
+    reactions?: NullableJsonNullValueInput | InputJsonValue
+    is_pinned?: boolean
+    media_type?: string | null
+    media_file_id?: string | null
+    media_url?: string | null
+    media_metadata?: NullableJsonNullValueInput | InputJsonValue
+    created_at?: Date | string
+    updated_at?: Date | string
+    send_username?: string | null
+    send_firstname?: string | null
+    send_lastname?: string | null
+    channels: tg_channelsCreateNestedOneWithoutMessagesInput
+  }
+
+  export type tg_messagesUncheckedCreateInput = {
+    id?: number
+    message_id: string
+    channel_id: string
+    chat_id: string
+    message_text: string
+    message_timestamp: bigint | number
+    sender_id?: string | null
+    sender?: NullableJsonNullValueInput | InputJsonValue
+    reply_to?: string | null
+    topic_id?: string | null
+    buttons?: NullableJsonNullValueInput | InputJsonValue
+    reactions?: NullableJsonNullValueInput | InputJsonValue
+    is_pinned?: boolean
+    media_type?: string | null
+    media_file_id?: string | null
+    media_url?: string | null
+    media_metadata?: NullableJsonNullValueInput | InputJsonValue
+    created_at?: Date | string
+    updated_at?: Date | string
+    send_username?: string | null
+    send_firstname?: string | null
+    send_lastname?: string | null
+  }
+
+  export type tg_messagesUpdateInput = {
+    message_id?: StringFieldUpdateOperationsInput | string
+    chat_id?: StringFieldUpdateOperationsInput | string
+    message_text?: StringFieldUpdateOperationsInput | string
+    message_timestamp?: BigIntFieldUpdateOperationsInput | bigint | number
+    sender_id?: NullableStringFieldUpdateOperationsInput | string | null
+    sender?: NullableJsonNullValueInput | InputJsonValue
+    reply_to?: NullableStringFieldUpdateOperationsInput | string | null
+    topic_id?: NullableStringFieldUpdateOperationsInput | string | null
+    buttons?: NullableJsonNullValueInput | InputJsonValue
+    reactions?: NullableJsonNullValueInput | InputJsonValue
+    is_pinned?: BoolFieldUpdateOperationsInput | boolean
+    media_type?: NullableStringFieldUpdateOperationsInput | string | null
+    media_file_id?: NullableStringFieldUpdateOperationsInput | string | null
+    media_url?: NullableStringFieldUpdateOperationsInput | string | null
+    media_metadata?: NullableJsonNullValueInput | InputJsonValue
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    send_username?: NullableStringFieldUpdateOperationsInput | string | null
+    send_firstname?: NullableStringFieldUpdateOperationsInput | string | null
+    send_lastname?: NullableStringFieldUpdateOperationsInput | string | null
+    channels?: tg_channelsUpdateOneRequiredWithoutMessagesNestedInput
+  }
+
+  export type tg_messagesUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    message_id?: StringFieldUpdateOperationsInput | string
+    channel_id?: StringFieldUpdateOperationsInput | string
+    chat_id?: StringFieldUpdateOperationsInput | string
+    message_text?: StringFieldUpdateOperationsInput | string
+    message_timestamp?: BigIntFieldUpdateOperationsInput | bigint | number
+    sender_id?: NullableStringFieldUpdateOperationsInput | string | null
+    sender?: NullableJsonNullValueInput | InputJsonValue
+    reply_to?: NullableStringFieldUpdateOperationsInput | string | null
+    topic_id?: NullableStringFieldUpdateOperationsInput | string | null
+    buttons?: NullableJsonNullValueInput | InputJsonValue
+    reactions?: NullableJsonNullValueInput | InputJsonValue
+    is_pinned?: BoolFieldUpdateOperationsInput | boolean
+    media_type?: NullableStringFieldUpdateOperationsInput | string | null
+    media_file_id?: NullableStringFieldUpdateOperationsInput | string | null
+    media_url?: NullableStringFieldUpdateOperationsInput | string | null
+    media_metadata?: NullableJsonNullValueInput | InputJsonValue
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    send_username?: NullableStringFieldUpdateOperationsInput | string | null
+    send_firstname?: NullableStringFieldUpdateOperationsInput | string | null
+    send_lastname?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type tg_messagesCreateManyInput = {
+    id?: number
+    message_id: string
+    channel_id: string
+    chat_id: string
+    message_text: string
+    message_timestamp: bigint | number
+    sender_id?: string | null
+    sender?: NullableJsonNullValueInput | InputJsonValue
+    reply_to?: string | null
+    topic_id?: string | null
+    buttons?: NullableJsonNullValueInput | InputJsonValue
+    reactions?: NullableJsonNullValueInput | InputJsonValue
+    is_pinned?: boolean
+    media_type?: string | null
+    media_file_id?: string | null
+    media_url?: string | null
+    media_metadata?: NullableJsonNullValueInput | InputJsonValue
+    created_at?: Date | string
+    updated_at?: Date | string
+    send_username?: string | null
+    send_firstname?: string | null
+    send_lastname?: string | null
+  }
+
+  export type tg_messagesUpdateManyMutationInput = {
+    message_id?: StringFieldUpdateOperationsInput | string
+    chat_id?: StringFieldUpdateOperationsInput | string
+    message_text?: StringFieldUpdateOperationsInput | string
+    message_timestamp?: BigIntFieldUpdateOperationsInput | bigint | number
+    sender_id?: NullableStringFieldUpdateOperationsInput | string | null
+    sender?: NullableJsonNullValueInput | InputJsonValue
+    reply_to?: NullableStringFieldUpdateOperationsInput | string | null
+    topic_id?: NullableStringFieldUpdateOperationsInput | string | null
+    buttons?: NullableJsonNullValueInput | InputJsonValue
+    reactions?: NullableJsonNullValueInput | InputJsonValue
+    is_pinned?: BoolFieldUpdateOperationsInput | boolean
+    media_type?: NullableStringFieldUpdateOperationsInput | string | null
+    media_file_id?: NullableStringFieldUpdateOperationsInput | string | null
+    media_url?: NullableStringFieldUpdateOperationsInput | string | null
+    media_metadata?: NullableJsonNullValueInput | InputJsonValue
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    send_username?: NullableStringFieldUpdateOperationsInput | string | null
+    send_firstname?: NullableStringFieldUpdateOperationsInput | string | null
+    send_lastname?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type tg_messagesUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    message_id?: StringFieldUpdateOperationsInput | string
+    channel_id?: StringFieldUpdateOperationsInput | string
+    chat_id?: StringFieldUpdateOperationsInput | string
+    message_text?: StringFieldUpdateOperationsInput | string
+    message_timestamp?: BigIntFieldUpdateOperationsInput | bigint | number
+    sender_id?: NullableStringFieldUpdateOperationsInput | string | null
+    sender?: NullableJsonNullValueInput | InputJsonValue
+    reply_to?: NullableStringFieldUpdateOperationsInput | string | null
+    topic_id?: NullableStringFieldUpdateOperationsInput | string | null
+    buttons?: NullableJsonNullValueInput | InputJsonValue
+    reactions?: NullableJsonNullValueInput | InputJsonValue
+    is_pinned?: BoolFieldUpdateOperationsInput | boolean
+    media_type?: NullableStringFieldUpdateOperationsInput | string | null
+    media_file_id?: NullableStringFieldUpdateOperationsInput | string | null
+    media_url?: NullableStringFieldUpdateOperationsInput | string | null
+    media_metadata?: NullableJsonNullValueInput | InputJsonValue
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    send_username?: NullableStringFieldUpdateOperationsInput | string | null
+    send_firstname?: NullableStringFieldUpdateOperationsInput | string | null
+    send_lastname?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type StringFilter<$PrismaModel = never> = {
@@ -5111,6 +8455,294 @@ export namespace Prisma {
     _max?: NestedJsonFilter<$PrismaModel>
   }
 
+  export type IntFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[] | ListIntFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntFilter<$PrismaModel> | number
+  }
+
+  export type DecimalFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+  }
+
+  export type Tg_messagesListRelationFilter = {
+    every?: tg_messagesWhereInput
+    some?: tg_messagesWhereInput
+    none?: tg_messagesWhereInput
+  }
+
+  export type tg_messagesOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type tg_channelsUser_idData_idCompoundUniqueInput = {
+    user_id: string
+    data_id: string
+  }
+
+  export type tg_channelsCountOrderByAggregateInput = {
+    id?: SortOrder
+    channel_id?: SortOrder
+    user_id?: SortOrder
+    data_type?: SortOrder
+    data_id?: SortOrder
+    metadata?: SortOrder
+    is_public?: SortOrder
+    is_free?: SortOrder
+    subscription_fee?: SortOrder
+    last_synced_at?: SortOrder
+    status?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type tg_channelsAvgOrderByAggregateInput = {
+    id?: SortOrder
+    subscription_fee?: SortOrder
+  }
+
+  export type tg_channelsMaxOrderByAggregateInput = {
+    id?: SortOrder
+    channel_id?: SortOrder
+    user_id?: SortOrder
+    data_type?: SortOrder
+    data_id?: SortOrder
+    is_public?: SortOrder
+    is_free?: SortOrder
+    subscription_fee?: SortOrder
+    last_synced_at?: SortOrder
+    status?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type tg_channelsMinOrderByAggregateInput = {
+    id?: SortOrder
+    channel_id?: SortOrder
+    user_id?: SortOrder
+    data_type?: SortOrder
+    data_id?: SortOrder
+    is_public?: SortOrder
+    is_free?: SortOrder
+    subscription_fee?: SortOrder
+    last_synced_at?: SortOrder
+    status?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+  }
+
+  export type tg_channelsSumOrderByAggregateInput = {
+    id?: SortOrder
+    subscription_fee?: SortOrder
+  }
+
+  export type IntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[] | ListIntFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedIntFilter<$PrismaModel>
+    _min?: NestedIntFilter<$PrismaModel>
+    _max?: NestedIntFilter<$PrismaModel>
+  }
+
+  export type DecimalWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedDecimalFilter<$PrismaModel>
+    _sum?: NestedDecimalFilter<$PrismaModel>
+    _min?: NestedDecimalFilter<$PrismaModel>
+    _max?: NestedDecimalFilter<$PrismaModel>
+  }
+
+  export type BigIntFilter<$PrismaModel = never> = {
+    equals?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    in?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    notIn?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    lt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    lte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    not?: NestedBigIntFilter<$PrismaModel> | bigint | number
+  }
+  export type JsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type Tg_channelsScalarRelationFilter = {
+    is?: tg_channelsWhereInput
+    isNot?: tg_channelsWhereInput
+  }
+
+  export type tg_messagesChannel_idMessage_idCompoundUniqueInput = {
+    channel_id: string
+    message_id: string
+  }
+
+  export type tg_messagesCountOrderByAggregateInput = {
+    id?: SortOrder
+    message_id?: SortOrder
+    channel_id?: SortOrder
+    chat_id?: SortOrder
+    message_text?: SortOrder
+    message_timestamp?: SortOrder
+    sender_id?: SortOrder
+    sender?: SortOrder
+    reply_to?: SortOrder
+    topic_id?: SortOrder
+    buttons?: SortOrder
+    reactions?: SortOrder
+    is_pinned?: SortOrder
+    media_type?: SortOrder
+    media_file_id?: SortOrder
+    media_url?: SortOrder
+    media_metadata?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+    send_username?: SortOrder
+    send_firstname?: SortOrder
+    send_lastname?: SortOrder
+  }
+
+  export type tg_messagesAvgOrderByAggregateInput = {
+    id?: SortOrder
+    message_timestamp?: SortOrder
+  }
+
+  export type tg_messagesMaxOrderByAggregateInput = {
+    id?: SortOrder
+    message_id?: SortOrder
+    channel_id?: SortOrder
+    chat_id?: SortOrder
+    message_text?: SortOrder
+    message_timestamp?: SortOrder
+    sender_id?: SortOrder
+    reply_to?: SortOrder
+    topic_id?: SortOrder
+    is_pinned?: SortOrder
+    media_type?: SortOrder
+    media_file_id?: SortOrder
+    media_url?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+    send_username?: SortOrder
+    send_firstname?: SortOrder
+    send_lastname?: SortOrder
+  }
+
+  export type tg_messagesMinOrderByAggregateInput = {
+    id?: SortOrder
+    message_id?: SortOrder
+    channel_id?: SortOrder
+    chat_id?: SortOrder
+    message_text?: SortOrder
+    message_timestamp?: SortOrder
+    sender_id?: SortOrder
+    reply_to?: SortOrder
+    topic_id?: SortOrder
+    is_pinned?: SortOrder
+    media_type?: SortOrder
+    media_file_id?: SortOrder
+    media_url?: SortOrder
+    created_at?: SortOrder
+    updated_at?: SortOrder
+    send_username?: SortOrder
+    send_firstname?: SortOrder
+    send_lastname?: SortOrder
+  }
+
+  export type tg_messagesSumOrderByAggregateInput = {
+    id?: SortOrder
+    message_timestamp?: SortOrder
+  }
+
+  export type BigIntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    in?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    notIn?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    lt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    lte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    not?: NestedBigIntWithAggregatesFilter<$PrismaModel> | bigint | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedBigIntFilter<$PrismaModel>
+    _min?: NestedBigIntFilter<$PrismaModel>
+    _max?: NestedBigIntFilter<$PrismaModel>
+  }
+  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedJsonNullableFilter<$PrismaModel>
+    _max?: NestedJsonNullableFilter<$PrismaModel>
+  }
+
   export type conversationsCreateNestedManyWithoutUserInput = {
     create?: XOR<conversationsCreateWithoutUserInput, conversationsUncheckedCreateWithoutUserInput> | conversationsCreateWithoutUserInput[] | conversationsUncheckedCreateWithoutUserInput[]
     connectOrCreate?: conversationsCreateOrConnectWithoutUserInput | conversationsCreateOrConnectWithoutUserInput[]
@@ -5237,6 +8869,86 @@ export namespace Prisma {
     upsert?: conversationsUpsertWithoutMessagesInput
     connect?: conversationsWhereUniqueInput
     update?: XOR<XOR<conversationsUpdateToOneWithWhereWithoutMessagesInput, conversationsUpdateWithoutMessagesInput>, conversationsUncheckedUpdateWithoutMessagesInput>
+  }
+
+  export type tg_messagesCreateNestedManyWithoutChannelsInput = {
+    create?: XOR<tg_messagesCreateWithoutChannelsInput, tg_messagesUncheckedCreateWithoutChannelsInput> | tg_messagesCreateWithoutChannelsInput[] | tg_messagesUncheckedCreateWithoutChannelsInput[]
+    connectOrCreate?: tg_messagesCreateOrConnectWithoutChannelsInput | tg_messagesCreateOrConnectWithoutChannelsInput[]
+    createMany?: tg_messagesCreateManyChannelsInputEnvelope
+    connect?: tg_messagesWhereUniqueInput | tg_messagesWhereUniqueInput[]
+  }
+
+  export type tg_messagesUncheckedCreateNestedManyWithoutChannelsInput = {
+    create?: XOR<tg_messagesCreateWithoutChannelsInput, tg_messagesUncheckedCreateWithoutChannelsInput> | tg_messagesCreateWithoutChannelsInput[] | tg_messagesUncheckedCreateWithoutChannelsInput[]
+    connectOrCreate?: tg_messagesCreateOrConnectWithoutChannelsInput | tg_messagesCreateOrConnectWithoutChannelsInput[]
+    createMany?: tg_messagesCreateManyChannelsInputEnvelope
+    connect?: tg_messagesWhereUniqueInput | tg_messagesWhereUniqueInput[]
+  }
+
+  export type DecimalFieldUpdateOperationsInput = {
+    set?: Decimal | DecimalJsLike | number | string
+    increment?: Decimal | DecimalJsLike | number | string
+    decrement?: Decimal | DecimalJsLike | number | string
+    multiply?: Decimal | DecimalJsLike | number | string
+    divide?: Decimal | DecimalJsLike | number | string
+  }
+
+  export type tg_messagesUpdateManyWithoutChannelsNestedInput = {
+    create?: XOR<tg_messagesCreateWithoutChannelsInput, tg_messagesUncheckedCreateWithoutChannelsInput> | tg_messagesCreateWithoutChannelsInput[] | tg_messagesUncheckedCreateWithoutChannelsInput[]
+    connectOrCreate?: tg_messagesCreateOrConnectWithoutChannelsInput | tg_messagesCreateOrConnectWithoutChannelsInput[]
+    upsert?: tg_messagesUpsertWithWhereUniqueWithoutChannelsInput | tg_messagesUpsertWithWhereUniqueWithoutChannelsInput[]
+    createMany?: tg_messagesCreateManyChannelsInputEnvelope
+    set?: tg_messagesWhereUniqueInput | tg_messagesWhereUniqueInput[]
+    disconnect?: tg_messagesWhereUniqueInput | tg_messagesWhereUniqueInput[]
+    delete?: tg_messagesWhereUniqueInput | tg_messagesWhereUniqueInput[]
+    connect?: tg_messagesWhereUniqueInput | tg_messagesWhereUniqueInput[]
+    update?: tg_messagesUpdateWithWhereUniqueWithoutChannelsInput | tg_messagesUpdateWithWhereUniqueWithoutChannelsInput[]
+    updateMany?: tg_messagesUpdateManyWithWhereWithoutChannelsInput | tg_messagesUpdateManyWithWhereWithoutChannelsInput[]
+    deleteMany?: tg_messagesScalarWhereInput | tg_messagesScalarWhereInput[]
+  }
+
+  export type IntFieldUpdateOperationsInput = {
+    set?: number
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
+  export type tg_messagesUncheckedUpdateManyWithoutChannelsNestedInput = {
+    create?: XOR<tg_messagesCreateWithoutChannelsInput, tg_messagesUncheckedCreateWithoutChannelsInput> | tg_messagesCreateWithoutChannelsInput[] | tg_messagesUncheckedCreateWithoutChannelsInput[]
+    connectOrCreate?: tg_messagesCreateOrConnectWithoutChannelsInput | tg_messagesCreateOrConnectWithoutChannelsInput[]
+    upsert?: tg_messagesUpsertWithWhereUniqueWithoutChannelsInput | tg_messagesUpsertWithWhereUniqueWithoutChannelsInput[]
+    createMany?: tg_messagesCreateManyChannelsInputEnvelope
+    set?: tg_messagesWhereUniqueInput | tg_messagesWhereUniqueInput[]
+    disconnect?: tg_messagesWhereUniqueInput | tg_messagesWhereUniqueInput[]
+    delete?: tg_messagesWhereUniqueInput | tg_messagesWhereUniqueInput[]
+    connect?: tg_messagesWhereUniqueInput | tg_messagesWhereUniqueInput[]
+    update?: tg_messagesUpdateWithWhereUniqueWithoutChannelsInput | tg_messagesUpdateWithWhereUniqueWithoutChannelsInput[]
+    updateMany?: tg_messagesUpdateManyWithWhereWithoutChannelsInput | tg_messagesUpdateManyWithWhereWithoutChannelsInput[]
+    deleteMany?: tg_messagesScalarWhereInput | tg_messagesScalarWhereInput[]
+  }
+
+  export type tg_channelsCreateNestedOneWithoutMessagesInput = {
+    create?: XOR<tg_channelsCreateWithoutMessagesInput, tg_channelsUncheckedCreateWithoutMessagesInput>
+    connectOrCreate?: tg_channelsCreateOrConnectWithoutMessagesInput
+    connect?: tg_channelsWhereUniqueInput
+  }
+
+  export type BigIntFieldUpdateOperationsInput = {
+    set?: bigint | number
+    increment?: bigint | number
+    decrement?: bigint | number
+    multiply?: bigint | number
+    divide?: bigint | number
+  }
+
+  export type tg_channelsUpdateOneRequiredWithoutMessagesNestedInput = {
+    create?: XOR<tg_channelsCreateWithoutMessagesInput, tg_channelsUncheckedCreateWithoutMessagesInput>
+    connectOrCreate?: tg_channelsCreateOrConnectWithoutMessagesInput
+    upsert?: tg_channelsUpsertWithoutMessagesInput
+    connect?: tg_channelsWhereUniqueInput
+    update?: XOR<XOR<tg_channelsUpdateToOneWithWhereWithoutMessagesInput, tg_channelsUpdateWithoutMessagesInput>, tg_channelsUncheckedUpdateWithoutMessagesInput>
   }
 
   export type NestedStringFilter<$PrismaModel = never> = {
@@ -5368,6 +9080,110 @@ export namespace Prisma {
     | OptionalFlat<Omit<Required<NestedJsonFilterBase<$PrismaModel>>, 'path'>>
 
   export type NestedJsonFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string[]
+    mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    lte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
+
+  export type NestedDecimalFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+  }
+
+  export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[] | ListIntFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListIntFieldRefInput<$PrismaModel>
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedIntFilter<$PrismaModel>
+    _min?: NestedIntFilter<$PrismaModel>
+    _max?: NestedIntFilter<$PrismaModel>
+  }
+
+  export type NestedFloatFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel>
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatFilter<$PrismaModel> | number
+  }
+
+  export type NestedDecimalWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    in?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    notIn?: Decimal[] | DecimalJsLike[] | number[] | string[] | ListDecimalFieldRefInput<$PrismaModel>
+    lt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    lte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gt?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    gte?: Decimal | DecimalJsLike | number | string | DecimalFieldRefInput<$PrismaModel>
+    not?: NestedDecimalWithAggregatesFilter<$PrismaModel> | Decimal | DecimalJsLike | number | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedDecimalFilter<$PrismaModel>
+    _sum?: NestedDecimalFilter<$PrismaModel>
+    _min?: NestedDecimalFilter<$PrismaModel>
+    _max?: NestedDecimalFilter<$PrismaModel>
+  }
+
+  export type NestedBigIntFilter<$PrismaModel = never> = {
+    equals?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    in?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    notIn?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    lt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    lte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    not?: NestedBigIntFilter<$PrismaModel> | bigint | number
+  }
+
+  export type NestedBigIntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    in?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    notIn?: bigint[] | number[] | ListBigIntFieldRefInput<$PrismaModel>
+    lt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    lte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gt?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    gte?: bigint | number | BigIntFieldRefInput<$PrismaModel>
+    not?: NestedBigIntWithAggregatesFilter<$PrismaModel> | bigint | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedBigIntFilter<$PrismaModel>
+    _min?: NestedBigIntFilter<$PrismaModel>
+    _max?: NestedBigIntFilter<$PrismaModel>
+  }
+  export type NestedJsonNullableFilter<$PrismaModel = never> =
+    | PatchUndefined<
+        Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<NestedJsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
     equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
     path?: string[]
     mode?: QueryMode | EnumQueryModeFieldRefInput<$PrismaModel>
@@ -5585,6 +9401,185 @@ export namespace Prisma {
     status?: StringFieldUpdateOperationsInput | string
   }
 
+  export type tg_messagesCreateWithoutChannelsInput = {
+    message_id: string
+    chat_id: string
+    message_text: string
+    message_timestamp: bigint | number
+    sender_id?: string | null
+    sender?: NullableJsonNullValueInput | InputJsonValue
+    reply_to?: string | null
+    topic_id?: string | null
+    buttons?: NullableJsonNullValueInput | InputJsonValue
+    reactions?: NullableJsonNullValueInput | InputJsonValue
+    is_pinned?: boolean
+    media_type?: string | null
+    media_file_id?: string | null
+    media_url?: string | null
+    media_metadata?: NullableJsonNullValueInput | InputJsonValue
+    created_at?: Date | string
+    updated_at?: Date | string
+    send_username?: string | null
+    send_firstname?: string | null
+    send_lastname?: string | null
+  }
+
+  export type tg_messagesUncheckedCreateWithoutChannelsInput = {
+    id?: number
+    message_id: string
+    chat_id: string
+    message_text: string
+    message_timestamp: bigint | number
+    sender_id?: string | null
+    sender?: NullableJsonNullValueInput | InputJsonValue
+    reply_to?: string | null
+    topic_id?: string | null
+    buttons?: NullableJsonNullValueInput | InputJsonValue
+    reactions?: NullableJsonNullValueInput | InputJsonValue
+    is_pinned?: boolean
+    media_type?: string | null
+    media_file_id?: string | null
+    media_url?: string | null
+    media_metadata?: NullableJsonNullValueInput | InputJsonValue
+    created_at?: Date | string
+    updated_at?: Date | string
+    send_username?: string | null
+    send_firstname?: string | null
+    send_lastname?: string | null
+  }
+
+  export type tg_messagesCreateOrConnectWithoutChannelsInput = {
+    where: tg_messagesWhereUniqueInput
+    create: XOR<tg_messagesCreateWithoutChannelsInput, tg_messagesUncheckedCreateWithoutChannelsInput>
+  }
+
+  export type tg_messagesCreateManyChannelsInputEnvelope = {
+    data: tg_messagesCreateManyChannelsInput | tg_messagesCreateManyChannelsInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type tg_messagesUpsertWithWhereUniqueWithoutChannelsInput = {
+    where: tg_messagesWhereUniqueInput
+    update: XOR<tg_messagesUpdateWithoutChannelsInput, tg_messagesUncheckedUpdateWithoutChannelsInput>
+    create: XOR<tg_messagesCreateWithoutChannelsInput, tg_messagesUncheckedCreateWithoutChannelsInput>
+  }
+
+  export type tg_messagesUpdateWithWhereUniqueWithoutChannelsInput = {
+    where: tg_messagesWhereUniqueInput
+    data: XOR<tg_messagesUpdateWithoutChannelsInput, tg_messagesUncheckedUpdateWithoutChannelsInput>
+  }
+
+  export type tg_messagesUpdateManyWithWhereWithoutChannelsInput = {
+    where: tg_messagesScalarWhereInput
+    data: XOR<tg_messagesUpdateManyMutationInput, tg_messagesUncheckedUpdateManyWithoutChannelsInput>
+  }
+
+  export type tg_messagesScalarWhereInput = {
+    AND?: tg_messagesScalarWhereInput | tg_messagesScalarWhereInput[]
+    OR?: tg_messagesScalarWhereInput[]
+    NOT?: tg_messagesScalarWhereInput | tg_messagesScalarWhereInput[]
+    id?: IntFilter<"tg_messages"> | number
+    message_id?: StringFilter<"tg_messages"> | string
+    channel_id?: StringFilter<"tg_messages"> | string
+    chat_id?: StringFilter<"tg_messages"> | string
+    message_text?: StringFilter<"tg_messages"> | string
+    message_timestamp?: BigIntFilter<"tg_messages"> | bigint | number
+    sender_id?: StringNullableFilter<"tg_messages"> | string | null
+    sender?: JsonNullableFilter<"tg_messages">
+    reply_to?: StringNullableFilter<"tg_messages"> | string | null
+    topic_id?: StringNullableFilter<"tg_messages"> | string | null
+    buttons?: JsonNullableFilter<"tg_messages">
+    reactions?: JsonNullableFilter<"tg_messages">
+    is_pinned?: BoolFilter<"tg_messages"> | boolean
+    media_type?: StringNullableFilter<"tg_messages"> | string | null
+    media_file_id?: StringNullableFilter<"tg_messages"> | string | null
+    media_url?: StringNullableFilter<"tg_messages"> | string | null
+    media_metadata?: JsonNullableFilter<"tg_messages">
+    created_at?: DateTimeFilter<"tg_messages"> | Date | string
+    updated_at?: DateTimeFilter<"tg_messages"> | Date | string
+    send_username?: StringNullableFilter<"tg_messages"> | string | null
+    send_firstname?: StringNullableFilter<"tg_messages"> | string | null
+    send_lastname?: StringNullableFilter<"tg_messages"> | string | null
+  }
+
+  export type tg_channelsCreateWithoutMessagesInput = {
+    channel_id: string
+    user_id: string
+    data_type: string
+    data_id: string
+    metadata?: JsonNullValueInput | InputJsonValue
+    is_public?: boolean
+    is_free?: boolean
+    subscription_fee?: Decimal | DecimalJsLike | number | string
+    last_synced_at?: Date | string
+    status?: string
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type tg_channelsUncheckedCreateWithoutMessagesInput = {
+    id?: number
+    channel_id: string
+    user_id: string
+    data_type: string
+    data_id: string
+    metadata?: JsonNullValueInput | InputJsonValue
+    is_public?: boolean
+    is_free?: boolean
+    subscription_fee?: Decimal | DecimalJsLike | number | string
+    last_synced_at?: Date | string
+    status?: string
+    created_at?: Date | string
+    updated_at?: Date | string
+  }
+
+  export type tg_channelsCreateOrConnectWithoutMessagesInput = {
+    where: tg_channelsWhereUniqueInput
+    create: XOR<tg_channelsCreateWithoutMessagesInput, tg_channelsUncheckedCreateWithoutMessagesInput>
+  }
+
+  export type tg_channelsUpsertWithoutMessagesInput = {
+    update: XOR<tg_channelsUpdateWithoutMessagesInput, tg_channelsUncheckedUpdateWithoutMessagesInput>
+    create: XOR<tg_channelsCreateWithoutMessagesInput, tg_channelsUncheckedCreateWithoutMessagesInput>
+    where?: tg_channelsWhereInput
+  }
+
+  export type tg_channelsUpdateToOneWithWhereWithoutMessagesInput = {
+    where?: tg_channelsWhereInput
+    data: XOR<tg_channelsUpdateWithoutMessagesInput, tg_channelsUncheckedUpdateWithoutMessagesInput>
+  }
+
+  export type tg_channelsUpdateWithoutMessagesInput = {
+    channel_id?: StringFieldUpdateOperationsInput | string
+    user_id?: StringFieldUpdateOperationsInput | string
+    data_type?: StringFieldUpdateOperationsInput | string
+    data_id?: StringFieldUpdateOperationsInput | string
+    metadata?: JsonNullValueInput | InputJsonValue
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_free?: BoolFieldUpdateOperationsInput | boolean
+    subscription_fee?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    last_synced_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    status?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type tg_channelsUncheckedUpdateWithoutMessagesInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    channel_id?: StringFieldUpdateOperationsInput | string
+    user_id?: StringFieldUpdateOperationsInput | string
+    data_type?: StringFieldUpdateOperationsInput | string
+    data_id?: StringFieldUpdateOperationsInput | string
+    metadata?: JsonNullValueInput | InputJsonValue
+    is_public?: BoolFieldUpdateOperationsInput | boolean
+    is_free?: BoolFieldUpdateOperationsInput | boolean
+    subscription_fee?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
+    last_synced_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    status?: StringFieldUpdateOperationsInput | string
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type conversationsCreateManyUserInput = {
     id?: string
     created_at?: Date | string
@@ -5637,6 +9632,101 @@ export namespace Prisma {
     role?: StringFieldUpdateOperationsInput | string
     content?: JsonNullValueInput | InputJsonValue
     created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type tg_messagesCreateManyChannelsInput = {
+    id?: number
+    message_id: string
+    chat_id: string
+    message_text: string
+    message_timestamp: bigint | number
+    sender_id?: string | null
+    sender?: NullableJsonNullValueInput | InputJsonValue
+    reply_to?: string | null
+    topic_id?: string | null
+    buttons?: NullableJsonNullValueInput | InputJsonValue
+    reactions?: NullableJsonNullValueInput | InputJsonValue
+    is_pinned?: boolean
+    media_type?: string | null
+    media_file_id?: string | null
+    media_url?: string | null
+    media_metadata?: NullableJsonNullValueInput | InputJsonValue
+    created_at?: Date | string
+    updated_at?: Date | string
+    send_username?: string | null
+    send_firstname?: string | null
+    send_lastname?: string | null
+  }
+
+  export type tg_messagesUpdateWithoutChannelsInput = {
+    message_id?: StringFieldUpdateOperationsInput | string
+    chat_id?: StringFieldUpdateOperationsInput | string
+    message_text?: StringFieldUpdateOperationsInput | string
+    message_timestamp?: BigIntFieldUpdateOperationsInput | bigint | number
+    sender_id?: NullableStringFieldUpdateOperationsInput | string | null
+    sender?: NullableJsonNullValueInput | InputJsonValue
+    reply_to?: NullableStringFieldUpdateOperationsInput | string | null
+    topic_id?: NullableStringFieldUpdateOperationsInput | string | null
+    buttons?: NullableJsonNullValueInput | InputJsonValue
+    reactions?: NullableJsonNullValueInput | InputJsonValue
+    is_pinned?: BoolFieldUpdateOperationsInput | boolean
+    media_type?: NullableStringFieldUpdateOperationsInput | string | null
+    media_file_id?: NullableStringFieldUpdateOperationsInput | string | null
+    media_url?: NullableStringFieldUpdateOperationsInput | string | null
+    media_metadata?: NullableJsonNullValueInput | InputJsonValue
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    send_username?: NullableStringFieldUpdateOperationsInput | string | null
+    send_firstname?: NullableStringFieldUpdateOperationsInput | string | null
+    send_lastname?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type tg_messagesUncheckedUpdateWithoutChannelsInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    message_id?: StringFieldUpdateOperationsInput | string
+    chat_id?: StringFieldUpdateOperationsInput | string
+    message_text?: StringFieldUpdateOperationsInput | string
+    message_timestamp?: BigIntFieldUpdateOperationsInput | bigint | number
+    sender_id?: NullableStringFieldUpdateOperationsInput | string | null
+    sender?: NullableJsonNullValueInput | InputJsonValue
+    reply_to?: NullableStringFieldUpdateOperationsInput | string | null
+    topic_id?: NullableStringFieldUpdateOperationsInput | string | null
+    buttons?: NullableJsonNullValueInput | InputJsonValue
+    reactions?: NullableJsonNullValueInput | InputJsonValue
+    is_pinned?: BoolFieldUpdateOperationsInput | boolean
+    media_type?: NullableStringFieldUpdateOperationsInput | string | null
+    media_file_id?: NullableStringFieldUpdateOperationsInput | string | null
+    media_url?: NullableStringFieldUpdateOperationsInput | string | null
+    media_metadata?: NullableJsonNullValueInput | InputJsonValue
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    send_username?: NullableStringFieldUpdateOperationsInput | string | null
+    send_firstname?: NullableStringFieldUpdateOperationsInput | string | null
+    send_lastname?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type tg_messagesUncheckedUpdateManyWithoutChannelsInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    message_id?: StringFieldUpdateOperationsInput | string
+    chat_id?: StringFieldUpdateOperationsInput | string
+    message_text?: StringFieldUpdateOperationsInput | string
+    message_timestamp?: BigIntFieldUpdateOperationsInput | bigint | number
+    sender_id?: NullableStringFieldUpdateOperationsInput | string | null
+    sender?: NullableJsonNullValueInput | InputJsonValue
+    reply_to?: NullableStringFieldUpdateOperationsInput | string | null
+    topic_id?: NullableStringFieldUpdateOperationsInput | string | null
+    buttons?: NullableJsonNullValueInput | InputJsonValue
+    reactions?: NullableJsonNullValueInput | InputJsonValue
+    is_pinned?: BoolFieldUpdateOperationsInput | boolean
+    media_type?: NullableStringFieldUpdateOperationsInput | string | null
+    media_file_id?: NullableStringFieldUpdateOperationsInput | string | null
+    media_url?: NullableStringFieldUpdateOperationsInput | string | null
+    media_metadata?: NullableJsonNullValueInput | InputJsonValue
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    send_username?: NullableStringFieldUpdateOperationsInput | string | null
+    send_firstname?: NullableStringFieldUpdateOperationsInput | string | null
+    send_lastname?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
 

@@ -1,0 +1,44 @@
+@baseUrl = http://localhost:3000
+@apiKey = f3692275-60af-41d0-b9a5-158b4294ed5a
+
+### ping api
+POST {{baseUrl}}/api/ping
+Content-Type: application/json
+Authorization: Bearer {{apiKey}}
+
+{
+  "message": "hello"
+}
+
+### /tg/import_groups
+POST {{baseUrl}}/api/tg/import_groups
+Content-Type: application/json
+Authorization: Bearer {{apiKey}}
+
+{
+  "chats": [
+    {
+      "data_type": "telegram_group",
+      "data_id": "-1001791111111"
+    }
+  ]
+}
+
+### /tg/import_messages
+POST {{baseUrl}}/api/tg/import_messages
+Content-Type: application/json
+Authorization: Bearer {{apiKey}}
+
+{
+  "messages": [
+    {
+      "message_id": "1234567890",
+      "data_type": "telegram_group",
+      "data_id": "-1001791111111",
+      "message_text": "Hello, world!",
+      "message_timestamp": 1672531200,
+      "sender_id": "1234567890"
+    }
+  ]
+}
+  
