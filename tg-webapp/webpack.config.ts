@@ -2,7 +2,6 @@ import 'webpack-dev-server';
 
 import StatoscopeWebpackPlugin from '@statoscope/webpack-plugin';
 import dotenv from 'dotenv';
-import { GitRevisionPlugin } from 'git-revision-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import path from 'path';
@@ -217,7 +216,7 @@ export default function createConfig(
       new DefinePlugin({
         APP_VERSION: JSON.stringify(appVersion),
         APP_REVISION: DefinePlugin.runtimeValue(() => {
-          const { branch, commit } = getGitMetadata();
+          const { branch, commit } = { branch: 'main', commit: 'railway' };
           const shouldDisplayCommit = APP_ENV === 'staging' || !branch || branch === 'HEAD';
           return JSON.stringify(shouldDisplayCommit ? commit : branch);
         }, mode === 'development' ? true : []),
@@ -253,13 +252,6 @@ export default function createConfig(
       }),
     },
   };
-}
-
-function getGitMetadata() {
-  const gitRevisionPlugin = new GitRevisionPlugin();
-  const branch = HEAD || gitRevisionPlugin.branch();
-  const commit = gitRevisionPlugin.commithash()?.substring(0, 7);
-  return { branch, commit };
 }
 
 class WebpackContextExtension {
