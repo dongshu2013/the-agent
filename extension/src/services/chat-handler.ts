@@ -168,7 +168,7 @@ export class ChatHandler {
             for (const toolCall of toolCalls) {
               const toolResult = await toolExecutor.executeToolCall(toolCall);
               const resultStr = JSON.stringify(toolResult, null, 2);
-              const toolCallInfo = `Recived reqquest to execute tool call: \n<div style="background-color: #f0f0f0; padding: 8px; border-radius: 8px; margin: 4px 0; font-size: 14px; line-height: 1.6;margin-bottom: 20px;"> >>> Executing tool call: ${toolCall.function.name.replace("TabToolkit_", "")}</div>`;
+              const toolCallInfo = `Recived request to execute tool call: \n<div style="background-color: #f0f0f0; padding: 8px; border-radius: 8px; margin: 4px 0; font-size: 14px; line-height: 1.6;margin-bottom: 20px;"> >>> Executing tool call: ${toolCall.function.name.replace("TabToolkit_", "")}</div>`;
               accumulatedContent += toolCallInfo;
 
               await this.updateMessage({
