@@ -186,34 +186,40 @@ export const getConversations = async (): Promise<Conversation[]> => {
       throw new Error(response.error || "Failed to fetch conversations");
     }
 
-    const newConversations: Conversation[] = response.data.map((conv: any) => ({
-      id: conv.id,
-      title:
-        conv?.title || conv.messages[0]?.content.slice(0, 20) || "New Chat",
-      user_id: conv.user_id,
-      created_at: conv.created_at,
-      status: conv.status,
-      messages: conv.messages.map((msg: any) => ({
-        id: msg.id,
-        role: msg.role,
-        content: msg.content,
-        timestamp: new Date(msg.timestamp),
-      })),
-      createdAt: new Date(conv.created_at),
-      updatedAt: new Date(conv.updated_at),
-    }));
-
-    db.saveConversationsAndMessages(
-      newConversations.map((conv) => ({ conversation: conv }))
+    const serverConversations: Conversation[] = response.data.map(
+      (conv: any) => ({
+        id: conv.id,
+        title:
+          conv?.title || conv.messages[0]?.content.slice(0, 20) || "New Chat",
+        user_id: conv.user_id,
+        created_at: conv.created_at,
+        status: conv.status,
+        messages: conv.messages.map((msg: any) => ({
+          id: msg.id,
+          role: msg.role,
+          content: msg.content,
+          timestamp: new Date(msg.timestamp),
+        })),
+        createdAt: new Date(conv.created_at),
+        updatedAt: new Date(conv.updated_at),
+      })
     );
-    return newConversations;
+
+    await db.saveConversationsAndMessages(
+      serverConversations.map((conv) => ({ conversation: conv })),
+      serverConversations[0].user_id
+    );
+
+    return serverConversations;
   } catch (error) {
     console.error("Error in getConversations:", error);
-    // 如果 API 调用失败，返回 IndexedDB 中的数据（如果有的话）
-    const fallbackConversations = await db.getAllConversations();
-    if (fallbackConversations && fallbackConversations.length > 0) {
-      console.log("Using fallback conversations from IndexedDB");
-      return fallbackConversations;
+    // 只有在网络错误时才使用本地数据
+    if (error instanceof TypeError && error.message.includes("fetch")) {
+      const fallbackConversations = await db.getAllConversations();
+      if (fallbackConversations && fallbackConversations.length > 0) {
+        console.log("Using fallback conversations from IndexedDB");
+        return fallbackConversations;
+      }
     }
     throw error;
   }

@@ -1,9 +1,11 @@
 import { Storage } from "@plasmohq/storage";
 import { TabToolkit } from "../tools/tab-toolkit";
+import { WebToolkit } from "../tools/web-toolkit";
+
 const storage = new Storage();
+const webToolkit = new WebToolkit();
 
 chrome.runtime.onInstalled.addListener(async () => {
-  // 检查 chrome.contextMenus 是否可用
   console.log("Extension installed");
 });
 
@@ -29,12 +31,6 @@ async function openSidePanel(tab: chrome.tabs.Tab) {
 // 检查 chrome.action 是否存在
 if (typeof chrome !== "undefined" && chrome.action) {
   chrome.action.onClicked.addListener(async (tab) => {
-    if (tab.id) {
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        files: ["content-script.js"],
-      });
-    }
     await openSidePanel(tab);
   });
 } else {
@@ -52,7 +48,7 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
   // 处理工具调用消息
   if (message.name === "execute-tool") {
     const { name, arguments: params } = message.body;
-    console.log("Executing tool:", name, "with params:", params);
+    console.log("🍒Executing tool:", name, "with params:", params);
 
     (async () => {
       try {
@@ -60,6 +56,64 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
         if (!chrome?.tabs) {
           throw new Error("chrome.tabs API is not available");
         }
+
+        // 处理 WebToolkit 调用
+        if (name.startsWith("WebToolkit_")) {
+          const toolName = name.replace("WebToolkit_", "");
+          let result;
+          // 执行 WebToolkit 操作
+          switch (toolName) {
+            case "getPageSource":
+              result = await webToolkit.getPageSource(
+                params.includeHtml,
+                params.includeJs
+              );
+              break;
+            case "screenshot":
+              result = await webToolkit.screenshot(params.fullPage);
+              break;
+            case "findElement":
+              result = await webToolkit.findElement(
+                params.selector,
+                params.timeout
+              );
+              break;
+            case "inputElement":
+              result = await webToolkit.inputElement(
+                params.selector,
+                params.value
+              );
+              break;
+            case "clickElement":
+              result = await webToolkit.clickElement(params.selector);
+              break;
+            case "scrollToElement":
+              result = await webToolkit.scrollToElement(params.selector);
+              break;
+            case "waitForElement":
+              result = await webToolkit.waitForElement(
+                params.selector,
+                params.timeout
+              );
+              break;
+            case "extractText":
+              result = await webToolkit.extractText(params.selector);
+              break;
+            case "extractAttribute":
+              result = await webToolkit.extractAttribute(
+                params.selector,
+                params.attribute
+              );
+              break;
+            default:
+              throw new Error(`Unknown WebToolkit operation: ${toolName}`);
+          }
+
+          sendResponse({ success: true, data: result });
+          return true;
+        }
+
+        // 处理 TabToolkit 调用
         const toolNoolName = name.replace("TabToolkit_", "");
 
         switch (toolNoolName) {

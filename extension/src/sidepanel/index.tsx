@@ -6,8 +6,6 @@ import Message from "./components/Message";
 import InputArea from "./components/InputArea";
 import Settings from "./components/Settings";
 import ConversationList from "./components/ConversationList";
-import { ChatMessage, Message as MessageType } from "../types/messages";
-import { saveMessageApi, sendChatCompletion } from "../services/chat";
 import {
   createNewConversation,
   selectConversation as selectConv,
@@ -16,11 +14,9 @@ import {
 } from "../services/conversation";
 import { Storage } from "@plasmohq/storage";
 import { getApiKey } from "~/services/utils";
-import { ToolCall, toolExecutor } from "../services/tool-executor";
-import { env } from "~/utils/env";
 import { db } from "~/utils/db";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Conversation } from "~/types/conversations";
+import { ChatHandler } from "../services/chat-handler";
 
 const Sidepanel = () => {
   const [apiKey, setApiKey] = useStorage("apiKey");
@@ -35,8 +31,8 @@ const Sidepanel = () => {
   const [showConversationList, setShowConversationList] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-  const abortControllerRef = useRef<AbortController | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [chatHandler, setChatHandler] = useState<ChatHandler | null>(null);
 
   // 使用 useLiveQuery 获取消息和会话列表
   const messages =
@@ -98,56 +94,55 @@ const Sidepanel = () => {
         setApiKey(storedApiKey);
         setIsLoading(true);
 
-        try {
-          const loadedConversations = await getConversations();
-          if (loadedConversations && loadedConversations.length > 0) {
-            const firstConversation = loadedConversations[0];
-            setCurrentConversationId(firstConversation.id);
+        const dbConversations = await db.getAllConversations();
+
+        if (
+          !currentConversationId ||
+          !(await db.getConversation(currentConversationId))
+        ) {
+          if (dbConversations && dbConversations.length > 0) {
+            setCurrentConversationId(dbConversations[0].id);
           } else {
-            // 如果没有会话，创建新会话
             const newConv = await createNewConversation();
             setCurrentConversationId(newConv.id);
           }
-        } catch (error) {
-          console.error("Failed to load conversations:", error);
-          setApiKeyValidationError(
-            "Failed to initialize chat. Please try again."
-          );
-          setShowSettings(true);
-          handleApiError(error);
         }
 
         setIsInitialized(true);
       } catch (error) {
         console.error("Failed to initialize app:", error);
+        setApiKeyValidationError(
+          "Failed to initialize chat. Please try again."
+        );
+        setShowSettings(true);
         handleApiError(error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    initializeApp();
-  }, [apiKey, isInitialized]);
+    if (!isInitialized) {
+      initializeApp();
+    }
+  }, []);
 
   // 监听API Key变化
   useEffect(() => {
+    if (!isInitialized) return;
+
     const validateAndInitialize = async () => {
-      if (isInitialized && !apiKey) {
+      if (!apiKey) {
         setShowSettings(true);
         setShowConversationList(false);
         return;
       }
 
-      if (isInitialized && apiKey) {
-        try {
-          // 使用获取会话列表来验证API Key
-          await getConversations();
-          // 清除错误状态
-          setApiKeyValidationError("");
-        } catch (error) {
-          setApiKeyValidationError("Invalid or disabled API key");
-          setShowSettings(true);
-        }
+      try {
+        await getConversations();
+        setApiKeyValidationError("");
+      } catch (error) {
+        setApiKeyValidationError("Invalid or disabled API key");
+        setShowSettings(true);
       }
     };
 
@@ -181,242 +176,54 @@ const Sidepanel = () => {
     };
   }, []);
 
-  // 修改暂停处理函数
-  const handlePauseStream = useCallback(() => {
-    console.log("Pause clicked");
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
-      setIsStreaming(false);
-      setIsLoading(false);
+  useEffect(() => {
+    if (apiKey && currentConversationId) {
+      setChatHandler(
+        new ChatHandler({
+          apiKey,
+          currentConversationId,
+          onError: (error) => {
+            if (
+              typeof error === "string" &&
+              (error.includes("Authentication failed") ||
+                error.includes("API key") ||
+                error.includes("403") ||
+                error.includes("401"))
+            ) {
+              setShowSettings(true);
+            }
+          },
+          onStreamStart: () => {
+            setIsLoading(true);
+            setIsStreaming(true);
+          },
+          onStreamEnd: () => {
+            setIsLoading(false);
+            setIsStreaming(false);
+          },
+          onMessageUpdate: async (message) => {
+            await db.saveMessage(message);
+          },
+        })
+      );
     }
-  }, []);
+  }, [apiKey, currentConversationId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!prompt.trim() || !apiKey || !currentConversationId) {
-      if (!apiKey) setShowSettings(true);
-      return;
-    }
+    if (!prompt.trim() || !chatHandler) return;
 
     const currentPrompt = prompt.trim();
-    const userMessageId = crypto.randomUUID();
-    const assistantMessageId = crypto.randomUUID();
-    const userTimestamp = new Date().toISOString();
-    const assistantTimestamp = new Date(
-      new Date().getTime() + 100
-    ).toISOString(); // 只比用户消息晚100ms
+    setPrompt(""); // 立即清空输入框
 
-    const userMessage: MessageType = {
-      message_id: userMessageId,
-      role: "user",
-      content: currentPrompt,
-      created_at: userTimestamp,
-      conversation_id: currentConversationId,
-      status: "completed",
-    };
-
-    const loadingMessage: MessageType = {
-      message_id: assistantMessageId,
-      role: "assistant",
-      content: "",
-      created_at: assistantTimestamp,
-      conversation_id: currentConversationId,
-      status: "pending",
-      isLoading: true,
-    };
-
-    setPrompt("");
-    setIsLoading(true);
-    setIsStreaming(true);
-    abortControllerRef.current = new AbortController();
-
-    await db.saveMessages([userMessage, loadingMessage]);
-
-    try {
-      const saveResponse = await saveMessageApi({
-        conversation_id: currentConversationId,
-        message: userMessage,
-        top_k_related: 3,
-      });
-
-      if (!saveResponse.success) {
-        throw new Error(saveResponse.error || "Failed to save message");
-      }
-
-      const relatedMessages = await db.getRelatedMessagesWithContext(
-        saveResponse.data?.top_k_messages || [],
-        currentConversationId
-      );
-      const recentMessages = await db.getRecentMessages(
-        currentConversationId,
-        10
-      );
-
-      let newPrompt = ``;
-      if (relatedMessages.length > 0) {
-        newPrompt += `Related messages:\n`;
-        relatedMessages.forEach((msg) => {
-          newPrompt += `${msg.role}: ${msg.content}\n`;
-        });
-      }
-      if (recentMessages.length > 0) {
-        newPrompt += `Recent messages:\n`;
-        recentMessages.forEach((msg) => {
-          newPrompt += `${msg.role}: ${msg.content}\n`;
-        });
-      }
-      if (newPrompt.length > 0) {
-        newPrompt = `
-        Please follow the user's request and use the memory to help you answer the question.
-        User Request: ${currentPrompt}\n
-        Memory: ${newPrompt}
-        `;
-      }
-
-      let toolCallCount = 0;
-      const MAX_TOOL_CALLS = 5;
-
-      const processRequest = async (inputMessages: ChatMessage[]) => {
-        let accumulatedContent = "";
-        while (true) {
-          console.log("Processing request with messages:", inputMessages);
-          const stream = await sendChatCompletion(
-            { messages: inputMessages },
-            apiKey,
-            {
-              signal: abortControllerRef.current?.signal,
-            }
-          );
-
-          let currentResponse = "";
-          for await (const chunk of stream) {
-            if (abortControllerRef.current === null) {
-              break;
-            }
-
-            const content = chunk.choices[0]?.delta?.content;
-            if (content) {
-              currentResponse += content;
-              await db.saveMessage({
-                ...loadingMessage,
-                content: currentResponse,
-              });
-            }
-          }
-
-          const resp = await stream.finalChatCompletion();
-          accumulatedContent += currentResponse;
-          inputMessages.push(resp.choices[0].message);
-
-          const toolCalls = resp.choices[0].message.tool_calls;
-          if (toolCalls) {
-            if (toolCallCount >= MAX_TOOL_CALLS) {
-              await db.saveMessage({
-                ...loadingMessage,
-                content: accumulatedContent,
-              });
-              return accumulatedContent;
-            }
-
-            toolCallCount += toolCalls.length;
-            await Promise.all(
-              toolCalls.map(async (toolCall: ToolCall) => {
-                const toolResult = await toolExecutor.executeToolCall(toolCall);
-                accumulatedContent += `Recived request tool call:\n <div style="background-color: #f0f0f0; padding: 8px; border-radius: 8px; margin: 4px 0; font-size: 14px; line-height: 1.6;"> >>> Executing tool call: ${toolCall.function.name.replace("TabToolkit_", "")}</div> \n`;
-                inputMessages.push({
-                  role: "tool",
-                  name: toolCall.function.name,
-                  content: toolResult,
-                  ...(env.OPENAI_MODEL === "google/gemini-2.5-pro-preview-03-25"
-                    ? { toolCallId: toolCall.id }
-                    : {
-                        tool_call_id: toolCall.id,
-                        tool_calls: [
-                          {
-                            id: toolCall.id,
-                            type: toolCall.type,
-                            function: toolCall.function,
-                          },
-                        ],
-                      }),
-                });
-                await db.saveMessage({
-                  ...loadingMessage,
-                  content: accumulatedContent,
-                });
-              })
-            );
-          } else {
-            break;
-          }
-        }
-        return accumulatedContent;
-      };
-
-      // start processing response
-      const finalContent = await processRequest([
-        {
-          role: "user",
-          content: newPrompt,
-        },
-      ]);
-
-      // save final AI message
-      const aiMessage: MessageType = {
-        ...loadingMessage,
-        content: finalContent,
-        status: "completed",
-        isLoading: false,
-        created_at: new Date().toISOString(),
-      };
-
-      await db.saveMessage(aiMessage);
-      await saveMessageApi({
-        conversation_id: currentConversationId,
-        message: aiMessage,
-      });
-    } catch (error: any) {
-      console.error("Error in handleSubmit:", error);
-      if (error.name === "AbortError") {
-        console.warn("Stream aborted.");
-        await db.saveMessage({
-          ...loadingMessage,
-          status: "error",
-          content: "Stream aborted",
-          error: "Stream aborted",
-          isLoading: false,
-          role: "system",
-          created_at: new Date().toISOString(),
-        });
-      } else {
-        console.error("Chat Error:", error);
-        if (
-          typeof error === "string" &&
-          (error.includes("Authentication failed") ||
-            error.includes("API key") ||
-            error.includes("403") ||
-            error.includes("401"))
-        ) {
-          setShowSettings(true);
-        }
-
-        await db.saveMessage({
-          ...loadingMessage,
-          status: "error",
-          content: "Network error",
-          error: error.message,
-          isLoading: false,
-          role: "system",
-          created_at: new Date().toISOString(),
-        });
-      }
-    } finally {
-      setIsLoading(false);
-      setIsStreaming(false);
-      abortControllerRef.current = null;
-    }
+    await chatHandler.handleSubmit(currentPrompt);
   };
+
+  const handlePauseStream = useCallback(() => {
+    if (chatHandler) {
+      chatHandler.stopStreaming();
+    }
+  }, [chatHandler]);
 
   // UI toggle handlers
   const toggleSettings = (value: boolean) => {
@@ -539,14 +346,22 @@ const Sidepanel = () => {
       await storage.set("apiKey", key);
       setApiKey(key);
 
-      if (!currentConversationId) {
-        setIsLoading(true);
-        try {
+      // 设置新的API key后，同步服务器数据
+      setIsLoading(true);
+      try {
+        // 获取服务器会话列表，这会自动清理并同步本地数据
+        const serverConversations = await getConversations();
+
+        if (serverConversations.length > 0) {
+          // 使用服务器的第一个会话
+          setCurrentConversationId(serverConversations[0].id);
+        } else {
+          // 如果服务器没有会话，创建新会话
           const newConv = await createNewConversation();
           setCurrentConversationId(newConv.id);
-        } finally {
-          setIsLoading(false);
         }
+      } finally {
+        setIsLoading(false);
       }
 
       setShowSettings(false);

@@ -21,26 +21,28 @@ const Settings: React.FC<SettingsProps> = ({
   const [showApiKey, setShowApiKey] = useState(false);
 
   useEffect(() => {
-    const initApiKey = async () => {
+    const initSettings = async () => {
+      // Initialize API key
       const key = await getApiKey();
       if (key) {
         setTempApiKey(key);
       }
-    };
-    initApiKey();
-  }, []);
 
-  useEffect(() => {
-    if (initialValidationError) {
-      setSaveStatus(initialValidationError);
-      setShowWarning(true);
-    }
+      // Handle initial validation error
+      if (initialValidationError) {
+        setSaveStatus(initialValidationError);
+        setShowWarning(true);
+      }
+    };
+
+    initSettings();
   }, [initialValidationError]);
 
   const handleSave = async () => {
     try {
       if (!tempApiKey?.trim()) {
         setSaveStatus("API key cannot be empty");
+        setShowWarning(true);
         setTimeout(() => setSaveStatus(""), 2000);
         return;
       }
@@ -48,9 +50,9 @@ const Settings: React.FC<SettingsProps> = ({
       setIsValidating(true);
       setSaveStatus("Validating API key...");
       const formattedKey = tempApiKey.trim();
-      console.log("formattedKey", formattedKey);
 
-      const response = await fetch(`${env.BACKEND_URL}/v1/auth/verify`, {
+      // First verify the API key
+      const verifyResponse = await fetch(`${env.BACKEND_URL}/v1/auth/verify`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${formattedKey}`,
@@ -58,22 +60,45 @@ const Settings: React.FC<SettingsProps> = ({
         },
       });
 
-      if (!response.ok) {
-        throw new Error("Invalid or disabled API key");
+      if (!verifyResponse.ok) {
+        throw new Error(
+          (await verifyResponse.text()) || "Invalid or disabled API key"
+        );
       }
 
-      const data = await response.json();
-      if (!data.success) {
-        throw new Error("Invalid or disabled API key");
+      const verifyData = await verifyResponse.json();
+      if (!verifyData.success) {
+        throw new Error(verifyData.message || "Invalid or disabled API key");
       }
+
+      // Get user data
+      setSaveStatus("Fetching user data...");
+      const userResponse = await fetch(`${env.BACKEND_URL}/v1/user/me`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${formattedKey}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!userResponse.ok) {
+        throw new Error("Failed to fetch user data");
+      }
+
+      const userData = await userResponse.json();
+
+      // Save API key and user data
       setApiKey(formattedKey);
-      await db.saveUser(data.user);
-      setSaveStatus("Saved successfully!");
-      setTimeout(() => setSaveStatus(""), 2000);
+      await db.saveUser(userData);
 
-      onClose();
-    } catch (error) {
-      setSaveStatus("Invalid or disabled API key");
+      setSaveStatus("Saved successfully!");
+      setTimeout(() => {
+        setSaveStatus("");
+        onClose();
+      }, 1000);
+    } catch (error: any) {
+      console.error("Settings error:", error);
+      setSaveStatus(error.message || "Invalid or disabled API key");
       setShowWarning(true);
       setTimeout(() => setSaveStatus(""), 3000);
     } finally {

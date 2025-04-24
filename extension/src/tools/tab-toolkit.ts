@@ -99,7 +99,6 @@ export class TabToolkit {
     console.log("switchToTab 🍒", tabId);
     return new Promise((resolve) => {
       chrome.tabs.update(tabId, { active: true }, (tab) => {
-        console.log("tab 🍒", tab);
         if (chrome.runtime.lastError) {
           resolve({
             success: false,
@@ -178,6 +177,7 @@ export class TabToolkit {
   static getCurrentActiveTab(): Promise<WebInteractionResult> {
     return new Promise((resolve) => {
       chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        console.log("getCurrentActiveTab 🍒", tabs);
         if (tabs.length > 0 && tabs[0].id) {
           resolve({
             success: true,

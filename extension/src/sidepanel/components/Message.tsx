@@ -1,6 +1,7 @@
 import { Message as MessageType } from "../../types/messages";
 import LoadingBrain from "./LoadingBrain";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { processMarkdown } from "../../utils/markdown-processor";
 
 interface Props {
   message: MessageType;
@@ -62,56 +63,86 @@ export default function MessageComponent({ message }: Props) {
 
     const content = message.content || "";
 
-    // 简单的 markdown 转换
+    // 预处理内容，处理各种图片格式
     const processedContent = content
-      // 处理代码块
-      .replace(/```(\w+)?\n([\s\S]*?)```/g, (_, lang, code) => {
-        return `<pre style="background-color: #f6f8fa; padding: 6px 8px; border-radius: 4px; margin: 2px 0; font-size: 13px; line-height: 1.2; font-family: monospace;"><code class="language-${lang || ""}" style="white-space: pre;">${code.trim()}</code></pre>`;
+      .split("\n")
+      .map((line) => {
+        const trimmedLine = line.trim();
+
+        // 如果是HTML img标签，提取src并重新格式化
+        if (trimmedLine.match(/<img[^>]+>/)) {
+          const srcMatch = trimmedLine.match(/src=["']([^"']+)["']/);
+          if (srcMatch) {
+            return `![](${srcMatch[1]})`;
+          }
+          return line;
+        }
+
+        // 如果已经是Markdown图片格式，保持不变
+        if (trimmedLine.match(/^!\[.*\]\(.*\)$/)) {
+          return line;
+        }
+
+        // 处理以感叹号开头的行
+        if (trimmedLine.startsWith("!")) {
+          const imageText = trimmedLine.slice(1).trim();
+          // 如果是URL或base64数据，直接作为图片源
+          if (imageText.match(/^(https?:\/\/|data:image\/)/)) {
+            return `![](${imageText})`;
+          }
+          // 如果是纯文本，尝试从 chrome.runtime.getURL 获取本地资源
+          return `![${imageText}](${imageText})`;
+        }
+
+        // 检查是否包含可能的图片文本（比如 "Elon Musk's Twitter Profile"）
+        if (
+          trimmedLine.includes("Twitter Profile") ||
+          trimmedLine.includes("Screenshot") ||
+          trimmedLine.includes("Image") ||
+          trimmedLine.includes("Photo")
+        ) {
+          // 在消息历史中查找最近的图片数据
+          const recentImageData = findRecentImageData(message);
+          if (recentImageData) {
+            return `![${trimmedLine}](${recentImageData})`;
+          }
+        }
+
+        return line;
       })
-      // 处理行内代码
-      .replace(
-        /`([^`]+)`/g,
-        '<code style="background-color: #f6f8fa; padding: 2px 4px; border-radius: 3px; font-family: monospace; font-size: 13px;">\$1</code>'
-      )
-      // 处理粗体
-      .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
-      // 处理斜体
-      .replace(/\*([^*]+)\*/g, "<em>$1</em>")
-      // 处理链接
-      .replace(
-        /\[([^\]]+)\]\(([^)]+)\)/g,
-        '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: #0366d6; text-decoration: none;">$1</a>'
-      )
-      // 处理列表
-      .replace(/^\s*[-*]\s+(.+)$/gm, "<li style='margin-left: 20px;'>$1</li>")
-      // 处理标题
-      .replace(
-        /^#\s+(.+)$/gm,
-        "<h1 style='font-size: 1.5em; margin: 16px 0;'>$1</h1>"
-      )
-      .replace(
-        /^##\s+(.+)$/gm,
-        "<h2 style='font-size: 1.3em; margin: 14px 0;'>$2</h2>"
-      )
-      .replace(
-        /^###\s+(.+)$/gm,
-        "<h3 style='font-size: 1.1em; margin: 12px 0;'>$3</h3>"
-      )
-      // 处理引用
-      .replace(
-        /^>\s+(.+)$/gm,
-        "<blockquote style='border-left: 3px solid #e1e4e8; margin: 8px 0; padding-left: 16px; color: #6a737d;'>$1</blockquote>"
-      )
-      // 处理换行
-      .replace(/\n/g, "<br>");
+      .join("\n");
+
+    // 使用markdown处理器处理内容
+    const htmlContent = processMarkdown(processedContent);
 
     return (
       <div
         className="markdown-content"
-        style={{ width: "100%" }}
-        dangerouslySetInnerHTML={{ __html: processedContent }}
+        style={{ width: "100%", overflow: "auto" }}
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
       />
     );
+  };
+
+  // 辅助函数：在消息历史中查找最近的图片数据
+  const findRecentImageData = (currentMessage: MessageType): string | null => {
+    // 检查当前消息是否包含base64图片数据
+    const base64Match = currentMessage.content?.match(
+      /data:image\/[^;]+;base64,[^"'\s]+/
+    );
+    if (base64Match) {
+      return base64Match[0];
+    }
+
+    // 检查当前消息是否包含图片URL
+    const urlMatch = currentMessage.content?.match(
+      /https?:\/\/[^"'\s]+\.(jpg|jpeg|png|gif|webp)/i
+    );
+    if (urlMatch) {
+      return urlMatch[0];
+    }
+
+    return null;
   };
 
   return (

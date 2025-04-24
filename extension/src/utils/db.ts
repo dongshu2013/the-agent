@@ -9,19 +9,9 @@ interface UserInfo {
   api_key_enabled: boolean;
   api_key: string;
 }
-
-interface TabInfo {
-  tabId: number;
-  url: string;
-  title?: string;
-  type: "openTab" | "closeTab";
-  created_at: string;
-}
-
 class MizuDB extends Dexie {
   conversations!: Table<Conversation>;
   messages!: Table<Message>;
-  tabs!: Table<TabInfo>;
   users!: Table<UserInfo>;
 
   constructor() {
@@ -30,7 +20,6 @@ class MizuDB extends Dexie {
     this.version(3).stores({
       conversations: "id, created_at, *messages",
       messages: "message_id, conversation_id, created_at",
-      tabs: "tabId, created_at",
       users: "id",
     });
 
@@ -89,8 +78,6 @@ class MizuDB extends Dexie {
 
   // Message operations
   async saveMessage(message: Message): Promise<void> {
-    console.log("Saving message:", message);
-
     if (!message.message_id) {
       console.warn("Message missing message_id, generating new one");
       throw new Error("Message missing message_id");
@@ -166,18 +153,85 @@ class MizuDB extends Dexie {
 
   // Conversation and Messages operations
   async saveConversationsAndMessages(
-    conversations: Array<{ conversation: Conversation }>
+    conversations: Array<{ conversation: Conversation }>,
+    userId?: string
   ): Promise<void> {
+    try {
+      await this.transaction(
+        "rw",
+        [this.conversations, this.messages],
+        async () => {
+          // If userId is provided, clear old data first
+          if (userId) {
+            await this.clearUserData(userId);
+          }
+
+          for (const { conversation } of conversations) {
+            if (!conversation || !conversation.id) {
+              console.warn("Invalid conversation data:", conversation);
+              continue;
+            }
+
+            // Save conversation
+            await this.conversations.put({
+              ...conversation,
+              created_at: conversation.created_at || new Date().toISOString(),
+            });
+
+            // Save messages if they exist
+            if (conversation.messages && conversation.messages.length > 0) {
+              const validMessages = conversation.messages.filter(
+                (msg) => msg && msg.message_id && msg.conversation_id
+              );
+
+              if (validMessages.length > 0) {
+                await this.messages.bulkPut(validMessages);
+              }
+            }
+          }
+        }
+      );
+    } catch (error) {
+      console.error("Error in saveConversationsAndMessages:", error);
+      throw new Error(
+        `Failed to save conversations and messages: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  }
+
+  async clearAllConversations() {
+    await this.transaction(
+      "rw",
+      this.conversations,
+      this.messages,
+      async () => {
+        await this.messages.clear();
+        await this.conversations.clear();
+      }
+    );
+  }
+
+  async clearUserData(userId: string) {
     await this.transaction(
       "rw",
       [this.conversations, this.messages],
       async () => {
-        for (const { conversation } of conversations) {
-          await this.conversations.put(conversation);
-          if (conversation.messages && conversation.messages.length > 0) {
-            await this.messages.bulkPut(conversation.messages);
-          }
-        }
+        // Delete all messages from conversations belonging to this user
+        const userConversations = await this.conversations
+          .where("user_id")
+          .equals(userId)
+          .toArray();
+
+        const conversationIds = userConversations.map((conv) => conv.id);
+
+        // Delete all messages from these conversations
+        await this.messages
+          .where("conversation_id")
+          .anyOf(conversationIds)
+          .delete();
+
+        // Delete all conversations for this user
+        await this.conversations.where("user_id").equals(userId).delete();
       }
     );
   }
