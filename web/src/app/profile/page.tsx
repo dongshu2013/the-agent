@@ -10,6 +10,8 @@ export default function ProfilePage() {
   const [isCopied, setIsCopied] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
+  const [telegramStats, setTelegramStats] = useState<{ channels_count: number; messages_count: number } | null>(null);
+  const [isLoadingTelegramStats, setIsLoadingTelegramStats] = useState(false);
   const router = useRouter();
 
   // Redirect to login if not authenticated
@@ -18,6 +20,37 @@ export default function ProfilePage() {
       router.push("/");
     }
   }, [user, loading, router]);
+
+  // Fetch Telegram stats when user is loaded
+  useEffect(() => {
+    const fetchTelegramStats = async () => {
+      if (user?.apiKey && user?.apiKeyEnabled) {
+        setIsLoadingTelegramStats(true);
+        try {
+          const response = await fetch('/api/tg/stats', {
+            headers: {
+              'Authorization': `Bearer ${user.apiKey}`,
+            },
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            setTelegramStats(data);
+          } else {
+            console.error('Failed to fetch Telegram stats');
+          }
+        } catch (error) {
+          console.error('Error fetching Telegram stats:', error);
+        } finally {
+          setIsLoadingTelegramStats(false);
+        }
+      }
+    };
+
+    if (user) {
+      fetchTelegramStats();
+    }
+  }, [user]);
 
   const handleCopyApiKey = async () => {
     if (user?.apiKey) {
@@ -204,6 +237,102 @@ export default function ProfilePage() {
               >
                 {isRotating ? "Rotating..." : "Rotate Key"}
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Data Source Section */}
+        <div className="mt-8 bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+          <div className="px-4 py-5 sm:px-6">
+            <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+              Manage Your Data
+            </h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Connect your data sources to enhance your MIZU Agent experience
+            </p>
+          </div>
+          <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-5 sm:p-6">
+            <div className="grid grid-cols-3 gap-8">
+              {/* Telegram Data Source */}
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 mb-4 overflow-hidden rounded-full flex items-center justify-center">
+                  <Image
+                    src="/tg-logo.png"
+                    alt="Telegram Logo"
+                    width={48}
+                    height={48}
+                    className="rounded-full"
+                  />
+                </div>
+                <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-1">
+                  Telegram
+                </h4>
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
+                  {isLoadingTelegramStats ? (
+                    "Loading Telegram data..."
+                  ) : telegramStats && telegramStats.channels_count > 0 ? (
+                    `${telegramStats.channels_count} channels imported, ${telegramStats.messages_count} messages imported`
+                  ) : (
+                    "No data has been imported yet..."
+                  )}
+                </p>
+                <button
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  onClick={() => window.open(process.env.TG_WEBAPP_URL || '#', '_blank')}
+                >
+                  Import Telegram Data
+                </button>
+              </div>
+              
+              {/* Twitter Data Source */}
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 mb-4 overflow-hidden rounded-full flex items-center justify-center">
+                  <Image
+                    src="/tw-logo.png"
+                    alt="Twitter Logo"
+                    width={48}
+                    height={48}
+                    className="rounded-full"
+                  />
+                </div>
+                <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-1">
+                  Twitter
+                </h4>
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
+                  No data has been imported yet...
+                </p>
+                <button
+                  className="px-4 py-2 text-sm font-medium text-white bg-gray-400 rounded-md cursor-not-allowed"
+                  disabled
+                >
+                  Coming Soon
+                </button>
+              </div>
+              
+              {/* Instagram Data Source */}
+              <div className="flex flex-col items-center">
+                <div className="w-16 h-16 mb-4 overflow-hidden rounded-full flex items-center justify-center">
+                  <Image
+                    src="/ins-logo.png"
+                    alt="Instagram Logo"
+                    width={48}
+                    height={48}
+                    className="rounded-full"
+                  />
+                </div>
+                <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-1">
+                  Instagram
+                </h4>
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
+                  No data has been imported yet...
+                </p>
+                <button
+                  className="px-4 py-2 text-sm font-medium text-white bg-gray-400 rounded-md cursor-not-allowed"
+                  disabled
+                >
+                  Coming Soon
+                </button>
+              </div>
             </div>
           </div>
         </div>

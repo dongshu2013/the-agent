@@ -19,6 +19,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+!tg-webapp/src/lib/
 lib64/
 parts/
 sdist/

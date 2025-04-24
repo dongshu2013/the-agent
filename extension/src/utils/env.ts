@@ -20,7 +20,7 @@ Always format tool calls as a JSON array, like this:
 // Try to get values from process.env, fallback to defaults
 export const env: Env = {
   OPENAI_MODEL:
-    process.env.PLASMO_PUBLIC_DEFAULT_MODEL || defaultEnv.OPENAI_MODEL,
+    process.env.PLASMO_PUBLIC_OPENAI_MODEL || defaultEnv.OPENAI_MODEL,
   SYSTEM_PROMPT:
     process.env.PLASMO_PUBLIC_SYSTEM_PROMPT || defaultEnv.SYSTEM_PROMPT,
   BACKEND_URL: process.env.PLASMO_PUBLIC_BACKEND_URL || defaultEnv.BACKEND_URL,
