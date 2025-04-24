@@ -35,6 +35,7 @@ export class ChatHandler {
     const userMessageId = crypto.randomUUID();
     const assistantMessageId = crypto.randomUUID();
     const baseTimestamp = new Date();
+    let finalContent = ``;
 
     const userMessage: MessageType = {
       message_id: userMessageId,
@@ -96,7 +97,7 @@ export class ChatHandler {
       }
       if (newPrompt.length > 0) {
         newPrompt = `
-        Please follow the user's request and use the memory to help you answer the question.
+        Please follow the user's request and if the user's request is related to the memory, use the memory to help you answer the question.
         User Request: ${currentPrompt}\n
         Memory: ${newPrompt}
         `;
@@ -137,7 +138,6 @@ export class ChatHandler {
                   this.stopStreaming();
                   break;
                 }
-                // 重置内容
                 accumulatedContent = "";
                 currentResponse = "";
               }
@@ -167,6 +167,7 @@ export class ChatHandler {
             toolCallCount += toolCalls.length;
             for (const toolCall of toolCalls) {
               const toolResult = await toolExecutor.executeToolCall(toolCall);
+              const resultStr = JSON.stringify(toolResult, null, 2);
               const toolCallInfo = `Recived reqquest to execute tool call: \n<div style="background-color: #f0f0f0; padding: 8px; border-radius: 8px; margin: 4px 0; font-size: 14px; line-height: 1.6;margin-bottom: 20px;"> >>> Executing tool call: ${toolCall.function.name.replace("TabToolkit_", "")}</div>`;
               accumulatedContent += toolCallInfo;
 
@@ -186,7 +187,7 @@ export class ChatHandler {
               inputMessages.push({
                 role: "tool",
                 name: toolCall.function.name,
-                content: toolResult,
+                content: `Function call success: ${resultStr}`,
                 ...(env.OPENAI_MODEL === "google/gemini-2.5-pro-preview-03-25"
                   ? { toolCallId: toolCall.id }
                   : {
@@ -208,7 +209,7 @@ export class ChatHandler {
         return accumulatedContent;
       };
 
-      const finalContent = await processRequest([
+      let finalContent = await processRequest([
         {
           role: "user",
           content: newPrompt,
@@ -234,7 +235,7 @@ export class ChatHandler {
         await this.updateMessage({
           ...loadingMessage,
           status: "error",
-          content: "Stream aborted",
+          content: `${finalContent}\nStream aborted. `,
           error: "Stream aborted",
           isLoading: false,
           role: "system",
@@ -245,7 +246,7 @@ export class ChatHandler {
         await this.updateMessage({
           ...loadingMessage,
           status: "error",
-          content: "Network error",
+          content: `${error.message}`,
           error: error.message,
           isLoading: false,
           role: "system",

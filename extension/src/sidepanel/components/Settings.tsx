@@ -61,35 +61,16 @@ const Settings: React.FC<SettingsProps> = ({
       });
 
       if (!verifyResponse.ok) {
-        throw new Error(
-          (await verifyResponse.text()) || "Invalid or disabled API key"
-        );
+        throw new Error("Invalid or disabled API key");
       }
 
       const verifyData = await verifyResponse.json();
-      if (!verifyData.success) {
+      if (!verifyData.success || !verifyData.data) {
         throw new Error(verifyData.message || "Invalid or disabled API key");
       }
 
-      // Get user data
-      setSaveStatus("Fetching user data...");
-      const userResponse = await fetch(`${env.BACKEND_URL}/v1/user/me`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${formattedKey}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!userResponse.ok) {
-        throw new Error("Failed to fetch user data");
-      }
-
-      const userData = await userResponse.json();
-
-      // Save API key and user data
       setApiKey(formattedKey);
-      await db.saveUser(userData);
+      await db.saveUser(verifyData.data);
 
       setSaveStatus("Saved successfully!");
       setTimeout(() => {

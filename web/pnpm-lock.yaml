@@ -4,63 +4,63 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-dependencies:
-  '@prisma/client':
-    specifier: ^6.6.0
+    dependencies:
+      '@prisma/client':
+        specifier: ^6.6.0
     version: 6.6.0(prisma@6.6.0)(typescript@5.8.3)
-  firebase:
-    specifier: ^11.6.0
-    version: 11.6.0
-  firebase-admin:
-    specifier: ^13.2.0
+      firebase:
+        specifier: ^11.6.0
+        version: 11.6.0
+      firebase-admin:
+        specifier: ^13.2.0
     version: 13.3.0
-  next:
-    specifier: 15.3.0
+      next:
+        specifier: 15.3.0
     version: 15.3.0(react-dom@19.1.0)(react@19.1.0)
-  pg:
-    specifier: ^8.14.1
+      pg:
+        specifier: ^8.14.1
     version: 8.15.1
-  prisma:
-    specifier: ^6.6.0
-    version: 6.6.0(typescript@5.8.3)
-  react:
-    specifier: ^19.0.0
-    version: 19.1.0
-  react-dom:
-    specifier: ^19.0.0
-    version: 19.1.0(react@19.1.0)
-  react-firebase-hooks:
-    specifier: ^5.1.1
-    version: 5.1.1(firebase@11.6.0)(react@19.1.0)
+      prisma:
+        specifier: ^6.6.0
+        version: 6.6.0(typescript@5.8.3)
+      react:
+        specifier: ^19.0.0
+        version: 19.1.0
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.1.0(react@19.1.0)
+      react-firebase-hooks:
+        specifier: ^5.1.1
+        version: 5.1.1(firebase@11.6.0)(react@19.1.0)
 
-devDependencies:
-  '@eslint/eslintrc':
-    specifier: ^3
-    version: 3.3.1
-  '@tailwindcss/postcss':
-    specifier: ^4
+    devDependencies:
+      '@eslint/eslintrc':
+        specifier: ^3
+        version: 3.3.1
+      '@tailwindcss/postcss':
+        specifier: ^4
     version: 4.1.4
-  '@types/node':
-    specifier: ^20.17.30
-    version: 20.17.30
-  '@types/react':
-    specifier: ^19
+      '@types/node':
+        specifier: ^20.17.30
+        version: 20.17.30
+      '@types/react':
+        specifier: ^19
     version: 19.1.2
-  '@types/react-dom':
-    specifier: ^19
+      '@types/react-dom':
+        specifier: ^19
     version: 19.1.2(@types/react@19.1.2)
-  eslint:
-    specifier: ^9
+      eslint:
+        specifier: ^9
     version: 9.25.1
-  eslint-config-next:
-    specifier: 15.3.0
+      eslint-config-next:
+        specifier: 15.3.0
     version: 15.3.0(eslint@9.25.1)(typescript@5.8.3)
-  tailwindcss:
-    specifier: ^4
+      tailwindcss:
+        specifier: ^4
     version: 4.1.4
-  typescript:
-    specifier: ^5
-    version: 5.8.3
+      typescript:
+        specifier: ^5
+        version: 5.8.3
 
 packages:
 

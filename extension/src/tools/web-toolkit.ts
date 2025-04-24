@@ -137,20 +137,21 @@ export class WebToolkit {
 
   async screenshot(fullPage: boolean = false): Promise<WebInteractionResult> {
     try {
-      // 获取当前标签页所在的窗口
+      // 获取当前标签页
       const tabs = await chrome.tabs.query({
         active: true,
         currentWindow: true,
       });
-      if (!tabs[0]?.windowId) {
-        throw new Error("Could not determine current window ID");
+
+      if (!tabs[0]?.id) {
+        throw new Error("No active tab found");
       }
 
       // 使用 chrome.tabs.captureVisibleTab 进行截图
       const dataUrl = await new Promise<string>((resolve, reject) => {
         chrome.tabs.captureVisibleTab(
           tabs[0].windowId,
-          { format: "png" },
+          { format: "png", quality: 100 },
           (dataUrl) => {
             if (chrome.runtime.lastError) {
               reject(new Error(chrome.runtime.lastError.message));
