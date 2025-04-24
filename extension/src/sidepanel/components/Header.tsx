@@ -1,8 +1,6 @@
 import {
-  PlusIcon,
   Cog6ToothIcon,
   ChatBubbleLeftRightIcon,
-  PencilIcon,
 } from "@heroicons/react/24/outline";
 
 interface HeaderProps {

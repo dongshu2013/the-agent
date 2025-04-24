@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { env } from "../../utils/env";
-import { indexedDB } from "../../utils/db";
+import { db } from "../../utils/db";
 import { getApiKey } from "~/services/utils";
 
 interface SettingsProps {
@@ -67,7 +67,7 @@ const Settings: React.FC<SettingsProps> = ({
         throw new Error("Invalid or disabled API key");
       }
       setApiKey(formattedKey);
-      await indexedDB.saveUser(data.user);
+      await db.saveUser(data.user);
       setSaveStatus("Saved successfully!");
       setTimeout(() => setSaveStatus(""), 2000);
 

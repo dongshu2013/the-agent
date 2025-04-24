@@ -7,7 +7,7 @@ import { SaveMessageResponse } from "../types/conversations";
 import OpenAI from "openai";
 import { env } from "../utils/env";
 import { handleAuthError, getApiKey } from "./utils";
-import { indexedDB } from "../utils/db";
+import { db } from "../utils/db";
 import { ChatRequest } from "../types/api";
 import { getToolDescriptions } from "../tools/tool-descriptions";
 
@@ -108,8 +108,7 @@ export const saveMessageApi = async ({
 
     const data = await response.json();
 
-    // 保存消息到 IndexedDB
-    await indexedDB.saveMessage({
+    await db.saveMessage({
       ...message,
       conversation_id,
     });

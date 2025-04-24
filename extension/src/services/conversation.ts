@@ -3,9 +3,9 @@
  */
 
 import { env } from "../utils/env";
-import { indexedDB } from "../utils/db";
 import { getApiKey, handleAuthError } from "./utils";
 import { Conversation } from "../types/conversations";
+import { db } from "../utils/db";
 
 /**
  * 创建新会话（调用后端接口）
@@ -181,15 +181,6 @@ export const getConversationsApi = async (
  */
 export const getConversations = async (): Promise<Conversation[]> => {
   try {
-    // 首先尝试从 IndexedDB 获取会话列表
-    const localConversations = await indexedDB.getAllConversations();
-    if (localConversations && localConversations.length > 0) {
-      console.log("Using conversations from IndexedDB", localConversations);
-      return localConversations;
-    }
-
-    // 如果 IndexedDB 中没有数据，则从 API 获取
-    console.log("No conversations in IndexedDB, fetching from API");
     const response = await getConversationsApi();
     if (!response.success || !response.data) {
       throw new Error(response.error || "Failed to fetch conversations");
@@ -212,16 +203,14 @@ export const getConversations = async (): Promise<Conversation[]> => {
       updatedAt: new Date(conv.updated_at),
     }));
 
-    // 保存到 IndexedDB
-    await Promise.all(
-      newConversations.map((conv) => indexedDB.saveConversation(conv))
+    db.saveConversationsAndMessages(
+      newConversations.map((conv) => ({ conversation: conv }))
     );
-
     return newConversations;
   } catch (error) {
     console.error("Error in getConversations:", error);
     // 如果 API 调用失败，返回 IndexedDB 中的数据（如果有的话）
-    const fallbackConversations = await indexedDB.getAllConversations();
+    const fallbackConversations = await db.getAllConversations();
     if (fallbackConversations && fallbackConversations.length > 0) {
       console.log("Using fallback conversations from IndexedDB");
       return fallbackConversations;
@@ -261,8 +250,7 @@ export const createNewConversation = async (): Promise<Conversation> => {
       status: response.data.status,
     };
 
-    // Save to IndexedDB
-    await indexedDB.saveConversation(conversation);
+    await db.saveConversation(conversation);
 
     return conversation;
   } catch (error) {
@@ -279,13 +267,13 @@ export const selectConversation = async (
 ): Promise<Conversation | null> => {
   try {
     // 从 IndexedDB 获取会话
-    const conversation = await indexedDB.getConversation(id);
+    const conversation = await db.getConversation(id);
     if (!conversation) {
       throw new Error("Conversation not found");
     }
 
     // 获取会话的消息
-    const messages = await indexedDB.getMessagesByConversation(id);
+    const messages = await db.getMessagesByConversation(id);
     conversation.messages = messages;
 
     return conversation;
@@ -304,8 +292,8 @@ export const deleteConversation = async (id: string): Promise<void> => {
       throw new Error(response.error || "Failed to delete conversation");
     }
 
-    await indexedDB.deleteConversation(id);
-    await indexedDB.deleteMessagesByConversation(id);
+    await db.deleteConversation(id);
+    await db.deleteMessagesByConversation(id);
   } catch (error) {
     throw error;
   }

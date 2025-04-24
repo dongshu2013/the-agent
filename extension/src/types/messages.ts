@@ -4,7 +4,7 @@
  */
 
 export interface ChatMessage {
-  role: "user" | "assistant" | "system" | "tool";
+  role?: "user" | "assistant" | "system" | "tool";
   content?: string;
   toolCallId?: string; // toolcall
   name?: string; // toolcall
@@ -24,7 +24,7 @@ export interface ChatMessage {
  */
 export interface Message extends ChatMessage {
   message_id: string;
-  created_at: string;
+  created_at?: string;
   conversation_id: string;
   status?: "pending" | "completed" | "error";
   error?: string;

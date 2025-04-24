@@ -1,5 +1,6 @@
 import { Message } from "../types/messages";
 import { Conversation } from "../types/conversations";
+import Dexie, { Table } from "dexie";
 
 interface UserInfo {
   id: string;
@@ -9,340 +10,177 @@ interface UserInfo {
   api_key: string;
 }
 
-class IndexedDB {
-  private dbName = "mizu-agent";
-  private dbVersion = 2;
-  private stores = {
-    conversations: "conversations",
-    messages: "messages",
-    tabs: "tabs",
-  };
+interface TabInfo {
+  tabId: number;
+  url: string;
+  title?: string;
+  type: "openTab" | "closeTab";
+  created_at: string;
+}
 
-  private async openDB(): Promise<IDBDatabase> {
-    return new Promise((resolve, reject) => {
-      const request = window.indexedDB.open(this.dbName, this.dbVersion);
+class MizuDB extends Dexie {
+  conversations!: Table<Conversation>;
+  messages!: Table<Message>;
+  tabs!: Table<TabInfo>;
+  users!: Table<UserInfo>;
 
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(request.result);
+  constructor() {
+    super("mizu-agent");
 
-      request.onupgradeneeded = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
+    this.version(3).stores({
+      conversations: "id, created_at, *messages",
+      messages: "message_id, conversation_id, created_at",
+      tabs: "tabId, created_at",
+      users: "id",
+    });
 
-        // Create conversations store
-        if (!db.objectStoreNames.contains(this.stores.conversations)) {
-          const conversationStore = db.createObjectStore(
-            this.stores.conversations,
-            { keyPath: "id" }
-          );
-          conversationStore.createIndex("created_at", "created_at", {
-            unique: false,
-          });
-        }
-
-        // Create messages store
-        if (!db.objectStoreNames.contains(this.stores.messages)) {
-          const messageStore = db.createObjectStore(this.stores.messages, {
-            keyPath: "message_id",
-            autoIncrement: false,
-          });
-          messageStore.createIndex("conversation_id", "conversation_id", {
-            unique: false,
-          });
-          messageStore.createIndex("created_at", "created_at", {
-            unique: false,
-          });
-        }
-
-        // Create tabs store
-        if (!db.objectStoreNames.contains(this.stores.tabs)) {
-          const tabStore = db.createObjectStore(this.stores.tabs, {
-            keyPath: "tabId",
-            autoIncrement: false,
-          });
-          tabStore.createIndex("created_at", "created_at", {
-            unique: false,
-          });
-        }
-      };
+    // Add index definitions
+    this.messages.hook("creating", function (primKey, obj) {
+      if (!obj.created_at) {
+        obj.created_at = new Date().toISOString();
+      }
     });
   }
 
+  // User operations
   async saveUser(user: UserInfo): Promise<void> {
-    const db = await this.openDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(
-        this.stores.conversations,
-        "readwrite"
-      );
-      const store = transaction.objectStore(this.stores.conversations);
-      const request = store.put(user);
-
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
+    await this.users.put(user);
   }
 
   async getUser(userId: string): Promise<UserInfo | null> {
-    const db = await this.openDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(this.stores.conversations, "readonly");
-      const store = transaction.objectStore(this.stores.conversations);
-      const request = store.get(userId);
-
-      request.onsuccess = () => resolve(request.result || null);
-      request.onerror = () => reject(request.error);
-    });
+    const user = await this.users.get(userId);
+    return user || null;
   }
 
   async deleteUser(userId: string): Promise<void> {
-    const db = await this.openDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(
-        this.stores.conversations,
-        "readwrite"
-      );
-      const store = transaction.objectStore(this.stores.conversations);
-      const request = store.delete(userId);
-
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
+    await this.users.delete(userId);
   }
 
   // Conversation operations
   async saveConversation(conversation: Conversation): Promise<void> {
-    const db = await this.openDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(
-        this.stores.conversations,
-        "readwrite"
-      );
-      const store = transaction.objectStore(this.stores.conversations);
-      const request = store.put(conversation);
-
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
+    await this.conversations.put(conversation);
   }
 
   async getConversation(id: string): Promise<Conversation | null> {
-    const db = await this.openDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(this.stores.conversations, "readonly");
-      const store = transaction.objectStore(this.stores.conversations);
-      const request = store.get(id);
-
-      request.onsuccess = () => resolve(request.result || null);
-      request.onerror = () => reject(request.error);
-    });
+    const conversation = await this.conversations.get(id);
+    return conversation || null;
   }
 
   async getAllConversations(): Promise<Conversation[]> {
-    const db = await this.openDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(this.stores.conversations, "readonly");
-      const store = transaction.objectStore(this.stores.conversations);
-      const request = store.getAll();
+    const conversations = await this.conversations
+      .orderBy("created_at")
+      .reverse()
+      .toArray();
 
-      request.onsuccess = () => resolve(request.result || []);
-      request.onerror = () => reject(request.error);
-    });
+    return await Promise.all(
+      conversations.map(async (conversation) => ({
+        ...conversation,
+        messages: await this.messages
+          .where("conversation_id")
+          .equals(conversation.id)
+          .sortBy("created_at"),
+      })) || []
+    );
   }
 
   async deleteConversation(id: string): Promise<void> {
-    const db = await this.openDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(
-        this.stores.conversations,
-        "readwrite"
-      );
-      const store = transaction.objectStore(this.stores.conversations);
-      const request = store.delete(id);
-
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
+    await this.conversations.delete(id);
   }
 
   // Message operations
   async saveMessage(message: Message): Promise<void> {
     console.log("Saving message:", message);
 
-    // 确保消息有 message_id
     if (!message.message_id) {
       console.warn("Message missing message_id, generating new one");
-      message.message_id = crypto.randomUUID();
+      throw new Error("Message missing message_id");
     }
 
-    const db = await this.openDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(this.stores.messages, "readwrite");
-      const store = transaction.objectStore(this.stores.messages);
+    try {
+      await this.messages.put(message);
+      console.log("Message saved successfully:", message.message_id);
+    } catch (error) {
+      console.error("Error in saveMessage:", error);
+      throw error;
+    }
+  }
 
-      try {
-        const request = store.put(message);
-
-        request.onsuccess = () => {
-          console.log("Message saved successfully:", message.message_id);
-          resolve();
-        };
-
-        request.onerror = (event) => {
-          console.error("Error saving message:", event);
-          reject(request.error);
-        };
-      } catch (error) {
-        console.error("Error in saveMessage:", error);
-        reject(error);
-      }
-    });
+  async saveMessages(messages: Message[]): Promise<void> {
+    await this.messages.bulkPut(messages);
   }
 
   async getMessagesByConversation(conversationId: string): Promise<Message[]> {
-    const db = await this.openDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(this.stores.messages, "readonly");
-      const store = transaction.objectStore(this.stores.messages);
-      const index = store.index("conversation_id");
-      const request = index.getAll(conversationId);
-
-      request.onsuccess = () => resolve(request.result || []);
-      request.onerror = () => reject(request.error);
-    });
+    const messages = await this.messages
+      .where("conversation_id")
+      .equals(conversationId)
+      .sortBy("created_at");
+    return messages || [];
   }
 
   async deleteMessagesByConversation(conversationId: string): Promise<void> {
-    const db = await this.openDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(this.stores.messages, "readwrite");
-      const store = transaction.objectStore(this.stores.messages);
-      const index = store.index("conversation_id");
-      const request = index.openCursor(conversationId);
-
-      request.onsuccess = () => {
-        const cursor = request.result;
-        if (cursor) {
-          cursor.delete();
-          cursor.continue();
-        } else {
-          resolve();
-        }
-      };
-      request.onerror = () => reject(request.error);
-    });
+    await this.messages
+      .where("conversation_id")
+      .equals(conversationId)
+      .delete();
   }
 
-  // 获取相关消息及其上下文
+  // Related messages operations
   async getRelatedMessagesWithContext(
     messageIds: string[],
     conversationId: string
   ): Promise<Message[]> {
-    const db = await this.openDB();
-    const transaction = db.transaction(["messages"], "readonly");
-    const store = transaction.objectStore("messages");
-    const index = store.index("conversation_id");
+    const allMessages = await this.messages
+      .where("conversation_id")
+      .equals(conversationId)
+      .sortBy("created_at");
 
-    const allMessages: Message[] = [];
+    const contextMessages: Message[] = [];
 
     for (const messageId of messageIds) {
-      // 获取目标消息
-      const targetMessage = await store.get(messageId);
-      if (!targetMessage) continue;
-
-      // 获取同一对话的所有消息
-      const request = index.getAll(conversationId);
-      const messages = await new Promise<Message[]>((resolve) => {
-        request.onsuccess = () => resolve(request.result);
-      });
-
-      // 按时间排序
-      messages.sort(
-        (a: Message, b: Message) =>
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      const targetIndex = allMessages.findIndex(
+        (m: Message) => m.message_id === messageId
       );
-
-      // 找到目标消息的索引
-      const targetIndex = messages.findIndex((m) => m.message_id === messageId);
       if (targetIndex === -1) continue;
 
-      // 获取前后各2条消息
+      // Get 2 messages before and after the target message
       const start = Math.max(0, targetIndex - 2);
-      const end = Math.min(messages.length, targetIndex + 3);
-      const contextMessages = messages.slice(start, end);
-
-      allMessages.push(...contextMessages);
+      const end = Math.min(allMessages.length, targetIndex + 3);
+      contextMessages.push(...allMessages.slice(start, end));
     }
 
-    return allMessages;
+    return contextMessages;
   }
 
-  // 获取最近的N条消息
   async getRecentMessages(
     conversationId: string,
     limit: number
   ): Promise<Message[]> {
-    const db = await this.openDB();
-    const transaction = db.transaction(["messages"], "readonly");
-    const store = transaction.objectStore("messages");
-    const index = store.index("conversation_id");
+    const messages = await this.messages
+      .where("conversation_id")
+      .equals(conversationId)
+      .reverse()
+      .sortBy("created_at");
 
-    const request = index.getAll(conversationId);
-    const messages = await new Promise<Message[]>((resolve) => {
-      request.onsuccess = () => resolve(request.result);
-    });
-
-    // 按时间排序并获取最新的N条
-    messages.sort(
-      (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
     return messages.slice(0, limit);
   }
 
-  // Tab operations
-  async saveTab(tab: {
-    tabId: number;
-    url: string;
-    title?: string;
-    type: "openTab" | "closeTab";
-  }): Promise<void> {
-    const db = await this.openDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(this.stores.tabs, "readwrite");
-      const store = transaction.objectStore(this.stores.tabs);
-      const request = store.put({
-        ...tab,
-        created_at: new Date().toISOString(),
-      });
-
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  async getTab(tabId: number): Promise<any> {
-    const db = await this.openDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(this.stores.tabs, "readonly");
-      const store = transaction.objectStore(this.stores.tabs);
-      const request = store.get(tabId);
-
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  async getAllTabs(): Promise<any[]> {
-    const db = await this.openDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(this.stores.tabs, "readonly");
-      const store = transaction.objectStore(this.stores.tabs);
-      const request = store.getAll();
-
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
+  // Conversation and Messages operations
+  async saveConversationsAndMessages(
+    conversations: Array<{ conversation: Conversation }>
+  ): Promise<void> {
+    await this.transaction(
+      "rw",
+      [this.conversations, this.messages],
+      async () => {
+        for (const { conversation } of conversations) {
+          await this.conversations.put(conversation);
+          if (conversation.messages && conversation.messages.length > 0) {
+            await this.messages.bulkPut(conversation.messages);
+          }
+        }
+      }
+    );
   }
 }
 
-export const indexedDB = new IndexedDB();
+export const db = new MizuDB();
