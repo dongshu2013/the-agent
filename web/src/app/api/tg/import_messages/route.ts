@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "Invalid messages data" },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -67,17 +67,18 @@ export async function POST(req: NextRequest) {
     const validMessages = [];
     for (const msg of syncedMessages) {
       // 支持snake_case或camelCase属性命名
-      const channelId = msg.channel_id || msg.channelId;
-      if (!channelId) continue;
+      // const channelId = msg.channel_id || msg.channelId;
+      // if (!channelId) continue;
 
-      // 频道ID格式：$user_id:$channel_type:$platform_id
-      const channelUserId = channelId.split(":")[0];
+      // // 频道ID格式：$user_id:$channel_type:$platform_id
+      // const channelUserId = channelId.split(":")[0];
 
-      if (channelUserId === userId) {
+      if (true) {
+        const channelId = `${userId}:${msg.channel_type}:${msg.chatId}`;
         // 转换消息格式以匹配数据库列名
         validMessages.push({
           messageId: msg.message_id || msg.messageId,
-          channelId: channelId,
+          channelId,
           chatId: msg.chat_id || msg.chatId,
           messageText: msg.message_text || msg.messageText,
           messageTimestamp: msg.message_timestamp || msg.messageTimestamp,
@@ -111,7 +112,7 @@ export async function POST(req: NextRequest) {
             synced_message_count: 0,
           },
         },
-        { status: 403 }
+        { status: 403, headers: corsHeaders }
       );
     }
 
@@ -184,7 +185,7 @@ export async function POST(req: NextRequest) {
         total_message_count: totalMessageCount,
         synced_message_count: syncedMessageCount,
       },
-    });
+    }, { headers: corsHeaders });
   } catch (error) {
     console.error("Failed to batch insert messages:", error);
     return NextResponse.json(
@@ -193,7 +194,7 @@ export async function POST(req: NextRequest) {
         message: "Failed to process messages",
         error: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
