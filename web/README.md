@@ -1,3 +1,9 @@
+## Prisma 
+
+1. edit `prisma/schema.prisma` 
+2. run `pnpm prisma migrate dev --name <migration_name>` to update local database
+3. git push will auto trigger railway command `prisma migrate deploy` to update remote database 
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
