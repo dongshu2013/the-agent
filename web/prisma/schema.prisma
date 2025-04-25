@@ -62,6 +62,7 @@ model tg_channels {
   data_type        String
   data_id          String
   metadata         Json     @default("{}")
+  tags             Json?    @default("[]")
   is_public        Boolean  @default(false)
   is_free          Boolean  @default(false)
   subscription_fee Decimal  @default(0)
