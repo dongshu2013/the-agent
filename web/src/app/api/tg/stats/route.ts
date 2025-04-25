@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Get the count of channels for this user
-    const channelsCount = await prisma.tg_channels.count({
+    const channelsCount = await prisma.tg_chats.count({
       where: {
         user_id: user.id,
       },
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
     // Get the count of messages for this user's channels
     const messagesCount = await prisma.tg_messages.count({
       where: {
-        channels: {
+        chat: {
           user_id: user.id,
         },
       },
