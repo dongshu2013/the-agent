@@ -271,7 +271,7 @@ export default function ProfilePage() {
                   {isLoadingTelegramStats ? (
                     "Loading Telegram data..."
                   ) : telegramStats && telegramStats.channels_count > 0 ? (
-                    `${telegramStats.channels_count} channels imported, ${telegramStats.messages_count} messages imported`
+                    `${telegramStats.channels_count} chats imported, ${telegramStats.messages_count} messages imported`
                   ) : (
                     "No data has been imported yet..."
                   )}
