@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { 
         success: true, 
-        message: `Successfully processed ${successfulUpserts.length} chats`,
+        message: `Successfully imported ${successfulUpserts.length} chats`,
         total: chats.length,
         successful: successfulUpserts.length,
         failed: failedUpserts.length,
