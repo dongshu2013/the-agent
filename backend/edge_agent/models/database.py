@@ -54,6 +54,7 @@ class Message(Base):
     content = Column(JSON, nullable=False)  # Array of text_message or image_message objects
     embedding = Column(Vector(1024), nullable=True)  # Vector embedding for similarity search
     created_at = Column(DateTime, default=func.now(), nullable=False)
+    tool_calls = Column(JSON, nullable=True)
 
     # Relationships
     conversation = relationship("Conversation", back_populates="messages")

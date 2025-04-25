@@ -65,12 +65,11 @@ const Settings: React.FC<SettingsProps> = ({
       }
 
       const verifyData = await verifyResponse.json();
-      if (!verifyData.success || !verifyData.data) {
-        throw new Error(verifyData.message || "Invalid or disabled API key");
+      if (!verifyData.success || !verifyData.user) {
+        throw new Error(verifyData?.message || "Invalid or disabled API key");
       }
-
       setApiKey(formattedKey);
-      await db.saveUser(verifyData.data);
+      await db.saveUser(verifyData.user);
 
       setSaveStatus("Saved successfully!");
       setTimeout(() => {

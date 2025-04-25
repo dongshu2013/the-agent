@@ -213,14 +213,6 @@ export const getConversations = async (): Promise<Conversation[]> => {
     return serverConversations;
   } catch (error) {
     console.error("Error in getConversations:", error);
-    // 只有在网络错误时才使用本地数据
-    if (error instanceof TypeError && error.message.includes("fetch")) {
-      const fallbackConversations = await db.getAllConversations();
-      if (fallbackConversations && fallbackConversations.length > 0) {
-        console.log("Using fallback conversations from IndexedDB");
-        return fallbackConversations;
-      }
-    }
     throw error;
   }
 };

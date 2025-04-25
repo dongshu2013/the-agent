@@ -139,7 +139,8 @@ exports.Prisma.MessagesScalarFieldEnum = {
   conversation_id: 'conversation_id',
   role: 'role',
   content: 'content',
-  created_at: 'created_at'
+  created_at: 'created_at',
+  tool_calls: 'tool_calls'
 };
 
 exports.Prisma.Tg_channelsScalarFieldEnum = {

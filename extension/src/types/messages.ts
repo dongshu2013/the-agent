@@ -8,13 +8,16 @@ export interface ChatMessage {
   content?: string;
   toolCallId?: string; // toolcall
   name?: string; // toolcall
-  tool_call_id?: string; // toolcall
   toolCalls?: Array<{
     id: string;
     type: string;
     function: {
       name: string;
       arguments: string;
+    };
+    result: {
+      data: any;
+      success: boolean;
     };
   }>;
 }

@@ -1,6 +1,6 @@
-import { ChatMessage, Message as MessageType } from "../types/messages";
+import { ChatMessage, Message } from "../types/messages";
 import { saveMessageApi, sendChatCompletion } from "./chat";
-import { toolExecutor } from "./tool-executor";
+import { ToolCall, toolExecutor } from "./tool-executor";
 import { db } from "~/utils/db";
 import { env } from "~/utils/env";
 
@@ -10,7 +10,7 @@ interface ChatHandlerOptions {
   onError: (error: any) => void;
   onStreamStart: () => void;
   onStreamEnd: () => void;
-  onMessageUpdate: (message: MessageType) => void;
+  onMessageUpdate: (message: Message) => void;
 }
 
 export class ChatHandler {
@@ -35,9 +35,8 @@ export class ChatHandler {
     const userMessageId = crypto.randomUUID();
     const assistantMessageId = crypto.randomUUID();
     const baseTimestamp = new Date();
-    let finalContent = ``;
 
-    const userMessage: MessageType = {
+    const userMessage: Message = {
       message_id: userMessageId,
       role: "user",
       content: currentPrompt,
@@ -46,7 +45,7 @@ export class ChatHandler {
       status: "completed",
     };
 
-    const loadingMessage: MessageType = {
+    const loadingMessage: Message = {
       message_id: assistantMessageId,
       role: "assistant",
       content: "",
@@ -54,6 +53,7 @@ export class ChatHandler {
       conversation_id: this.options.currentConversationId,
       status: "pending",
       isLoading: true,
+      toolCalls: [],
     };
 
     this.isStreaming = true;
@@ -87,25 +87,35 @@ export class ChatHandler {
         newPrompt += `Related messages:\n`;
         relatedMessages.forEach((msg) => {
           newPrompt += `${msg.role}: ${msg.content}\n`;
+          if (msg.toolCalls) {
+            msg.toolCalls.forEach((toolCall) => {
+              // html size too loong ,so we not add it to the prompt
+              newPrompt += `Tool calls: ${toolCall.function.name}, executed result: ${!toolCall?.result?.data?.html && JSON.stringify(toolCall?.result?.data || "")} \n`;
+            });
+          }
         });
       }
       if (recentMessages.length > 0) {
         newPrompt += `Recent messages:\n`;
         recentMessages.forEach((msg) => {
           newPrompt += `${msg.role}: ${msg.content}\n`;
+          if (msg.toolCalls) {
+            msg.toolCalls.forEach((toolCall) => {
+              newPrompt += `Tool calls: ${toolCall.function.name}, executed result: ${!toolCall?.result?.data?.html && JSON.stringify(toolCall?.result?.data || "")} \n`;
+            });
+          }
         });
       }
       if (newPrompt.length > 0) {
         newPrompt = `
-        Please follow the user's request and if the user's request is related to the memory, use the memory to help you answer the question.
-        User Request: ${currentPrompt}\n
-        Memory: ${newPrompt}
+        Please follow the user's request and if the user's request is related to the memory, use the memory to help you answer the question.\n
+        user Request: ${currentPrompt}\n
+        memory: ${newPrompt}
         `;
       }
 
       let toolCallCount = 0;
       const MAX_TOOL_CALLS = 10;
-      const MAX_CONTENT_LENGTH = 10000; // 限制内容长度
 
       const processRequest = async (inputMessages: ChatMessage[]) => {
         let accumulatedContent = "";
@@ -127,21 +137,6 @@ export class ChatHandler {
             const content = chunk.choices[0]?.delta?.content;
             if (content) {
               currentResponse += content;
-              // 检查内容长度
-              if (
-                accumulatedContent.length + currentResponse.length >
-                MAX_CONTENT_LENGTH
-              ) {
-                // 询问用户是否继续
-                const shouldContinue = await this.askUserToContinue();
-                if (!shouldContinue) {
-                  this.stopStreaming();
-                  break;
-                }
-                accumulatedContent = "";
-                currentResponse = "";
-              }
-
               await this.updateMessage({
                 ...loadingMessage,
                 content: accumulatedContent + currentResponse,
@@ -166,40 +161,27 @@ export class ChatHandler {
 
             toolCallCount += toolCalls.length;
             for (const toolCall of toolCalls) {
+              console.log("🔥 toolCall:", toolCall.function);
               const toolResult = await toolExecutor.executeToolCall(toolCall);
-              const resultStr = JSON.stringify(toolResult, null, 2);
+              console.log("🔥Tool call🌹 result:", toolResult);
+
               const toolCallInfo = `Recived request to execute tool call: \n<div style="background-color: #f0f0f0; padding: 8px; border-radius: 8px; margin: 4px 0; font-size: 14px; line-height: 1.6;margin-bottom: 20px;"> >>> Executing tool call: ${toolCall.function.name.replace("TabToolkit_", "")}</div>`;
               accumulatedContent += toolCallInfo;
 
-              await this.updateMessage({
-                ...loadingMessage,
-                content: accumulatedContent,
-                toolCalls: [
-                  ...(loadingMessage.toolCalls || []),
-                  {
-                    id: toolCall.id,
-                    type: toolCall.type,
-                    function: toolCall.function,
-                  },
-                ],
+              if (!loadingMessage.toolCalls) {
+                loadingMessage.toolCalls = [];
+              }
+              loadingMessage.toolCalls.push({
+                id: toolCall.id,
+                type: toolCall.type,
+                function: toolCall.function,
+                result: toolResult,
               });
-
               inputMessages.push({
                 role: "tool",
                 name: toolCall.function.name,
-                content: `Function call success: ${resultStr}`,
-                ...(env.OPENAI_MODEL === "google/gemini-2.5-pro-preview-03-25"
-                  ? { toolCallId: toolCall.id }
-                  : {
-                      tool_call_id: toolCall.id,
-                      tool_calls: [
-                        {
-                          id: toolCall.id,
-                          type: toolCall.type,
-                          function: toolCall.function,
-                        },
-                      ],
-                    }),
+                content: `Function call success: ${JSON.stringify(toolResult.data)}`,
+                toolCallId: toolCall.id,
               });
             }
           } else {
@@ -216,7 +198,7 @@ export class ChatHandler {
         },
       ]);
 
-      const aiMessage: MessageType = {
+      const aiMessage: Message = {
         ...loadingMessage,
         content: finalContent,
         status: "completed",
@@ -231,22 +213,20 @@ export class ChatHandler {
     } catch (error: any) {
       console.error("Error in handleSubmit:", error);
       if (error.name === "AbortError") {
-        console.warn("Stream aborted.");
         await this.updateMessage({
           ...loadingMessage,
           status: "error",
-          content: `${finalContent}\nStream aborted. `,
+          content: `Stream aborted. `,
           error: "Stream aborted",
           isLoading: false,
           role: "system",
         });
       } else {
-        console.error("Chat Error:", error);
         this.options.onError(error);
         await this.updateMessage({
           ...loadingMessage,
           status: "error",
-          content: `${error.message}`,
+          content: `Network error, please try again later.`,
           error: error.message,
           isLoading: false,
           role: "system",
@@ -257,15 +237,9 @@ export class ChatHandler {
     }
   }
 
-  private async updateMessage(message: MessageType) {
+  private async updateMessage(message: Message) {
     await db.saveMessage(message);
     this.options.onMessageUpdate(message);
-  }
-
-  private async askUserToContinue(): Promise<boolean> {
-    // TODO: 实现用户确认对话框
-    // 这里可以添加一个对话框组件来询问用户是否继续
-    return window.confirm("内容较长，是否继续？");
   }
 
   stopStreaming() {

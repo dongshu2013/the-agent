@@ -41,6 +41,7 @@ model messages {
   role            String // "system", "user", "assistant", or "tooling"
   content         Json // Array of text_message or image_message objects
   created_at      DateTime      @default(now())
+  tool_calls      Json?
 }
 
 // Types for reference (not actual models):

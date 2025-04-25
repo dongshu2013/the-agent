@@ -1,7 +1,7 @@
 export interface WebInteractionResult {
   success: boolean;
   data?: any;
-  error?: string;
+  error?: string | null;
 }
 
 interface PageSourceResult {
@@ -30,69 +30,12 @@ export class WebToolkit {
         target: { tabId: tabs[0].id },
         func: (): PageSourceResult => {
           try {
-            // 提取页面内容
-            const extractPageContent = () => {
-              // 1. 获取页面基本信息
-              const pageInfo = {
-                title: document.title,
-                url: window.location.href,
-                description: document
-                  .querySelector('meta[name="description"]')
-                  ?.getAttribute("content"),
-                keywords: document
-                  .querySelector('meta[name="keywords"]')
-                  ?.getAttribute("content"),
-              };
-
-              // 2. 提取主要内容区域
-              const mainContent =
-                document.querySelector(
-                  'main, article, #content, .content, [role="main"]'
-                ) || document.body;
-
-              // 3. 提取结构化数据
-              const structuredData = {
-                headings: Array.from(
-                  mainContent.querySelectorAll("h1, h2, h3, h4, h5, h6")
-                ).map((h) => ({
-                  level: h.tagName.toLowerCase(),
-                  text: h.textContent?.trim(),
-                })),
-                links: Array.from(mainContent.querySelectorAll("a"))
-                  .map((a) => ({ href: a.href, text: a.textContent?.trim() }))
-                  .filter((link) => link.href && link.text),
-                images: Array.from(mainContent.querySelectorAll("img")).map(
-                  (img) => ({ src: img.src, alt: img.alt })
-                ),
-              };
-
-              // 4. 提取文本内容
-              const textContent = mainContent.textContent?.trim() || "";
-
-              // 5. 分块处理文本内容
-              const chunkSize = 10000; // 每个块的大小
-              const chunks = [];
-              for (let i = 0; i < textContent.length; i += chunkSize) {
-                chunks.push(textContent.slice(i, i + chunkSize));
-              }
-
-              return {
-                pageInfo,
-                structuredData,
-                contentChunks: chunks,
-                totalChunks: chunks.length,
-                currentChunk: 0,
-              };
-            };
-
-            const extractedContent = extractPageContent();
-
             return {
-              html: JSON.stringify(extractedContent),
-              js: [], // 不再返回 JS 脚本，因为我们现在专注于内容提取
+              html: document.documentElement.outerHTML,
+              js: Array.from(document.scripts).map((script) => script.src),
             };
           } catch (error) {
-            console.error("Error extracting content:", error);
+            console.error("Error getting page source:", error);
             throw error;
           }
         },
@@ -172,26 +115,100 @@ export class WebToolkit {
     }
   }
 
+  // 安全地转义字符串，防止 XSS
+  private escapeString(str: string): string {
+    return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
+  }
+
+  // 安全地构建选择器
+  private buildSafeSelector(selector: string): string {
+    return this.escapeString(selector);
+  }
+
+  async getCurrentUrl(): Promise<WebInteractionResult> {
+    try {
+      const tabs = await chrome.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
+      if (!tabs[0]?.url) throw new Error("No active tab found");
+      return { success: true, data: tabs[0].url };
+    } catch (error) {
+      console.error("Error getting URL:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  async highlightElement(selector: string): Promise<WebInteractionResult> {
+    try {
+      const safeSelector = this.buildSafeSelector(selector);
+      const code = `
+        (() => {
+          const el = document.querySelector('${safeSelector}');
+          if (el) {
+            el.style.outline = '3px solid red';
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return { success: true };
+          }
+          return { success: false, error: 'Element not found' };
+        })()
+      `;
+      const result = await this.executeInTab(code);
+      return { success: true, data: result };
+    } catch (error) {
+      console.error("Error highlighting element:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  async getInnerHTML(selector: string): Promise<WebInteractionResult> {
+    try {
+      const safeSelector = this.buildSafeSelector(selector);
+      const code = `
+        (() => {
+          const element = document.querySelector('${safeSelector}');
+          return element ? element.innerHTML : null;
+        })()
+      `;
+      const result = await this.executeInTab(code);
+      return { success: true, data: result };
+    } catch (error) {
+      console.error("Error getting innerHTML:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  // 更新现有的 findElement 方法以使用安全的选择器
   async findElement(
     selector: string,
     timeout: number = 5000
   ): Promise<WebInteractionResult> {
     try {
+      const safeSelector = this.buildSafeSelector(selector);
       const code = `
         (() => {
           return new Promise((resolve) => {
-            const element = document.querySelector('${selector}');
+            const element = document.querySelector('${safeSelector}');
             if (element) {
               resolve({
                 found: true,
-                selector: '${selector}',
+                selector: '${safeSelector}',
                 text: element.textContent,
                 html: element.outerHTML
               });
             } else {
               resolve({
                 found: false,
-                selector: '${selector}'
+                selector: '${safeSelector}'
               });
             }
           });

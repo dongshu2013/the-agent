@@ -125,15 +125,16 @@ export class ToolExecutor {
     }
   }
 
-  async executeToolCall(toolCall: ToolCall): Promise<string> {
+  async executeToolCall(
+    toolCall: ToolCall
+  ): Promise<{ success: boolean; data: any }> {
     try {
       const result = await this.executeTool(toolCall);
-      const resultStr = JSON.stringify(result, null, 2);
-      return `Function call success: ${resultStr}`;
+      return result;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error("Tool execution failed:", message);
-      return `Error: ${message}`;
+      return { success: false, data: message };
     }
   }
 }
