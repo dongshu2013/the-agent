@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --no-lint",
-    "build:railway": "next build --no-lint || next build",
+    "build:railway": "prisma generate && (next build --no-lint || next build)",
     "start": "next start",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
@@ -18,6 +18,8 @@
     "prisma:push": "prisma db push"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.796.0",
+    "@aws-sdk/s3-request-presigner": "^3.796.0",
     "@prisma/client": "^6.6.0",
     "firebase": "^11.6.0",
     "firebase-admin": "^13.2.0",
