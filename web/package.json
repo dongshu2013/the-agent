@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --no-lint",
-    "build:railway": "next build --no-lint || next build",
+    "build:railway": "prisma generate && (next build --no-lint || next build)",
     "start": "next start",
     "lint": "next lint",
     "prisma:generate": "prisma generate",
