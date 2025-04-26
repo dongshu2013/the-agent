@@ -4618,6 +4618,7 @@ export namespace Prisma {
     data_type: number
     data_id: number
     metadata: number
+    tags: number
     is_public: number
     is_free: number
     subscription_fee: number
@@ -4676,6 +4677,7 @@ export namespace Prisma {
     data_type?: true
     data_id?: true
     metadata?: true
+    tags?: true
     is_public?: true
     is_free?: true
     subscription_fee?: true
@@ -4779,6 +4781,7 @@ export namespace Prisma {
     data_type: string
     data_id: string
     metadata: JsonValue
+    tags: JsonValue | null
     is_public: boolean
     is_free: boolean
     subscription_fee: Decimal
@@ -4814,6 +4817,7 @@ export namespace Prisma {
     data_type?: boolean
     data_id?: boolean
     metadata?: boolean
+    tags?: boolean
     is_public?: boolean
     is_free?: boolean
     subscription_fee?: boolean
@@ -4832,6 +4836,7 @@ export namespace Prisma {
     data_type?: boolean
     data_id?: boolean
     metadata?: boolean
+    tags?: boolean
     is_public?: boolean
     is_free?: boolean
     subscription_fee?: boolean
@@ -4848,6 +4853,7 @@ export namespace Prisma {
     data_type?: boolean
     data_id?: boolean
     metadata?: boolean
+    tags?: boolean
     is_public?: boolean
     is_free?: boolean
     subscription_fee?: boolean
@@ -4864,6 +4870,7 @@ export namespace Prisma {
     data_type?: boolean
     data_id?: boolean
     metadata?: boolean
+    tags?: boolean
     is_public?: boolean
     is_free?: boolean
     subscription_fee?: boolean
@@ -4873,7 +4880,7 @@ export namespace Prisma {
     updated_at?: boolean
   }
 
-  export type tg_channelsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "channel_id" | "user_id" | "data_type" | "data_id" | "metadata" | "is_public" | "is_free" | "subscription_fee" | "last_synced_at" | "status" | "created_at" | "updated_at", ExtArgs["result"]["tg_channels"]>
+  export type tg_channelsOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "channel_id" | "user_id" | "data_type" | "data_id" | "metadata" | "tags" | "is_public" | "is_free" | "subscription_fee" | "last_synced_at" | "status" | "created_at" | "updated_at", ExtArgs["result"]["tg_channels"]>
   export type tg_channelsInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     messages?: boolean | tg_channels$messagesArgs<ExtArgs>
     _count?: boolean | Tg_channelsCountOutputTypeDefaultArgs<ExtArgs>
@@ -4893,6 +4900,7 @@ export namespace Prisma {
       data_type: string
       data_id: string
       metadata: Prisma.JsonValue
+      tags: Prisma.JsonValue | null
       is_public: boolean
       is_free: boolean
       subscription_fee: Prisma.Decimal
@@ -5330,6 +5338,7 @@ export namespace Prisma {
     readonly data_type: FieldRef<"tg_channels", 'String'>
     readonly data_id: FieldRef<"tg_channels", 'String'>
     readonly metadata: FieldRef<"tg_channels", 'Json'>
+    readonly tags: FieldRef<"tg_channels", 'Json'>
     readonly is_public: FieldRef<"tg_channels", 'Boolean'>
     readonly is_free: FieldRef<"tg_channels", 'Boolean'>
     readonly subscription_fee: FieldRef<"tg_channels", 'Decimal'>
@@ -7124,6 +7133,7 @@ export namespace Prisma {
     data_type: 'data_type',
     data_id: 'data_id',
     metadata: 'metadata',
+    tags: 'tags',
     is_public: 'is_public',
     is_free: 'is_free',
     subscription_fee: 'subscription_fee',
@@ -7513,6 +7523,7 @@ export namespace Prisma {
     data_type?: StringFilter<"tg_channels"> | string
     data_id?: StringFilter<"tg_channels"> | string
     metadata?: JsonFilter<"tg_channels">
+    tags?: JsonNullableFilter<"tg_channels">
     is_public?: BoolFilter<"tg_channels"> | boolean
     is_free?: BoolFilter<"tg_channels"> | boolean
     subscription_fee?: DecimalFilter<"tg_channels"> | Decimal | DecimalJsLike | number | string
@@ -7530,6 +7541,7 @@ export namespace Prisma {
     data_type?: SortOrder
     data_id?: SortOrder
     metadata?: SortOrder
+    tags?: SortOrderInput | SortOrder
     is_public?: SortOrder
     is_free?: SortOrder
     subscription_fee?: SortOrder
@@ -7551,6 +7563,7 @@ export namespace Prisma {
     data_type?: StringFilter<"tg_channels"> | string
     data_id?: StringFilter<"tg_channels"> | string
     metadata?: JsonFilter<"tg_channels">
+    tags?: JsonNullableFilter<"tg_channels">
     is_public?: BoolFilter<"tg_channels"> | boolean
     is_free?: BoolFilter<"tg_channels"> | boolean
     subscription_fee?: DecimalFilter<"tg_channels"> | Decimal | DecimalJsLike | number | string
@@ -7568,6 +7581,7 @@ export namespace Prisma {
     data_type?: SortOrder
     data_id?: SortOrder
     metadata?: SortOrder
+    tags?: SortOrderInput | SortOrder
     is_public?: SortOrder
     is_free?: SortOrder
     subscription_fee?: SortOrder
@@ -7592,6 +7606,7 @@ export namespace Prisma {
     data_type?: StringWithAggregatesFilter<"tg_channels"> | string
     data_id?: StringWithAggregatesFilter<"tg_channels"> | string
     metadata?: JsonWithAggregatesFilter<"tg_channels">
+    tags?: JsonNullableWithAggregatesFilter<"tg_channels">
     is_public?: BoolWithAggregatesFilter<"tg_channels"> | boolean
     is_free?: BoolWithAggregatesFilter<"tg_channels"> | boolean
     subscription_fee?: DecimalWithAggregatesFilter<"tg_channels"> | Decimal | DecimalJsLike | number | string
@@ -7938,6 +7953,7 @@ export namespace Prisma {
     data_type: string
     data_id: string
     metadata?: JsonNullValueInput | InputJsonValue
+    tags?: NullableJsonNullValueInput | InputJsonValue
     is_public?: boolean
     is_free?: boolean
     subscription_fee?: Decimal | DecimalJsLike | number | string
@@ -7955,6 +7971,7 @@ export namespace Prisma {
     data_type: string
     data_id: string
     metadata?: JsonNullValueInput | InputJsonValue
+    tags?: NullableJsonNullValueInput | InputJsonValue
     is_public?: boolean
     is_free?: boolean
     subscription_fee?: Decimal | DecimalJsLike | number | string
@@ -7971,6 +7988,7 @@ export namespace Prisma {
     data_type?: StringFieldUpdateOperationsInput | string
     data_id?: StringFieldUpdateOperationsInput | string
     metadata?: JsonNullValueInput | InputJsonValue
+    tags?: NullableJsonNullValueInput | InputJsonValue
     is_public?: BoolFieldUpdateOperationsInput | boolean
     is_free?: BoolFieldUpdateOperationsInput | boolean
     subscription_fee?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
@@ -7988,6 +8006,7 @@ export namespace Prisma {
     data_type?: StringFieldUpdateOperationsInput | string
     data_id?: StringFieldUpdateOperationsInput | string
     metadata?: JsonNullValueInput | InputJsonValue
+    tags?: NullableJsonNullValueInput | InputJsonValue
     is_public?: BoolFieldUpdateOperationsInput | boolean
     is_free?: BoolFieldUpdateOperationsInput | boolean
     subscription_fee?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
@@ -8005,6 +8024,7 @@ export namespace Prisma {
     data_type: string
     data_id: string
     metadata?: JsonNullValueInput | InputJsonValue
+    tags?: NullableJsonNullValueInput | InputJsonValue
     is_public?: boolean
     is_free?: boolean
     subscription_fee?: Decimal | DecimalJsLike | number | string
@@ -8020,6 +8040,7 @@ export namespace Prisma {
     data_type?: StringFieldUpdateOperationsInput | string
     data_id?: StringFieldUpdateOperationsInput | string
     metadata?: JsonNullValueInput | InputJsonValue
+    tags?: NullableJsonNullValueInput | InputJsonValue
     is_public?: BoolFieldUpdateOperationsInput | boolean
     is_free?: BoolFieldUpdateOperationsInput | boolean
     subscription_fee?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
@@ -8036,6 +8057,7 @@ export namespace Prisma {
     data_type?: StringFieldUpdateOperationsInput | string
     data_id?: StringFieldUpdateOperationsInput | string
     metadata?: JsonNullValueInput | InputJsonValue
+    tags?: NullableJsonNullValueInput | InputJsonValue
     is_public?: BoolFieldUpdateOperationsInput | boolean
     is_free?: BoolFieldUpdateOperationsInput | boolean
     subscription_fee?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
@@ -8571,6 +8593,7 @@ export namespace Prisma {
     data_type?: SortOrder
     data_id?: SortOrder
     metadata?: SortOrder
+    tags?: SortOrder
     is_public?: SortOrder
     is_free?: SortOrder
     subscription_fee?: SortOrder
@@ -9534,6 +9557,7 @@ export namespace Prisma {
     data_type: string
     data_id: string
     metadata?: JsonNullValueInput | InputJsonValue
+    tags?: NullableJsonNullValueInput | InputJsonValue
     is_public?: boolean
     is_free?: boolean
     subscription_fee?: Decimal | DecimalJsLike | number | string
@@ -9550,6 +9574,7 @@ export namespace Prisma {
     data_type: string
     data_id: string
     metadata?: JsonNullValueInput | InputJsonValue
+    tags?: NullableJsonNullValueInput | InputJsonValue
     is_public?: boolean
     is_free?: boolean
     subscription_fee?: Decimal | DecimalJsLike | number | string
@@ -9581,6 +9606,7 @@ export namespace Prisma {
     data_type?: StringFieldUpdateOperationsInput | string
     data_id?: StringFieldUpdateOperationsInput | string
     metadata?: JsonNullValueInput | InputJsonValue
+    tags?: NullableJsonNullValueInput | InputJsonValue
     is_public?: BoolFieldUpdateOperationsInput | boolean
     is_free?: BoolFieldUpdateOperationsInput | boolean
     subscription_fee?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string
@@ -9597,6 +9623,7 @@ export namespace Prisma {
     data_type?: StringFieldUpdateOperationsInput | string
     data_id?: StringFieldUpdateOperationsInput | string
     metadata?: JsonNullValueInput | InputJsonValue
+    tags?: NullableJsonNullValueInput | InputJsonValue
     is_public?: BoolFieldUpdateOperationsInput | boolean
     is_free?: BoolFieldUpdateOperationsInput | boolean
     subscription_fee?: DecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string

@@ -231,15 +231,41 @@ export class WebToolkit {
     value: string
   ): Promise<WebInteractionResult> {
     try {
+      // First wait for the element to be present
+      await this.waitForElement(selector);
+
       const code = `
         (() => {
-          const element = document.querySelector('${selector}');
-          if (element) {
-            element.value = '${value}';
-            element.dispatchEvent(new Event('input', { bubbles: true }));
+          try {
+            const element = document.querySelector(${JSON.stringify(selector)});
+            if (!element) {
+              return { success: false, error: 'Element not found' };
+            }
+            
+            // Ensure element is visible and editable
+            if (element.offsetParent === null) {
+              return { success: false, error: 'Element is not visible' };
+            }
+            
+            // Scroll element into view
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Add a small delay to ensure scrolling is complete
+            setTimeout(() => {
+              // Clear existing value
+              element.value = '';
+              // Set new value
+              element.value = ${JSON.stringify(value)};
+              // Trigger input event
+              element.dispatchEvent(new Event('input', { bubbles: true }));
+              // Trigger change event
+              element.dispatchEvent(new Event('change', { bubbles: true }));
+            }, 100);
+            
             return { success: true };
+          } catch (error) {
+            return { success: false, error: error.message };
           }
-          return { success: false, error: 'Element not found' };
         })()
       `;
 
@@ -256,14 +282,34 @@ export class WebToolkit {
 
   async clickElement(selector: string): Promise<WebInteractionResult> {
     try {
+      // First wait for the element to be present
+      await this.waitForElement(selector);
+
       const code = `
         (() => {
-          const element = document.querySelector('${selector}');
-          if (element) {
-            element.click();
+          try {
+            const element = document.querySelector(${JSON.stringify(selector)});
+            if (!element) {
+              return { success: false, error: 'Element not found' };
+            }
+            
+            // Ensure element is visible and clickable
+            if (element.offsetParent === null) {
+              return { success: false, error: 'Element is not visible' };
+            }
+            
+            // Scroll element into view
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Add a small delay to ensure scrolling is complete
+            setTimeout(() => {
+              element.click();
+            }, 100);
+            
             return { success: true };
+          } catch (error) {
+            return { success: false, error: error.message };
           }
-          return { success: false, error: 'Element not found' };
         })()
       `;
 
@@ -312,7 +358,7 @@ export class WebToolkit {
           return new Promise((resolve) => {
             const startTime = Date.now();
             const checkElement = () => {
-              const element = document.querySelector('${selector}');
+              const element = document.querySelector(${JSON.stringify(selector)});
               if (element) {
                 resolve({ success: true, found: true });
               } else if (Date.now() - startTime >= ${timeout}) {

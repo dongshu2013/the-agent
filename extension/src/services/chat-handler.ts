@@ -108,9 +108,22 @@ export class ChatHandler {
       }
       if (newPrompt.length > 0) {
         newPrompt = `
-        Please follow the user's request and if the user's request is related to the memory, use the memory to help you answer the question.\n
-        user Request: ${currentPrompt}\n
-        memory: ${newPrompt}
+       You are an AI agent that can use tools and has memory of prior interactions.
+Please do the following:
+1. Carefully read the \`user request\`.
+2. Then, check the \`memory\` to see if the same request or tool call has already been handled.
+3. If the memory shows the tool call has already been completed, **do not repeat it**, unless the user explicitly requests a re-run.
+4. Only call tools if it is a **new request** that is not already handled in memory.
+
+---
+
+user request:
+${currentPrompt}
+
+---
+
+memory (executed actions and prior responses):
+${newPrompt}
         `;
       }
 
@@ -119,76 +132,103 @@ export class ChatHandler {
 
       const processRequest = async (inputMessages: ChatMessage[]) => {
         let accumulatedContent = "";
-        while (true) {
-          if (!this.isStreaming) break;
-
-          const stream = await sendChatCompletion(
-            { messages: inputMessages },
-            this.options.apiKey,
-            {
-              signal: this.abortController?.signal,
-            }
-          );
-
-          let currentResponse = "";
-          for await (const chunk of stream) {
+        try {
+          while (true) {
             if (!this.isStreaming) break;
 
-            const content = chunk.choices[0]?.delta?.content;
-            if (content) {
-              currentResponse += content;
-              await this.updateMessage({
-                ...loadingMessage,
-                content: accumulatedContent + currentResponse,
-              });
-            }
-          }
-
-          const resp = await stream.finalChatCompletion();
-          accumulatedContent += currentResponse;
-          inputMessages.push(resp.choices[0].message);
-
-          const toolCalls = resp.choices[0].message.tool_calls;
-          if (toolCalls) {
-            if (toolCallCount >= MAX_TOOL_CALLS) {
-              await this.updateMessage({
-                ...loadingMessage,
-                content: accumulatedContent,
-                isLoading: true,
-              });
-              return accumulatedContent;
-            }
-
-            toolCallCount += toolCalls.length;
-            for (const toolCall of toolCalls) {
-              console.log("🔥 toolCall:", toolCall.function);
-              const toolResult = await toolExecutor.executeToolCall(toolCall);
-              console.log("🔥Tool call🌹 result:", toolResult);
-
-              const toolCallInfo = `Recived request to execute tool call: \n<div style="background-color: #f0f0f0; padding: 8px; border-radius: 8px; margin: 4px 0; font-size: 14px; line-height: 1.6;margin-bottom: 20px;"> >>> Executing tool call: ${toolCall.function.name.replace("TabToolkit_", "")}</div>`;
-              accumulatedContent += toolCallInfo;
-
-              if (!loadingMessage.toolCalls) {
-                loadingMessage.toolCalls = [];
+            const stream = await sendChatCompletion(
+              { messages: inputMessages },
+              this.options.apiKey,
+              {
+                signal: this.abortController?.signal,
               }
-              loadingMessage.toolCalls.push({
-                id: toolCall.id,
-                type: toolCall.type,
-                function: toolCall.function,
-                result: toolResult,
-              });
-              inputMessages.push({
-                role: "tool",
-                name: toolCall.function.name,
-                content: `Function call success: ${JSON.stringify(toolResult.data)}`,
-                toolCallId: toolCall.id,
-              });
+            );
+
+            let currentResponse = "";
+            for await (const chunk of stream) {
+              if (!this.isStreaming) break;
+
+              const content = chunk.choices[0]?.delta?.content;
+              if (content) {
+                currentResponse += content;
+                await this.updateMessage({
+                  ...loadingMessage,
+                  content: accumulatedContent + currentResponse,
+                });
+              }
             }
-          } else {
-            break;
+
+            const resp = await stream.finalChatCompletion();
+            accumulatedContent += currentResponse;
+            inputMessages.push(resp.choices[0].message);
+
+            const toolCalls = resp.choices[0].message.tool_calls;
+            if (toolCalls) {
+              if (toolCallCount >= MAX_TOOL_CALLS) {
+                await this.updateMessage({
+                  ...loadingMessage,
+                  content: accumulatedContent,
+                  isLoading: true,
+                });
+                return accumulatedContent;
+              }
+
+              toolCallCount += toolCalls.length;
+              for (const toolCall of toolCalls) {
+                console.log("🔥 toolCall:", toolCall.function);
+                const toolResult = await toolExecutor.executeToolCall(toolCall);
+                console.log("🔥Tool call🌹 result:", toolResult);
+
+                const toolCallInfo = `Recived request to execute tool call: \n<div style="background-color: #f0f0f0; padding: 8px; border-radius: 8px; margin: 4px 0; font-size: 14px; line-height: 1.6;margin-bottom: 20px;"> >>> Executing tool call: ${toolCall.function.name.replace("TabToolkit_", "")}</div>`;
+                accumulatedContent += toolCallInfo;
+
+                if (!loadingMessage.toolCalls) {
+                  loadingMessage.toolCalls = [];
+                }
+                loadingMessage.toolCalls.push({
+                  id: toolCall.id,
+                  type: toolCall.type,
+                  function: toolCall.function,
+                  result: toolResult,
+                });
+                inputMessages.push({
+                  role: "tool",
+                  name: toolCall.function.name,
+                  content: `Function call success: ${JSON.stringify(toolResult.data)}`,
+                  toolCallId: toolCall.id,
+                });
+              }
+            } else {
+              break;
+            }
           }
+          return accumulatedContent;
+        } catch (error: any) {
+          console.error("Error in processRequest:", error);
+          if (error.name === "AbortError") {
+            await this.updateMessage({
+              ...loadingMessage,
+              status: "error",
+              content: accumulatedContent + `\n\nStream aborted. `,
+              error: "Stream aborted",
+              isLoading: false,
+              role: "system",
+            });
+          } else {
+            this.options.onError(error);
+            await this.updateMessage({
+              ...loadingMessage,
+              status: "error",
+              content:
+                accumulatedContent +
+                `\n\nNetwork error, please try again later.`,
+              error: error.message,
+              isLoading: false,
+              role: "system",
+            });
+          }
+          return accumulatedContent;
         }
-        return accumulatedContent;
       };
 
       let finalContent = await processRequest([
@@ -212,26 +252,15 @@ export class ChatHandler {
       });
     } catch (error: any) {
       console.error("Error in handleSubmit:", error);
-      if (error.name === "AbortError") {
-        await this.updateMessage({
-          ...loadingMessage,
-          status: "error",
-          content: `Stream aborted. `,
-          error: "Stream aborted",
-          isLoading: false,
-          role: "system",
-        });
-      } else {
-        this.options.onError(error);
-        await this.updateMessage({
-          ...loadingMessage,
-          status: "error",
-          content: `Network error, please try again later.`,
-          error: error.message,
-          isLoading: false,
-          role: "system",
-        });
-      }
+      this.options.onError(error);
+      await this.updateMessage({
+        ...loadingMessage,
+        status: "error",
+        content: `Network error, please try again later.`,
+        error: error.message,
+        isLoading: false,
+        role: "system",
+      });
     } finally {
       this.stopStreaming();
     }

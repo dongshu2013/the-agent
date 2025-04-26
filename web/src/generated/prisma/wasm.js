@@ -150,6 +150,7 @@ exports.Prisma.Tg_channelsScalarFieldEnum = {
   data_type: 'data_type',
   data_id: 'data_id',
   metadata: 'metadata',
+  tags: 'tags',
   is_public: 'is_public',
   is_free: 'is_free',
   subscription_fee: 'subscription_fee',

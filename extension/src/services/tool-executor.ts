@@ -86,7 +86,6 @@ export class ToolExecutor {
     return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage(message, (response) => {
         if (chrome.runtime.lastError) {
-          console.error("TabToolkit error:", chrome.runtime.lastError);
           reject(chrome.runtime.lastError);
           return;
         }
@@ -129,8 +128,7 @@ export class ToolExecutor {
     toolCall: ToolCall
   ): Promise<{ success: boolean; data: any }> {
     try {
-      const result = await this.executeTool(toolCall);
-      return result;
+      return await this.executeTool(toolCall);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error("Tool execution failed:", message);
