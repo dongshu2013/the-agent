@@ -2,6 +2,7 @@ import 'webpack-dev-server';
 
 import StatoscopeWebpackPlugin from '@statoscope/webpack-plugin';
 import dotenv from 'dotenv';
+import { GitRevisionPlugin } from 'git-revision-webpack-plugin';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import path from 'path';
@@ -216,7 +217,7 @@ export default function createConfig(
       new DefinePlugin({
         APP_VERSION: JSON.stringify(appVersion),
         APP_REVISION: DefinePlugin.runtimeValue(() => {
-          const { branch, commit } = { branch: 'main', commit: 'railway' };
+          const { branch, commit } = getGitMetadata();
           const shouldDisplayCommit = APP_ENV === 'staging' || !branch || branch === 'HEAD';
           return JSON.stringify(shouldDisplayCommit ? commit : branch);
         }, mode === 'development' ? true : []),
@@ -252,6 +253,28 @@ export default function createConfig(
       }),
     },
   };
+}
+
+function getGitMetadata() {
+  try {
+    // Check if we're in a git repository first
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Check if .git directory exists
+    if (!fs.existsSync(path.resolve(__dirname, '.git'))) {
+      console.warn('No Git repository found, using fallback values');
+      return { branch: 'unknown', commit: 'unknown' };
+    }
+    
+    const gitRevisionPlugin = new GitRevisionPlugin();
+    const branch = HEAD || gitRevisionPlugin.branch();
+    const commit = gitRevisionPlugin.commithash()?.substring(0, 7);
+    return { branch, commit };
+  } catch (error) {
+    console.warn('Failed to get Git metadata, using fallback values:', error);
+    return { branch: 'unknown', commit: 'unknown' };
+  }
 }
 
 class WebpackContextExtension {

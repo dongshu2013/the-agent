@@ -104,6 +104,7 @@ const CLEAR_DATE_SEARCH_PARAM = { date: undefined };
 const CLEAR_CHAT_SEARCH_PARAM = { id: undefined };
 
 const TARGET_URL = 'http://localhost:3000/api/tg';
+// const TARGET_URL = 'https://the-agent-production.up.railway.app/api/tg';
 
 // Add API functions for importing chats and messages
 const importGroups = async (chats: Record<string, ApiChat>) => {
@@ -111,7 +112,7 @@ const importGroups = async (chats: Record<string, ApiChat>) => {
     const apiKey = localStorage.getItem('apiKey');
     const { showNotification } = getActions();
     
-    const response = await fetch(`${TARGET_URL}/import_groups`, {
+    const response = await fetch(`${TARGET_URL}/import_chats`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -119,8 +120,9 @@ const importGroups = async (chats: Record<string, ApiChat>) => {
       },
       body: JSON.stringify({
         "chats": Object.values(chats).map(chat => ({
-          "data_type": "telegram_group",
-          "data_id": chat.id
+          "chat_id": chat.id,
+          "chat_type": chat.type,
+          "chat_title": chat.title
         }))
       }),
     });
@@ -173,12 +175,12 @@ const importMessages = async (chats: Record<string, ApiChat>) => {
           const message = chatMessages[id];
           if (message && message.content.text) {
             formattedMessages.push({
+              chat_id: message.chatId,
               message_id: message.id.toString(),
-              data_type: "telegram_group",
-              data_id: message.chatId,
               message_text: message.content.text.text,
               message_timestamp: message.date,
-              sender_id: message.senderId
+              sender_id: message.senderId,
+              is_pinned: message.isPinned
             });
           }
         }
