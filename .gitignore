@@ -59,3 +59,6 @@ extension/build
 extension/node_modules
 backend/node_modules
 web/node_modules
+
+# prisma generated files
+/web/src/generated/prisma

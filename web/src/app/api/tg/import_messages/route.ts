@@ -45,13 +45,15 @@ export async function POST(req: NextRequest) {
     const userId = user.id;
     console.log("---User found:", user);
 
-    const { syncedMessages } = await req.json();
 
-    // 验证请求参数
+    // Parse request body
+    const body = await req.json();
+    const { messages } = body;
+
     if (
-      !syncedMessages ||
-      !Array.isArray(syncedMessages) ||
-      syncedMessages.length === 0
+      !messages ||
+      !Array.isArray(messages) ||
+      messages.length === 0
     ) {
       return NextResponse.json(
         { error: "Invalid messages data" },
@@ -59,132 +61,83 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const totalMessageCount = syncedMessages.length;
+    console.log("---Messages received:", messages.length);
 
-    console.log("---Messages received:", totalMessageCount);
-
-    // 验证用户只能发送消息到自己的频道并格式化消息
-    const validMessages = [];
-    for (const msg of syncedMessages) {
-      // 支持snake_case或camelCase属性命名
-      // const channelId = msg.channel_id || msg.channelId;
-      // if (!channelId) continue;
-
-      // // 频道ID格式：$user_id:$channel_type:$platform_id
-      // const channelUserId = channelId.split(":")[0];
-
-      if (true) {
-        const channelId = `${userId}:${msg.channel_type}:${msg.chatId}`;
-        // 转换消息格式以匹配数据库列名
-        validMessages.push({
-          messageId: msg.message_id || msg.messageId,
-          channelId,
-          chatId: msg.chat_id || msg.chatId,
-          messageText: msg.message_text || msg.messageText,
-          messageTimestamp: msg.message_timestamp || msg.messageTimestamp,
-          senderId: msg.sender_id || msg.senderId || "",
-          sender: msg.sender || {},
-          sendUsername: msg.sender?.username,
-          sendFirstname: msg.sender?.firstName,
-          sendLastname: msg.sender?.lastName,
-          replyTo: msg.reply_to || msg.replyTo,
-          topicId: msg.topic_id || msg.topicId,
-          isPinned: msg.is_pinned || msg.isPinned || false,
-          buttons: msg.buttons || [],
-          reactions: msg.reactions || [],
-          mediaType: msg.media_type || msg.mediaType,
-          mediaFileId: msg.media_file_id || msg.mediaFileId,
-          mediaUrl: msg.media_url || msg.mediaUrl,
-          mediaMetadata: msg.media_metadata || msg.mediaMetadata || {},
-        });
+    // Get unique Telegram chat IDs from the messages
+    const uniqueTelegramChatIds = Array.from(new Set(messages.map(msg => msg.chat_id)));
+    
+    // Fetch all relevant chat records to get the mapping from Telegram chat_id to internal UUID
+    const chatRecords = await prisma.tg_chats.findMany({
+      where: {
+        chat_id: { in: uniqueTelegramChatIds },
+        user_id: userId
+      },
+      select: {
+        id: true,
+        chat_id: true
       }
-    }
+    });
 
-    const syncedMessageCount = validMessages.length;
+    // Create a mapping from Telegram chat_id to internal UUID
+    const chatIdMapping = new Map();
+    chatRecords.forEach(chat => {
+      chatIdMapping.set(chat.chat_id, chat.id);
+    });
 
-    if (syncedMessageCount === 0) {
-      return NextResponse.json(
-        {
-          code: 403,
-          message: "No valid messages to process",
-          data: {
-            total_message_count: totalMessageCount,
-            synced_message_count: 0,
-          },
-        },
-        { status: 403, headers: corsHeaders }
-      );
-    }
+    console.log("---Chat ID mapping:", Object.fromEntries(chatIdMapping));
 
-    // 将消息分批插入，每批最多1000条
-    const BATCH_SIZE = 1000;
-    // let insertedCount = 0;
-
-    for (let i = 0; i < validMessages.length; i += BATCH_SIZE) {
-      const batch = validMessages.slice(i, i + BATCH_SIZE);
-      // await db
-      //   .insert(messages)
-      //   .values(batch)
-      //   .onConflictDoNothing({
-      //     target: [messages.channelId, messages.messageId]
-      //   });
-      await prisma.tg_messages.upsert({
-        where: {
-          channel_id_message_id: {
-            channel_id: batch[0].channelId,
-            message_id: batch[0].messageId,
-          },
-        },
-        update: {},
-        create: {
-          channel_id: batch[0].channelId,
-          message_id: batch[0].messageId,
-          chat_id: batch[0].chatId,
-          message_text: batch[0].messageText,
-          message_timestamp: batch[0].messageTimestamp,
-          sender_id: batch[0].senderId,
-          sender: batch[0].sender,
-          send_username: batch[0].sendUsername,
-          send_firstname: batch[0].sendFirstname,
-          send_lastname: batch[0].sendLastname,
-          reply_to: batch[0].replyTo,
-          topic_id: batch[0].topicId,
-          is_pinned: batch[0].isPinned,
-          buttons: batch[0].buttons,
-          reactions: batch[0].reactions,
-          media_type: batch[0].mediaType,
-          media_file_id: batch[0].mediaFileId,
-          media_url: batch[0].mediaUrl,
-          media_metadata: batch[0].mediaMetadata,
-        },
-      });
-      // insertedCount += batch.length;
-    }
-
-    // 仅更新一次channel的最后同步时间
-    if (validMessages.length > 0) {
-      // await db
-      //   .update(channels)
-      //   .set({ lastSyncedAt: new Date() })
-      //   .where(eq(channels.channelId, validMessages[0].channelId));
-      await prisma.tg_channels.update({
-        where: {
-          channel_id: validMessages[0].channelId,
-        },
+    // Filter out messages for chats that don't exist in our database
+    const validMessages = messages.filter(msg => chatIdMapping.has(msg.chat_id));
+    
+    if (validMessages.length === 0) {
+      return NextResponse.json({
+        code: 400,
+        message: "No valid messages found. Ensure the chats exist in the database first.",
         data: {
-          last_synced_at: new Date(),
+          total_message_count: messages.length,
+          synced_message_count: 0
+        }
+      }, { headers: corsHeaders });
+    }
+
+    // Format messages according to the database schema
+    const formattedMessages = validMessages.map(msg => ({
+      chat_id: chatIdMapping.get(msg.chat_id), // Use the internal UUID
+      message_id: msg.message_id,
+      message_text: msg.message_text || '',
+      message_timestamp: BigInt(msg.message_timestamp),
+      sender_id: msg.sender_id || null,
+      sender_username: msg.sender?.username || null,
+      sender_firstname: msg.sender?.firstName || null,
+      sender_lastname: msg.sender?.lastName || null,
+      reply_to_msg_id: msg.replyTo?.messageId || null,
+      is_pinned: msg.is_pinned || false
+    }));
+
+    // Use Prisma's createMany with skipDuplicates to handle upserts efficiently
+    const result = await prisma.tg_messages.createMany({
+      data: formattedMessages,
+      skipDuplicates: true, // Skip records that would violate the unique constraint
+    });
+
+    // Update the last_synced_at for all affected chats
+    if (formattedMessages.length > 0) {
+      await prisma.tg_chats.updateMany({
+        where: {
+          id: { in: Array.from(chatIdMapping.values()) }
         },
+        data: { last_synced_at: new Date() }
       });
     }
 
-    // 返回同步结果
+    // Return success response
     return NextResponse.json({
       code: 200,
-      message: "success",
+      message: `Successfully imported ${result.count} messages`,
       data: {
-        total_message_count: totalMessageCount,
-        synced_message_count: syncedMessageCount,
-      },
+        total_message_count: messages.length,
+        synced_message_count: result.count
+      }
     }, { headers: corsHeaders });
   } catch (error) {
     console.error("Failed to batch insert messages:", error);
