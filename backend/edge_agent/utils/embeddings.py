@@ -10,7 +10,7 @@ from openai import OpenAI
 from sqlalchemy.orm import Session
 
 from edge_agent.core.config import settings
-from edge_agent.models.database import Message
+from edge_agent.models.database import Message, TelegramMessage
 
 logger = logging.getLogger("embeddings")
 
@@ -168,6 +168,98 @@ async def update_all_messages_embeddings(db: Session = None, minutes_threshold: 
                 continue
         
         logger.info(f"Updated embeddings for {updated_count} messages")
+        return updated_count
+    finally:
+        # Close the session if we created it
+        if session_created:
+            db.close()
+
+async def update_tg_message_embedding(message_id: str, db: Session = None) -> Optional[TelegramMessage]:
+    """
+    Update a Telegram message with its embedding.
+    Takes a message ID and optionally a database session.
+    If no session is provided, a new one will be created.
+    """
+    db, session_created = get_db_session(db)
+    
+    try:
+        # Get the message from the database
+        message_in_db = db.query(TelegramMessage).filter(TelegramMessage.id == message_id).first()
+        
+        if not message_in_db:
+            logger.error(f"Telegram message {message_id} not found in database")
+            return None
+            
+        if message_in_db.embedding is not None:
+            # Skip if embedding already exists
+            return message_in_db
+        
+        # Use the message_text field for the embedding
+        text = message_in_db.message_text
+        
+        logger.info(f"Generating embedding for Telegram message {message_in_db.id}")
+        # Generate embedding
+        embedding = await generate_embedding(text)
+
+        # Only update if we got a valid embedding
+        if embedding is not None:
+            # Update message with embedding
+            message_in_db.embedding = embedding
+            db.commit()
+            logger.info(f"Updated embedding for Telegram message {message_in_db.id}")
+        else:
+            logger.warning(f"No embedding generated for Telegram message {message_in_db.id}")
+
+        return message_in_db
+    except Exception as e:
+        logger.error(f"Error updating Telegram message embedding: {str(e)}")
+        try:
+            db.rollback()
+        except:
+            pass
+        return None
+    finally:
+        # Close the session if we created it
+        if session_created:
+            db.close()
+
+async def update_tg_messages_embeddings(db: Session = None, minutes_threshold: int = 5) -> int:
+    """
+    Update embeddings for all Telegram messages that don't have them yet and were created
+    at least minutes_threshold minutes ago.
+    
+    Args:
+        db: Optional database session
+        minutes_threshold: Only process messages created at least this many minutes ago
+        
+    Returns:
+        Number of messages updated
+    """
+    db, session_created = get_db_session(db)
+    
+    try:
+        # Calculate the cutoff time (current time - threshold)
+        from datetime import datetime, timedelta
+        cutoff_time = datetime.utcnow() - timedelta(minutes=minutes_threshold)
+        
+        # Get messages without embeddings that were created before the cutoff time
+        messages = db.query(TelegramMessage).filter(
+            TelegramMessage.embedding.is_(None),
+            TelegramMessage.created_at < cutoff_time
+        ).all()
+        
+        logger.info(f"Found {len(messages)} Telegram messages without embeddings created before {cutoff_time}")
+        updated_count = 0
+        
+        for message in messages:
+            try:
+                await update_tg_message_embedding(message.id, db)
+                updated_count += 1
+            except Exception as e:
+                logger.error(f"Error updating embedding for Telegram message {message.id}: {str(e)}")
+                continue
+        
+        logger.info(f"Updated embeddings for {updated_count} Telegram messages")
         return updated_count
     finally:
         # Close the session if we created it

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, JSON
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, JSON, BigInteger, Numeric
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -63,3 +63,66 @@ class Message(Base):
         return f"<Message(id={self.id}, role={self.role})>"
 
 
+class TelegramChat(Base):
+    __tablename__ = "tg_chats"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    user_id = Column(String, nullable=False)
+    chat_id = Column(String, nullable=False)
+    chat_type = Column(String, nullable=False)
+    chat_title = Column(String, nullable=False)
+    is_public = Column(Boolean, default=False, nullable=False)
+    is_free = Column(Boolean, default=False, nullable=False)
+    subscription_fee = Column(Numeric, default=0, nullable=False)
+    last_synced_at = Column(DateTime, default=func.now(), nullable=False)
+    status = Column(String, default="watching", nullable=False)  # watching, quiet
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
+
+    # Relationships
+    messages = relationship("TelegramMessage", back_populates="chat", cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"<TelegramChat(id={self.id}, chat_id={self.chat_id}, chat_title={self.chat_title})>"
+
+
+class TelegramMessage(Base):
+    __tablename__ = "tg_messages"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    chat_id = Column(String, ForeignKey("tg_chats.id"), nullable=False)
+    message_id = Column(String, nullable=False)
+    message_text = Column(String, nullable=False)
+    message_timestamp = Column(BigInteger, nullable=False)
+    sender_id = Column(String, nullable=True)
+    reply_to_msg_id = Column(String, nullable=True)
+    is_pinned = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
+    sender_username = Column(String, nullable=True)
+    sender_firstname = Column(String, nullable=True)
+    sender_lastname = Column(String, nullable=True)
+    embedding = Column(Vector(1024), nullable=True)  # Vector embedding for similarity search
+
+    # Relationships
+    chat = relationship("TelegramChat", back_populates="messages")
+
+    def __repr__(self):
+        return f"<TelegramMessage(id={self.id}, message_id={self.message_id})>"
+
+
+class TelegramUser(Base):
+    __tablename__ = "tg_users"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    user_id = Column(String, nullable=False)
+    user_type = Column(String, nullable=False)
+    username = Column(String, nullable=False)
+    first_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=True)
+    photo_url = Column(String, nullable=True)
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
+
+    def __repr__(self):
+        return f"<TelegramUser(id={self.id}, user_id={self.user_id}, username={self.username})>"
