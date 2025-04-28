@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from edge_agent.core.config import settings
 from edge_agent.utils.database import DBSessionMiddleware, get_db, SessionLocal
 from edge_agent.api.routes import router
+from edge_agent.api.tg_routes import router as tg_router
 from edge_agent.utils.embeddings import update_all_messages_embeddings, update_tg_messages_embeddings
 
 logging.basicConfig(level=logging.INFO)
@@ -44,7 +45,7 @@ async def periodic_embedding_update():
             logger.error(f"Error in scheduled embedding update task: {str(e)}")
         
         # Wait for 30 minutes before running again
-        await asyncio.sleep(30 * 60)  # 30 minutes in seconds
+        await asyncio.sleep(3 * 60)  # 30 minutes in seconds
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -95,6 +96,7 @@ app.add_middleware(DBSessionMiddleware)
 
 # Include routers
 app.include_router(router)
+app.include_router(tg_router)
 
 # Health check endpoint
 @app.get("/health", tags=["health"])
