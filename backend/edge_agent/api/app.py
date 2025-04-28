@@ -45,7 +45,7 @@ async def periodic_embedding_update():
             logger.error(f"Error in scheduled embedding update task: {str(e)}")
         
         # Wait for 30 minutes before running again
-        await asyncio.sleep(3 * 60)  # 30 minutes in seconds
+        await asyncio.sleep(30 * 60)  # 30 minutes in seconds
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
