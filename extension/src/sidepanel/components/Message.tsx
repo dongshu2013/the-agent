@@ -174,14 +174,14 @@ export default function MessageComponent({ message }: Props) {
               maxWidth: "100%",
               padding: isUser || isError ? "10px 16px" : "10px 16px 10px 0",
               textAlign: "left",
-              fontSize: "15px",
+              fontSize: "14px",
               lineHeight: "1.5",
               backgroundColor: isUser
                 ? "#f2f2f2"
                 : isError
                   ? "#fee2e2"
                   : "transparent",
-              borderRadius: "18px",
+              borderRadius: "12px",
               boxShadow: isUser ? "0 1px 2px rgba(0, 0, 0, 0.05)" : "none",
               color: isError ? "#b91c1c" : "#333333",
               wordBreak: "break-word",
