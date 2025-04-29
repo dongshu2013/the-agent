@@ -27,11 +27,56 @@ export class ToolExecutor {
         return await this.executeWebToolkit(toolCall);
       }
 
+      // 处理 TgToolkit 调用
+      if (toolName.startsWith("TgToolkit_")) {
+        return await this.executeTgToolkit(toolCall);
+      }
+
       throw new Error(`Unknown tool type: ${toolName}`);
     } catch (error) {
       console.error(`Error executing ${toolCall.function.name}:`, error);
       throw error;
     }
+  }
+
+  private async executeTgToolkit(toolCall: ToolCall): Promise<any> {
+    const params = this.parseToolParams(toolCall);
+    const message = {
+      name: "execute-tool",
+      body: { name: toolCall.function.name, arguments: params },
+    };
+
+    console.log("Sending TgToolkit message to background:", message);
+
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(message, (response) => {
+        if (chrome.runtime.lastError) {
+          console.error("TgToolkit error:", chrome.runtime.lastError);
+          reject(chrome.runtime.lastError);
+          return;
+        }
+
+        if (!response) {
+          const error = new Error(
+            "No response received from background script"
+          );
+          console.error(error);
+          reject(error);
+          return;
+        }
+
+        console.log("TgToolkit response:", response);
+
+        if (!response.success) {
+          const error = new Error(response.error || "Unknown error");
+          console.error("TgToolkit failed:", error);
+          reject(error);
+          return;
+        }
+
+        resolve(response.data);
+      });
+    });
   }
 
   private async executeWebToolkit(toolCall: ToolCall): Promise<any> {

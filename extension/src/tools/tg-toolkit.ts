@@ -1,10 +1,12 @@
 import { WebInteractionResult } from './tab-toolkit';
+import { env } from '../utils/env';
+import { handleAuthError, getApiKey } from '../services/utils';
 
 // Ensure Chrome types are available
 declare const chrome: any;
 
 export class TgToolkit {
-  private static readonly API_BASE_URL = '/api/v1/tg';
+  private static readonly API_ENDPOINT = '/v1/tg';
 
   /**
    * Get a list of user's Telegram dialogs
@@ -25,7 +27,8 @@ export class TgToolkit {
     isFree?: boolean,
     status?: string,
     sortBy: string = "updated_at",
-    sortOrder: string = "desc"
+    sortOrder: string = "desc",
+    apiKey?: string
   ): Promise<WebInteractionResult> {
     try {
       // Build query parameters
@@ -40,21 +43,38 @@ export class TgToolkit {
       params.append('sort_by', sortBy);
       params.append('sort_order', sortOrder);
 
+      // Get API key
+      const apiKeyToUse = apiKey || (await getApiKey());
+      if (!apiKeyToUse) {
+        return handleAuthError();
+      }
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      headers['Authorization'] = `Bearer ${apiKeyToUse}`;
+
       // Make API request
-      const response = await fetch(`${this.API_BASE_URL}/get_dialogs?${params.toString()}`, {
+      const response = await fetch(`${env.BACKEND_URL}${this.API_ENDPOINT}/get_dialogs?${params.toString()}`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': await this.getApiKey()
-        }
+        headers
       });
 
       const data = await response.json();
       
       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        
+        if (response.status === 401 || response.status === 403) {
+          return handleAuthError();
+        }
+        
         return {
           success: false,
-          error: data.error?.message || 'Failed to get dialogs'
+          error: errorData.detail || 
+                 errorData.error?.message || 
+                 `API Error: ${response.status} - ${response.statusText}`
         };
       }
 
@@ -91,7 +111,8 @@ export class TgToolkit {
     startTimestamp?: number,
     endTimestamp?: number,
     sortBy: string = "message_timestamp",
-    sortOrder: string = "desc"
+    sortOrder: string = "desc",
+    apiKey?: string
   ): Promise<WebInteractionResult> {
     try {
       // Build query parameters
@@ -107,21 +128,38 @@ export class TgToolkit {
       params.append('sort_by', sortBy);
       params.append('sort_order', sortOrder);
 
+      // Get API key
+      const apiKeyToUse = apiKey || (await getApiKey());
+      if (!apiKeyToUse) {
+        return handleAuthError();
+      }
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      headers['Authorization'] = `Bearer ${apiKeyToUse}`;
+
       // Make API request
-      const response = await fetch(`${this.API_BASE_URL}/get_messages?${params.toString()}`, {
+      const response = await fetch(`${env.BACKEND_URL}${this.API_ENDPOINT}/get_messages?${params.toString()}`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': await this.getApiKey()
-        }
+        headers
       });
 
       const data = await response.json();
       
       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        
+        if (response.status === 401 || response.status === 403) {
+          return handleAuthError();
+        }
+        
         return {
           success: false,
-          error: data.error?.message || 'Failed to get messages'
+          error: errorData.detail || 
+                 errorData.error?.message || 
+                 `API Error: ${response.status} - ${response.statusText}`
         };
       }
 
@@ -154,7 +192,8 @@ export class TgToolkit {
     messageRange: number = 2,
     threshold: number = 0.7,
     isPublic?: boolean,
-    isFree?: boolean
+    isFree?: boolean,
+    apiKey?: string
   ): Promise<WebInteractionResult> {
     try {
       // Build query parameters
@@ -168,21 +207,38 @@ export class TgToolkit {
       if (isPublic !== undefined) params.append('is_public', isPublic.toString());
       if (isFree !== undefined) params.append('is_free', isFree.toString());
 
+      // Get API key
+      const apiKeyToUse = apiKey || (await getApiKey());
+      if (!apiKeyToUse) {
+        return handleAuthError();
+      }
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      headers['Authorization'] = `Bearer ${apiKeyToUse}`;
+
       // Make API request
-      const response = await fetch(`${this.API_BASE_URL}/search_messages?${params.toString()}`, {
+      const response = await fetch(`${env.BACKEND_URL}${this.API_ENDPOINT}/search_messages?${params.toString()}`, {
         method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': await this.getApiKey()
-        }
+        headers
       });
 
       const data = await response.json();
       
       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        
+        if (response.status === 401 || response.status === 403) {
+          return handleAuthError();
+        }
+        
         return {
           success: false,
-          error: data.error?.message || 'Failed to search messages'
+          error: errorData.detail || 
+                 errorData.error?.message || 
+                 `API Error: ${response.status} - ${response.statusText}`
         };
       }
 
@@ -198,10 +254,9 @@ export class TgToolkit {
     }
   }
 
-  /**
-   * Get API key from storage
-   * @private
-   */
+  // Note: We're no longer using this method as we're using the getApiKey from services/utils
+  // Keeping this commented out for reference
+  /*
   private static async getApiKey(): Promise<string> {
     return new Promise((resolve, reject) => {
       chrome.storage.local.get(['apiKey'], (result: { apiKey?: string }) => {
@@ -215,4 +270,5 @@ export class TgToolkit {
       });
     });
   }
+  */
 }
