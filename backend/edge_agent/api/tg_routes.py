@@ -172,7 +172,7 @@ async def get_messages(
             )
         
         # Query messages
-        query = db.query(TelegramMessage).filter(TelegramMessage.chat_id == chat_id)
+        query = db.query(TelegramMessage).filter(TelegramMessage.chat_id == chat.id)
         
         # Apply filters
         if message_text:
