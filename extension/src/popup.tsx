@@ -29,7 +29,7 @@ const Popup = () => {
         gap: "12px",
       }}
     >
-      <h2 style={{ margin: "0", fontSize: "18px" }}>MIZU Agent</h2>
+      <h2 style={{ margin: "0", fontSize: "18px" }}>Mysta Agent</h2>
       <button
         onClick={openSidePanel}
         style={{

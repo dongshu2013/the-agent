@@ -432,7 +432,7 @@ const Sidepanel = () => {
                   letterSpacing: "-0.025em",
                 }}
               >
-                Welcome to MIZU
+                Welcome to Mysta
               </h1>
               <p
                 style={{
