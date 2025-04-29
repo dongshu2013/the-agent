@@ -154,7 +154,7 @@ async def get_messages(
         
         # First verify that the user has permission to access this chat
         chat = db.query(TelegramChat).filter(
-            TelegramChat.id == chat_id,
+            TelegramChat.chat_id == chat_id,
             TelegramChat.user_id == user.id
         ).first()
         
