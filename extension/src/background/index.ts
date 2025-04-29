@@ -1,5 +1,6 @@
 import { Storage } from "@plasmohq/storage";
 import { TabToolkit } from "../tools/tab-toolkit";
+import { TgToolkit } from "../tools/tg-toolkit";
 import { WebToolkit } from "../tools/web-toolkit";
 
 const storage = new Storage();
@@ -114,9 +115,10 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
         }
 
         // 处理 TabToolkit 调用
-        const toolNoolName = name.replace("TabToolkit_", "");
+        if (name.startsWith("TabToolkit_")) {
+          const toolNoolName = name.replace("TabToolkit_", "");
 
-        switch (toolNoolName) {
+          switch (toolNoolName) {
           case "openTab":
             const result = await TabToolkit.openTab(params.url);
             sendResponse(result);
@@ -147,7 +149,61 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
               success: false,
               error: `Tool ${name} not implemented in background script`,
             });
+          }
+          return true;
         }
+        
+        // 处理 TgToolkit 调用
+        if (name.startsWith("TgToolkit_")) {
+          const toolName = name.replace("TgToolkit_", "");
+          let result;
+          
+          switch (toolName) {
+            case "getDialogs":
+              result = await TgToolkit.getDialogs(
+                params.limit,
+                params.offset,
+                params.chatTitle,
+                params.isPublic,
+                params.isFree,
+                params.status,
+                params.sortBy,
+                params.sortOrder
+              );
+              break;
+            case "getMessages":
+              result = await TgToolkit.getMessages(
+                params.chatId,
+                params.limit,
+                params.offset,
+                params.messageText,
+                params.senderId,
+                params.startTimestamp,
+                params.endTimestamp,
+                params.sortBy,
+                params.sortOrder
+              );
+              break;
+            case "searchMessages":
+              result = await TgToolkit.searchMessages(
+                params.query,
+                params.chatId,
+                params.topK,
+                params.messageRange,
+                params.threshold,
+                params.isPublic,
+                params.isFree
+              );
+              break;
+            default:
+              throw new Error(`Unknown TgToolkit operation: ${toolName}`);
+          }
+          
+          sendResponse({ success: true, data: result });
+          return true;
+        }
+
+
       } catch (error: any) {
         console.error("Error executing tool in background:", error);
         sendResponse({ success: false, error: error.message || String(error) });

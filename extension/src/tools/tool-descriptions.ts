@@ -17,6 +17,174 @@ export interface ToolDescription {
 // Generate tool descriptions for AI model
 export const getToolDescriptions = (): ToolDescription[] => {
   return [
+    // Telegram Toolkit Tools
+    {
+      name: "TgToolkit_getDialogs",
+      description: "Get a list of user's Telegram dialogs",
+      parameters: {
+        type: "object",
+        properties: {
+          limit: {
+            type: "number",
+            description: "Maximum number of dialogs to return (default: 100)",
+          },
+          offset: {
+            type: "number",
+            description: "Offset for pagination (default: 0)",
+          },
+          chatTitle: {
+            type: "string",
+            description: "Optional filter by chat title",
+          },
+          isPublic: {
+            type: "boolean",
+            description: "Optional filter by public status",
+          },
+          isFree: {
+            type: "boolean",
+            description: "Optional filter by free status",
+          },
+          status: {
+            type: "string",
+            description: "Optional filter by status",
+          },
+          sortBy: {
+            type: "string",
+            description: "Field to sort by (default: 'updated_at')",
+          },
+          sortOrder: {
+            type: "string",
+            description: "Sort order (default: 'desc')",
+          },
+        },
+      },
+      returns: {
+        type: "object",
+        description: "List of Telegram dialogs",
+        properties: {
+          success: {
+            type: "boolean",
+            description: "Whether the operation was successful",
+          },
+          data: {
+            type: "object",
+            description: "Dialog data including list of dialogs and pagination info",
+          },
+        },
+      },
+    },
+    {
+      name: "TgToolkit_getMessages",
+      description: "Get messages from a specified chat",
+      parameters: {
+        type: "object",
+        properties: {
+          chatId: {
+            type: "string",
+            description: "ID of the chat to get messages from",
+          },
+          limit: {
+            type: "number",
+            description: "Maximum number of messages to return (default: 100)",
+          },
+          offset: {
+            type: "number",
+            description: "Offset for pagination (default: 0)",
+          },
+          messageText: {
+            type: "string",
+            description: "Optional filter by message text",
+          },
+          senderId: {
+            type: "string",
+            description: "Optional filter by sender ID",
+          },
+          startTimestamp: {
+            type: "number",
+            description: "Optional filter by start timestamp",
+          },
+          endTimestamp: {
+            type: "number",
+            description: "Optional filter by end timestamp",
+          },
+          sortBy: {
+            type: "string",
+            description: "Field to sort by (default: 'message_timestamp')",
+          },
+          sortOrder: {
+            type: "string",
+            description: "Sort order (default: 'desc')",
+          },
+        },
+        required: ["chatId"],
+      },
+      returns: {
+        type: "object",
+        description: "List of messages from the specified chat",
+        properties: {
+          success: {
+            type: "boolean",
+            description: "Whether the operation was successful",
+          },
+          data: {
+            type: "object",
+            description: "Message data including list of messages and pagination info",
+          },
+        },
+      },
+    },
+    {
+      name: "TgToolkit_searchMessages",
+      description: "Search messages based on vector similarity",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "Search query",
+          },
+          chatId: {
+            type: "string",
+            description: "Optional chat ID to limit search to",
+          },
+          topK: {
+            type: "number",
+            description: "Maximum number of results to return (default: 10)",
+          },
+          messageRange: {
+            type: "number",
+            description: "Number of messages before and after the match to include (default: 2)",
+          },
+          threshold: {
+            type: "number",
+            description: "Similarity threshold (default: 0.7)",
+          },
+          isPublic: {
+            type: "boolean",
+            description: "Optional filter by public status",
+          },
+          isFree: {
+            type: "boolean",
+            description: "Optional filter by free status",
+          },
+        },
+        required: ["query"],
+      },
+      returns: {
+        type: "object",
+        description: "Search results with matching messages and their context",
+        properties: {
+          success: {
+            type: "boolean",
+            description: "Whether the operation was successful",
+          },
+          data: {
+            type: "object",
+            description: "Search results including matching messages and their context",
+          },
+        },
+      },
+    },
     // Tab Toolkit Tools
     {
       name: "TabToolkit_openTab",

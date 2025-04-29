@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -9,7 +12,8 @@ from sqlalchemy.orm import Session
 from edge_agent.core.config import settings
 from edge_agent.utils.database import DBSessionMiddleware, get_db, SessionLocal
 from edge_agent.api.routes import router
-from edge_agent.utils.embeddings import update_all_messages_embeddings
+from edge_agent.api.tg_routes import router as tg_router
+from edge_agent.utils.embeddings import update_all_messages_embeddings, update_tg_messages_embeddings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("app")
@@ -28,9 +32,13 @@ async def periodic_embedding_update():
             # Create a new session for this task
             db = SessionLocal()
             try:
-                # Update embeddings for messages created at least 30 minutes ago
+                # Update embeddings for regular messages created at least 5 minutes ago
                 updated_count = await update_all_messages_embeddings(db, minutes_threshold=5)
-                logger.info(f"Scheduled task updated embeddings for {updated_count} messages")
+                logger.info(f"Scheduled task updated embeddings for {updated_count} regular messages")
+                
+                # Update embeddings for Telegram messages created at least 5 minutes ago
+                tg_updated_count = await update_tg_messages_embeddings(db, minutes_threshold=5)
+                logger.info(f"Scheduled task updated embeddings for {tg_updated_count} Telegram messages")
             finally:
                 db.close()
         except Exception as e:
@@ -88,6 +96,7 @@ app.add_middleware(DBSessionMiddleware)
 
 # Include routers
 app.include_router(router)
+app.include_router(tg_router)
 
 # Health check endpoint
 @app.get("/health", tags=["health"])
