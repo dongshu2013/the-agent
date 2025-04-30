@@ -34,6 +34,7 @@
     "dexie-react-hooks": "^1.1.7",
     "dotenv": "^16.0.3",
     "openai": "^4.93.0",
+    "playwright": "^1.52.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-markdown": "7.1.2",

@@ -47,7 +47,11 @@ uv run uvicorn edge_agent.api.app:app --reload --port 8000 --lifespan on
 ## API参考
 
 ### 聊天完成 `/v1/chat/completion`
-
+web-toolkit.ts:115 Error getting page source: Error: No result returned from page
+    at WebToolkit.getPageSource (web-toolkit.ts:88:9)
+    at async index.ts:72:15
+getPageSource @ web-toolkit.ts:115Understand this error
+tool-executor.ts:110 
 **请求示例:**
 
 ```json

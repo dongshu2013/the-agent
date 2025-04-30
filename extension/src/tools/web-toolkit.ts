@@ -1,3 +1,5 @@
+import { parseHtml, minify } from "./dom-parser";
+
 export interface WebInteractionResult {
   success: boolean;
   data?: any;
@@ -7,6 +9,9 @@ export interface WebInteractionResult {
 interface PageSourceResult {
   html: string;
   js: string[];
+  url: string;
+  title: string;
+  links: { text: string | null; href: string | null }[];
 }
 
 interface WebToolkitResponse {
@@ -16,32 +21,49 @@ interface WebToolkitResponse {
 }
 
 export class WebToolkit {
-  private async executeInTab<T>(code: string): Promise<T> {
+  private async executeInTab<T>(fn?: () => any): Promise<T> {
     try {
       const tabs = await chrome.tabs.query({
-        active: true,
         currentWindow: true,
+        status: "complete",
       });
-      if (!tabs[0]?.id) {
-        throw new Error("No active tab found");
+
+      if (!tabs || tabs.length === 0) {
+        throw new Error("No tabs found in current window");
+      }
+
+      const activeTab = tabs.find((tab) => tab.active) || tabs[0];
+
+      if (!activeTab?.id) {
+        throw new Error("Invalid tab ID");
       }
 
       const results = await chrome.scripting.executeScript({
-        target: { tabId: tabs[0].id },
-        func: (): PageSourceResult => {
+        target: { tabId: activeTab.id },
+        func: (userFuncString: string) => {
           try {
-            return {
-              html: document.documentElement.outerHTML,
-              js: Array.from(document.scripts).map((script) => script.src),
-            };
+            if (!userFuncString) {
+              // 如果没有传入函数，则返回页面内容
+              const html = document.documentElement.outerHTML;
+              return {
+                html,
+                url: window.location.href,
+                title: document.title,
+              };
+            }
+
+            // 执行传入的函数
+            const userFunc = new Function("return " + userFuncString)();
+            return userFunc();
           } catch (error) {
-            console.error("Error getting page source:", error);
+            console.error("Error in content script execution:", error);
             throw error;
           }
         },
+        args: [fn ? fn.toString() : ""],
       });
 
-      if (!results || results.length === 0) {
+      if (!results || results.length === 0 || !results[0].result) {
         throw new Error("No results returned from script execution");
       }
 
@@ -53,22 +75,28 @@ export class WebToolkit {
   }
 
   async getPageSource(
-    includeHtml: boolean = true,
-    includeJs: boolean = true
+    includeHtml: boolean = true
   ): Promise<WebToolkitResponse> {
     try {
-      const result = await this.executeInTab<PageSourceResult>("");
-      if (!result) {
-        throw new Error("Failed to get page source");
+      const result = await this.executeInTab<PageSourceResult>();
+
+      if (!result || !result.html) {
+        throw new Error("No result returned from page");
       }
 
-      // 根据参数过滤结果
-      const filteredResult = {
-        html: includeHtml ? result.html : null,
-        js: includeJs ? result.js : null,
-      };
+      // 使用dom-parser处理HTML
+      const domTree = parseHtml(result.html);
+      const { html: minifiedHtml, selectors } = minify(domTree);
 
-      return { success: true, data: filteredResult };
+      return {
+        success: true,
+        data: {
+          html: includeHtml ? minifiedHtml : null,
+          selectors: selectors,
+          url: result.url,
+          title: result.title,
+        },
+      };
     } catch (error) {
       console.error("Error getting page source:", error);
       return {
@@ -78,7 +106,7 @@ export class WebToolkit {
     }
   }
 
-  async screenshot(fullPage: boolean = false): Promise<WebInteractionResult> {
+  async screenshot(): Promise<WebInteractionResult> {
     try {
       // 获取当前标签页
       const tabs = await chrome.tabs.query({
@@ -114,165 +142,42 @@ export class WebToolkit {
       };
     }
   }
-
-  // 安全地转义字符串，防止 XSS
-  private escapeString(str: string): string {
-    return str.replace(/'/g, "\\'").replace(/"/g, '\\"');
-  }
-
-  // 安全地构建选择器
-  private buildSafeSelector(selector: string): string {
-    return this.escapeString(selector);
-  }
-
-  async getCurrentUrl(): Promise<WebInteractionResult> {
-    try {
-      const tabs = await chrome.tabs.query({
-        active: true,
-        currentWindow: true,
-      });
-      if (!tabs[0]?.url) throw new Error("No active tab found");
-      return { success: true, data: tabs[0].url };
-    } catch (error) {
-      console.error("Error getting URL:", error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-  }
-
-  async highlightElement(selector: string): Promise<WebInteractionResult> {
-    try {
-      const safeSelector = this.buildSafeSelector(selector);
-      const code = `
-        (() => {
-          const el = document.querySelector('${safeSelector}');
-          if (el) {
-            el.style.outline = '3px solid red';
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            return { success: true };
-          }
-          return { success: false, error: 'Element not found' };
-        })()
-      `;
-      const result = await this.executeInTab(code);
-      return { success: true, data: result };
-    } catch (error) {
-      console.error("Error highlighting element:", error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-  }
-
-  async getInnerHTML(selector: string): Promise<WebInteractionResult> {
-    try {
-      const safeSelector = this.buildSafeSelector(selector);
-      const code = `
-        (() => {
-          const element = document.querySelector('${safeSelector}');
-          return element ? element.innerHTML : null;
-        })()
-      `;
-      const result = await this.executeInTab(code);
-      return { success: true, data: result };
-    } catch (error) {
-      console.error("Error getting innerHTML:", error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-  }
-
-  // 更新现有的 findElement 方法以使用安全的选择器
-  async findElement(
-    selector: string,
-    timeout: number = 5000
-  ): Promise<WebInteractionResult> {
-    try {
-      const safeSelector = this.buildSafeSelector(selector);
-      const code = `
-        (() => {
-          return new Promise((resolve) => {
-            const element = document.querySelector('${safeSelector}');
-            if (element) {
-              resolve({
-                found: true,
-                selector: '${safeSelector}',
-                text: element.textContent,
-                html: element.outerHTML
-              });
-            } else {
-              resolve({
-                found: false,
-                selector: '${safeSelector}'
-              });
-            }
-          });
-        })()
-      `;
-
-      const result = await this.executeInTab(code);
-      return { success: true, data: result };
-    } catch (error) {
-      console.error("Error finding element:", error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-  }
-
   async inputElement(
     selector: string,
     value: string
   ): Promise<WebInteractionResult> {
     try {
-      // First wait for the element to be present
-      await this.waitForElement(selector);
-
-      const code = `
-        (() => {
-          try {
-            const element = document.querySelector(${JSON.stringify(selector)});
-            if (!element) {
-              return { success: false, error: 'Element not found' };
-            }
-            
-            // Ensure element is visible and editable
-            if (element.offsetParent === null) {
-              return { success: false, error: 'Element is not visible' };
-            }
-            
-            // Scroll element into view
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            
-            // Add a small delay to ensure scrolling is complete
-            setTimeout(() => {
-              // Clear existing value
-              element.value = '';
-              // Set new value
-              element.value = ${JSON.stringify(value)};
-              // Trigger input event
-              element.dispatchEvent(new Event('input', { bubbles: true }));
-              // Trigger change event
-              element.dispatchEvent(new Event('change', { bubbles: true }));
-            }, 100);
-            
-            return { success: true };
-          } catch (error) {
-            return { success: false, error: error.message };
+      const result = await this.executeInTab<WebInteractionResult>(() => {
+        return new Promise((resolve) => {
+          const element = document.querySelector(selector) as HTMLElement;
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
+            element.focus();
+            (element as HTMLInputElement).value = value;
+            const events = ["input", "change", "blur"];
+            events.forEach((eventType) => {
+              const event = new Event(eventType, { bubbles: true });
+              element.dispatchEvent(event);
+            });
+            const keyboardEvents = ["keydown", "keypress", "keyup"];
+            keyboardEvents.forEach((eventType) => {
+              const event = new KeyboardEvent(eventType, {
+                bubbles: true,
+                key: "Enter",
+                keyCode: 13,
+                which: 13,
+              });
+              element.dispatchEvent(event);
+            });
+            resolve({ success: true });
+          } else {
+            resolve({ success: false, error: "Element not found" });
           }
-        })()
-      `;
-
-      const result = await this.executeInTab(code);
+        });
+      });
       return { success: true, data: result };
     } catch (error) {
-      console.error("Error inputting element:", error);
+      console.error("Error in inputElement:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),
@@ -282,38 +187,25 @@ export class WebToolkit {
 
   async clickElement(selector: string): Promise<WebInteractionResult> {
     try {
-      // First wait for the element to be present
-      await this.waitForElement(selector);
-
-      const code = `
-        (() => {
-          try {
-            const element = document.querySelector(${JSON.stringify(selector)});
-            if (!element) {
-              return { success: false, error: 'Element not found' };
-            }
-            
-            // Ensure element is visible and clickable
-            if (element.offsetParent === null) {
-              return { success: false, error: 'Element is not visible' };
-            }
-            
-            // Scroll element into view
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            
-            // Add a small delay to ensure scrolling is complete
-            setTimeout(() => {
-              element.click();
-            }, 100);
-            
-            return { success: true };
-          } catch (error) {
-            return { success: false, error: error.message };
+      const result = await this.executeInTab<WebInteractionResult>(() => {
+        return new Promise((resolve) => {
+          const element = document.querySelector(selector) as HTMLElement;
+          if (element) {
+            element.click();
+            resolve({
+              found: true,
+              selector: selector,
+              text: element.textContent,
+              html: element.outerHTML,
+            });
+          } else {
+            resolve({
+              found: false,
+              selector: selector,
+            });
           }
-        })()
-      `;
-
-      const result = await this.executeInTab(code);
+        });
+      });
       return { success: true, data: result };
     } catch (error) {
       console.error("Error clicking element:", error);
@@ -326,99 +218,20 @@ export class WebToolkit {
 
   async scrollToElement(selector: string): Promise<WebInteractionResult> {
     try {
-      const code = `
-        (() => {
-          const element = document.querySelector('${selector}');
+      const result = await this.executeInTab<WebInteractionResult>(() => {
+        return new Promise((resolve) => {
+          const element = document.querySelector(selector) as HTMLElement;
           if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
-            return { success: true };
+            element.scrollIntoView({ behavior: "smooth" });
+            resolve({ success: true });
+          } else {
+            resolve({ success: false, error: "Element not found" });
           }
-          return { success: false, error: 'Element not found' };
-        })()
-      `;
-
-      const result = await this.executeInTab(code);
+        });
+      });
       return { success: true, data: result };
     } catch (error) {
       console.error("Error scrolling to element:", error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-  }
-
-  async waitForElement(
-    selector: string,
-    timeout: number = 5000
-  ): Promise<WebInteractionResult> {
-    try {
-      const code = `
-        (() => {
-          return new Promise((resolve) => {
-            const startTime = Date.now();
-            const checkElement = () => {
-              const element = document.querySelector(${JSON.stringify(selector)});
-              if (element) {
-                resolve({ success: true, found: true });
-              } else if (Date.now() - startTime >= ${timeout}) {
-                resolve({ success: false, error: 'Timeout waiting for element' });
-              } else {
-                setTimeout(checkElement, 100);
-              }
-            };
-            checkElement();
-          });
-        })()
-      `;
-
-      const result = await this.executeInTab(code);
-      return { success: true, data: result };
-    } catch (error) {
-      console.error("Error waiting for element:", error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-  }
-
-  async extractText(selector: string): Promise<WebInteractionResult> {
-    try {
-      const code = `
-        (() => {
-          const element = document.querySelector('${selector}');
-          return element ? element.textContent : null;
-        })()
-      `;
-
-      const result = await this.executeInTab(code);
-      return { success: true, data: result };
-    } catch (error) {
-      console.error("Error extracting text:", error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-  }
-
-  async extractAttribute(
-    selector: string,
-    attribute: string
-  ): Promise<WebInteractionResult> {
-    try {
-      const code = `
-        (() => {
-          const element = document.querySelector('${selector}');
-          return element ? element.getAttribute('${attribute}') : null;
-        })()
-      `;
-
-      const result = await this.executeInTab(code);
-      return { success: true, data: result };
-    } catch (error) {
-      console.error("Error extracting attribute:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),

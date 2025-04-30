@@ -8,6 +8,7 @@ from typing import List, Optional, Union, Dict, Any
 import openai
 from openai import OpenAI
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import text
 
 from edge_agent.core.config import settings
 from edge_agent.models.database import Message, TelegramMessage
@@ -285,30 +286,33 @@ async def find_similar_messages(query_text: str, conversation_id: Optional[str] 
             logger.error("Failed to generate embedding for search query")
             return []
             
+        # Convert Python list to PostgreSQL array syntax
+        embedding_str = str(query_embedding).replace('[', '{').replace(']', '}')
+            
         # Build the query
-        query = """
+        query = text("""
         SELECT id, conversation_id, role, content, created_at, 
-               embedding <=> :query_embedding AS distance
+               embedding <=> :query_embedding::vector AS distance
         FROM messages
         WHERE embedding IS NOT NULL
-        """
+        """)
         
         params = {
-            "query_embedding": query_embedding,
+            "query_embedding": embedding_str,
             "limit": limit
         }
         
         # Add conversation filter if provided
         if conversation_id:
             logger.info(f"Filtering search to conversation: {conversation_id}")
-            query += " AND conversation_id = :conversation_id"
+            query = text(str(query) + " AND conversation_id = :conversation_id")
             params["conversation_id"] = conversation_id
         
         # Add ordering and limit
-        query += """
+        query = text(str(query) + """
         ORDER BY distance
         LIMIT :limit
-        """
+        """)
         
         # Execute the query
         logger.info(f"Executing vector similarity search with limit: {limit}")

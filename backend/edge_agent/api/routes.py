@@ -53,7 +53,7 @@ class ToolCall(BaseModel):
     function: ToolCallFunction
     id: str
     type: Optional[str] = None
-
+    result: Optional[str] = None
 class ChatMessage(BaseModel):
     role: str
     content: Optional[str] = None  # Required for save_message endpoint
@@ -315,6 +315,24 @@ async def save_message(
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation not found or not authorized")
 
+        # Convert tool_calls to a serializable format
+        tool_calls = []
+        if message_data.message.tool_calls:
+            tool_calls = message_data.message.tool_calls
+            
+
+        if message_data.message.toolCalls:
+            tool_calls = message_data.message.toolCalls
+           
+        if tool_calls:
+            for tool_call in tool_calls:
+                tool_calls.append({
+                    "id": tool_call.id,
+                    "type": tool_call.type,
+                    "function": tool_call.function,
+                    "result": tool_call.result
+                })
+
         # 保存消息
         message = Message(
             id=message_data.message.message_id,
@@ -322,7 +340,7 @@ async def save_message(
             role=message_data.message.role,
             content=message_data.message.content,
             created_at=datetime.fromisoformat(message_data.message.created_at),
-            tool_calls=json.dumps(message_data.message.tool_calls),
+            tool_calls=json.dumps(tool_calls) if tool_calls else None,
         )
         db.add(message)
         db.commit()

@@ -1,8 +1,8 @@
+import { env } from "~/utils/env";
 import { ChatMessage, Message } from "../types/messages";
 import { saveMessageApi, sendChatCompletion } from "./chat";
-import { ToolCall, toolExecutor } from "./tool-executor";
+import { toolExecutor } from "./tool-executor";
 import { db } from "~/utils/db";
-import { env } from "~/utils/env";
 
 interface ChatHandlerOptions {
   apiKey: string;
@@ -53,7 +53,9 @@ export class ChatHandler {
       conversation_id: this.options.currentConversationId,
       status: "pending",
       isLoading: true,
-      toolCalls: [],
+      ...(env.OPENAI_MODEL === "deepseek-chat"
+        ? { tool_calls: [], tool_call_id: "" }
+        : { toolCalls: [], toolCallId: "" }),
     };
 
     this.isStreaming = true;
@@ -90,7 +92,7 @@ export class ChatHandler {
           if (msg.toolCalls) {
             msg.toolCalls.forEach((toolCall) => {
               // html size too loong ,so we not add it to the prompt
-              newPrompt += `Tool calls: ${toolCall.function.name}, executed result: ${!toolCall?.result?.data?.html && JSON.stringify(toolCall?.result?.data || "")} \n`;
+              newPrompt += `Tool calls: ${toolCall.function.name}, executed result: ${JSON.stringify(toolCall?.result?.data || "")} \n`;
             });
           }
         });
@@ -101,7 +103,7 @@ export class ChatHandler {
           newPrompt += `${msg.role}: ${msg.content}\n`;
           if (msg.toolCalls) {
             msg.toolCalls.forEach((toolCall) => {
-              newPrompt += `Tool calls: ${toolCall.function.name}, executed result: ${!toolCall?.result?.data?.html && JSON.stringify(toolCall?.result?.data || "")} \n`;
+              newPrompt += `Tool calls: ${toolCall.function.name}, executed result: ${JSON.stringify(toolCall?.result?.data || "")} \n`;
             });
           }
         });
@@ -128,7 +130,7 @@ ${newPrompt}
       }
 
       let toolCallCount = 0;
-      const MAX_TOOL_CALLS = 10;
+      const MAX_TOOL_CALLS = 20;
 
       const processRequest = async (inputMessages: ChatMessage[]) => {
         let accumulatedContent = "";
@@ -185,18 +187,37 @@ ${newPrompt}
                 if (!loadingMessage.toolCalls) {
                   loadingMessage.toolCalls = [];
                 }
-                loadingMessage.toolCalls.push({
-                  id: toolCall.id,
-                  type: toolCall.type,
-                  function: toolCall.function,
-                  result: toolResult,
-                });
-                inputMessages.push({
-                  role: "tool",
-                  name: toolCall.function.name,
-                  content: `Function call success: ${JSON.stringify(toolResult.data)}`,
-                  toolCallId: toolCall.id,
-                });
+                if (!loadingMessage.tool_calls) {
+                  loadingMessage.tool_calls = [];
+                }
+
+                if (env.OPENAI_MODEL === "deepseek-chat") {
+                  loadingMessage.tool_calls.push({
+                    id: toolCall.id,
+                    type: toolCall.type,
+                    function: toolCall.function,
+                    result: toolResult,
+                  });
+                  inputMessages.push({
+                    role: "tool",
+                    name: toolCall.function.name,
+                    content: `Function call ${toolCall.function.name}: ${toolResult.success} ${JSON.stringify(toolResult.data)}`,
+                    tool_call_id: toolCall.id,
+                  });
+                } else {
+                  loadingMessage.toolCalls.push({
+                    id: toolCall.id,
+                    type: toolCall.type,
+                    function: toolCall.function,
+                    result: toolResult,
+                  });
+                  inputMessages.push({
+                    role: "tool",
+                    name: toolCall.function.name,
+                    content: `Function call ${toolCall.function.name}: ${toolResult.success} ${JSON.stringify(toolResult.data)}`,
+                    toolCallId: toolCall.id,
+                  });
+                }
               }
             } else {
               break;

@@ -68,7 +68,8 @@ export const getToolDescriptions = (): ToolDescription[] => {
           },
           data: {
             type: "object",
-            description: "Dialog data including list of dialogs and pagination info",
+            description:
+              "Dialog data including list of dialogs and pagination info",
           },
         },
       },
@@ -128,7 +129,8 @@ export const getToolDescriptions = (): ToolDescription[] => {
           },
           data: {
             type: "object",
-            description: "Message data including list of messages and pagination info",
+            description:
+              "Message data including list of messages and pagination info",
           },
         },
       },
@@ -153,7 +155,8 @@ export const getToolDescriptions = (): ToolDescription[] => {
           },
           messageRange: {
             type: "number",
-            description: "Number of messages before and after the match to include (default: 2)",
+            description:
+              "Number of messages before and after the match to include (default: 2)",
           },
           threshold: {
             type: "number",
@@ -180,7 +183,8 @@ export const getToolDescriptions = (): ToolDescription[] => {
           },
           data: {
             type: "object",
-            description: "Search results including matching messages and their context",
+            description:
+              "Search results including matching messages and their context",
           },
         },
       },
@@ -327,10 +331,6 @@ export const getToolDescriptions = (): ToolDescription[] => {
             type: "boolean",
             description: "Whether to include HTML source code",
           },
-          includeJs: {
-            type: "boolean",
-            description: "Whether to include JavaScript source code",
-          },
         },
       },
       returns: {
@@ -340,10 +340,6 @@ export const getToolDescriptions = (): ToolDescription[] => {
           html: {
             type: "string",
             description: "The HTML source code of the page",
-          },
-          javascript: {
-            type: "string",
-            description: "The JavaScript source code of the page",
           },
           success: {
             type: "boolean",

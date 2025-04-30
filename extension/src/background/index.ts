@@ -65,19 +65,10 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
           // 执行 WebToolkit 操作
           switch (toolName) {
             case "getPageSource":
-              result = await webToolkit.getPageSource(
-                params.includeHtml,
-                params.includeJs
-              );
+              result = await webToolkit.getPageSource(params.includeHtml);
               break;
             case "screenshot":
-              result = await webToolkit.screenshot(params.fullPage);
-              break;
-            case "findElement":
-              result = await webToolkit.findElement(
-                params.selector,
-                params.timeout
-              );
+              result = await webToolkit.screenshot();
               break;
             case "inputElement":
               result = await webToolkit.inputElement(
@@ -90,21 +81,6 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
               break;
             case "scrollToElement":
               result = await webToolkit.scrollToElement(params.selector);
-              break;
-            case "waitForElement":
-              result = await webToolkit.waitForElement(
-                params.selector,
-                params.timeout
-              );
-              break;
-            case "extractText":
-              result = await webToolkit.extractText(params.selector);
-              break;
-            case "extractAttribute":
-              result = await webToolkit.extractAttribute(
-                params.selector,
-                params.attribute
-              );
               break;
             default:
               throw new Error(`Unknown WebToolkit operation: ${toolName}`);
@@ -119,45 +95,47 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
           const toolNoolName = name.replace("TabToolkit_", "");
 
           switch (toolNoolName) {
-          case "openTab":
-            const result = await TabToolkit.openTab(params.url);
-            sendResponse(result);
-            return true;
-          case "listTabs":
-            const listResult = await TabToolkit.listTabs();
-            sendResponse(listResult);
-            return true;
-          case "closeTab":
-            const closeResult = await TabToolkit.closeTab(params.tabId);
-            sendResponse(closeResult);
-            return true;
-          case "switchToTab":
-            const switchResult = await TabToolkit.switchToTab(params.tabId);
-            sendResponse(switchResult);
-            return true;
-          case "waitForTabLoad":
-            const waitForResult = await TabToolkit.waitForTabLoad(params.tabId);
-            sendResponse(waitForResult);
-            return true;
-          case "getCurrentActiveTab":
-            const getCurrentActiveTabResult =
-              await TabToolkit.getCurrentActiveTab();
-            sendResponse(getCurrentActiveTabResult);
-            return true;
-          default:
-            sendResponse({
-              success: false,
-              error: `Tool ${name} not implemented in background script`,
-            });
+            case "openTab":
+              const result = await TabToolkit.openTab(params.url);
+              sendResponse(result);
+              return true;
+            case "listTabs":
+              const listResult = await TabToolkit.listTabs();
+              sendResponse(listResult);
+              return true;
+            case "closeTab":
+              const closeResult = await TabToolkit.closeTab(params.tabId);
+              sendResponse(closeResult);
+              return true;
+            case "switchToTab":
+              const switchResult = await TabToolkit.switchToTab(params.tabId);
+              sendResponse(switchResult);
+              return true;
+            case "waitForTabLoad":
+              const waitForResult = await TabToolkit.waitForTabLoad(
+                params.tabId
+              );
+              sendResponse(waitForResult);
+              return true;
+            case "getCurrentActiveTab":
+              const getCurrentActiveTabResult =
+                await TabToolkit.getCurrentActiveTab();
+              sendResponse(getCurrentActiveTabResult);
+              return true;
+            default:
+              sendResponse({
+                success: false,
+                error: `Tool ${name} not implemented in background script`,
+              });
           }
           return true;
         }
-        
+
         // 处理 TgToolkit 调用
         if (name.startsWith("TgToolkit_")) {
           const toolName = name.replace("TgToolkit_", "");
           let result;
-          
+
           switch (toolName) {
             case "getDialogs":
               result = await TgToolkit.getDialogs(
@@ -198,12 +176,10 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
             default:
               throw new Error(`Unknown TgToolkit operation: ${toolName}`);
           }
-          
+
           sendResponse({ success: true, data: result });
           return true;
         }
-
-
       } catch (error: any) {
         console.error("Error executing tool in background:", error);
         sendResponse({ success: false, error: error.message || String(error) });
