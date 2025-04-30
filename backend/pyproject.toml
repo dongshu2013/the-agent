@@ -5,9 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "edge_agent"
 version = "0.1.0"
-description = "MIZU Agent Backend API"
+description = "Mysta Agent Backend API"
 authors = [
-    {name = "MIZU Team"}
+    {name = "Mysta Team"}
 ]
 readme = "README.md"
 requires-python = ">=3.11"

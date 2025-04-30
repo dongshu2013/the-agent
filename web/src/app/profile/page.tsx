@@ -105,14 +105,14 @@ export default function ProfilePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center">
             <Image
-              src="/mizu-logo.png"
-              alt="MIZU Agent Logo"
+              src="/mysta-logo.png"
+              alt="Mysta Agent Logo"
               width={40}
               height={40}
               className="mr-3"
             />
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-              MIZU Agent Dashboard
+              Mysta Agent Dashboard
             </h1>
           </div>
           <button
@@ -179,7 +179,7 @@ export default function ProfilePage() {
               </div>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Use this API key to authenticate requests to the MIZU Agent API.
+              Use this API key to authenticate requests to the Mysta Agent API.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
@@ -248,7 +248,7 @@ export default function ProfilePage() {
               Manage Your Data
             </h3>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Connect your data sources to enhance your MIZU Agent experience
+              Connect your data sources to enhance your Mysta Agent experience
             </p>
           </div>
           <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-5 sm:p-6">
@@ -339,7 +339,7 @@ export default function ProfilePage() {
       </main>
 
       <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
-        {new Date().getFullYear()} MIZU Agent. All rights reserved.
+        {new Date().getFullYear()} Mysta Agent. All rights reserved.
       </footer>
     </div>
   );

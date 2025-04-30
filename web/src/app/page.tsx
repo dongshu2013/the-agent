@@ -20,14 +20,14 @@ export default function Home() {
       <main className="flex flex-col items-center gap-8 max-w-md w-full">
         <div className="flex flex-col items-center text-center">
           <Image
-            src="/mizu-logo.png"
-            alt="MIZU Agent Logo"
+            src="/mysta-logo.png"
+            alt="Mysta Agent Logo"
             width={120}
             height={120}
             className="mb-6"
             priority
           />
-          <h1 className="text-4xl font-bold mb-2">MIZU Agent</h1>
+          <h1 className="text-4xl font-bold mb-2">Mysta Agent</h1>
           <p className="text-gray-600 dark:text-gray-400 mb-8">
             Your intelligent AI assistant dashboard
           </p>
@@ -49,7 +49,7 @@ export default function Home() {
       </main>
 
       <footer className="mt-16 text-center text-sm text-gray-500 dark:text-gray-400">
-        {new Date().getFullYear()} MIZU Agent. All rights reserved.
+        {new Date().getFullYear()} Mysta Agent. All rights reserved.
       </footer>
     </div>
   );

@@ -1,8 +1,8 @@
 {
   "name": "mizu-agent",
-  "displayName": "MIZU Agent",
+  "displayName": "Mysta Agent",
   "version": "1.0.0",
-  "description": "MIZU Agent - AI Powered Chrome Extension",
+  "description": "Mysta Agent - AI Powered Chrome Extension",
   "manifest": {
     "permissions": [
       "storage",
