@@ -58,7 +58,7 @@ const Header = ({
             marginLeft: "8px",
           }}
         >
-          MIZU Agent
+          Mysta Agent
         </span>
       </div>
 

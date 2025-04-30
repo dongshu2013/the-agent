@@ -203,7 +203,7 @@ export default function InputArea({
             color: "#6b7280",
           }}
         >
-          MIZU AI assistant may produce inaccurate information. Your data is
+          Mysta AI assistant may produce inaccurate information. Your data is
           kept private.
         </p>
       </form>

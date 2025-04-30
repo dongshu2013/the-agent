@@ -191,7 +191,7 @@ const Settings: React.FC<SettingsProps> = ({
                 marginBottom: "8px",
               }}
             >
-              Use this API key to authenticate requests to the MIZU Agent API.
+              Use this API key to authenticate requests to the Mysta Agent API.
             </p>
             <p
               style={{
