@@ -547,11 +547,11 @@ const LeftMainHeader: FC<OwnProps & StateProps> = ({
               size="smaller"
               color="translucent"
               className="import-selected-button"
-              ariaLabel="Import Selected"
+              ariaLabel="Connect Mysta Agent"
               onClick={handleImportSelected}
               disabled={selectedChatsCount === 0}
             >
-              <Icon name="download" />
+              <Icon name="link" />
             </Button>
           </div>
         )}
