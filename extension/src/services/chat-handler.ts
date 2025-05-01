@@ -110,7 +110,7 @@ export class ChatHandler {
       }
       if (newPrompt.length > 0) {
         newPrompt = `
-       You are an AI agent that can use tools and has memory of prior interactions.
+       You are an AI agent that can use tools and has memory of prior interactions. if the user request is request don't care about the memory, just do it.
 Please do the following:
 1. Carefully read the \`user request\`.
 2. Then, check the \`memory\` to see if the same request or tool call has already been handled.

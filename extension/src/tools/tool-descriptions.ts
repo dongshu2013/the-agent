@@ -341,10 +341,6 @@ export const getToolDescriptions = (): ToolDescription[] => {
             type: "string",
             description: "The HTML source code of the page",
           },
-          success: {
-            type: "boolean",
-            description: "Whether the source code was successfully retrieved",
-          },
         },
       },
     },
@@ -372,43 +368,6 @@ export const getToolDescriptions = (): ToolDescription[] => {
           success: {
             type: "boolean",
             description: "Whether the screenshot was successfully taken",
-          },
-        },
-      },
-    },
-    {
-      name: "WebToolkit_findElement",
-      description: "Find an element on the page using CSS selector",
-      parameters: {
-        type: "object",
-        properties: {
-          selector: {
-            type: "string",
-            description: "CSS selector to find the element",
-          },
-          timeout: {
-            type: "number",
-            description:
-              "Maximum time to wait for the element in milliseconds (default: 5000)",
-          },
-        },
-        required: ["selector"],
-      },
-      returns: {
-        type: "object",
-        description: "Element finding result",
-        properties: {
-          found: {
-            type: "boolean",
-            description: "Whether the element was found",
-          },
-          element: {
-            type: "object",
-            description: "Information about the found element",
-          },
-          success: {
-            type: "boolean",
-            description: "Whether the operation was successful",
           },
         },
       },
@@ -530,6 +489,52 @@ export const getToolDescriptions = (): ToolDescription[] => {
           success: {
             type: "boolean",
             description: "Whether the page was successfully scrolled",
+          },
+        },
+      },
+    },
+    {
+      name: "WebToolkit_refreshPage",
+      description: "Refresh the current page",
+      parameters: {
+        type: "object",
+        properties: {},
+      },
+      returns: {
+        type: "object",
+        description: "Result of the refresh operation",
+        properties: {
+          success: {
+            type: "boolean",
+            description: "Whether the page was successfully refreshed",
+          },
+        },
+      },
+    },
+    {
+      name: "WebToolkit_findElement",
+      description: "Find an element on the page using CSS selector",
+      parameters: {
+        type: "object",
+        properties: {
+          selector: {
+            type: "string",
+            description: "CSS selector for the element to find",
+          },
+        },
+        required: ["selector"],
+      },
+      returns: {
+        type: "object",
+        description: "Result of the find operation",
+        properties: {
+          success: {
+            type: "boolean",
+            description: "Whether the element was successfully found",
+          },
+          element: {
+            type: "object",
+            description: "Information about the found element",
           },
         },
       },

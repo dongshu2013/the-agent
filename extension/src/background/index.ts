@@ -65,7 +65,7 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
           // 执行 WebToolkit 操作
           switch (toolName) {
             case "getPageSource":
-              result = await webToolkit.getPageSource(params.includeHtml);
+              result = await webToolkit.getPageSource();
               break;
             case "screenshot":
               result = await webToolkit.screenshot();
@@ -81,6 +81,9 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
               break;
             case "scrollToElement":
               result = await webToolkit.scrollToElement(params.selector);
+              break;
+            case "refreshPage":
+              result = await webToolkit.refreshPage();
               break;
             default:
               throw new Error(`Unknown WebToolkit operation: ${toolName}`);
