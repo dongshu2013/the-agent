@@ -192,28 +192,33 @@ export const getToolDescriptions = (): ToolDescription[] => {
     // Tab Toolkit Tools
     {
       name: "TabToolkit_openTab",
-      description: "Open a new tab with the specified URL",
+      description:
+        "Open a new tab with the specified URL. If the URL is already open in another tab, do not open a new one. Return the existing tabId and mark it as alreadyOpened.",
       parameters: {
         type: "object",
         properties: {
           url: {
             type: "string",
-            description: "The URL to open in the new tab",
+            description: "The URL to open in a tab. Exact match required.",
           },
         },
         required: ["url"],
       },
       returns: {
         type: "object",
-        description: "Information about the newly opened tab",
+        description: "Result of attempting to open or reuse a tab",
         properties: {
           tabId: {
             type: "number",
-            description: "The ID of the newly opened tab",
+            description: "ID of the opened or reused tab",
+          },
+          alreadyOpened: {
+            type: "boolean",
+            description: "Whether the URL was already open in an existing tab",
           },
           success: {
             type: "boolean",
-            description: "Whether the tab was successfully opened",
+            description: "Whether the tab was opened or found successfully",
           },
         },
       },
@@ -319,31 +324,51 @@ export const getToolDescriptions = (): ToolDescription[] => {
         },
       },
     },
-    // Web Toolkit Tools
-    {
-      name: "WebToolkit_getPageSource",
-      description:
-        "Get the HTML and JavaScript source code of the current page",
-      parameters: {
-        type: "object",
-        properties: {
-          includeHtml: {
-            type: "boolean",
-            description: "Whether to include HTML source code",
-          },
-        },
-      },
-      returns: {
-        type: "object",
-        description: "Source code from the page",
-        properties: {
-          html: {
-            type: "string",
-            description: "The HTML source code of the page",
-          },
-        },
-      },
-    },
+    // {
+    //   name: "WebToolkit_getPageSource",
+    //   description:
+    //     "Get the HTML and JavaScript source code of the current page",
+    //   parameters: {
+    //     type: "object",
+    //     properties: {
+    //       includeHtml: {
+    //         type: "boolean",
+    //         description: "Whether to include HTML source code",
+    //       },
+    //     },
+    //   },
+    //   returns: {
+    //     type: "object",
+    //     description: "Source code from the page",
+    //     properties: {
+    //       html: {
+    //         type: "string",
+    //         description: "The HTML source code of the page",
+    //       },
+    //     },
+    //   },
+    // },
+    // {
+    //   name: "WebToolkit_getPageContent",
+    //   description:
+    //     "Get the content of the current page, get the text content of the page, markdown format",
+    //   parameters: {
+    //     type: "object",
+    //     properties: {},
+    //   },
+    //   returns: {
+    //     type: "object",
+    //     description:
+    //       "Content of the current page, get the text content of the page, markdown format",
+    //     properties: {
+    //       content: {
+    //         type: "string",
+    //         description:
+    //           "The content of the current page, get the text content of the page, markdown format",
+    //       },
+    //     },
+    //   },
+    // },
     {
       name: "WebToolkit_screenshot",
       description: "Take a screenshot of the current page",
@@ -374,29 +399,31 @@ export const getToolDescriptions = (): ToolDescription[] => {
     },
     {
       name: "WebToolkit_inputElement",
-      description: "Input text into a form element",
+      description: "Types text into a specified input element on the page.",
       parameters: {
         type: "object",
         properties: {
           selector: {
             type: "string",
-            description: "CSS selector for the input element",
+            description: "CSS selector for the target input element.",
           },
           value: {
             type: "string",
-            description: "Text to input",
+            description: "The text to input into the element.",
           },
           options: {
             type: "object",
-            description: "Input options",
+            description: "Optional configuration for input behavior.",
             properties: {
               clearFirst: {
                 type: "boolean",
-                description: "Whether to clear existing content before input",
+                description:
+                  "If true, clears existing content before inputting. Default: true.",
               },
               delay: {
                 type: "number",
-                description: "Delay between keystrokes in milliseconds",
+                description:
+                  "Delay (in milliseconds) between keystrokes. Default: 100.",
               },
             },
           },
@@ -405,11 +432,11 @@ export const getToolDescriptions = (): ToolDescription[] => {
       },
       returns: {
         type: "object",
-        description: "Result of the input operation",
+        description: "The result of the input action.",
         properties: {
           success: {
             type: "boolean",
-            description: "Whether the text was successfully input",
+            description: "Indicates whether the text was successfully input.",
           },
         },
       },
@@ -422,7 +449,7 @@ export const getToolDescriptions = (): ToolDescription[] => {
         properties: {
           selector: {
             type: "string",
-            description: "CSS selector for the element to click",
+            description: "Selector for the element to click",
           },
           options: {
             type: "object",
@@ -430,12 +457,13 @@ export const getToolDescriptions = (): ToolDescription[] => {
             properties: {
               waitBefore: {
                 type: "number",
-                description: "Time to wait before clicking in milliseconds",
+                description:
+                  "Time to wait before clicking in milliseconds, default: 100",
               },
               scrollIntoView: {
                 type: "boolean",
                 description:
-                  "Whether to scroll the element into view before clicking",
+                  "Whether to scroll the element into view before clicking, default: true (scroll the element into view)",
               },
             },
           },
@@ -512,29 +540,105 @@ export const getToolDescriptions = (): ToolDescription[] => {
       },
     },
     {
-      name: "WebToolkit_findElement",
-      description: "Find an element on the page using CSS selector",
+      name: "WebToolkit_listElements",
+      description:
+        "List all interactive elements on the page (buttons, inputs, etc.), optionally filtered by selectors",
       parameters: {
         type: "object",
         properties: {
-          selector: {
-            type: "string",
-            description: "CSS selector for the element to find",
+          selectors: {
+            type: "array",
+            description:
+              "Optional: list of selectors to filter elements, e.g. ['button', 'input', '[contenteditable=true]']. If omitted, all common interactive elements will be returned.",
+            items: {
+              type: "string",
+            },
           },
         },
-        required: ["selector"],
+        required: [],
       },
       returns: {
         type: "object",
-        description: "Result of the find operation",
+        description: "Structured list of found DOM elements and their metadata",
         properties: {
           success: {
             type: "boolean",
-            description: "Whether the element was successfully found",
+            description: "Whether the operation was successful",
           },
-          element: {
+          data: {
             type: "object",
-            description: "Information about the found element",
+            properties: {
+              elements: {
+                type: "array",
+                description: "Array of elements found on the page",
+                items: {
+                  type: "object",
+                  properties: {
+                    tag: {
+                      type: "string",
+                      description:
+                        "Tag name of the element (e.g., button, input)",
+                    },
+                    displayText: {
+                      type: "string",
+                      description:
+                        "Merged visible text content (text, placeholder, aria-label, etc.)",
+                    },
+                    text: { type: "string", description: "Inner text content" },
+                    placeholder: { type: "string" },
+                    visible: {
+                      type: "boolean",
+                      description: "Whether the element is visible",
+                    },
+                    clickable: {
+                      type: "boolean",
+                      description: "Whether the element is likely clickable",
+                    },
+                    position: {
+                      type: "object",
+                      properties: {
+                        x: { type: "number" },
+                        y: { type: "number" },
+                      },
+                    },
+                    boundingBox: {
+                      type: "object",
+                      description:
+                        "Size and position of the element on screen (for screenshots/visual anchor)",
+                      properties: {
+                        x: { type: "number" },
+                        y: { type: "number" },
+                        width: { type: "number" },
+                        height: { type: "number" },
+                      },
+                    },
+                    attributes: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string" },
+                        class: { type: "string" },
+                        type: { type: "string" },
+                        disabled: { type: "boolean" },
+                        "aria-label": { type: "string" },
+                        "data-testid": { type: "string" },
+                        contenteditable: { type: "boolean" },
+                      },
+                    },
+                    parentTag: {
+                      type: "string",
+                      description: "Tag name of the direct parent node",
+                    },
+                    parentAttributes: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string" },
+                        class: { type: "string" },
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },

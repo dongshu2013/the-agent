@@ -114,7 +114,7 @@ export class ToolExecutor {
           return;
         }
 
-        resolve(response.data);
+        resolve(response);
       });
     });
   }
@@ -153,7 +153,7 @@ export class ToolExecutor {
           return;
         }
 
-        resolve(response.data);
+        resolve(response);
       });
     });
   }

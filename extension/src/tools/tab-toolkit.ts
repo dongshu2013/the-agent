@@ -10,37 +10,48 @@ export class TabToolkit {
    */
   static async openTab(url: string): Promise<WebInteractionResult> {
     try {
+      const existingTabs = await chrome.tabs.query({});
+
+      const matchedTab = existingTabs.find((tab) => tab.url === url);
+
+      if (matchedTab && matchedTab.id !== undefined) {
+        return {
+          success: true,
+          data: {
+            tabId: matchedTab.id,
+            alreadyOpened: true,
+          },
+        };
+      }
+
+      // 没有找到，创建新 tab
       return new Promise((resolve) => {
-        chrome.tabs.create({ url }, async (tab) => {
+        chrome.tabs.create({ url }, (newTab) => {
           if (chrome.runtime.lastError) {
             resolve({
               success: false,
               error: chrome.runtime.lastError.message,
+              data: {
+                tabId: newTab.id!,
+                alreadyOpened: false,
+              },
             });
             return;
           }
 
-          if (!tab || !tab.id) {
-            resolve({
-              success: false,
-              error: "Failed to create tab: no tab ID returned",
-            });
-            return;
-          } else {
-            resolve({
-              success: true,
-              data: {
-                tabId: tab.id,
-                url: tab.url,
-              },
-            });
-          }
+          resolve({
+            success: true,
+            data: {
+              tabId: newTab.id!,
+              alreadyOpened: true,
+            },
+          });
         });
       });
-    } catch (error) {
+    } catch (err) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error),
+        error: err instanceof Error ? err.message : String(err),
       };
     }
   }
@@ -134,40 +145,47 @@ export class TabToolkit {
     timeout: number = 10000
   ): Promise<WebInteractionResult> {
     return new Promise((resolve) => {
-      const startTime = Date.now();
+      const start = Date.now();
 
-      const checkTabStatus = () => {
+      const check = () => {
         chrome.tabs.get(tabId, (tab) => {
           if (chrome.runtime.lastError) {
-            resolve({
+            return resolve({
               success: false,
               error: chrome.runtime.lastError.message,
             });
-            return;
+          }
+
+          if (!tab) {
+            return resolve({
+              success: false,
+              error: "Tab not found",
+            });
           }
 
           if (tab.status === "complete") {
-            resolve({
+            return resolve({
               success: true,
               data: {
-                tabId: tab.id,
-                url: tab.url,
-                title: tab.title,
+                tabId: tab.id!,
+                url: tab.url!,
+                title: tab.title ?? "",
               },
             });
-          } else if (Date.now() - startTime > timeout) {
-            resolve({
+          }
+
+          if (Date.now() - start > timeout) {
+            return resolve({
               success: false,
               error: "Tab load timeout",
             });
-          } else {
-            // Retry after a short delay
-            setTimeout(checkTabStatus, 100);
           }
+
+          setTimeout(check, 200); // 稍微拉长间隔，减少资源占用
         });
       };
 
-      checkTabStatus();
+      check();
     });
   }
 

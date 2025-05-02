@@ -49,7 +49,7 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
   // 处理工具调用消息
   if (message.name === "execute-tool") {
     const { name, arguments: params } = message.body;
-    console.log("🍒Executing tool:", name, "with params:", params);
+    console.log("🍒 Executing tool:", name, "with params:", params);
 
     (async () => {
       try {
@@ -85,11 +85,14 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
             case "refreshPage":
               result = await webToolkit.refreshPage();
               break;
+            case "listElements":
+              result = await webToolkit.listElements(params.selectors);
+              break;
             default:
               throw new Error(`Unknown WebToolkit operation: ${toolName}`);
           }
 
-          sendResponse({ success: true, data: result });
+          sendResponse(result);
           return true;
         }
 

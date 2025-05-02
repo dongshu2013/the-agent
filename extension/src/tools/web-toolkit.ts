@@ -19,20 +19,52 @@ interface WebToolkitResponse {
   data?: any;
   error?: string;
 }
-
 export class WebToolkit {
   private async executeInTab<T = any>(
     userFunc: (...args: any[]) => any,
     args: any[] = []
   ): Promise<T> {
     try {
+      console.log("🍒 【executeInTab】开始执行");
+
+      // 获取所有标签页信息
+      const allTabs = await chrome.tabs.query({});
+      console.log("🍒 【executeInTab】所有标签页:", allTabs);
+
+      // 获取当前窗口的标签页
+      const currentWindowTabs = await chrome.tabs.query({
+        currentWindow: true,
+      });
+      console.log("🍒 【executeInTab】当前窗口标签页:", currentWindowTabs);
+
+      // 获取活动标签页
       const tabs = await chrome.tabs.query({
         active: true,
         currentWindow: true,
       });
-      const tab = tabs[0];
-      if (!tab?.id) throw new Error("No active tab found");
+      console.log("🍒 【executeInTab】活动标签页:", tabs);
 
+      if (!tabs || tabs.length === 0) {
+        console.error("🍒 【executeInTab】错误: 未找到活动标签页");
+        return {
+          success: false,
+          error:
+            "No active tab found. Please ensure you have an active tab in the current window.",
+        } as T;
+      }
+
+      const tab = tabs[0];
+      console.log("🍒 【executeInTab】目标标签页:", tab);
+
+      if (!tab?.id) {
+        console.error("🍒 【executeInTab】错误: 标签页ID未找到");
+        return {
+          success: false,
+          error: "Tab ID not found. Please ensure the tab is properly loaded.",
+        } as T;
+      }
+
+      console.log("🍒 【executeInTab】准备执行脚本");
       const [result] = await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         func: userFunc,
@@ -40,13 +72,21 @@ export class WebToolkit {
       });
 
       if (!result || typeof result.result === "undefined") {
-        throw new Error("No result returned from script execution");
+        console.error("🍒 【executeInTab】错误: 脚本执行未返回结果");
+        return {
+          success: false,
+          error: "No result returned from script execution",
+        } as T;
       }
 
+      console.log("🍒 【executeInTab】执行完成");
       return result.result as T;
     } catch (error) {
-      console.error("Error in executeInTab:", error);
-      throw error;
+      console.error("🍒 【executeInTab】错误:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      } as T;
     }
   }
 
@@ -151,174 +191,142 @@ export class WebToolkit {
 
   async inputElement(
     selector: string,
-    value: string
+    value: string,
+    options?: {
+      clearFirst?: boolean;
+      delay?: number;
+    }
   ): Promise<WebInteractionResult> {
     try {
       const result = await this.executeInTab<WebInteractionResult>(
-        (sel, val) => {
-          // 尝试多种选择器方式
-          let element = document.querySelector(sel) as HTMLElement;
-
-          // 如果直接选择器失败，尝试其他方式
+        async (sel, val, opts) => {
+          const element = document.querySelector(sel) as HTMLElement | null;
           if (!element) {
-            // 尝试通过 data-testid 查找
-            element = document.querySelector(
-              `[data-testid="${sel}"]`
-            ) as HTMLElement;
+            throw new Error(`Element not found with selector: ${sel}`);
           }
 
-          if (!element) {
-            // 尝试通过 aria-label 查找
-            element = document.querySelector(
-              `[aria-label="${sel}"]`
-            ) as HTMLElement;
-          }
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
 
-          if (!element) {
-            // 尝试通过 class 查找
-            element = document.querySelector(`.${sel}`) as HTMLElement;
-          }
+          const isInput =
+            element instanceof HTMLInputElement ||
+            element instanceof HTMLTextAreaElement;
 
-          if (!element) {
-            // 尝试通过 id 查找
-            element = document.getElementById(sel) as HTMLElement;
-          }
+          const isEditable = element.isContentEditable;
 
-          if (!element) {
-            console.error("Element not found with selector:", sel);
-            console.log("Available elements with similar attributes:");
-            // 输出所有可能的元素信息用于调试
-            const allElements = document.querySelectorAll("*");
-            allElements.forEach((el) => {
-              if (
-                el.getAttribute("data-testid") ||
-                el.getAttribute("aria-label") ||
-                el.getAttribute("class")?.includes(sel) ||
-                el.id === sel
-              ) {
-                console.log("Found potential element:", {
-                  tag: el.tagName,
-                  id: el.id,
-                  class: el.className,
-                  "data-testid": el.getAttribute("data-testid"),
-                  "aria-label": el.getAttribute("aria-label"),
-                  contenteditable: el.getAttribute("contenteditable"),
-                });
-              }
-            });
-            return {
-              success: false,
-              error: `Element not found with selector: ${sel}`,
-            };
-          }
+          // 模拟鼠标点击和聚焦
+          element.dispatchEvent(new MouseEvent("mouseover", { bubbles: true }));
+          element.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
+          element.focus();
+          element.dispatchEvent(new FocusEvent("focus", { bubbles: true }));
+          element.dispatchEvent(new MouseEvent("mouseup", { bubbles: true }));
+          element.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 
-          try {
-            // 确保元素可见
-            element.scrollIntoView({ behavior: "smooth", block: "center" });
-
-            // 模拟真实的用户交互
-            return new Promise((resolve) => {
-              // 先触发 mousedown 和 focus 事件
-              element.dispatchEvent(
-                new MouseEvent("mousedown", { bubbles: true })
+          if (opts.clearFirst !== false) {
+            if (isInput) {
+              const prototype = Object.getPrototypeOf(element);
+              const descriptor = Object.getOwnPropertyDescriptor(
+                prototype,
+                "value"
               );
-              element.focus();
-              element.dispatchEvent(new FocusEvent("focus", { bubbles: true }));
+              descriptor?.set?.call(element, "");
+            } else if (isEditable) {
+              element.textContent = "";
+            }
+            element.dispatchEvent(new Event("input", { bubbles: true }));
+            element.dispatchEvent(new Event("change", { bubbles: true }));
+          }
 
-              // 清除现有内容
-              if (
-                element instanceof HTMLInputElement ||
-                element instanceof HTMLTextAreaElement
-              ) {
-                element.value = "";
-              } else if (element.isContentEditable) {
-                element.textContent = "";
-              }
+          const delay = typeof opts.delay === "number" ? opts.delay : 100;
 
-              // 触发内容清除的事件
-              element.dispatchEvent(new Event("input", { bubbles: true }));
+          return await new Promise<WebInteractionResult>((resolve) => {
+            let currentText = "";
 
-              let currentText = "";
-              const typeNextChar = () => {
-                if (currentText.length < val.length) {
-                  const nextChar = val[currentText.length];
-                  currentText += nextChar;
+            const typeNextChar = () => {
+              if (currentText.length < val.length) {
+                const nextChar = val[currentText.length];
+                currentText += nextChar;
 
-                  // 设置值
-                  if (
-                    element instanceof HTMLInputElement ||
-                    element instanceof HTMLTextAreaElement
-                  ) {
-                    element.value = currentText;
-                  } else if (element.isContentEditable) {
-                    element.textContent = currentText;
-                  }
-
-                  // 触发更完整的输入事件
-                  ["keydown", "beforeinput", "input", "keyup"].forEach(
-                    (eventType) => {
-                      const event = new Event(eventType, {
-                        bubbles: true,
-                        cancelable: true,
-                        composed: true,
-                      });
-                      element.dispatchEvent(event);
-                    }
+                if (isInput) {
+                  const prototype = Object.getPrototypeOf(element);
+                  const descriptor = Object.getOwnPropertyDescriptor(
+                    prototype,
+                    "value"
                   );
+                  descriptor?.set?.call(element, currentText);
+                } else if (isEditable) {
+                  element.textContent = currentText;
+                }
 
-                  // 触发 input 事件以更新 React 状态
-                  const inputEvent = new Event("input", {
+                // 触发完整的输入事件序列
+                const events = [
+                  new KeyboardEvent("keydown", {
                     bubbles: true,
                     cancelable: true,
-                    composed: true,
+                    key: nextChar,
+                    code: `Key${nextChar.toUpperCase()}`,
+                    view: window,
+                  }),
+                  new InputEvent("beforeinput", {
+                    bubbles: true,
+                    cancelable: true,
+                    data: nextChar,
+                    inputType: "insertText",
+                    view: window,
+                  }),
+                  new InputEvent("input", {
+                    bubbles: true,
+                    cancelable: true,
+                    data: currentText,
+                    inputType: "insertText",
+                    view: window,
+                  }),
+                  new KeyboardEvent("keyup", {
+                    bubbles: true,
+                    cancelable: true,
+                    key: nextChar,
+                    code: `Key${nextChar.toUpperCase()}`,
+                    view: window,
+                  }),
+                ];
+
+                events.forEach((event) => {
+                  element.dispatchEvent(event);
+                });
+
+                // 触发额外的状态更新事件
+                element.dispatchEvent(new Event("change", { bubbles: true }));
+                element.dispatchEvent(new Event("blur", { bubbles: true }));
+                element.dispatchEvent(new Event("focus", { bubbles: true }));
+
+                setTimeout(typeNextChar, delay);
+              } else {
+                // 触发最终事件序列
+                const finalEvents = [
+                  new Event("change", { bubbles: true }),
+                  new Event("blur", { bubbles: true }),
+                  new Event("focus", { bubbles: true }),
+                ];
+
+                finalEvents.forEach((event) => element.dispatchEvent(event));
+
+                // 确保状态更新
+                setTimeout(() => {
+                  element.dispatchEvent(new Event("change", { bubbles: true }));
+                  resolve({
+                    success: true,
+                    data: {
+                      text: currentText,
+                      html: element.outerHTML,
+                    },
                   });
-                  element.dispatchEvent(inputEvent);
-
-                  // 随机延迟 50-150ms 模拟真实打字速度
-                  const delay = Math.floor(Math.random() * 100) + 50;
-                  setTimeout(typeNextChar, delay);
-                } else {
-                  // 输入完成后触发完整的事件序列
-                  const finalEvents = [
-                    "change",
-                    "input",
-                    "keydown",
-                    "keypress",
-                    "keyup",
-                    "compositionend",
-                  ];
-
-                  finalEvents.forEach((eventType) => {
-                    const event = new Event(eventType, {
-                      bubbles: true,
-                      cancelable: true,
-                      composed: true,
-                    });
-                    element.dispatchEvent(event);
-                  });
-
-                  // 等待一下以确保状态更新
-                  setTimeout(() => {
-                    resolve({ success: true });
-                  }, 100);
-                }
-              };
-
-              // 开始打字
-              typeNextChar();
-            });
-          } catch (error) {
-            console.error("Error while setting value:", error);
-            return {
-              success: false,
-              error:
-                error instanceof Error
-                  ? error.message
-                  : "Unknown error occurred",
+                }, 100);
+              }
             };
-          }
+
+            typeNextChar();
+          });
         },
-        [selector, value]
+        [selector, value, options || {}]
       );
 
       return result;
@@ -333,47 +341,15 @@ export class WebToolkit {
 
   async clickElement(selector: string): Promise<WebInteractionResult> {
     try {
-      // selector: "button[aria-label=\"Post\"]"
       const result = await this.executeInTab<WebInteractionResult>(
         (sel) => {
-          // 尝试多种选择器方式
-          let element = document.querySelector(sel) as HTMLElement;
-
-          // 如果直接选择器失败，尝试其他方式
-          if (!element) {
-            // 尝试通过 data-testid 查找
-            element = document.querySelector(
-              `[data-testid="${sel}"]`
-            ) as HTMLElement;
-          }
+          const element = document.querySelector(sel) as HTMLElement;
 
           if (!element) {
-            // 尝试通过 aria-label 查找
-            element = document.querySelector(
-              `[aria-label="${sel}"]`
-            ) as HTMLElement;
-          }
-
-          if (!element) {
-            // 尝试通过 class 查找
-            element = document.querySelector(`.${sel}`) as HTMLElement;
-          }
-
-          if (!element) {
-            // 尝试通过 id 查找
-            element = document.getElementById(sel) as HTMLElement;
-          }
-
-          if (!element) {
-            console.error("Element not found with selector:", sel);
-            return {
-              success: false,
-              error: `Element not found with selector: ${sel}`,
-            };
+            throw new Error(`Element not found with selector: ${sel}`);
           }
 
           try {
-            // 确保元素可见
             element.scrollIntoView({ behavior: "smooth", block: "center" });
 
             // 模拟完整的点击事件序列
@@ -439,13 +415,7 @@ export class WebToolkit {
             });
           } catch (error) {
             console.error("Error while clicking element:", error);
-            return {
-              success: false,
-              error:
-                error instanceof Error
-                  ? error.message
-                  : "Unknown error occurred",
-            };
+            throw error;
           }
         },
         [selector]
@@ -495,6 +465,116 @@ export class WebToolkit {
       return result;
     } catch (error) {
       console.error("Error refreshing page:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  async listElements(selectors: string[]): Promise<WebInteractionResult> {
+    try {
+      console.log("🍒 【listElements】 selectors = ", selectors);
+      const result = await this.executeInTab<WebInteractionResult>(
+        (selectors: string[]) => {
+          return new Promise((resolve) => {
+            if (!selectors || selectors.length === 0) {
+              throw new Error("No selectors provided");
+            }
+
+            const elements = Array.from(
+              document.querySelectorAll(selectors.join(","))
+            );
+
+            const isVisible = (el: Element) => {
+              const style = window.getComputedStyle(el);
+              const rect = el.getBoundingClientRect();
+              return (
+                style.visibility !== "hidden" &&
+                style.display !== "none" &&
+                rect.width > 0 &&
+                rect.height > 0
+              );
+            };
+
+            const result = elements.map((el) => {
+              const rect = el.getBoundingClientRect();
+              const attrs = el.attributes || {};
+              const attrObj: Record<string, string> = {};
+              for (let attr of attrs) {
+                attrObj[attr.name] = attr.value;
+              }
+
+              const clickableTags = ["button", "a", "summary"];
+              const clickable =
+                clickableTags.includes(el.tagName.toLowerCase()) ||
+                el.getAttribute("role") === "button" ||
+                typeof (el as HTMLElement).onclick === "function";
+
+              const parent = el.parentElement;
+              const parentAttrs: Record<string, string | null> = {};
+              if (parent) {
+                parentAttrs.id = parent.id || null;
+                parentAttrs.class = parent.className || null;
+              }
+
+              const aria = el.getAttribute("aria-label");
+              const testid = el.getAttribute("data-testid");
+              const placeholder = el.getAttribute("placeholder");
+
+              return {
+                tag: el.tagName.toLowerCase(),
+                displayText:
+                  (el as HTMLElement).innerText?.trim() ||
+                  aria ||
+                  placeholder ||
+                  (el as HTMLInputElement).value ||
+                  el.getAttribute("title") ||
+                  "",
+                text: (el as HTMLElement).innerText || "",
+                placeholder: placeholder || "",
+                visible: isVisible(el),
+                clickable,
+                position: {
+                  x: rect.x,
+                  y: rect.y,
+                },
+                boundingBox: {
+                  x: rect.x,
+                  y: rect.y,
+                  width: rect.width,
+                  height: rect.height,
+                },
+                attributes: {
+                  id: el.id || null,
+                  class: el.className || null,
+                  type: el.getAttribute("type") || null,
+                  disabled: (el as HTMLInputElement).disabled || false,
+                  "aria-label": aria || null,
+                  "data-testid": testid || null,
+                  contenteditable:
+                    el.getAttribute("contenteditable") === "true",
+                },
+                parentTag: parent?.tagName?.toLowerCase() || null,
+                parentAttributes: parentAttrs,
+              };
+            });
+
+            resolve({
+              success: true,
+              data: {
+                elements: result,
+              },
+            });
+          });
+        },
+        [selectors] // 👈 args 显式传入
+      );
+
+      console.log("🍒 【listElements】 result = ", result);
+      return result;
+    } catch (error) {
+      console.error("Error in findElement:", error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),
