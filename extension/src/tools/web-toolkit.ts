@@ -199,15 +199,12 @@ export class WebToolkit {
     }
   }
 
-  async getPageSource(
-    includeHtml: boolean = true
-  ): Promise<WebToolkitResponse> {
+  async getPageText(format: string = "html"): Promise<WebToolkitResponse> {
     try {
       const result = await this.executeInTab<PageSourceResult>(
         (userFuncString: string) => {
           try {
             if (!userFuncString) {
-              // 如果没有传入函数，则返回页面内容
               const html = document.documentElement.outerHTML;
               return {
                 html,
@@ -241,15 +238,12 @@ export class WebToolkit {
 
       // 使用dom-parser处理HTML
       const domTree = parseHtml(result.html);
-      const { html: minifiedHtml, selectors } = minify(domTree);
+      const { html: minifiedHtml } = minify(domTree);
 
       return {
         success: true,
         data: {
-          html: includeHtml ? minifiedHtml : null,
-          selectors: selectors,
-          url: result.url,
-          title: result.title,
+          content: minifiedHtml,
         },
       };
     } catch (error) {
@@ -329,19 +323,12 @@ export class WebToolkit {
           }
 
           const rect = element.getBoundingClientRect();
-          const style = window.getComputedStyle(element);
-          const isVisible =
-            style.visibility !== "hidden" &&
-            style.display !== "none" &&
-            rect.width > 0 &&
-            rect.height > 0;
-
           return {
             success: true,
             data: {
               x: rect.left + rect.width / 2,
               y: rect.top + rect.height / 2,
-              visible: isVisible,
+              visible: rect.width > 0 && rect.height > 0,
               text: element.textContent,
               html: element.outerHTML,
             },
@@ -487,254 +474,92 @@ export class WebToolkit {
 
   async clickElement(selector: string): Promise<WebInteractionResult> {
     try {
-      // Get current tab
-      const tab = await this.getCurrentTab();
-      if (!tab?.id) {
-        throw new Error("No active tab found");
-      }
-
-      // Get element info and verify it exists and is visible
+      // 1. 查找元素（主文档+iframe）
       const elementInfo = await this.executeInTab<any>(
         (sel) => {
-          const element = document.querySelector(sel) as HTMLElement;
-          if (!element) {
-            return {
-              success: false,
-              error: `Element not found: ${sel}`,
-            };
+          function findElement(sel: string): {
+            element: HTMLElement | null;
+            frame?: HTMLIFrameElement;
+          } {
+            let el = document.querySelector(sel) as HTMLElement;
+            if (el) return { element: el };
+            const iframes = Array.from(document.getElementsByTagName("iframe"));
+            for (const frame of iframes) {
+              try {
+                const doc = frame.contentDocument;
+                if (doc) {
+                  el = doc.querySelector(sel) as HTMLElement;
+                  if (el) return { element: el, frame };
+                }
+              } catch {}
+            }
+            return { element: null };
           }
-
+          const { element, frame } = findElement(sel);
+          if (!element)
+            return { success: false, error: `Element not found: ${sel}` };
           const rect = element.getBoundingClientRect();
-          const style = window.getComputedStyle(element);
-          const isVisible =
-            style.visibility !== "hidden" &&
-            style.display !== "none" &&
-            rect.width > 0 &&
-            rect.height > 0;
-
-          // 获取元素的详细信息
-          const attributes: Record<string, string> = {};
-          Array.from(element.attributes).forEach((attr) => {
-            attributes[attr.name] = attr.value;
-          });
-
-          return {
-            success: true,
-            data: {
-              element,
-              visible: isVisible,
-              rect,
-              elementState: {
-                isVisible,
-                isEnabled: !element.hasAttribute("disabled"),
-                attributes,
-                tagName: element.tagName.toLowerCase(),
-                className: element.className,
-                id: element.id,
-                role: element.getAttribute("role"),
-                ariaLabel: element.getAttribute("aria-label"),
-                dataTestId: element.getAttribute("data-testid"),
-              },
-            },
-          };
+          const isVisible = rect.width > 0 && rect.height > 0;
+          return { success: true, data: { isVisible, frame } };
         },
         [selector]
       );
 
-      // Add null check for elementInfo
-      if (!elementInfo) {
+      if (!elementInfo?.success)
         return {
           success: false,
-          error: "Failed to get element information",
+          error: elementInfo?.error || "Element not found",
         };
-      }
 
-      if (!elementInfo.success) {
-        return {
-          success: false,
-          error: elementInfo.error || "Failed to get element information",
-        };
-      }
+      if (!elementInfo.data.isVisible)
+        return { success: false, error: "Element is not visible" };
 
-      if (!elementInfo.data.visible) {
-        return {
-          success: false,
-          error: "Element is not visible",
-        };
-      }
-
-      // Try to click using the debugger API first
-      if (this.hasDebuggerSupport) {
-        try {
-          await this.attachDebugger(tab.id);
-
-          const { rect } = elementInfo.data;
-          // Ensure coordinates are valid numbers
-          const x = Math.round(rect.left + rect.width / 2);
-          const y = Math.round(rect.top + rect.height / 2);
-
-          if (isNaN(x) || isNaN(y)) {
-            throw new Error("Invalid element coordinates");
-          }
-
-          // Move mouse to element
-          await this.sendCommand("Input.dispatchMouseEvent", {
-            type: "mouseMoved",
-            x,
-            y,
-            button: "none",
-            buttons: 0,
-            modifiers: 0,
-            timestamp: Date.now(),
-          });
-
-          // Click
-          await this.sendCommand("Input.dispatchMouseEvent", {
-            type: "mousePressed",
-            x,
-            y,
-            button: "left",
-            buttons: 1,
-            clickCount: 1,
-            modifiers: 0,
-            timestamp: Date.now(),
-          });
-
-          await this.sendCommand("Input.dispatchMouseEvent", {
-            type: "mouseReleased",
-            x,
-            y,
-            button: "left",
-            buttons: 0,
-            clickCount: 1,
-            modifiers: 0,
-            timestamp: Date.now(),
-          });
-
-          await this.detachDebugger();
-        } catch (error) {
-          console.error("Debugger click failed:", error);
-          this.hasDebuggerSupport = false;
-        }
-      }
-
-      // Fallback to direct DOM click if debugger failed or not supported
+      // 2. 执行点击
       const clickResult = await this.executeInTab<any>(
         (sel) => {
-          return new Promise((resolve) => {
-            const element = document.querySelector(sel) as HTMLElement;
-            if (!element) {
-              resolve({
-                success: false,
-                error: "Element not found after click attempt",
-              });
-              return;
-            }
-
-            // Scroll element into view
-            element.scrollIntoView({ behavior: "smooth", block: "center" });
-
-            // Wait for scroll to complete
-            setTimeout(() => {
+          function findElement(sel: string): HTMLElement | null {
+            let el = document.querySelector(sel) as HTMLElement;
+            if (el) return el;
+            const iframes = Array.from(document.getElementsByTagName("iframe"));
+            for (const frame of iframes) {
               try {
-                // Try native click first
-                element.click();
-
-                // If element is a button or has role="button", also trigger click event
-                if (
-                  element.tagName === "BUTTON" ||
-                  element.getAttribute("role") === "button"
-                ) {
-                  const event = new MouseEvent("click", {
-                    bubbles: true,
-                    cancelable: true,
-                    view: window,
-                  });
-                  element.dispatchEvent(event);
+                const doc = frame.contentDocument;
+                if (doc) {
+                  el = doc.querySelector(sel) as HTMLElement;
+                  if (el) return el;
                 }
-
-                resolve({ success: true });
-              } catch (error) {
-                resolve({ success: false, error: String(error) });
-              }
-            }, 100);
-          });
-        },
-        [selector]
-      );
-
-      if (!clickResult.success) {
-        return {
-          success: false,
-          error: clickResult.error || "Failed to click element",
-        };
-      }
-
-      // Verify the click had an effect by checking if the element's state changed
-      const finalState = await this.executeInTab<any>(
-        (sel) => {
-          const element = document.querySelector(sel) as HTMLElement;
-          if (!element) {
-            return { success: false, error: "Element not found after click" };
+              } catch {}
+            }
+            return null;
           }
-
-          const rect = element.getBoundingClientRect();
-          return {
-            success: true,
-            data: {
-              text: element.textContent,
-              html: element.outerHTML,
-              rect,
-              elementState: {
-                isVisible:
-                  element.style.visibility !== "hidden" &&
-                  element.style.display !== "none" &&
-                  rect.width > 0 &&
-                  rect.height > 0,
-                isEnabled: !element.hasAttribute("disabled"),
-                attributes: Array.from(element.attributes).reduce(
-                  (acc, attr) => {
-                    acc[attr.name] = attr.value;
-                    return acc;
-                  },
-                  {} as Record<string, string>
-                ),
-                tagName: element.tagName.toLowerCase(),
-                className: element.className,
-                id: element.id,
-                role: element.getAttribute("role"),
-                ariaLabel: element.getAttribute("aria-label"),
-                dataTestId: element.getAttribute("data-testid"),
-              },
-            },
-          };
+          const el = findElement(sel);
+          if (!el)
+            return { success: false, error: "Element not found for click" };
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          setTimeout(() => el.click(), 50);
+          return { success: true };
         },
         [selector]
       );
 
-      if (!finalState.success) {
-        return {
-          success: false,
-          error: finalState.error,
-        };
-      }
+      if (!clickResult?.success)
+        return { success: false, error: clickResult?.error || "Click failed" };
+
+      // 3. 简单等待后返回状态
+      await new Promise((r) => setTimeout(r, 500));
+      const stillExists = await this.executeInTab<boolean>(
+        (sel) => !!document.querySelector(sel),
+        [selector]
+      );
 
       return {
         success: true,
         data: {
-          text: finalState.data.text,
-          html: finalState.data.html,
           clicked: true,
-          position: {
-            x: finalState.data.rect.x + finalState.data.rect.width / 2,
-            y: finalState.data.rect.y + finalState.data.rect.height / 2,
-          },
-          elementState: finalState.data.elementState,
+          elementStillExists: stillExists,
         },
       };
     } catch (error) {
-      console.error("Error in clickElement:", error);
-      await this.detachDebugger();
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),
@@ -886,7 +711,8 @@ export class WebToolkit {
                 }
 
                 return {
-                  selector: uniqueSelector,
+                  uniqueSelector,
+                  selectorPath: uniqueSelector,
                   text: element.innerText?.trim() || "",
                   type: element.tagName.toLowerCase(),
                   attributes,

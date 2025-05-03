@@ -45,6 +45,11 @@ export interface Message extends ChatMessage {
   status?: "pending" | "completed" | "error";
   error?: string;
   isLoading?: boolean;
+  tokenUsage?: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
 }
 
 /**

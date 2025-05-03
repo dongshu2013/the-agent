@@ -324,51 +324,29 @@ export const getToolDescriptions = (): ToolDescription[] => {
         },
       },
     },
-    // {
-    //   name: "WebToolkit_getPageSource",
-    //   description:
-    //     "Get the HTML and JavaScript source code of the current page",
-    //   parameters: {
-    //     type: "object",
-    //     properties: {
-    //       includeHtml: {
-    //         type: "boolean",
-    //         description: "Whether to include HTML source code",
-    //       },
-    //     },
-    //   },
-    //   returns: {
-    //     type: "object",
-    //     description: "Source code from the page",
-    //     properties: {
-    //       html: {
-    //         type: "string",
-    //         description: "The HTML source code of the page",
-    //       },
-    //     },
-    //   },
-    // },
-    // {
-    //   name: "WebToolkit_getPageContent",
-    //   description:
-    //     "Get the content of the current page, get the text content of the page, markdown format",
-    //   parameters: {
-    //     type: "object",
-    //     properties: {},
-    //   },
-    //   returns: {
-    //     type: "object",
-    //     description:
-    //       "Content of the current page, get the text content of the page, markdown format",
-    //     properties: {
-    //       content: {
-    //         type: "string",
-    //         description:
-    //           "The content of the current page, get the text content of the page, markdown format",
-    //       },
-    //     },
-    //   },
-    // },
+    {
+      name: "WebToolkit_getPageText",
+      description: "Get the HTML or text content of the current page",
+      parameters: {
+        type: "object",
+        properties: {
+          format: {
+            type: "string",
+            description: "The format of the page text (html or text)",
+          },
+        },
+      },
+      returns: {
+        type: "object",
+        description: "Source code from the page",
+        properties: {
+          content: {
+            type: "string",
+            description: "The text content of the page",
+          },
+        },
+      },
+    },
     {
       name: "WebToolkit_screenshot",
       description: "Take a screenshot of the current page",
@@ -735,6 +713,24 @@ Always use listElements first to find the correct selector before clicking or in
               },
             },
           },
+        },
+      },
+    },
+    {
+      name: "WebToolkit_getPageText",
+      description:
+        "Get the text content of the current page, format as markdown",
+      parameters: {
+        type: "object",
+        properties: {},
+      },
+      returns: {
+        type: "object",
+        description: "Text content of the current page",
+        properties: {
+          text: { type: "string" },
+          success: { type: "boolean" },
+          error: { type: "string" },
         },
       },
     },

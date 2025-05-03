@@ -23,6 +23,9 @@ export class ChatHandler {
   }
 
   async handleSubmit(prompt: string) {
+    if (this.isStreaming) {
+      this.stopStreaming();
+    }
     if (
       !prompt.trim() ||
       !this.options.apiKey ||
@@ -84,31 +87,33 @@ export class ChatHandler {
         10
       );
 
-      let newPrompt = ``;
+      let contextPrompt = "";
       if (relatedMessages.length > 0) {
-        newPrompt += `Related messages:\n`;
+        contextPrompt += "Related messages:\n";
         relatedMessages.forEach((msg) => {
-          newPrompt += `${msg.role}: ${msg.content}\n`;
+          contextPrompt += `${msg.role}: ${msg.content}\n`;
           if (msg.toolCalls) {
             msg.toolCalls.forEach((toolCall) => {
-              newPrompt += `Tool calls: ${toolCall.function.name}, executed result: ${JSON.stringify(toolCall?.result?.data || "")} \n`;
+              contextPrompt += `Tool calls: ${toolCall.function.name}, executed result: ${JSON.stringify(toolCall?.result?.data || "")} \n`;
             });
           }
         });
       }
       if (recentMessages.length > 0) {
-        newPrompt += `Recent messages:\n`;
+        contextPrompt += "Recent messages:\n";
         recentMessages.forEach((msg) => {
-          newPrompt += `${msg.role}: ${msg.content}\n`;
+          contextPrompt += `${msg.role}: ${msg.content}\n`;
           if (msg.toolCalls) {
             msg.toolCalls.forEach((toolCall) => {
-              newPrompt += `Tool calls: ${toolCall.function.name}, executed result: ${JSON.stringify(toolCall?.result?.data || "")} \n`;
+              contextPrompt += `Tool calls: ${toolCall.function.name}, executed result: ${JSON.stringify(toolCall?.result?.data || "")} \n`;
             });
           }
         });
       }
-      if (newPrompt.length > 0) {
-        newPrompt = `
+
+      console.log("🔥 currentPrompt:", currentPrompt);
+
+      const finalPrompt = `
 You are an AI assistant that helps users interact with web pages. You have these tools available:
 
 WebToolkit:
@@ -119,11 +124,11 @@ WebToolkit:
 
 TabToolkit:
 - openTab: Open URL in new tab
-- switchTab: Switch between tabs
+- switchToTab: Switch between tabs
 
 Instructions:
 1. Before each action:
-   "I will [action] because [reason]"
+   "I will [action]"
 
 2. After each action:
    "Result: [success/fail] - [brief explanation]"
@@ -140,20 +145,26 @@ Keep responses concise and focused on the current task.
 
 ---
 
-User request: ${currentPrompt}
+User request:
+${currentPrompt}
 
 ---
 
 Context:
-${newPrompt}
-        `;
-      }
+${contextPrompt}
+`;
 
       let toolCallCount = 0;
       const MAX_TOOL_CALLS = 20;
 
       const processRequest = async (inputMessages: ChatMessage[]) => {
         let accumulatedContent = "";
+        let totalTokenUsage = {
+          promptTokens: 0,
+          completionTokens: 0,
+          totalTokens: 0,
+        };
+
         try {
           while (true) {
             if (!this.isStreaming) break;
@@ -184,6 +195,14 @@ ${newPrompt}
             accumulatedContent += currentResponse;
             inputMessages.push(resp.choices[0].message);
 
+            // 累计 token 使用量
+            if (resp.usage) {
+              totalTokenUsage.promptTokens += resp.usage.prompt_tokens || 0;
+              totalTokenUsage.completionTokens +=
+                resp.usage.completion_tokens || 0;
+              totalTokenUsage.totalTokens += resp.usage.total_tokens || 0;
+            }
+
             const toolCalls = resp.choices[0].message.tool_calls;
             if (toolCalls) {
               if (toolCallCount >= MAX_TOOL_CALLS) {
@@ -192,7 +211,10 @@ ${newPrompt}
                   content: accumulatedContent,
                   isLoading: true,
                 });
-                return accumulatedContent;
+                return {
+                  content: accumulatedContent,
+                  tokenUsage: totalTokenUsage,
+                };
               }
 
               toolCallCount += toolCalls.length;
@@ -243,7 +265,7 @@ ${newPrompt}
               break;
             }
           }
-          return accumulatedContent;
+          return { content: accumulatedContent, tokenUsage: totalTokenUsage };
         } catch (error: any) {
           console.error("Error in processRequest:", error);
           if (error.name === "AbortError") {
@@ -254,6 +276,7 @@ ${newPrompt}
               error: "Stream aborted",
               isLoading: false,
               role: "system",
+              tokenUsage: totalTokenUsage,
             });
           } else {
             this.options.onError(error);
@@ -266,16 +289,17 @@ ${newPrompt}
               error: error.message,
               isLoading: false,
               role: "system",
+              tokenUsage: totalTokenUsage,
             });
           }
-          return accumulatedContent;
+          return { content: accumulatedContent, tokenUsage: totalTokenUsage };
         }
       };
 
-      let finalContent = await processRequest([
+      const { content: finalContent, tokenUsage } = await processRequest([
         {
           role: "user",
-          content: newPrompt,
+          content: finalPrompt,
         },
       ]);
 
@@ -284,7 +308,16 @@ ${newPrompt}
         content: finalContent,
         status: "completed",
         isLoading: false,
+        tokenUsage,
       };
+
+      // 在最后添加 token 使用统计
+      const tokenSummary = `\n\n---\nToken usage statistics:
+- Prompt tokens: ${tokenUsage.promptTokens}
+- Completion tokens: ${tokenUsage.completionTokens}
+- Total tokens: ${tokenUsage.totalTokens}`;
+
+      aiMessage.content += tokenSummary;
 
       await this.updateMessage(aiMessage);
       await saveMessageApi({

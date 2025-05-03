@@ -31,6 +31,7 @@
     "@plasmohq/storage": "^1.15.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
+    "@types/turndown": "^5.0.5",
     "dexie": "^4.0.11",
     "dexie-react-hooks": "^1.1.7",
     "dotenv": "^16.0.3",
@@ -40,6 +41,7 @@
     "react-dom": "^18.2.0",
     "react-markdown": "7.1.2",
     "remark-gfm": "3.0.1",
+    "turndown": "^7.2.0",
     "uuid": "^9.0.1",
     "webextension-polyfill": "^0.10.0"
   },

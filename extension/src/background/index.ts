@@ -64,8 +64,8 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
           let result;
           // 执行 WebToolkit 操作
           switch (toolName) {
-            case "getPageSource":
-              result = await webToolkit.getPageSource();
+            case "getPageText":
+              result = await webToolkit.getPageText(params.format);
               break;
             case "screenshot":
               result = await webToolkit.screenshot();
