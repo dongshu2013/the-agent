@@ -512,12 +512,29 @@ export class WebToolkit {
             rect.width > 0 &&
             rect.height > 0;
 
+          // 获取元素的详细信息
+          const attributes: Record<string, string> = {};
+          Array.from(element.attributes).forEach((attr) => {
+            attributes[attr.name] = attr.value;
+          });
+
           return {
             success: true,
             data: {
               element,
               visible: isVisible,
               rect,
+              elementState: {
+                isVisible,
+                isEnabled: !element.hasAttribute("disabled"),
+                attributes,
+                tagName: element.tagName.toLowerCase(),
+                className: element.className,
+                id: element.id,
+                role: element.getAttribute("role"),
+                ariaLabel: element.getAttribute("aria-label"),
+                dataTestId: element.getAttribute("data-testid"),
+              },
             },
           };
         },
@@ -668,6 +685,27 @@ export class WebToolkit {
               text: element.textContent,
               html: element.outerHTML,
               rect,
+              elementState: {
+                isVisible:
+                  element.style.visibility !== "hidden" &&
+                  element.style.display !== "none" &&
+                  rect.width > 0 &&
+                  rect.height > 0,
+                isEnabled: !element.hasAttribute("disabled"),
+                attributes: Array.from(element.attributes).reduce(
+                  (acc, attr) => {
+                    acc[attr.name] = attr.value;
+                    return acc;
+                  },
+                  {} as Record<string, string>
+                ),
+                tagName: element.tagName.toLowerCase(),
+                className: element.className,
+                id: element.id,
+                role: element.getAttribute("role"),
+                ariaLabel: element.getAttribute("aria-label"),
+                dataTestId: element.getAttribute("data-testid"),
+              },
             },
           };
         },
@@ -691,6 +729,7 @@ export class WebToolkit {
             x: finalState.data.rect.x + finalState.data.rect.width / 2,
             y: finalState.data.rect.y + finalState.data.rect.height / 2,
           },
+          elementState: finalState.data.elementState,
         },
       };
     } catch (error) {
@@ -816,11 +855,61 @@ export class WebToolkit {
           return {
             success: true,
             data: {
-              elements: elements.map((el) => ({
-                selector: el.tagName.toLowerCase(),
-                text: (el as HTMLElement).innerText?.trim() || "",
-                type: el.tagName.toLowerCase(),
-              })),
+              elements: elements.map((el) => {
+                const element = el as HTMLElement;
+                const rect = element.getBoundingClientRect();
+                const style = window.getComputedStyle(element);
+                const isVisible =
+                  style.visibility !== "hidden" &&
+                  style.display !== "none" &&
+                  rect.width > 0 &&
+                  rect.height > 0;
+
+                // 收集元素属性
+                const attributes: Record<string, string> = {};
+                Array.from(element.attributes).forEach((attr) => {
+                  attributes[attr.name] = attr.value;
+                });
+
+                // 构建唯一选择器
+                let uniqueSelector = element.tagName.toLowerCase();
+                if (element.id) {
+                  uniqueSelector = `#${element.id}`;
+                } else if (element.className) {
+                  uniqueSelector += `.${element.className.split(" ").join(".")}`;
+                }
+                if (element.getAttribute("role")) {
+                  uniqueSelector += `[role="${element.getAttribute("role")}"]`;
+                }
+                if (element.getAttribute("data-testid")) {
+                  uniqueSelector += `[data-testid="${element.getAttribute("data-testid")}"]`;
+                }
+
+                return {
+                  selector: uniqueSelector,
+                  text: element.innerText?.trim() || "",
+                  type: element.tagName.toLowerCase(),
+                  attributes,
+                  isVisible,
+                  isInteractive:
+                    (element.tagName === "BUTTON" ||
+                      element.tagName === "A" ||
+                      element.tagName === "INPUT" ||
+                      element.getAttribute("role") === "button" ||
+                      element.onclick != null ||
+                      style.cursor === "pointer") &&
+                    !element.hasAttribute("disabled"),
+                  elementState: {
+                    isEnabled: !element.hasAttribute("disabled"),
+                    tagName: element.tagName.toLowerCase(),
+                    className: element.className,
+                    id: element.id,
+                    role: element.getAttribute("role"),
+                    ariaLabel: element.getAttribute("aria-label"),
+                    dataTestId: element.getAttribute("data-testid"),
+                  },
+                };
+              }),
             },
           };
         },

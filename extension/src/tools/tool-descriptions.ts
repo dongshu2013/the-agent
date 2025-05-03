@@ -470,70 +470,83 @@ export const getToolDescriptions = (): ToolDescription[] => {
     {
       name: "WebToolkit_clickElement",
       description:
-        "Click on an element on the page. The element must be visible and clickable. If the element is not found or not clickable, use listElements to find the correct selector. The selector can be a simple tag name (e.g., 'button'), a class name (e.g., '.submit'), an ID (e.g., '#login'), or a combination of these with attributes (e.g., 'button[type=\"submit\"]').",
+        "Click an element on the page. The element must be visible and clickable. Always use listElements first to find the correct selector.",
       parameters: {
         type: "object",
         properties: {
           selector: {
             type: "string",
-            description:
-              "CSS selector for the element to click. Examples:\n- 'button' - any button\n- '.submit' - element with class 'submit'\n- '#login' - element with ID 'login'\n- 'button[type=\"submit\"]' - submit button\n- 'a[href*=\"login\"]' - link containing 'login' in URL\nIf the selector fails, use listElements to find the correct selector.",
-          },
-          options: {
-            type: "object",
-            description: "Click options",
-            properties: {
-              waitBefore: {
-                type: "number",
-                description:
-                  "Time to wait before clicking in milliseconds, default: 100",
-              },
-              scrollIntoView: {
-                type: "boolean",
-                description:
-                  "Whether to scroll the element into view before clicking, default: true",
-              },
-            },
+            description: `CSS selector for the element to click. Use listElements first to find the correct selector.
+
+Best practices for selectors:
+1. Prefer attribute selectors for interactive elements:
+   - '[role="button"]'
+   - '[aria-label="Submit"]'
+   - '[data-testid="submitButton"]'
+   - 'button[type="submit"]'
+
+2. Use specific class or id if available:
+   - '.submit-button'
+   - '#submitButton'
+
+3. Combine selectors for more precision:
+   - 'button.primary[type="submit"]'
+   - '.form-container button[type="submit"]'
+
+4. Avoid relying on text content alone as it may change
+
+If click fails:
+1. Use listElements to verify the element exists
+2. Check if element is visible and interactive
+3. Try a more specific selector`,
           },
         },
         required: ["selector"],
       },
       returns: {
         type: "object",
-        description:
-          "Result of the click operation. If unsuccessful, use listElements to find the correct selector.",
+        description: "Result of the click operation",
         properties: {
           success: {
             type: "boolean",
-            description: "Whether the element was successfully clicked",
+            description: "Whether the click was successful",
           },
           error: {
             type: "string",
             description:
-              "Error message if the operation failed. Common errors include: 'Element not found', 'Element is not visible', 'Element is not clickable'. If the selector is incorrect, use listElements to find the correct selector.",
+              "Error details if click failed, including why the element was not clickable",
           },
           data: {
             type: "object",
-            description: "Additional information about the clicked element",
+            description: "Information about the clicked element",
             properties: {
               text: {
                 type: "string",
-                description: "Text content of the element",
+                description: "Element's text content",
               },
               html: {
                 type: "string",
-                description: "HTML content of the element",
+                description: "Element's HTML structure",
               },
               clicked: {
                 type: "boolean",
-                description: "Whether the click was actually performed",
+                description: "Whether click was performed",
               },
               position: {
                 type: "object",
-                description: "Position where the click occurred",
+                description: "Click coordinates",
                 properties: {
                   x: { type: "number" },
                   y: { type: "number" },
+                },
+              },
+              elementState: {
+                type: "object",
+                description: "Element state when clicked",
+                properties: {
+                  isVisible: { type: "boolean" },
+                  isEnabled: { type: "boolean" },
+                  attributes: { type: "object" },
                 },
               },
             },
@@ -644,25 +657,45 @@ export const getToolDescriptions = (): ToolDescription[] => {
     {
       name: "WebToolkit_listElements",
       description:
-        "List elements on the page that match the user's intent. Returns the most relevant interactive elements based on the provided selector. If no selector is provided, returns a focused set of commonly used interactive elements. The selector can be a simple tag name (e.g., 'button'), a class name (e.g., '.submit'), an ID (e.g., '#login'), or a combination of these with attributes (e.g., 'input[type=\"text\"]').",
+        "List elements on the page that match the given selector. Use this tool first to find the correct selector before attempting to click or input. Returns detailed information about matching elements including their attributes, text content, and role.",
       parameters: {
         type: "object",
         properties: {
           selectors: {
             type: "string",
-            description:
-              "CSS selector to find specific elements. Examples:\n- 'button' - all buttons\n- '.submit' - elements with class 'submit'\n- '#login' - element with ID 'login'\n- 'input[type=\"text\"]' - text input fields\n- 'a[href*=\"login\"]' - links containing 'login' in URL\n- 'button, input[type=\"submit\"]' - multiple selectors\nIf not provided, returns a focused set of commonly used interactive elements (buttons, links, inputs, etc.).",
+            description: `CSS selector to find elements. Common selector patterns:
+1. Basic selectors:
+   - tag: 'button', 'input', 'a'
+   - class: '.classname'
+   - id: '#elementId'
+   - attribute: '[attr="value"]'
+
+2. Attribute selectors:
+   - '[role="button"]' - elements with role attribute
+   - '[aria-label="Submit"]' - elements with aria-label
+   - '[data-testid="submitButton"]' - elements with data-testid
+   - '[type="submit"]' - input/button type
+
+3. Combining selectors:
+   - 'button.primary' - button with class
+   - 'button[type="submit"]' - button with type
+   - '.container button' - button inside container
+
+4. Multiple elements:
+   - 'button, [role="button"]' - buttons and button-like elements
+   - 'input[type="text"], textarea' - text inputs
+
+Always use listElements first to find the correct selector before clicking or inputting.`,
           },
         },
       },
       returns: {
         type: "object",
-        description:
-          "Object containing the list of elements and operation status",
+        description: "List of matching elements with their properties",
         properties: {
           success: {
             type: "boolean",
-            description: "Whether the operation was successful",
+            description: "Whether elements were found",
           },
           data: {
             type: "object",
@@ -674,35 +707,33 @@ export const getToolDescriptions = (): ToolDescription[] => {
                   properties: {
                     selector: {
                       type: "string",
-                      description:
-                        "The element's tag name and any distinguishing attributes",
+                      description: "Unique selector for this element",
                     },
                     text: {
                       type: "string",
-                      description: "The visible text content of the element",
+                      description: "Text content of the element",
                     },
                     type: {
                       type: "string",
+                      description: "Element type (button, input, link, etc)",
+                    },
+                    attributes: {
+                      type: "object",
                       description:
-                        "The type of the element (e.g., 'button', 'input', 'link')",
+                        "Element attributes (role, aria-label, data-testid, etc)",
+                    },
+                    isVisible: {
+                      type: "boolean",
+                      description: "Whether the element is visible",
+                    },
+                    isInteractive: {
+                      type: "boolean",
+                      description: "Whether the element can be interacted with",
                     },
                   },
                 },
               },
-              total: {
-                type: "number",
-                description: "Total number of matching elements found",
-              },
-              limited: {
-                type: "boolean",
-                description:
-                  "Whether the results were limited to the most relevant elements",
-              },
             },
-          },
-          error: {
-            type: "string",
-            description: "Error message if the operation failed",
           },
         },
       },
