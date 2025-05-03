@@ -249,7 +249,7 @@ export const getToolDescriptions = (): ToolDescription[] => {
     },
     {
       name: "TabToolkit_listTabs",
-      description: "List all tabs",
+      description: "List all tabs in the current window",
       returns: {
         type: "array",
         description: "List of matching tabs",
@@ -399,31 +399,33 @@ export const getToolDescriptions = (): ToolDescription[] => {
     },
     {
       name: "WebToolkit_inputElement",
-      description: "Types text into a specified input element on the page.",
+      description:
+        "Types text into a specified input element on the page. If the element is not found or not interactable, use listElements to find the correct selector. The selector can be a simple tag name (e.g., 'input'), a class name (e.g., '.username'), an ID (e.g., '#email'), or a combination of these with attributes (e.g., 'input[type=\"text\"]').",
       parameters: {
         type: "object",
         properties: {
           selector: {
             type: "string",
-            description: "CSS selector for the target input element.",
+            description:
+              "CSS selector for the target input element. Examples:\n- 'input' - any input\n- '.username' - input with class 'username'\n- '#email' - input with ID 'email'\n- 'input[type=\"text\"]' - text input\n- 'textarea' - any textarea\nIf the selector fails, use listElements to find the correct selector.",
           },
           value: {
             type: "string",
-            description: "The text to input into the element.",
+            description: "The text to input into the element",
           },
           options: {
             type: "object",
-            description: "Optional configuration for input behavior.",
+            description: "Optional configuration for input behavior",
             properties: {
               clearFirst: {
                 type: "boolean",
                 description:
-                  "If true, clears existing content before inputting. Default: true.",
+                  "If true, clears existing content before inputting. Default: true",
               },
               delay: {
                 type: "number",
                 description:
-                  "Delay (in milliseconds) between keystrokes. Default: 100.",
+                  "Delay (in milliseconds) between keystrokes. Default: 100",
               },
             },
           },
@@ -432,24 +434,50 @@ export const getToolDescriptions = (): ToolDescription[] => {
       },
       returns: {
         type: "object",
-        description: "The result of the input action.",
+        description:
+          "The result of the input action. If unsuccessful, use listElements to find the correct selector.",
         properties: {
           success: {
             type: "boolean",
-            description: "Indicates whether the text was successfully input.",
+            description: "Indicates whether the text was successfully input",
+          },
+          error: {
+            type: "string",
+            description:
+              "Error message if the input failed. Common errors include: 'Element not found', 'Element is not visible', 'Element is not interactable'. If the selector is incorrect, use listElements to find the correct selector.",
+          },
+          data: {
+            type: "object",
+            description: "Additional information about the input operation",
+            properties: {
+              text: {
+                type: "string",
+                description: "Text content of the element",
+              },
+              value: {
+                type: "string",
+                description: "Value of the input element",
+              },
+              html: {
+                type: "string",
+                description: "HTML content of the element",
+              },
+            },
           },
         },
       },
     },
     {
       name: "WebToolkit_clickElement",
-      description: "Click on an element on the page",
+      description:
+        "Click on an element on the page. The element must be visible and clickable. If the element is not found or not clickable, use listElements to find the correct selector. The selector can be a simple tag name (e.g., 'button'), a class name (e.g., '.submit'), an ID (e.g., '#login'), or a combination of these with attributes (e.g., 'button[type=\"submit\"]').",
       parameters: {
         type: "object",
         properties: {
           selector: {
             type: "string",
-            description: "Selector for the element to click",
+            description:
+              "CSS selector for the element to click. Examples:\n- 'button' - any button\n- '.submit' - element with class 'submit'\n- '#login' - element with ID 'login'\n- 'button[type=\"submit\"]' - submit button\n- 'a[href*=\"login\"]' - link containing 'login' in URL\nIf the selector fails, use listElements to find the correct selector.",
           },
           options: {
             type: "object",
@@ -463,7 +491,7 @@ export const getToolDescriptions = (): ToolDescription[] => {
               scrollIntoView: {
                 type: "boolean",
                 description:
-                  "Whether to scroll the element into view before clicking, default: true (scroll the element into view)",
+                  "Whether to scroll the element into view before clicking, default: true",
               },
             },
           },
@@ -472,11 +500,43 @@ export const getToolDescriptions = (): ToolDescription[] => {
       },
       returns: {
         type: "object",
-        description: "Result of the click operation",
+        description:
+          "Result of the click operation. If unsuccessful, use listElements to find the correct selector.",
         properties: {
           success: {
             type: "boolean",
             description: "Whether the element was successfully clicked",
+          },
+          error: {
+            type: "string",
+            description:
+              "Error message if the operation failed. Common errors include: 'Element not found', 'Element is not visible', 'Element is not clickable'. If the selector is incorrect, use listElements to find the correct selector.",
+          },
+          data: {
+            type: "object",
+            description: "Additional information about the clicked element",
+            properties: {
+              text: {
+                type: "string",
+                description: "Text content of the element",
+              },
+              html: {
+                type: "string",
+                description: "HTML content of the element",
+              },
+              clicked: {
+                type: "boolean",
+                description: "Whether the click was actually performed",
+              },
+              position: {
+                type: "object",
+                description: "Position where the click occurred",
+                properties: {
+                  x: { type: "number" },
+                  y: { type: "number" },
+                },
+              },
+            },
           },
         },
       },
@@ -523,10 +583,27 @@ export const getToolDescriptions = (): ToolDescription[] => {
     },
     {
       name: "WebToolkit_refreshPage",
-      description: "Refresh the current page",
+      description:
+        "Refresh the current page based on the user's context. This will reload the current page and wait for it to be fully loaded. The page to refresh is determined by the user's current context and cannot be specified directly.",
       parameters: {
         type: "object",
-        properties: {},
+        properties: {
+          url: {
+            type: "string",
+            description:
+              "The URL of the page to refresh. Default: determined by the user's current context",
+          },
+          waitForLoad: {
+            type: "boolean",
+            description:
+              "Whether to wait for the page to be fully loaded after refresh. Default: true",
+          },
+          timeout: {
+            type: "number",
+            description:
+              "Maximum time to wait for page load in milliseconds. Default: 5000",
+          },
+        },
       },
       returns: {
         type: "object",
@@ -534,7 +611,32 @@ export const getToolDescriptions = (): ToolDescription[] => {
         properties: {
           success: {
             type: "boolean",
-            description: "Whether the page was successfully refreshed",
+            description:
+              "Whether the page was successfully refreshed and loaded",
+          },
+          error: {
+            type: "string",
+            description:
+              "Error message if the refresh failed. Common errors include: 'Page load timeout', 'Navigation failed', 'No active page to refresh'",
+          },
+          data: {
+            type: "object",
+            description: "Additional information about the refresh operation",
+            properties: {
+              url: {
+                type: "string",
+                description: "The URL of the refreshed page",
+              },
+              loadTime: {
+                type: "number",
+                description: "Time taken for the page to load in milliseconds",
+              },
+              status: {
+                type: "string",
+                description:
+                  "Final status of the page after refresh (complete, loading, error)",
+              },
+            },
           },
         },
       },
@@ -542,24 +644,21 @@ export const getToolDescriptions = (): ToolDescription[] => {
     {
       name: "WebToolkit_listElements",
       description:
-        "List all interactive elements on the page (buttons, inputs, etc.), optionally filtered by selectors",
+        "List elements on the page that match the user's intent. Returns the most relevant interactive elements based on the provided selector. If no selector is provided, returns a focused set of commonly used interactive elements. The selector can be a simple tag name (e.g., 'button'), a class name (e.g., '.submit'), an ID (e.g., '#login'), or a combination of these with attributes (e.g., 'input[type=\"text\"]').",
       parameters: {
         type: "object",
         properties: {
           selectors: {
-            type: "array",
+            type: "string",
             description:
-              "Optional: list of selectors to filter elements, e.g. ['button', 'input', '[contenteditable=true]']. If omitted, all common interactive elements will be returned.",
-            items: {
-              type: "string",
-            },
+              "CSS selector to find specific elements. Examples:\n- 'button' - all buttons\n- '.submit' - elements with class 'submit'\n- '#login' - element with ID 'login'\n- 'input[type=\"text\"]' - text input fields\n- 'a[href*=\"login\"]' - links containing 'login' in URL\n- 'button, input[type=\"submit\"]' - multiple selectors\nIf not provided, returns a focused set of commonly used interactive elements (buttons, links, inputs, etc.).",
           },
         },
-        required: [],
       },
       returns: {
         type: "object",
-        description: "Structured list of found DOM elements and their metadata",
+        description:
+          "Object containing the list of elements and operation status",
         properties: {
           success: {
             type: "boolean",
@@ -570,75 +669,40 @@ export const getToolDescriptions = (): ToolDescription[] => {
             properties: {
               elements: {
                 type: "array",
-                description: "Array of elements found on the page",
                 items: {
                   type: "object",
                   properties: {
-                    tag: {
+                    selector: {
                       type: "string",
                       description:
-                        "Tag name of the element (e.g., button, input)",
+                        "The element's tag name and any distinguishing attributes",
                     },
-                    displayText: {
+                    text: {
+                      type: "string",
+                      description: "The visible text content of the element",
+                    },
+                    type: {
                       type: "string",
                       description:
-                        "Merged visible text content (text, placeholder, aria-label, etc.)",
-                    },
-                    text: { type: "string", description: "Inner text content" },
-                    placeholder: { type: "string" },
-                    visible: {
-                      type: "boolean",
-                      description: "Whether the element is visible",
-                    },
-                    clickable: {
-                      type: "boolean",
-                      description: "Whether the element is likely clickable",
-                    },
-                    position: {
-                      type: "object",
-                      properties: {
-                        x: { type: "number" },
-                        y: { type: "number" },
-                      },
-                    },
-                    boundingBox: {
-                      type: "object",
-                      description:
-                        "Size and position of the element on screen (for screenshots/visual anchor)",
-                      properties: {
-                        x: { type: "number" },
-                        y: { type: "number" },
-                        width: { type: "number" },
-                        height: { type: "number" },
-                      },
-                    },
-                    attributes: {
-                      type: "object",
-                      properties: {
-                        id: { type: "string" },
-                        class: { type: "string" },
-                        type: { type: "string" },
-                        disabled: { type: "boolean" },
-                        "aria-label": { type: "string" },
-                        "data-testid": { type: "string" },
-                        contenteditable: { type: "boolean" },
-                      },
-                    },
-                    parentTag: {
-                      type: "string",
-                      description: "Tag name of the direct parent node",
-                    },
-                    parentAttributes: {
-                      type: "object",
-                      properties: {
-                        id: { type: "string" },
-                        class: { type: "string" },
-                      },
+                        "The type of the element (e.g., 'button', 'input', 'link')",
                     },
                   },
                 },
               },
+              total: {
+                type: "number",
+                description: "Total number of matching elements found",
+              },
+              limited: {
+                type: "boolean",
+                description:
+                  "Whether the results were limited to the most relevant elements",
+              },
             },
+          },
+          error: {
+            type: "string",
+            description: "Error message if the operation failed",
           },
         },
       },

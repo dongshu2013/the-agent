@@ -287,7 +287,7 @@ async def find_similar_messages(query_text: str, conversation_id: Optional[str] 
             return []
             
         # Convert Python list to PostgreSQL array syntax
-        embedding_str = str(query_embedding).replace('[', '{').replace(']', '}')
+        embedding_str = "{" + ",".join(map(str, query_embedding)) + "}"
             
         # Build the query
         query = text("""

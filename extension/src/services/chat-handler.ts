@@ -91,7 +91,6 @@ export class ChatHandler {
           newPrompt += `${msg.role}: ${msg.content}\n`;
           if (msg.toolCalls) {
             msg.toolCalls.forEach((toolCall) => {
-              // html size too loong ,so we not add it to the prompt
               newPrompt += `Tool calls: ${toolCall.function.name}, executed result: ${JSON.stringify(toolCall?.result?.data || "")} \n`;
             });
           }
@@ -110,21 +109,42 @@ export class ChatHandler {
       }
       if (newPrompt.length > 0) {
         newPrompt = `
-       You are an AI agent that can use tools and has memory of prior interactions. if the user request is request don't care about the memory, just do it.
-Please do the following:
-1. Carefully read the \`user request\`.
-2. Then, check the \`memory\` to see if the same request or tool call has already been handled.
-3. If the memory shows the tool call has already been completed, **do not repeat it**, unless the user explicitly requests a re-run.
-4. Only call tools if it is a **new request** that is not already handled in memory.
+You are an AI assistant that helps users interact with web pages. You have these tools available:
+
+WebToolkit:
+- clickElement: Click buttons, links or any clickable elements
+- inputElement: Type text into input fields
+- listElements: Find and list elements on the page
+- refreshPage: Reload the current page
+
+TabToolkit:
+- openTab: Open URL in new tab
+- switchTab: Switch between tabs
+
+Instructions:
+1. Before each action:
+   "I will [action] because [reason]"
+
+2. After each action:
+   "Result: [success/fail] - [brief explanation]"
+
+3. If an action fails:
+   - Explain why it failed
+   - What you'll try next
+   - Or suggest alternatives
+
+4. End with:
+   "Task status: [completed/failed] - [brief summary]"
+
+Keep responses concise and focused on the current task.
 
 ---
 
-user request:
-${currentPrompt}
+User request: ${currentPrompt}
 
 ---
 
-memory (executed actions and prior responses):
+Context:
 ${newPrompt}
         `;
       }
