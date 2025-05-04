@@ -113,8 +113,19 @@ export class ChatHandler {
 
       console.log("🔥 currentPrompt:", currentPrompt);
 
-      const finalPrompt = `
+      const systemMessage: ChatMessage = {
+        role: "system",
+        content: `
 You are an AI assistant that helps users interact with web pages. You have these tools available:
+
+WebToolkit:
+- clickElement: Click buttons, links or any clickable elements
+- inputElement: Type text into input fields
+- listElements: Find and list elements on the page
+- refreshPage: Reload the current page
+
+TabToolkit:
+- openTab: Open URL in new tab
 
 WebToolkit:
 - clickElement: Click buttons, links or any clickable elements
@@ -145,14 +156,10 @@ Keep responses concise and focused on the current task.
 
 ---
 
-User request:
-${currentPrompt}
-
----
-
 Context:
 ${contextPrompt}
-`;
+`,
+      };
 
       let toolCallCount = 0;
       const MAX_TOOL_CALLS = 20;
@@ -170,7 +177,7 @@ ${contextPrompt}
             if (!this.isStreaming) break;
 
             const stream = await sendChatCompletion(
-              { messages: inputMessages },
+              { messages: [systemMessage, ...inputMessages] },
               this.options.apiKey,
               {
                 signal: this.abortController?.signal,
@@ -299,7 +306,7 @@ ${contextPrompt}
       const { content: finalContent, tokenUsage } = await processRequest([
         {
           role: "user",
-          content: finalPrompt,
+          content: currentPrompt,
         },
       ]);
 

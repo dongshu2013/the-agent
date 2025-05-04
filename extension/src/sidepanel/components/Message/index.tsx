@@ -42,51 +42,74 @@ const Message: React.FC<MessageProps> = ({ message }) => {
   };
 
   const processContent = (content: string) => {
-    if (!content) return "";
+    if (!content) return null;
 
-    return content
-      .split("\n")
-      .map((line) => {
-        const trimmedLine = line.trim();
+    // 用正则分割出所有 Tool call: 段
+    const parts = content.split(/(Tool call:[^\n]*)/g);
 
+    return parts.map((part, idx) => {
+      if (part.startsWith("Tool call:")) {
+        const toolName = part.replace("Tool call:", "").trim();
+        return (
+          <div className="tool-call" key={`tool-call-${idx}`}>
+            <svg
+              className="tool-icon"
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m15 12-8.5 8.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0a2.12 2.12 0 0 1 0-3L12 9" />
+              <path d="M17.64 15 22 10.64" />
+              <path d="m20.91 11.7-1.25-1.25c-.6-.6-.93-1.4-.93-2.25v-.86L16.01 4.6a5.56 5.56 0 0 0-3.94-1.64H9l.92.82A6.18 6.18 0 0 1 12 8.4v1.56l2 2h2.47l2.26 1.91" />
+            </svg>
+            <span>Executed tool call</span>
+            <span className="tool-name">{toolName}</span>
+          </div>
+        );
+      } else if (part.trim() !== "") {
         // 处理HTML img标签
-        if (trimmedLine.match(/<img[^>]+>/)) {
-          const srcMatch = trimmedLine.match(/src=["']([^"']+)["']/);
-          return srcMatch ? `![](${srcMatch[1]})` : line;
+        if (part.match(/<img[^>]+>/)) {
+          const srcMatch = part.match(/src=["']([^"']+)["']/);
+          return srcMatch ? `![](${srcMatch[1]})` : part;
         }
 
         // 保持已有的Markdown图片格式
-        if (trimmedLine.match(/^!\[.*\]\(.*\)$/)) {
-          return line;
+        if (part.match(/^!\[.*\]\(.*\)$/)) {
+          return part;
         }
 
         // 处理以感叹号开头的行
-        if (trimmedLine.startsWith("!")) {
-          const imageText = trimmedLine.slice(1).trim();
+        if (part.startsWith("!")) {
+          const imageText = part.slice(1).trim();
           if (imageText.match(/^(https?:\/\/|data:image\/)/)) {
             return `![](${imageText})`;
           }
           return `![${imageText}](${imageText})`;
         }
 
-        return line;
-      })
-      .join("\n");
+        // 其它内容用 markdown 渲染
+        return <ReactMarkdown key={`md-${idx}`}>{part}</ReactMarkdown>;
+      }
+      return null;
+    });
   };
 
   const renderContent = () => {
     if (isLoading && !message.content) {
       return <LoadingBrain />;
     }
-
     if (isUser || isError) {
       return (
         <div style={{ whiteSpace: "pre-wrap" }}>{message.content || ""}</div>
       );
     }
-
-    const markdownContent = processContent(message.content || "");
-    return <ReactMarkdown>{markdownContent}</ReactMarkdown>;
+    return <>{processContent(message.content || "")}</>;
   };
 
   return (
