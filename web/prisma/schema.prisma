@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -20,43 +14,35 @@ model users {
   email           String?         @unique
   api_key         String          @unique @default(uuid())
   api_key_enabled Boolean         @default(true)
-  conversations   conversations[]
   created_at      DateTime        @default(now())
   updated_at      DateTime        @updatedAt
+  conversations   conversations[]
 }
 
 model conversations {
   id         String     @id @default(uuid())
-  user       users      @relation(fields: [user_id], references: [id])
   user_id    String
-  messages   messages[]
   created_at DateTime   @default(now())
-  status     String     @default("active") // "active" or "deleted"
+  status     String     @default("active")
+  user       users      @relation(fields: [user_id], references: [id])
+  messages   messages[]
 }
 
 model messages {
-  id              String        @id @default(uuid())
-  conversation    conversations @relation(fields: [conversation_id], references: [id])
+  id              String                 @id @default(uuid())
   conversation_id String
-  role            String // "system", "user", "assistant", or "tooling"
-  content         Json // Array of text_message or image_message objects
-  created_at      DateTime      @default(now())
-  tool_calls      Json          @default("{}")
+  role            String
+  content         Json
+  created_at      DateTime               @default(now())
+  tool_calls      Json?
+  embedding       Unsupported("vector")?
+  is_deleted      Boolean                @default(false)
+  deleted_at      DateTime?
+  conversation    conversations          @relation(fields: [conversation_id], references: [id])
+
+  @@index([embedding])
 }
 
-// Types for reference (not actual models):
-// 
-// text_message {
-//   type: "text"
-//   text: string,
-// }
-//
-// image_message {
-//   type: "image_url",
-//   image_url: {url: string}
-// }
-
-// Telegram chats
 model tg_chats {
   id               String        @id @default(uuid())
   user_id          String
@@ -67,7 +53,7 @@ model tg_chats {
   is_free          Boolean       @default(false)
   subscription_fee Decimal       @default(0)
   last_synced_at   DateTime      @default(now())
-  status           String        @default("watching") // watching, quiet
+  status           String        @default("watching")
   created_at       DateTime      @default(now())
   updated_at       DateTime      @default(now())
   messages         tg_messages[]
@@ -75,28 +61,27 @@ model tg_chats {
   @@unique([user_id, chat_id])
 }
 
-// Telegram messagess
 model tg_messages {
-  id                String   @id @default(uuid())
-  chat_id           String
+  id                String                 @id @default(uuid())
   message_id        String
+  chat_id           String
   message_text      String
   message_timestamp BigInt
   sender_id         String?
+  is_pinned         Boolean                @default(false)
+  created_at        DateTime               @default(now())
+  updated_at        DateTime               @default(now())
   reply_to_msg_id   String?
-  is_pinned         Boolean  @default(false)
-  created_at        DateTime @default(now())
-  updated_at        DateTime @default(now())
-  sender_username   String?
   sender_firstname  String?
   sender_lastname   String?
-
-  chat tg_chats @relation(fields: [chat_id], references: [id])
+  sender_username   String?
+  embedding         Unsupported("vector")?
+  chat              tg_chats               @relation(fields: [chat_id], references: [id])
 
   @@unique([chat_id, message_id])
+  @@index([embedding])
 }
 
-// Telegram users
 model tg_users {
   id         String   @id @default(uuid())
   user_id    String
