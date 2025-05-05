@@ -94,7 +94,9 @@ export class ChatHandler {
           contextPrompt += `${msg.role}: ${msg.content}\n`;
           if (msg.toolCalls) {
             msg.toolCalls.forEach((toolCall) => {
-              contextPrompt += `Tool calls: ${toolCall.function.name}, executed result: ${JSON.stringify(toolCall?.result?.data || "")} \n`;
+              if (toolCall.function.name !== "WebToolkit_getPageText") {
+                contextPrompt += `Tool calls: ${toolCall.function.name}, executed result: ${JSON.stringify(toolCall?.result?.data || "")} \n`;
+              }
             });
           }
         });
@@ -105,7 +107,9 @@ export class ChatHandler {
           contextPrompt += `${msg.role}: ${msg.content}\n`;
           if (msg.toolCalls) {
             msg.toolCalls.forEach((toolCall) => {
-              contextPrompt += `Tool calls: ${toolCall.function.name}, executed result: ${JSON.stringify(toolCall?.result?.data || "")} \n`;
+              if (toolCall.function.name !== "WebToolkit_getPageText") {
+                contextPrompt += `Tool calls: ${toolCall.function.name}, executed result: ${JSON.stringify(toolCall?.result?.data || "")} \n`;
+              }
             });
           }
         });
@@ -191,18 +195,12 @@ ${contextPrompt}
               const content = chunk.choices[0]?.delta?.content;
               if (content) {
                 currentResponse += content;
-                await this.updateMessage({
-                  ...loadingMessage,
-                  content: accumulatedContent + currentResponse,
-                });
               }
             }
 
             const resp = await stream.finalChatCompletion();
-            accumulatedContent += currentResponse;
-            inputMessages.push(resp.choices[0].message);
+            accumulatedContent = currentResponse;
 
-            // 累计 token 使用量
             if (resp.usage) {
               totalTokenUsage.promptTokens += resp.usage.prompt_tokens || 0;
               totalTokenUsage.completionTokens +=
@@ -225,48 +223,71 @@ ${contextPrompt}
               }
 
               toolCallCount += toolCalls.length;
+
+              // 添加助手消息到输入消息列表
+              inputMessages.push({
+                role: "assistant",
+                content: currentResponse,
+                tool_calls: toolCalls,
+              });
+
+              // 处理每个工具调用
               for (const toolCall of toolCalls) {
-                console.log("🔥 toolCall:", toolCall.function);
                 const toolResult = await toolExecutor.executeToolCall(toolCall);
-                console.log("🔥Tool call🌹 result:", toolResult);
+                const simplifiedName = toolCall.function.name
+                  .replace("TabToolkit_", "")
+                  .replace("WebToolkit_", "");
 
-                const toolCallInfo = `<div style="border: 1px solid #ccc; border-radius: 6px; padding: 6px 8px; margin: 4px 0; font-size: 12px; line-height: 1.4; margin-bottom: 16px; display: flex; align-items: center;"><svg style="margin-right: 6px;" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 12-8.5 8.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0a2.12 2.12 0 0 1 0-3L12 9"/><path d="M17.64 15 22 10.64"/><path d="m20.91 11.7-1.25-1.25c-.6-.6-.93-1.4-.93-2.25v-.86L16.01 4.6a5.56 5.56 0 0 0-3.94-1.64H9l.92.82A6.18 6.18 0 0 1 12 8.4v1.56l2 2h2.47l2.26 1.91"/></svg>Executed tool call <span style="display: inline-block; background-color: #f7f7f7; color: #999; border: 1px solid #ccc; padding: 1px 6px; border-radius: 4px; margin-left: 6px; font-size: 11px;">${toolCall.function.name.replace("TabToolkit_", "") || toolCall.function.name.replace("WebToolkit_", "")}</span></div>`;
-                accumulatedContent += toolCallInfo;
+                // 创建工具调用消息，时间戳递增
+                const toolMessageId = crypto.randomUUID();
+                const toolMessage: Message = {
+                  message_id: toolMessageId,
+                  role: "tool",
+                  name: toolCall.function.name,
+                  content: `I will  ${simplifiedName}.\n`,
+                  created_at: new Date(
+                    baseTimestamp.getTime() + toolCallCount * 1000
+                  ).toISOString(),
+                  conversation_id: this.options.currentConversationId,
+                  status: "completed",
+                  ...(env.OPENAI_MODEL === "deepseek-chat"
+                    ? {
+                        tool_call_id: toolCall.id,
+                        tool_calls: [
+                          {
+                            id: toolCall.id,
+                            type: toolCall.type,
+                            function: toolCall.function,
+                            result: toolResult,
+                          },
+                        ],
+                      }
+                    : {
+                        toolCallId: toolCall.id,
+                        toolCalls: [
+                          {
+                            id: toolCall.id,
+                            type: toolCall.type,
+                            function: toolCall.function,
+                            result: toolResult,
+                          },
+                        ],
+                      }),
+                };
 
-                if (!loadingMessage.toolCalls) {
-                  loadingMessage.toolCalls = [];
-                }
-                if (!loadingMessage.tool_calls) {
-                  loadingMessage.tool_calls = [];
-                }
+                await this.updateMessage(toolMessage);
+                await saveMessageApi({
+                  conversation_id: this.options.currentConversationId,
+                  message: toolMessage,
+                });
 
-                if (env.OPENAI_MODEL === "deepseek-chat") {
-                  loadingMessage.tool_calls.push({
-                    id: toolCall.id,
-                    type: toolCall.type,
-                    function: toolCall.function,
-                    result: toolResult,
-                  });
-                  inputMessages.push({
-                    role: "tool",
-                    name: toolCall.function.name,
-                    content: `Function call ${toolCall.function.name}: ${toolResult.success} ${JSON.stringify(toolResult.data)}`,
-                    tool_call_id: toolCall.id,
-                  });
-                } else {
-                  loadingMessage.toolCalls.push({
-                    id: toolCall.id,
-                    type: toolCall.type,
-                    function: toolCall.function,
-                    result: toolResult,
-                  });
-                  inputMessages.push({
-                    role: "tool",
-                    name: toolCall.function.name,
-                    content: `Function call ${toolCall.function.name}: ${toolResult.success} ${JSON.stringify(toolResult.data)}`,
-                    toolCallId: toolCall.id,
-                  });
-                }
+                // 添加工具响应到输入消息列表
+                inputMessages.push({
+                  role: "tool",
+                  name: toolCall.function.name,
+                  content: `${toolResult.success ? "success" : "failed"} ${JSON.stringify(toolResult.data)}`,
+                  tool_call_id: toolCall.id,
+                });
               }
             } else {
               break;
@@ -310,12 +331,16 @@ ${contextPrompt}
         },
       ]);
 
+      // 修改最终 AI 消息的时间戳，确保显示在最后
       const aiMessage: Message = {
         ...loadingMessage,
         content: finalContent,
         status: "completed",
         isLoading: false,
         tokenUsage,
+        created_at: new Date(
+          baseTimestamp.getTime() + (toolCallCount + 1) * 1000
+        ).toISOString(),
       };
 
       // 在最后添加 token 使用统计

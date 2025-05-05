@@ -14,6 +14,7 @@ export default function MessageComponent({ message }: Props) {
   const isError = message?.status === "error";
   const [copySuccess, setCopySuccess] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const isTool = message?.role === "tool";
 
   if (!message) {
     console.warn("Message component received null or undefined message");
@@ -38,12 +39,68 @@ export default function MessageComponent({ message }: Props) {
     if (isLoading) return false;
     if (isError) return false;
     if (!message.content) return false;
+    if (message.role === "tool") return false; // 添加这行，工具调用消息不显示复制按钮
 
     // AI 回复的复制按钮始终显示
     if (!isUser) return true;
 
     // 用户消息的复制按钮只在 hover 时显示
     return isHovered;
+  };
+
+  const renderToolCalls = () => {
+    if (!message.toolCalls?.length && !message.tool_calls?.length) return null;
+
+    const toolCalls = message.toolCalls || message.tool_calls;
+    return toolCalls?.map((toolCall) => (
+      <div
+        key={toolCall.id}
+        style={{
+          border: "1px solid #ccc",
+          borderRadius: "6px",
+          padding: "6px 8px",
+          margin: "4px 0",
+          fontSize: "12px",
+          lineHeight: "1.4",
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
+        <svg
+          style={{ marginRight: "6px" }}
+          xmlns="http://www.w3.org/2000/svg"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="m15 12-8.5 8.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0a2.12 2.12 0 0 1 0-3L12 9" />
+          <path d="M17.64 15 22 10.64" />
+          <path d="m20.91 11.7-1.25-1.25c-.6-.6-.93-1.4-.93-2.25v-.86L16.01 4.6a5.56 5.56 0 0 0-3.94-1.64H9l.92.82A6.18 6.18 0 0 1 12 8.4v1.56l2 2h2.47l2.26 1.91" />
+        </svg>
+        Executed tool call{" "}
+        <span
+          style={{
+            display: "inline-block",
+            backgroundColor: "#f7f7f7",
+            color: "#999",
+            border: "1px solid #ccc",
+            padding: "1px 6px",
+            borderRadius: "4px",
+            marginLeft: "6px",
+            fontSize: "11px",
+          }}
+        >
+          {toolCall.function.name
+            .replace("TabToolkit_", "")
+            .replace("WebToolkit_", "")}
+        </span>
+      </div>
+    ));
   };
 
   const renderContent = () => {
@@ -62,92 +119,23 @@ export default function MessageComponent({ message }: Props) {
     }
 
     const content = message.content || "";
-
-    // 预处理内容，处理各种图片格式
-    const processedContent = content
-      .split("\n")
-      .map((line) => {
-        const trimmedLine = line.trim();
-
-        // 如果是HTML img标签，提取src并重新格式化
-        if (trimmedLine.match(/<img[^>]+>/)) {
-          const srcMatch = trimmedLine.match(/src=["']([^"']+)["']/);
-          if (srcMatch) {
-            return `![](${srcMatch[1]})`;
-          }
-          return line;
-        }
-
-        // 如果已经是Markdown图片格式，保持不变
-        if (trimmedLine.match(/^!\[.*\]\(.*\)$/)) {
-          return line;
-        }
-
-        // 处理以感叹号开头的行
-        if (trimmedLine.startsWith("!")) {
-          const imageText = trimmedLine.slice(1).trim();
-          // 如果是URL或base64数据，直接作为图片源
-          if (imageText.match(/^(https?:\/\/|data:image\/)/)) {
-            return `![](${imageText})`;
-          }
-          // 如果是纯文本，尝试从 chrome.runtime.getURL 获取本地资源
-          return `![${imageText}](${imageText})`;
-        }
-
-        // 检查是否包含可能的图片文本（比如 "Elon Musk's Twitter Profile"）
-        if (
-          trimmedLine.includes("Twitter Profile") ||
-          trimmedLine.includes("Screenshot") ||
-          trimmedLine.includes("Image") ||
-          trimmedLine.includes("Photo")
-        ) {
-          // 在消息历史中查找最近的图片数据
-          const recentImageData = findRecentImageData(message);
-          if (recentImageData) {
-            return `![${trimmedLine}](${recentImageData})`;
-          }
-        }
-
-        return line;
-      })
-      .join("\n");
-
-    // 使用markdown处理器处理内容
-    const htmlContent = processMarkdown(processedContent);
+    const htmlContent = processMarkdown(content);
 
     return (
-      <div
-        className="markdown-content"
-        style={{ width: "100%", overflow: "auto" }}
-        dangerouslySetInnerHTML={{ __html: htmlContent }}
-      />
+      <>
+        <div
+          className="markdown-content"
+          style={{ width: "100%", overflow: "auto" }}
+          dangerouslySetInnerHTML={{ __html: htmlContent }}
+        />
+        {renderToolCalls()}
+      </>
     );
-  };
-
-  // 辅助函数：在消息历史中查找最近的图片数据
-  const findRecentImageData = (currentMessage: MessageType): string | null => {
-    // 检查当前消息是否包含base64图片数据
-    const base64Match = currentMessage.content?.match(
-      /data:image\/[^;]+;base64,[^"'\s]+/
-    );
-    if (base64Match) {
-      return base64Match[0];
-    }
-
-    // 检查当前消息是否包含图片URL
-    const urlMatch = currentMessage.content?.match(
-      /https?:\/\/[^"'\s]+\.(jpg|jpeg|png|gif|webp)/i
-    );
-    if (urlMatch) {
-      return urlMatch[0];
-    }
-
-    return null;
   };
 
   return (
     <div
-      style={{ marginBottom: !isUser ? "32px" : "32px" }}
+      style={{ marginBottom: isTool ? "0" : "32px" }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
