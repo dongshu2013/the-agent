@@ -37,7 +37,7 @@ model messages {
   tool_calls      Json?
   embedding       Unsupported("vector")?
   is_deleted      Boolean                @default(false)
-  deleted_at      DateTime?
+  deleted_at      DateTime?              @db.Timestamptz(6)
   conversation    conversations          @relation(fields: [conversation_id], references: [id])
 
   @@index([embedding])
