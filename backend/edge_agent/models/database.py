@@ -55,6 +55,8 @@ class Message(Base):
     embedding = Column(Vector(1024), nullable=True)  # Vector embedding for similarity search
     created_at = Column(DateTime, default=func.now(), nullable=False)
     tool_calls = Column(JSON, nullable=True, default={})
+    is_deleted = Column(Boolean, default=False, nullable=False)
+    deleted_at = Column(DateTime, nullable=True)
 
     # Relationships
     conversation = relationship("Conversation", back_populates="messages")

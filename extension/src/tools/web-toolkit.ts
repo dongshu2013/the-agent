@@ -199,7 +199,7 @@ export class WebToolkit {
     }
   }
 
-  async getPageText(format: string = "html"): Promise<WebToolkitResponse> {
+  async getPageText(format: string = "text"): Promise<WebToolkitResponse> {
     try {
       const result = await this.executeInTab<PageSourceResult>(
         (userFuncString: string) => {
@@ -235,17 +235,39 @@ export class WebToolkit {
       if (!result || !result.html) {
         throw new Error("No result returned from page");
       }
-
-      // 使用dom-parser处理HTML
       const domTree = parseHtml(result.html);
-      const { html: minifiedHtml } = minify(domTree);
-
-      return {
-        success: true,
-        data: {
-          content: minifiedHtml,
-        },
-      };
+      if (format === "html") {
+        const { html: minifiedHtml } = minify(domTree);
+        return {
+          success: true,
+          data: {
+            content: minifiedHtml,
+          },
+        };
+      } else {
+        function findBody(node: any): any | null {
+          if (!node) return null;
+          if (node.tagName && node.tagName.toLowerCase() === "body")
+            return node;
+          if (node.children && node.children.length) {
+            for (const child of node.children) {
+              const found = findBody(child);
+              if (found) return found;
+            }
+          }
+          return null;
+        }
+        const bodyNode = findBody(domTree);
+        const textContent = bodyNode
+          ? bodyNode.innerText || bodyNode.textContent || ""
+          : "";
+        return {
+          success: true,
+          data: {
+            content: textContent,
+          },
+        };
+      }
     } catch (error) {
       console.error("Error getting page source:", error);
       return {

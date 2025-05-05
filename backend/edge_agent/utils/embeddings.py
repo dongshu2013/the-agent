@@ -295,6 +295,7 @@ async def find_similar_messages(query_text: str, conversation_id: Optional[str] 
                embedding <=> :query_embedding::vector AS distance
         FROM messages
         WHERE embedding IS NOT NULL
+          AND (is_deleted = false OR is_deleted IS NULL)
         """)
         
         params = {
