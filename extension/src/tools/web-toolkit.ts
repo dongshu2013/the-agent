@@ -201,33 +201,16 @@ export class WebToolkit {
 
   async getPageText(format: string = "text"): Promise<WebToolkitResponse> {
     try {
-      const result = await this.executeInTab<PageSourceResult>(
-        (userFuncString: string) => {
-          try {
-            if (!userFuncString) {
-              const html = document.documentElement.outerHTML;
-              return {
-                html,
-                url: window.location.href,
-                title: document.title,
-              };
-            }
-
-            // 执行传入的函数
-            const userFunc = new Function("return " + userFuncString)();
-            const result = userFunc();
-
-            // 确保返回的是 Promise
-            if (result instanceof Promise) {
-              return result;
-            }
-
-            // 如果不是 Promise，包装成 Promise
-            return Promise.resolve(result);
-          } catch (error) {
-            console.error("Error in content script execution:", error);
-            return Promise.reject(error);
-          }
+      const result = await this.executeInTab<{html: string; text: string; url: string; title: string}>(
+        () => {
+          const html = document.documentElement.outerHTML;
+          const text = document.body?.innerText || "";
+          return {
+            html,
+            text,
+            url: window.location.href,
+            title: document.title,
+          };
         },
         []
       );
@@ -235,6 +218,7 @@ export class WebToolkit {
       if (!result || !result.html) {
         throw new Error("No result returned from page");
       }
+
       const domTree = parseHtml(result.html);
       if (format === "html") {
         const { html: minifiedHtml } = minify(domTree);
@@ -242,29 +226,17 @@ export class WebToolkit {
           success: true,
           data: {
             content: minifiedHtml,
+            url: result.url,
+            title: result.title,
           },
         };
       } else {
-        function findBody(node: any): any | null {
-          if (!node) return null;
-          if (node.tagName && node.tagName.toLowerCase() === "body")
-            return node;
-          if (node.children && node.children.length) {
-            for (const child of node.children) {
-              const found = findBody(child);
-              if (found) return found;
-            }
-          }
-          return null;
-        }
-        const bodyNode = findBody(domTree);
-        const textContent = bodyNode
-          ? bodyNode.innerText || bodyNode.textContent || ""
-          : "";
         return {
           success: true,
           data: {
-            content: textContent,
+            content: result.text,
+            url: result.url,
+            title: result.title,
           },
         };
       }
