@@ -15,6 +15,7 @@ export default function MessageComponent({ message }: Props) {
   const [copySuccess, setCopySuccess] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const isTool = message?.role === "tool";
+  const isToolCall = message?.toolCalls?.length || message?.tool_calls?.length;
 
   if (!message) {
     console.warn("Message component received null or undefined message");
@@ -141,7 +142,7 @@ export default function MessageComponent({ message }: Props) {
     <>
       {!isTool && (
         <div
-          style={{ marginBottom: "32px" }}
+          style={{ marginBottom: isToolCall ? "0" : "32px" }}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
