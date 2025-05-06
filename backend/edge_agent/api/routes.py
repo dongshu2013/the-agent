@@ -168,7 +168,8 @@ async def get_user_conversations(
                     "role": message.role,
                     "content": message.content,
                     "timestamp": message.created_at.isoformat(),
-                    "tool_calls": json.loads(message.tool_calls) if message.tool_calls else None
+                    "tool_calls": json.loads(message.tool_calls) if message.tool_calls else None,
+                    "tool_call_id": message.tool_call_id
                 })
 
         result = list(conversations_map.values())
@@ -341,6 +342,7 @@ async def save_message(
             content=message_data.message.content,
             created_at=datetime.fromisoformat(message_data.message.created_at),
             tool_calls=json.dumps(tool_calls) if tool_calls else None,
+            tool_call_id=message_data.message.tool_call_id
         )
         db.add(message)
         db.commit()

@@ -15,85 +15,90 @@ const Settings: React.FC<SettingsProps> = ({
   initialValidationError,
 }) => {
   const [tempApiKey, setTempApiKey] = useState("");
-  const [saveStatus, setSaveStatus] = useState(initialValidationError || "");
-  const [showWarning, setShowWarning] = useState(!!initialValidationError);
+  const [saveStatus, setSaveStatus] = useState("");
+  const [showWarning, setShowWarning] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
     const initSettings = async () => {
-      // Initialize API key
       const key = await getApiKey();
       if (key) {
         setTempApiKey(key);
+        setSaveStatus("");
+        setShowWarning(false);
       }
-
-      // Handle initial validation error
-      if (initialValidationError) {
-        setSaveStatus(initialValidationError);
-        setShowWarning(true);
-      }
+      setIsInitialLoad(false);
     };
 
     initSettings();
-  }, [initialValidationError]);
+  }, []);
 
   const handleSave = async () => {
     try {
       if (!tempApiKey?.trim()) {
         setSaveStatus("API key cannot be empty");
         setShowWarning(true);
-        setTimeout(() => setSaveStatus(""), 2000);
         return;
       }
 
       setIsValidating(true);
-      setSaveStatus("Validating API key...");
+      setSaveStatus("");
       const formattedKey = tempApiKey.trim();
 
-      // First verify the API key
-      const verifyResponse = await fetch(`${env.BACKEND_URL}/v1/auth/verify`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${formattedKey}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const currentKey = await getApiKey();
+      if (currentKey === formattedKey && !isInitialLoad) {
+        onClose();
+        return;
+      }
 
-      if (!verifyResponse.ok) {
+      try {
+        const verifyResponse = await fetch(
+          `${env.BACKEND_URL}/v1/auth/verify`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${formattedKey}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const verifyData = await verifyResponse.json();
+
+        if (!verifyResponse.ok || !verifyData.success || !verifyData.user) {
+          throw new Error(verifyData?.message || "Invalid or disabled API key");
+        }
+
+        setApiKey(formattedKey);
+        await db.saveUser(verifyData.user);
+        setSaveStatus("Saved successfully!");
+
+        setTimeout(() => {
+          setSaveStatus("");
+          onClose();
+        }, 1000);
+      } catch (error: any) {
         throw new Error("Invalid or disabled API key");
       }
-
-      const verifyData = await verifyResponse.json();
-      if (!verifyData.success || !verifyData.user) {
-        throw new Error(verifyData?.message || "Invalid or disabled API key");
-      }
-      setApiKey(formattedKey);
-      await db.saveUser(verifyData.user);
-
-      setSaveStatus("Saved successfully!");
-      setTimeout(() => {
-        setSaveStatus("");
-        onClose();
-      }, 1000);
     } catch (error: any) {
       console.error("Settings error:", error);
       setSaveStatus(error.message || "Invalid or disabled API key");
       setShowWarning(true);
-      setTimeout(() => setSaveStatus(""), 3000);
     } finally {
       setIsValidating(false);
     }
   };
 
   const handleClose = () => {
-    if (!tempApiKey?.trim()) {
-      setShowWarning(true);
-      setSaveStatus("Please enter an API key before closing");
-      setTimeout(() => setSaveStatus(""), 3000);
+    if (tempApiKey?.trim()) {
+      onClose();
       return;
     }
-    onClose();
+
+    setShowWarning(true);
+    setSaveStatus("Please enter an API key before closing");
   };
 
   const handleGetApiKey = () => {
