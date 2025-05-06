@@ -125,8 +125,6 @@ export default function MessageComponent({ message }: Props) {
     const content = message.content || "";
     const htmlContent = processMarkdown(content);
 
-    console.log("🔥 htmlContent:🍷", htmlContent);
-
     return (
       <>
         <div

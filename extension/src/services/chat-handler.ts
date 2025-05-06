@@ -224,9 +224,7 @@ Keep responses concise and focused on the current task.
               inputMessages.push({
                 role: "assistant",
                 content: currentResponse,
-                ...(env.OPENAI_MODEL === "deepseek-chat"
-                  ? { tool_calls: toolCalls }
-                  : { toolCalls: toolCalls }),
+                tool_calls: toolCalls,
               });
 
               // 处理每个工具调用
@@ -262,9 +260,7 @@ Keep responses concise and focused on the current task.
                   role: "tool",
                   name: toolCall.function.name,
                   content: `${toolResult.success ? "success" : "failed"} ${JSON.stringify(toolResult.data)}`,
-                  ...(env.OPENAI_MODEL === "deepseek-chat"
-                    ? { tool_call_id: toolCall.id }
-                    : { toolCallId: toolCall.id }),
+                  tool_call_id: toolCall.id,
                 });
               }
             } else {

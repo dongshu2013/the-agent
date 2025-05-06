@@ -5,15 +5,6 @@ export interface WebInteractionResult {
   data?: any;
   error?: string | null;
 }
-
-interface PageSourceResult {
-  html: string;
-  js: string[];
-  url: string;
-  title: string;
-  links: { text: string | null; href: string | null }[];
-}
-
 interface WebToolkitResponse {
   success: boolean;
   data?: any;
@@ -201,19 +192,21 @@ export class WebToolkit {
 
   async getPageText(format: string = "text"): Promise<WebToolkitResponse> {
     try {
-      const result = await this.executeInTab<{html: string; text: string; url: string; title: string}>(
-        () => {
-          const html = document.documentElement.outerHTML;
-          const text = document.body?.innerText || "";
-          return {
-            html,
-            text,
-            url: window.location.href,
-            title: document.title,
-          };
-        },
-        []
-      );
+      const result = await this.executeInTab<{
+        html: string;
+        text: string;
+        url: string;
+        title: string;
+      }>(() => {
+        const html = document.documentElement.outerHTML;
+        const text = document.body?.innerText || "";
+        return {
+          html,
+          text,
+          url: window.location.href,
+          title: document.title,
+        };
+      }, []);
 
       if (!result || !result.html) {
         throw new Error("No result returned from page");
