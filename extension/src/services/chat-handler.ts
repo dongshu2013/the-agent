@@ -120,26 +120,7 @@ export class ChatHandler {
       const systemMessage: ChatMessage = {
         role: "system",
         content: `
-You are an AI assistant that helps users interact with web pages. You have these tools available:
-
-WebToolkit:
-- clickElement: Click buttons, links or any clickable elements
-- inputElement: Type text into input fields
-- listElements: Find and list elements on the page
-- refreshPage: Reload the current page
-
-TabToolkit:
-- openTab: Open URL in new tab
-
-WebToolkit:
-- clickElement: Click buttons, links or any clickable elements
-- inputElement: Type text into input fields
-- listElements: Find and list elements on the page
-- refreshPage: Reload the current page
-
-TabToolkit:
-- openTab: Open URL in new tab
-- switchToTab: Switch between tabs
+You are an AI assistant that helps users interact with web pages. You have some tools available:
 
 Instructions:
 1. Before each action:
@@ -157,11 +138,6 @@ Instructions:
    "Task status: [completed/failed] - [brief summary]"
 
 Keep responses concise and focused on the current task.
-
----
-
-Context:
-${contextPrompt}
 `,
       };
 
@@ -224,11 +200,32 @@ ${contextPrompt}
 
               toolCallCount += toolCalls.length;
 
+              console.log("🔥 toolCalls:🍷", toolCalls);
+
               // 添加助手消息到输入消息列表
+              const assistantMessage: Message = {
+                content: currentResponse,
+                created_at: new Date(
+                  baseTimestamp.getTime() + toolCallCount * 1000
+                ).toISOString(),
+                status: "completed",
+                message_id: crypto.randomUUID(),
+                conversation_id: this.options.currentConversationId,
+                tool_calls: toolCalls,
+              };
+
+              await this.updateMessage(assistantMessage);
+              await saveMessageApi({
+                conversation_id: this.options.currentConversationId,
+                message: assistantMessage,
+              });
+
               inputMessages.push({
                 role: "assistant",
                 content: currentResponse,
-                tool_calls: toolCalls,
+                ...(env.OPENAI_MODEL === "deepseek-chat"
+                  ? { tool_calls: toolCalls }
+                  : { toolCalls: toolCalls }),
               });
 
               // 处理每个工具调用
@@ -238,41 +235,19 @@ ${contextPrompt}
                   .replace("TabToolkit_", "")
                   .replace("WebToolkit_", "");
 
-                // 创建工具调用消息，时间戳递增
+                // 创建工具调用消息
                 const toolMessageId = crypto.randomUUID();
                 const toolMessage: Message = {
                   message_id: toolMessageId,
                   role: "tool",
                   name: toolCall.function.name,
-                  content: `I will  ${simplifiedName}.\n`,
+                  content: `${toolResult.success ? "success" : "failed"} ${JSON.stringify(toolResult.data)}`,
                   created_at: new Date(
-                    baseTimestamp.getTime() + toolCallCount * 1000
+                    baseTimestamp.getTime() + (toolCallCount + 2) * 1000
                   ).toISOString(),
                   conversation_id: this.options.currentConversationId,
                   status: "completed",
-                  ...(env.OPENAI_MODEL === "deepseek-chat"
-                    ? {
-                        tool_call_id: toolCall.id,
-                        tool_calls: [
-                          {
-                            id: toolCall.id,
-                            type: toolCall.type,
-                            function: toolCall.function,
-                            result: toolResult,
-                          },
-                        ],
-                      }
-                    : {
-                        toolCallId: toolCall.id,
-                        toolCalls: [
-                          {
-                            id: toolCall.id,
-                            type: toolCall.type,
-                            function: toolCall.function,
-                            result: toolResult,
-                          },
-                        ],
-                      }),
+                  tool_call_id: toolCall.id,
                 };
 
                 await this.updateMessage(toolMessage);
@@ -286,7 +261,9 @@ ${contextPrompt}
                   role: "tool",
                   name: toolCall.function.name,
                   content: `${toolResult.success ? "success" : "failed"} ${JSON.stringify(toolResult.data)}`,
-                  tool_call_id: toolCall.id,
+                  ...(env.OPENAI_MODEL === "deepseek-chat"
+                    ? { tool_call_id: toolCall.id }
+                    : { toolCallId: toolCall.id }),
                 });
               }
             } else {
@@ -327,11 +304,15 @@ ${contextPrompt}
       const { content: finalContent, tokenUsage } = await processRequest([
         {
           role: "user",
-          content: currentPrompt,
+          content: `Given the chat history:
+>>>>> Start of Chat History >>>>>>>>
+${contextPrompt}
+>>>>>> End of Chat History >>>>>>>>
+Now reply to user's message: ${currentPrompt}`,
         },
       ]);
 
-      // 修改最终 AI 消息的时间戳，确保显示在最后
+      // 修改最终消息的时间戳
       const aiMessage: Message = {
         ...loadingMessage,
         content: finalContent,
@@ -339,7 +320,7 @@ ${contextPrompt}
         isLoading: false,
         tokenUsage,
         created_at: new Date(
-          baseTimestamp.getTime() + (toolCallCount + 1) * 1000
+          baseTimestamp.getTime() + (toolCallCount + 3) * 1000
         ).toISOString(),
       };
 

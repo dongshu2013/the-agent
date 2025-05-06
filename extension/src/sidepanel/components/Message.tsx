@@ -39,7 +39,8 @@ export default function MessageComponent({ message }: Props) {
     if (isLoading) return false;
     if (isError) return false;
     if (!message.content) return false;
-    if (message.role === "tool") return false; // 添加这行，工具调用消息不显示复制按钮
+    if (message.role === "tool") return false;
+    if (message.toolCalls?.length || message.tool_calls?.length) return false;
 
     // AI 回复的复制按钮始终显示
     if (!isUser) return true;
@@ -49,6 +50,8 @@ export default function MessageComponent({ message }: Props) {
   };
 
   const renderToolCalls = () => {
+    // 只为 assistant 消息渲染工具调用
+    if (message.role === "tool") return null;
     if (!message.toolCalls?.length && !message.tool_calls?.length) return null;
 
     const toolCalls = message.toolCalls || message.tool_calls;
@@ -118,13 +121,16 @@ export default function MessageComponent({ message }: Props) {
       );
     }
 
+    if (isTool) {
+      return null;
+    }
+
     const content = message.content || "";
     const htmlContent = processMarkdown(content);
 
     return (
       <>
         <div
-          className="markdown-content"
           style={{ width: "100%", overflow: "auto" }}
           dangerouslySetInnerHTML={{ __html: htmlContent }}
         />
