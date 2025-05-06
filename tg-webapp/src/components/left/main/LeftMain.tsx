@@ -1,12 +1,13 @@
 import type { FC } from '../../../lib/teact/teact';
 import React, {
-  memo, useEffect, useRef, useState,
+  memo, useEffect, useRef, useState, useMemo,
 } from '../../../lib/teact/teact';
 import { getActions } from '../../../global';
 
 import type { FolderEditDispatch } from '../../../hooks/reducers/useFoldersReducer';
 import type { SettingsScreens } from '../../../types';
 import { LeftColumnContent } from '../../../types';
+import type { ApiChat } from '../../../api/types';
 
 import { PRODUCTION_URL } from '../../../config';
 import buildClassName from '../../../util/buildClassName';
@@ -39,6 +40,7 @@ type OwnProps = {
   isElectronUpdateAvailable?: boolean;
   isForumPanelOpen?: boolean;
   isClosingSearch?: boolean;
+  filteredChats?: ApiChat[];
   onSearchQuery: (query: string) => void;
   onContentChange: (content: LeftColumnContent) => void;
   onSettingsScreenSelect: (screen: SettingsScreens) => void;
@@ -71,6 +73,7 @@ const LeftMain: FC<OwnProps> = ({
   const { closeForumPanel } = getActions();
   const [isNewChatButtonShown, setIsNewChatButtonShown] = useState(IS_TOUCH_ENV);
   const [isElectronAutoUpdateEnabled, setIsElectronAutoUpdateEnabled] = useState(false);
+  const [filteredChats, setFilteredChats] = useState<ApiChat[] | undefined>(undefined);
 
   useEffect(() => {
     window.electron?.getIsAutoUpdateEnabled().then(setIsElectronAutoUpdateEnabled);
@@ -126,6 +129,15 @@ const LeftMain: FC<OwnProps> = ({
     closeForumPanel();
   });
 
+  const handleSearchQuery = useLastCallback((query: string) => {
+    // Always stay in ChatList view, regardless of search query
+    if (content !== LeftColumnContent.ChatList) {
+      onContentChange(LeftColumnContent.ChatList);
+    }
+
+    onSearchQuery(query);
+  });
+
   const handleUpdateClick = useLastCallback(() => {
     if (IS_ELECTRON && !isElectronAutoUpdateEnabled) {
       window.open(`${PRODUCTION_URL}/get`, '_blank', 'noopener');
@@ -174,13 +186,14 @@ const LeftMain: FC<OwnProps> = ({
         shouldHideSearch={isForumPanelVisible}
         content={content}
         contactsFilter={contactsFilter}
-        onSearchQuery={onSearchQuery}
+        onSearchQuery={handleSearchQuery}
         onSelectSettings={handleSelectSettings}
         onSelectContacts={handleSelectContacts}
         onSelectArchived={handleSelectArchived}
         onReset={onReset}
         shouldSkipTransition={shouldSkipTransition}
         isClosingSearch={isClosingSearch}
+        onFilteredChatsChange={setFilteredChats}
       />
       <Transition
         name={shouldSkipTransition ? 'none' : 'zoomFade'}
@@ -201,15 +214,24 @@ const LeftMain: FC<OwnProps> = ({
                   onLeftColumnContentChange={onContentChange}
                   foldersDispatch={foldersDispatch}
                   isForumPanelOpen={isForumPanelVisible}
+                  searchQuery={searchQuery}
+                  filteredChats={filteredChats}
                 />
               );
+            // We'll never reach this case with the new implementation
+            // but keeping it for backward compatibility
             case LeftColumnContent.GlobalSearch:
+              // Redirect back to ChatList with search query
+              onContentChange(LeftColumnContent.ChatList);
               return (
-                <LeftSearch
+                <ChatFolders
+                  shouldHideFolderTabs={isForumPanelVisible}
+                  onSettingsScreenSelect={onSettingsScreenSelect}
+                  onLeftColumnContentChange={onContentChange}
+                  foldersDispatch={foldersDispatch}
+                  isForumPanelOpen={isForumPanelVisible}
                   searchQuery={searchQuery}
-                  searchDate={searchDate}
-                  isActive={isActive}
-                  onReset={onReset}
+                  filteredChats={filteredChats}
                 />
               );
             case LeftColumnContent.Contacts:

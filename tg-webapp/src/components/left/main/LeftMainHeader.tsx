@@ -82,6 +82,7 @@ type OwnProps = {
   onSelectContacts: NoneToVoidFunction;
   onSelectArchived: NoneToVoidFunction;
   onReset: NoneToVoidFunction;
+  onFilteredChatsChange?: (filteredChats: ApiChat[] | undefined) => void;
 };
 
 type StateProps =
@@ -97,6 +98,7 @@ type StateProps =
     areChatsLoaded?: boolean;
     hasPasscode?: boolean;
     canSetPasscode?: boolean;
+    chats?: Record<string, ApiChat>;
   }
   & Pick<GlobalState, 'connectionState' | 'isSyncing' | 'isFetchingDifference'>;
 
@@ -240,11 +242,13 @@ const LeftMainHeader: FC<OwnProps & StateProps> = ({
   areChatsLoaded,
   hasPasscode,
   canSetPasscode,
+  chats,
   onSearchQuery,
   onSelectSettings,
   onSelectContacts,
   onSelectArchived,
   onReset,
+  onFilteredChatsChange,
 }) => {
   const {
     setGlobalSearchDate,
@@ -379,7 +383,7 @@ const LeftMainHeader: FC<OwnProps & StateProps> = ({
         color="translucent"
         className={isOpen ? 'active' : ''}
         // eslint-disable-next-line react/jsx-no-bind
-        onClick={hasMenu ? onTrigger : () => onReset()}
+        onClick={hasMenu ? onTrigger : handleReset}
         ariaLabel={hasMenu ? oldLang('AccDescrOpenMenu2') : 'Return to chat list'}
       >
         <div className={buildClassName(
@@ -393,10 +397,48 @@ const LeftMainHeader: FC<OwnProps & StateProps> = ({
   }, [hasMenu, isMobile, oldLang, onReset, shouldSkipTransition]);
 
   const handleSearchFocus = useLastCallback(() => {
-    if (!searchQuery) {
-      onSearchQuery('');
-    }
+    // No need to change content or clear search query when focusing the search input
+    // Just keep the current state
   });
+
+  const handleReset = useLastCallback(() => {
+    setGlobalSearchChatId({ id: undefined });
+    setGlobalSearchDate({ date: undefined });
+    if (onFilteredChatsChange) {
+      onFilteredChatsChange(undefined);
+    }
+    // Clear search query
+    onSearchQuery('');
+    onReset();
+  });
+
+  useEffect(() => {
+    if (!searchQuery) {
+      if (onFilteredChatsChange) {
+        onFilteredChatsChange(undefined);
+      }
+      return;
+    }
+
+    if (!chats) {
+      return;
+    }
+
+    // Filter chats based on search query
+    const filtered = Object.values(chats).filter((chat) => {
+      const title = chat.title?.toLowerCase() || '';
+      return title.includes(searchQuery.toLowerCase());
+    });
+
+    if (onFilteredChatsChange) {
+      onFilteredChatsChange(filtered);
+    }
+  }, [searchQuery, chats, onFilteredChatsChange]);
+  useEffect(() => {
+    if (!searchQuery && onFilteredChatsChange) {
+      onFilteredChatsChange(undefined);
+    }
+  }, [searchQuery, onFilteredChatsChange]);
 
   const toggleConnectionStatus = useLastCallback(() => {
     setSettingOption({ isConnectionStatusMinimized: !isConnectionStatusMinimized });
@@ -408,6 +450,7 @@ const LeftMainHeader: FC<OwnProps & StateProps> = ({
 
   const isSearchRelevant = Boolean(globalSearchChatId)
     || content === LeftColumnContent.GlobalSearch
+    || Boolean(searchQuery)
     || content === LeftColumnContent.Contacts;
 
   const isSearchFocused = isMobile ? !isMessageListOpen && isSearchRelevant : isSearchRelevant;
@@ -506,7 +549,7 @@ const LeftMainHeader: FC<OwnProps & StateProps> = ({
           autoComplete="off"
           canClose={Boolean(globalSearchChatId || searchDate)}
           onChange={onSearchQuery}
-          onReset={onReset}
+          onReset={handleReset}
           onFocus={handleSearchFocus}
           onSpinnerClick={connectionStatusPosition === 'minimized' ? toggleConnectionStatus : undefined}
         >
@@ -611,6 +654,7 @@ export default memo(withGlobal<OwnProps>(
       areChatsLoaded: Boolean(global.chats.listIds.active),
       hasPasscode: Boolean(global.passcode.hasPasscode),
       canSetPasscode: selectCanSetPasscode(global),
+      chats: global.chats.byId,
     };
   },
 )(LeftMainHeader));
