@@ -255,11 +255,9 @@ export default function ProfilePage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex items-center justify-between px-4 py-2 border rounded-lg bg-muted/50 gap-4">
-                <div>
-                  <h3 className="text-lg font-medium">Current Balance</h3>
-                </div>
-                <div className="text-xl font-bold">
+              <div className="flex items-center justify-between px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 gap-4">
+                <h3>Current Balance</h3>
+                <div className="font-bold">
                   {loading ? (
                     <Loader2 className="h-6 w-6 animate-spin" />
                   ) : (
