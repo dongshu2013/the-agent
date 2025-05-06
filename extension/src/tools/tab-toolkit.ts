@@ -4,6 +4,8 @@ export interface WebInteractionResult {
   error?: string;
 }
 
+const TAB_LOAD_TIMEOUT = 5000;
+
 export class TabToolkit {
   /**
    * Open a new tab with a specific URL
@@ -54,7 +56,10 @@ export class TabToolkit {
           }
 
           // 等待新 tab 加载完成
-          const loadResult = await TabToolkit.waitForTabLoad(newTab.id!, 10000);
+          const loadResult = await TabToolkit.waitForTabLoad(
+            newTab.id!,
+            TAB_LOAD_TIMEOUT
+          );
           if (loadResult.success) {
             resolve({
               success: true,
@@ -148,7 +153,10 @@ export class TabToolkit {
           // Focus the window containing the tab
           chrome.windows.update(tab.windowId, { focused: true }, async () => {
             // 等待页面加载完成
-            const loadResult = await TabToolkit.waitForTabLoad(tabId, 10000);
+            const loadResult = await TabToolkit.waitForTabLoad(
+              tabId,
+              TAB_LOAD_TIMEOUT
+            );
             if (loadResult.success) {
               resolve({
                 success: true,
@@ -181,7 +189,7 @@ export class TabToolkit {
    */
   static waitForTabLoad(
     tabId: number,
-    timeout: number = 10000
+    timeout: number = TAB_LOAD_TIMEOUT
   ): Promise<WebInteractionResult> {
     return new Promise((resolve) => {
       const start = Date.now();
