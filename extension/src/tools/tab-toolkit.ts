@@ -11,22 +11,36 @@ export class TabToolkit {
   static async openTab(url: string): Promise<WebInteractionResult> {
     try {
       const existingTabs = await chrome.tabs.query({});
-
       const matchedTab = existingTabs.find((tab) => tab.url === url);
 
       if (matchedTab && matchedTab.id !== undefined) {
-        return {
-          success: true,
-          data: {
-            tabId: matchedTab.id,
-            alreadyOpened: true,
-          },
-        };
+        // 只调用 switchToTab，让它负责等待
+        const switchResult = await TabToolkit.switchToTab(matchedTab.id);
+        if (switchResult.success) {
+          return {
+            success: true,
+            data: {
+              tabId: matchedTab.id,
+              alreadyOpened: true,
+              url: switchResult.data.url,
+              title: switchResult.data.title,
+            },
+          };
+        } else {
+          return {
+            success: false,
+            error: switchResult.error || "Failed to switch to existing tab",
+            data: {
+              tabId: matchedTab.id,
+              alreadyOpened: true,
+            },
+          };
+        }
       }
 
-      // 没有找到，创建新 tab
+      // 新建 tab 并等待加载完成
       return new Promise((resolve) => {
-        chrome.tabs.create({ url }, (newTab) => {
+        chrome.tabs.create({ url }, async (newTab) => {
           if (chrome.runtime.lastError) {
             resolve({
               success: false,
@@ -39,13 +53,28 @@ export class TabToolkit {
             return;
           }
 
-          resolve({
-            success: true,
-            data: {
-              tabId: newTab.id!,
-              alreadyOpened: true,
-            },
-          });
+          // 等待新 tab 加载完成
+          const loadResult = await TabToolkit.waitForTabLoad(newTab.id!, 10000);
+          if (loadResult.success) {
+            resolve({
+              success: true,
+              data: {
+                tabId: newTab.id!,
+                alreadyOpened: false,
+                url: loadResult.data.url,
+                title: loadResult.data.title,
+              },
+            });
+          } else {
+            resolve({
+              success: false,
+              error: loadResult.error || "Failed to load new tab",
+              data: {
+                tabId: newTab.id!,
+                alreadyOpened: false,
+              },
+            });
+          }
         });
       });
     } catch (err) {
@@ -106,10 +135,10 @@ export class TabToolkit {
   /**
    * Switch to a specific tab
    */
-  static switchToTab(tabId: number): Promise<WebInteractionResult> {
+  static async switchToTab(tabId: number): Promise<WebInteractionResult> {
     console.log("switchToTab 🍒", tabId);
     return new Promise((resolve) => {
-      chrome.tabs.update(tabId, { active: true }, (tab) => {
+      chrome.tabs.update(tabId, { active: true }, async (tab) => {
         if (chrome.runtime.lastError) {
           resolve({
             success: false,
@@ -117,14 +146,24 @@ export class TabToolkit {
           });
         } else if (tab) {
           // Focus the window containing the tab
-          chrome.windows.update(tab.windowId, { focused: true }, () => {
-            resolve({
-              success: true,
-              data: {
-                tabId: tab.id,
-                url: tab.url,
-              },
-            });
+          chrome.windows.update(tab.windowId, { focused: true }, async () => {
+            // 等待页面加载完成
+            const loadResult = await TabToolkit.waitForTabLoad(tabId, 10000);
+            if (loadResult.success) {
+              resolve({
+                success: true,
+                data: {
+                  tabId: tab.id,
+                  url: loadResult.data.url,
+                  title: loadResult.data.title,
+                },
+              });
+            } else {
+              resolve({
+                success: false,
+                error: loadResult.error || "Failed to load tab",
+              });
+            }
           });
         } else {
           console.log("Failed to switch to tab");

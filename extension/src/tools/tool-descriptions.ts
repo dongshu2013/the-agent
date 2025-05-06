@@ -193,32 +193,38 @@ export const getToolDescriptions = (): ToolDescription[] => {
     {
       name: "TabToolkit_openTab",
       description:
-        "Open a new tab with the specified URL. If the URL is already open in another tab, do not open a new one. Return the existing tabId and mark it as alreadyOpened.",
+        "Open a new browser tab with the specified URL. If a tab with the exact same URL is already open, do not open a new tab—instead, return the existing tab's ID and indicate that it was already open. Use this tool to help the user navigate to a specific website or web application.",
       parameters: {
         type: "object",
         properties: {
           url: {
             type: "string",
-            description: "The URL to open in a tab. Exact match required.",
+            description:
+              "The full URL to open in a new browser tab. Must be a valid and complete URL (e.g., 'https://twitter.com').",
           },
         },
         required: ["url"],
       },
       returns: {
         type: "object",
-        description: "Result of attempting to open or reuse a tab",
+        description: "Information about the tab that was opened or reused.",
         properties: {
           tabId: {
             type: "number",
-            description: "ID of the opened or reused tab",
+            description: "The unique ID of the tab that was opened or reused.",
           },
           alreadyOpened: {
             type: "boolean",
-            description: "Whether the URL was already open in an existing tab",
+            description:
+              "True if the tab was already open, false if a new tab was created.",
           },
           success: {
             type: "boolean",
-            description: "Whether the tab was opened or found successfully",
+            description: "True if the operation succeeded, false otherwise.",
+          },
+          error: {
+            type: "string",
+            description: "Error message if the operation failed.",
           },
         },
       },

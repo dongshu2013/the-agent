@@ -56,9 +56,8 @@ export class ChatHandler {
       conversation_id: this.options.currentConversationId,
       status: "pending",
       isLoading: true,
-      ...(env.OPENAI_MODEL === "deepseek-chat"
-        ? { tool_calls: [], tool_call_id: "" }
-        : { toolCalls: [], toolCallId: "" }),
+      tool_calls: [],
+      tool_call_id: "",
     };
 
     this.isStreaming = true;
@@ -120,7 +119,7 @@ export class ChatHandler {
       const systemMessage: ChatMessage = {
         role: "system",
         content: `
-You are an AI assistant that helps users interact with web pages. You have some tools available:
+You are an AI assistant that helps users interact with web pages. You have tools can be used to interact with web pages.
 
 Instructions:
 1. Before each action:
@@ -274,7 +273,9 @@ Keep responses concise and focused on the current task.
             await this.updateMessage({
               ...loadingMessage,
               status: "error",
-              content: accumulatedContent + `\n\nStream aborted. `,
+              content:
+                accumulatedContent +
+                `${accumulatedContent ? "\n\n" : ""}Stream aborted.`,
               error: "Stream aborted",
               isLoading: false,
               role: "system",
@@ -287,7 +288,7 @@ Keep responses concise and focused on the current task.
               status: "error",
               content:
                 accumulatedContent +
-                `\n\nNetwork error, please try again later.`,
+                `${accumulatedContent ? "\n\n" : ""}Network error, please try again later.`,
               error: error.message,
               isLoading: false,
               role: "system",
