@@ -29,13 +29,19 @@ model conversations {
 }
 
 model messages {
-  id              String        @id @default(uuid())
+  id              String                 @id @default(uuid())
   conversation_id String
   role            String
   content         Json
-  created_at      DateTime      @default(now())
+  created_at      DateTime               @default(now())
   tool_calls      Json?
-  conversation    conversations @relation(fields: [conversation_id], references: [id])
+  embedding       Unsupported("vector")?
+  is_deleted      Boolean                @default(false)
+  deleted_at      DateTime?              @db.Timestamptz(6)
+  conversation    conversations          @relation(fields: [conversation_id], references: [id])
+  tool_call_id    String?
+
+  @@index([embedding])
 }
 
 model tg_chats {
@@ -57,22 +63,24 @@ model tg_chats {
 }
 
 model tg_messages {
-  id                String   @id @default(uuid())
+  id                String                 @id @default(uuid())
   message_id        String
   chat_id           String
   message_text      String
   message_timestamp BigInt
   sender_id         String?
-  is_pinned         Boolean  @default(false)
-  created_at        DateTime @default(now())
-  updated_at        DateTime @default(now())
+  is_pinned         Boolean                @default(false)
+  created_at        DateTime               @default(now())
+  updated_at        DateTime               @default(now())
   reply_to_msg_id   String?
   sender_firstname  String?
   sender_lastname   String?
   sender_username   String?
-  chat              tg_chats @relation(fields: [chat_id], references: [id])
+  embedding         Unsupported("vector")?
+  chat              tg_chats               @relation(fields: [chat_id], references: [id])
 
   @@unique([chat_id, message_id])
+  @@index([embedding])
 }
 
 model tg_users {

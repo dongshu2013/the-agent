@@ -57,6 +57,7 @@ class Message(Base):
     tool_calls = Column(JSON, nullable=True, default={})
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime, nullable=True)
+    tool_call_id = Column(String, nullable=True)
 
     # Relationships
     conversation = relationship("Conversation", back_populates="messages")
