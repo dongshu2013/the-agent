@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { Loader2 } from "lucide-react";
+import { PaymentModal } from "./PaymentModal";
 
 export default function ProfilePage() {
   const { user, loading, signOut, rotateApiKey, toggleApiKey } = useAuth();
@@ -13,6 +15,7 @@ export default function ProfilePage() {
   const [telegramStats, setTelegramStats] = useState<{ channels_count: number; messages_count: number } | null>(null);
   const [isLoadingTelegramStats, setIsLoadingTelegramStats] = useState(false);
   const router = useRouter();
+  const [buyCreditsOpen, setBuyCreditsOpen] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -238,6 +241,45 @@ export default function ProfilePage() {
                 {isRotating ? "Rotating..." : "Rotate Key"}
               </button>
             </div>
+          </div>
+
+          {/* Credits Section */}
+          <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-5 sm:p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+                Your Credits
+              </h3>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              Manage your credits balance and purchases
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex items-center justify-between px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 gap-4">
+                <h3>Current Balance</h3>
+                <div className="font-bold">
+                  {loading ? (
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  ) : (
+                    <span>${user.credits}</span>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={() => setBuyCreditsOpen(true)}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Buy Credits
+              </button>
+            </div>
+
+            <PaymentModal
+              isOpen={buyCreditsOpen}
+              onClose={() => setBuyCreditsOpen(false)}
+              onSuccess={() => {
+                setBuyCreditsOpen(false);
+              }}
+            />
           </div>
         </div>
 

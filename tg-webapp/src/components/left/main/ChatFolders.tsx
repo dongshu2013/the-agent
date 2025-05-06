@@ -4,7 +4,7 @@ import React, {
 } from '../../../lib/teact/teact';
 import { getActions, getGlobal, withGlobal } from '../../../global';
 
-import type { ApiChatFolder, ApiChatlistExportedInvite, ApiSession } from '../../../api/types';
+import type { ApiChat, ApiChatFolder, ApiChatlistExportedInvite, ApiSession } from '../../../api/types';
 import type { GlobalState } from '../../../global/types';
 import type { FolderEditDispatch } from '../../../hooks/reducers/useFoldersReducer';
 import type { LeftColumnContent, SettingsScreens } from '../../../types';
@@ -39,6 +39,8 @@ type OwnProps = {
   onLeftColumnContentChange: (content: LeftColumnContent) => void;
   shouldHideFolderTabs?: boolean;
   isForumPanelOpen?: boolean;
+  searchQuery?: string;
+  filteredChats?: ApiChat[];
 };
 
 type StateProps = {
@@ -81,6 +83,8 @@ const ChatFolders: FC<OwnProps & StateProps> = ({
   archiveSettings,
   isStoryRibbonShown,
   sessions,
+  searchQuery,
+  filteredChats,
 }) => {
   const {
     loadChatFolders,
@@ -318,6 +322,8 @@ const ChatFolders: FC<OwnProps & StateProps> = ({
         canDisplayArchive={(hasArchivedChats || hasArchivedStories) && !archiveSettings.isHidden}
         archiveSettings={archiveSettings}
         sessions={sessions}
+        searchQuery={searchQuery}
+        filteredChats={filteredChats}
       />
     );
   }
