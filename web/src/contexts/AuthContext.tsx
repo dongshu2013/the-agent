@@ -25,6 +25,7 @@ interface User {
   photoURL: string | null;
   apiKey: string | null;
   apiKeyEnabled: boolean;
+  credits: string;
   idToken: string | null;
 }
 
@@ -79,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 photoURL: firebaseUser.photoURL,
                 apiKey: userData.apiKey,
                 apiKeyEnabled: userData.apiKeyEnabled,
+                credits: userData.credits,
                 idToken,
               });
             } else if (response.status === 404) {
@@ -112,6 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   photoURL: firebaseUser.photoURL,
                   apiKey: newUserData.apiKey,
                   apiKeyEnabled: newUserData.apiKeyEnabled,
+                  credits: newUserData.credits,
                   idToken,
                 });
               } else {
@@ -157,6 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             photoURL: user.photoURL,
             apiKey: null,
             apiKeyEnabled: false,
+            credits: "0",
             idToken,
           });
         }

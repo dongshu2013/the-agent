@@ -20,6 +20,7 @@ model users {
   email           String?         @unique
   api_key         String          @unique @default(uuid())
   api_key_enabled Boolean         @default(true)
+  credits         Decimal         @default(0) @db.Decimal(10, 2)
   conversations   conversations[]
   created_at      DateTime        @default(now())
   updated_at      DateTime        @updatedAt
