@@ -121,10 +121,6 @@ export default function MessageComponent({ message }: Props) {
       );
     }
 
-    if (isTool) {
-      return null;
-    }
-
     const content = message.content || "";
     const htmlContent = processMarkdown(content);
 
@@ -142,105 +138,121 @@ export default function MessageComponent({ message }: Props) {
   };
 
   return (
-    <div
-      style={{ marginBottom: isTool ? "0" : "32px" }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: isUser ? "flex-end" : "flex-start",
-          marginLeft: isUser ? "15%" : "0",
-          marginRight: !isUser ? "15%" : "0",
-        }}
-      >
+    <>
+      {!isTool && (
         <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: isUser ? "flex-end" : "flex-start",
-            maxWidth: "100%",
-            position: "relative",
-          }}
+          style={{ marginBottom: "32px" }}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
         >
           <div
             style={{
-              display: "inline-block",
-              maxWidth: "100%",
-              padding: isUser || isError ? "10px 16px" : "10px 16px 10px 0",
-              textAlign: "left",
-              fontSize: "14px",
-              lineHeight: "1.5",
-              backgroundColor: isUser
-                ? "#f2f2f2"
-                : isError
-                  ? "#fee2e2"
-                  : "transparent",
-              borderRadius: "12px",
-              boxShadow: isUser ? "0 1px 2px rgba(0, 0, 0, 0.05)" : "none",
-              color: isError ? "#b91c1c" : "#333333",
-              wordBreak: "break-word",
+              display: "flex",
+              justifyContent: isUser ? "flex-end" : "flex-start",
+              marginLeft: isUser ? "15%" : "0",
+              marginRight: !isUser ? "15%" : "0",
             }}
           >
-            {renderContent()}
-          </div>
-
-          {shouldShowCopyButton() && (
-            <button
-              onClick={handleCopy}
+            <div
               style={{
-                position: "absolute",
-                bottom: "-30px",
-                left: isUser ? "auto" : "0",
-                right: isUser ? "0" : "auto",
-                width: "30px",
-                height: "30px",
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "none",
-                backgroundColor: "transparent",
-                padding: 0,
-                borderRadius: "4px",
-                cursor: "pointer",
-                boxShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
-                transition: "all 0.2s",
-                opacity: !isUser ? 1 : isHovered ? 1 : 0,
-                pointerEvents: !isUser ? "auto" : isHovered ? "auto" : "none",
+                flexDirection: "column",
+                alignItems: isUser ? "flex-end" : "flex-start",
+                maxWidth: "100%",
+                position: "relative",
               }}
-              title="Copy to clipboard"
             >
-              {copySuccess ? (
-                <svg
-                  style={{ width: "16px", height: "16px", color: "#059669" }}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              <div
+                style={{
+                  display: "inline-block",
+                  maxWidth: "100%",
+                  padding: isUser || isError ? "10px 16px" : "10px 16px 10px 0",
+                  textAlign: "left",
+                  fontSize: "14px",
+                  lineHeight: "1.5",
+                  backgroundColor: isUser
+                    ? "#f2f2f2"
+                    : isError
+                      ? "#fee2e2"
+                      : "transparent",
+                  borderRadius: "12px",
+                  boxShadow: isUser ? "0 1px 2px rgba(0, 0, 0, 0.05)" : "none",
+                  color: isError ? "#b91c1c" : "#333333",
+                  wordBreak: "break-word",
+                }}
+              >
+                {renderContent()}
+              </div>
+
+              {shouldShowCopyButton() && (
+                <button
+                  onClick={handleCopy}
+                  style={{
+                    position: "absolute",
+                    bottom: "-30px",
+                    left: isUser ? "auto" : "0",
+                    right: isUser ? "0" : "auto",
+                    width: "30px",
+                    height: "30px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "none",
+                    backgroundColor: "transparent",
+                    padding: 0,
+                    borderRadius: "4px",
+                    cursor: "pointer",
+                    boxShadow: "0 1px 2px rgba(0, 0, 0, 0.1)",
+                    transition: "all 0.2s",
+                    opacity: !isUser ? 1 : isHovered ? 1 : 0,
+                    pointerEvents: !isUser
+                      ? "auto"
+                      : isHovered
+                        ? "auto"
+                        : "none",
+                  }}
+                  title="Copy to clipboard"
                 >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              ) : (
-                <svg
-                  style={{ width: "16px", height: "16px", color: "#6b7280" }}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                </svg>
+                  {copySuccess ? (
+                    <svg
+                      style={{
+                        width: "16px",
+                        height: "16px",
+                        color: "#059669",
+                      }}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  ) : (
+                    <svg
+                      style={{
+                        width: "16px",
+                        height: "16px",
+                        color: "#6b7280",
+                      }}
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                  )}
+                </button>
               )}
-            </button>
-          )}
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 }
