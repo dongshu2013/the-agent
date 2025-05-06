@@ -204,6 +204,7 @@ Keep responses concise and focused on the current task.
 
               // 添加助手消息到输入消息列表
               const assistantMessage: Message = {
+                role: "assistant",
                 content: currentResponse,
                 created_at: new Date(
                   baseTimestamp.getTime() + toolCallCount * 1000
@@ -241,7 +242,7 @@ Keep responses concise and focused on the current task.
                   message_id: toolMessageId,
                   role: "tool",
                   name: toolCall.function.name,
-                  content: `${toolResult.success ? "success" : "failed"} ${JSON.stringify(toolResult.data)}`,
+                  content: `I will ${simplifiedName}.\n${toolResult.success ? "success" : "failed"} ${JSON.stringify(toolResult.data)}`,
                   created_at: new Date(
                     baseTimestamp.getTime() + (toolCallCount + 2) * 1000
                   ).toISOString(),
