@@ -19,17 +19,13 @@ const Settings: React.FC<SettingsProps> = ({
   const [showWarning, setShowWarning] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
     const initSettings = async () => {
       const key = await getApiKey();
       if (key) {
         setTempApiKey(key);
-        setSaveStatus("");
-        setShowWarning(false);
       }
-      setIsInitialLoad(false);
     };
 
     initSettings();
@@ -44,14 +40,9 @@ const Settings: React.FC<SettingsProps> = ({
       }
 
       setIsValidating(true);
-      setSaveStatus("");
       const formattedKey = tempApiKey.trim();
 
-      const currentKey = await getApiKey();
-      if (currentKey === formattedKey && !isInitialLoad) {
-        onClose();
-        return;
-      }
+      setApiKey(formattedKey);
 
       try {
         const verifyResponse = await fetch(
@@ -66,39 +57,23 @@ const Settings: React.FC<SettingsProps> = ({
         );
 
         const verifyData = await verifyResponse.json();
-
-        if (!verifyResponse.ok || !verifyData.success || !verifyData.user) {
-          throw new Error(verifyData?.message || "Invalid or disabled API key");
+        if (verifyResponse.ok && verifyData.success && verifyData.user) {
+          await db.saveUser(verifyData.user);
         }
-
-        setApiKey(formattedKey);
-        await db.saveUser(verifyData.user);
-        setSaveStatus("Saved successfully!");
-
-        setTimeout(() => {
-          setSaveStatus("");
-          onClose();
-        }, 1000);
-      } catch (error: any) {
-        throw new Error("Invalid or disabled API key");
+      } catch (error) {
+        console.error("Verification error:", error);
       }
+
+      onClose();
     } catch (error: any) {
       console.error("Settings error:", error);
-      setSaveStatus(error.message || "Invalid or disabled API key");
-      setShowWarning(true);
     } finally {
       setIsValidating(false);
     }
   };
 
   const handleClose = () => {
-    if (tempApiKey?.trim()) {
-      onClose();
-      return;
-    }
-
-    setShowWarning(true);
-    setSaveStatus("Please enter an API key before closing");
+    onClose();
   };
 
   const handleGetApiKey = () => {
