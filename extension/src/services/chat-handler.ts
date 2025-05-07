@@ -135,7 +135,12 @@ Instructions:
    - What you'll try next
    - Or suggest alternatives
 
-4. End with:
+4. For complex UI interactions:
+   - First use listElements to understand the page structure
+   - Then use screenshot to verify the target element
+   - Finally perform the action with confidence
+
+5. End with:
    "Task status: [completed/failed] - [brief summary]"
 
 Keep responses concise and focused on the current task.

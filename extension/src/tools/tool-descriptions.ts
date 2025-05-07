@@ -332,39 +332,47 @@ export const getToolDescriptions = (): ToolDescription[] => {
     },
     {
       name: "WebToolkit_getPageText",
-      description: "Get the HTML or text content of the current page",
+      description:
+        "Get the text content of the current page, or of a specific element if a selector is provided. Use this tool to extract search results, user names, or any information displayed on the page or within a specific section.",
       parameters: {
         type: "object",
         properties: {
           format: {
             type: "string",
             description: "The format of the page text (html or text)",
+            enum: ["html", "text"],
+          },
+          selector: {
+            type: "string",
+            description:
+              "Optional CSS selector to extract text from a specific element or section of the page.",
           },
         },
       },
       returns: {
         type: "object",
-        description: "Source code from the page",
+        description: "Text content from the page or the specified element.",
         properties: {
-          content: {
-            type: "string",
-            description: "The text content of the page",
+          data: {
+            type: "object",
+            properties: {
+              content: { type: "string" },
+              url: { type: "string" },
+              title: { type: "string" },
+            },
           },
+          success: { type: "boolean" },
+          error: { type: "string" },
         },
       },
     },
     {
       name: "WebToolkit_screenshot",
-      description: "Take a screenshot of the current page",
+      description:
+        "Take a screenshot of the current page or a specific element. Use this tool to verify element positions, debug UI issues, or document the current state of the page. When combined with listElements, it can help verify the correct element is being targeted before interaction.",
       parameters: {
         type: "object",
-        properties: {
-          fullPage: {
-            type: "boolean",
-            description:
-              "Whether to capture the full page or just the viewport",
-          },
-        },
+        properties: {},
       },
       returns: {
         type: "object",
@@ -482,12 +490,14 @@ Best practices for selectors:
    - 'button.primary[type="submit"]'
    - '.form-container button[type="submit"]'
 
-4. Avoid relying on text content alone as it may change
-
 If click fails:
 1. Use listElements to verify the element exists
 2. Check if element is visible and interactive
 3. Try a more specific selector`,
+          },
+          text: {
+            type: "string",
+            description: "Text content of the element",
           },
         },
         required: ["selector"],
@@ -584,16 +594,16 @@ If click fails:
       },
     },
     {
-      name: "WebToolkit_refreshPage",
+      name: "TabToolkit_refreshTab",
       description:
         "Refresh the current page based on the user's context. This will reload the current page and wait for it to be fully loaded. The page to refresh is determined by the user's current context and cannot be specified directly.",
       parameters: {
         type: "object",
         properties: {
-          url: {
-            type: "string",
+          tabId: {
+            type: "number",
             description:
-              "The URL of the page to refresh. Default: determined by the user's current context",
+              "The ID of the tab to refresh. Default: determined by the user's current context",
           },
           waitForLoad: {
             type: "boolean",
@@ -646,46 +656,22 @@ If click fails:
     {
       name: "WebToolkit_listElements",
       description:
-        "List elements on the page that match the given selector. Use this tool first to find the correct selector before attempting to click or input. Returns detailed information about matching elements including their attributes, text content, and role.",
+        "Find elements on the page by CSS selector. Only return essential fields (selector, text, type, isVisible, isInteractive) for each element, and limit the number of elements returned to a maximum of 20 to keep the response concise.",
       parameters: {
         type: "object",
         properties: {
           selectors: {
             type: "string",
-            description: `CSS selector to find elements. Common selector patterns:
-1. Basic selectors:
-   - tag: 'button', 'input', 'a'
-   - class: '.classname'
-   - id: '#elementId'
-   - attribute: '[attr="value"]'
-
-2. Attribute selectors:
-   - '[role="button"]' - elements with role attribute
-   - '[aria-label="Submit"]' - elements with aria-label
-   - '[data-testid="submitButton"]' - elements with data-testid
-   - '[type="submit"]' - input/button type
-
-3. Combining selectors:
-   - 'button.primary' - button with class
-   - 'button[type="submit"]' - button with type
-   - '.container button' - button inside container
-
-4. Multiple elements:
-   - 'button, [role="button"]' - buttons and button-like elements
-   - 'input[type="text"], textarea' - text inputs
-
-Always use listElements first to find the correct selector before clicking or inputting.`,
+            description:
+              "Must be a CSS selector (e.g. 'button', '.class', '#id').",
           },
         },
       },
       returns: {
         type: "object",
-        description: "List of matching elements with their properties",
+        description: "Matching elements info",
         properties: {
-          success: {
-            type: "boolean",
-            description: "Whether elements were found",
-          },
+          success: { type: "boolean", description: "Elements found" },
           data: {
             type: "object",
             properties: {
@@ -706,15 +692,6 @@ Always use listElements first to find the correct selector before clicking or in
                       type: "string",
                       description: "Element type (button, input, link, etc)",
                     },
-                    attributes: {
-                      type: "object",
-                      description:
-                        "Element attributes (role, aria-label, data-testid, etc)",
-                    },
-                    isVisible: {
-                      type: "boolean",
-                      description: "Whether the element is visible",
-                    },
                     isInteractive: {
                       type: "boolean",
                       description: "Whether the element can be interacted with",
@@ -724,24 +701,6 @@ Always use listElements first to find the correct selector before clicking or in
               },
             },
           },
-        },
-      },
-    },
-    {
-      name: "WebToolkit_getPageText",
-      description:
-        "Get the text content of the current page, format as markdown",
-      parameters: {
-        type: "object",
-        properties: {},
-      },
-      returns: {
-        type: "object",
-        description: "Text content of the current page",
-        properties: {
-          text: { type: "string" },
-          success: { type: "boolean" },
-          error: { type: "string" },
         },
       },
     },

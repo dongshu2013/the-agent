@@ -79,11 +79,11 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
             case "scrollToElement":
               result = await webToolkit.scrollToElement(params.selector);
               break;
-            case "refreshPage":
-              result = await webToolkit.refreshPage();
-              break;
             case "listElements":
-              result = await webToolkit.listElements(params.selectors);
+              result = await webToolkit.listElements(
+                params.selectors,
+                params.text
+              );
               break;
             default:
               throw new Error(`Unknown WebToolkit operation: ${toolName}`);
@@ -95,9 +95,9 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
 
         // 处理 TabToolkit 调用
         if (name.startsWith("TabToolkit_")) {
-          const toolNoolName = name.replace("TabToolkit_", "");
+          const toolName = name.replace("TabToolkit_", "");
 
-          switch (toolNoolName) {
+          switch (toolName) {
             case "openTab":
               const result = await TabToolkit.openTab(params.url);
               sendResponse(result);
@@ -113,6 +113,14 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
             case "switchToTab":
               const switchResult = await TabToolkit.switchToTab(params.tabId);
               sendResponse(switchResult);
+              return true;
+            case "refreshTab":
+              const refreshResult = await TabToolkit.refreshTab(
+                params.tabId,
+                params.waitForLoad,
+                params.timeout
+              );
+              sendResponse(refreshResult);
               return true;
             case "waitForTabLoad":
               const waitForResult = await TabToolkit.waitForTabLoad(

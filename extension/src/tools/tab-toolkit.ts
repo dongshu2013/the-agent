@@ -4,7 +4,7 @@ export interface WebInteractionResult {
   error?: string;
 }
 
-const TAB_LOAD_TIMEOUT = 10000;
+const TAB_LOAD_TIMEOUT = 15000;
 
 export class TabToolkit {
   /**
@@ -55,25 +55,26 @@ export class TabToolkit {
             return;
           }
 
+          // 聚焦新 tab 所在窗口
+          if (newTab.windowId) {
+            await TabToolkit.focusTabWindow(newTab as chrome.tabs.Tab);
+          }
           // 等待新 tab 加载完成
-          const loadResult = await TabToolkit.waitForTabLoad(
-            newTab.id!,
-            TAB_LOAD_TIMEOUT
-          );
-          if (loadResult.success) {
+          try {
+            await TabToolkit.waitForTabReady(newTab.id!, TAB_LOAD_TIMEOUT);
             resolve({
               success: true,
               data: {
                 tabId: newTab.id!,
                 alreadyOpened: false,
-                url: loadResult.data.url,
-                title: loadResult.data.title,
+                url: newTab.url,
+                title: newTab.title,
               },
             });
-          } else {
+          } catch (e) {
             resolve({
               success: false,
-              error: loadResult.error || "Failed to load new tab",
+              error: e instanceof Error ? e.message : String(e),
               data: {
                 tabId: newTab.id!,
                 alreadyOpened: false,
@@ -326,5 +327,93 @@ export class TabToolkit {
         }
       });
     });
+  }
+
+  /**
+   * Refresh the given tab (or current active tab if tabId 未指定)
+   * @param tabId 可选，指定要刷新的 tabId
+   * @param waitForLoad 是否等待页面加载完成
+   * @param timeout 超时时间（毫秒）
+   */
+  static async refreshTab(
+    tabId?: number,
+    waitForLoad: boolean = true,
+    timeout: number = 15000
+  ): Promise<WebInteractionResult> {
+    try {
+      // 获取目标 tab
+      let targetTabId = tabId;
+      if (!targetTabId) {
+        const activeTab = await TabToolkit.getCurrentActiveTab();
+        if (!activeTab.success || !activeTab.data?.tabId) {
+          throw new Error("No active tab found");
+        }
+        targetTabId = activeTab.data.tabId;
+      }
+
+      // 聚焦 tab 所在窗口
+      const tab = await chrome.tabs.get(targetTabId!);
+      if (tab.windowId) {
+        await TabToolkit.focusTabWindow(tab);
+      }
+
+      // 刷新页面
+      await new Promise<void>((resolve, reject) => {
+        chrome.tabs.reload(targetTabId!, {}, () => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+          } else {
+            resolve();
+          }
+        });
+      });
+
+      // 等待页面加载完成
+      if (waitForLoad) {
+        await TabToolkit.waitForTabReady(targetTabId!, timeout);
+      }
+
+      // 获取页面状态
+      const tabInfo = await new Promise<any>((resolve) => {
+        chrome.tabs.get(targetTabId!, (tab) => {
+          resolve({
+            url: tab.url,
+            title: tab.title,
+            status: tab.status,
+          });
+        });
+      });
+
+      return {
+        success: true,
+        data: {
+          tabId: targetTabId,
+          url: tabInfo.url,
+          title: tabInfo.title,
+          status: tabInfo.status,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  static async waitForTabReady(tabId: number, timeout = 20000): Promise<void> {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+      const tab = await chrome.tabs.get(tabId);
+      if (tab.status === "complete" || tab.status === "interactive") return;
+      await new Promise((r) => setTimeout(r, 300));
+    }
+    throw new Error("Tab load timeout");
+  }
+
+  static async focusTabWindow(tab: chrome.tabs.Tab) {
+    if (tab.windowId) {
+      await chrome.windows.update(tab.windowId, { focused: true });
+    }
   }
 }

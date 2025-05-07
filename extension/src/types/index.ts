@@ -16,7 +16,6 @@ export * from "./settings";
 export interface Env {
   OPENAI_MODEL: string;
   BACKEND_URL: string;
-  SYSTEM_PROMPT: string;
   SERVER_URL: string;
 }
 /**

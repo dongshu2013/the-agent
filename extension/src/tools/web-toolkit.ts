@@ -244,7 +244,6 @@ export class WebToolkit {
 
   async screenshot(): Promise<WebInteractionResult> {
     try {
-      // 获取当前标签页
       const tabs = await chrome.tabs.query({
         active: true,
         currentWindow: true,
@@ -254,11 +253,11 @@ export class WebToolkit {
         throw new Error("No active tab found");
       }
 
-      // 使用 chrome.tabs.captureVisibleTab 进行截图
-      const dataUrl = await new Promise<string>((resolve, reject) => {
+      // 获取原始截图
+      const originalDataUrl = await new Promise<string>((resolve, reject) => {
         chrome.tabs.captureVisibleTab(
           tabs[0].windowId,
-          { format: "png", quality: 100 },
+          { format: "jpeg", quality: 60 },
           (dataUrl) => {
             if (chrome.runtime.lastError) {
               reject(new Error(chrome.runtime.lastError.message));
@@ -269,7 +268,51 @@ export class WebToolkit {
         );
       });
 
-      return { success: true, data: dataUrl };
+      // 压缩和调整图片大小，使用WebP格式
+      const compressedDataUrl = await this.executeInTab<string>(
+        (dataUrl) => {
+          return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement("canvas");
+              let width = img.width;
+              let height = img.height;
+
+              // 限制最大宽度为800像素
+              if (width > 800) {
+                height = (800 * height) / width;
+                width = 800;
+              }
+
+              canvas.width = width;
+              canvas.height = height;
+
+              const ctx = canvas.getContext("2d");
+              if (!ctx) {
+                reject(new Error("Failed to get canvas context"));
+                return;
+              }
+
+              ctx.imageSmoothingEnabled = false;
+              ctx.drawImage(img, 0, 0, width, height);
+
+              // 使用WebP格式，质量设置为0.6
+              resolve(canvas.toDataURL("image/webp", 0.6));
+            };
+
+            img.onerror = () => reject(new Error("Failed to load image"));
+            img.src = dataUrl;
+          });
+        },
+        [originalDataUrl]
+      );
+
+      return {
+        success: true,
+        data: {
+          screenshot: compressedDataUrl,
+        },
+      };
     } catch (error) {
       console.error("Error taking screenshot:", error);
       return {
@@ -602,97 +645,39 @@ export class WebToolkit {
     }
   }
 
-  async refreshPage(
-    url?: string,
-    waitForLoad: boolean = true,
-    timeout: number = 5000
+  async listElements(
+    selectors?: string,
+    text?: string
   ): Promise<WebInteractionResult> {
     try {
-      // 获取当前标签页
-      const tab = await this.getCurrentTab();
-      if (!tab?.id) {
-        throw new Error("No active tab found");
-      }
-
-      // 记录开始时间
-      const startTime = Date.now();
-
-      await this.executeInTab<WebInteractionResult>(() => {
-        return new Promise((resolve) => {
-          if (url) {
-            window.location.href = url;
-          } else {
-            location.reload();
-          }
-          resolve({ success: true });
-        });
-      });
-
-      // 如果需要等待页面加载完成
-      if (waitForLoad) {
-        await new Promise<void>((resolve, reject) => {
-          const timeoutId = setTimeout(() => {
-            chrome.tabs.onUpdated.removeListener(listener);
-            reject(new Error("Page load timeout"));
-          }, timeout);
-
-          const listener = (tabId: number, info: chrome.tabs.TabChangeInfo) => {
-            if (tabId === tab.id && info.status === "complete") {
-              clearTimeout(timeoutId);
-              chrome.tabs.onUpdated.removeListener(listener);
-              resolve();
-            }
-          };
-
-          chrome.tabs.onUpdated.addListener(listener);
-        });
-      }
-
-      // 获取页面状态
-      const pageState = await this.executeInTab<any>(() => {
-        return {
-          url: window.location.href,
-          title: document.title,
-          readyState: document.readyState,
-        };
-      });
-
-      // 计算加载时间
-      const loadTime = Date.now() - startTime;
-
-      return {
-        success: true,
-        data: {
-          url: pageState.url,
-          title: pageState.title,
-          loadTime,
-          status: pageState.readyState,
-        },
-      };
-    } catch (error) {
-      console.error("Error refreshing page:", error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error),
-      };
-    }
-  }
-
-  async listElements(selector?: string): Promise<WebInteractionResult> {
-    try {
-      if (!selector) {
-        throw new Error(
-          "Selector is required. Please provide a valid CSS selector."
-        );
+      if (!selectors && !text) {
+        throw new Error("At least one of selectors or text is required.");
       }
 
       const result = await this.executeInTab<WebInteractionResult>(
-        (selector: string) => {
-          const elements = Array.from(document.querySelectorAll(selector));
+        (selectors: string | null, text: string | null) => {
+          let elements: Element[] = [];
+
+          if (selectors) {
+            elements = Array.from(document.querySelectorAll(selectors));
+          } else {
+            elements = Array.from(document.querySelectorAll("body *"));
+          }
+
+          if (text) {
+            const lowerText = text.trim().toLowerCase();
+            elements = elements.filter(
+              (el) =>
+                el.textContent &&
+                el.textContent.trim().toLowerCase().includes(lowerText)
+            );
+          }
+
+          // 只返回前20个元素，并且只包含必要字段
           return {
             success: true,
             data: {
-              elements: elements.map((el) => {
+              elements: elements.slice(0, 20).map((el) => {
                 const element = el as HTMLElement;
                 const rect = element.getBoundingClientRect();
                 const style = window.getComputedStyle(element);
@@ -701,12 +686,6 @@ export class WebToolkit {
                   style.display !== "none" &&
                   rect.width > 0 &&
                   rect.height > 0;
-
-                // 收集元素属性
-                const attributes: Record<string, string> = {};
-                Array.from(element.attributes).forEach((attr) => {
-                  attributes[attr.name] = attr.value;
-                });
 
                 // 构建唯一选择器
                 let uniqueSelector = element.tagName.toLowerCase();
@@ -723,35 +702,24 @@ export class WebToolkit {
                 }
 
                 return {
-                  uniqueSelector,
-                  selectorPath: uniqueSelector,
+                  selector: uniqueSelector,
                   text: element.innerText?.trim() || "",
                   type: element.tagName.toLowerCase(),
-                  attributes,
                   isVisible,
                   isInteractive:
                     (element.tagName === "BUTTON" ||
                       element.tagName === "A" ||
                       element.tagName === "INPUT" ||
                       element.getAttribute("role") === "button" ||
-                      element.onclick != null ||
+                      (element as any).onclick != null ||
                       style.cursor === "pointer") &&
                     !element.hasAttribute("disabled"),
-                  elementState: {
-                    isEnabled: !element.hasAttribute("disabled"),
-                    tagName: element.tagName.toLowerCase(),
-                    className: element.className,
-                    id: element.id,
-                    role: element.getAttribute("role"),
-                    ariaLabel: element.getAttribute("aria-label"),
-                    dataTestId: element.getAttribute("data-testid"),
-                  },
                 };
               }),
             },
           };
         },
-        [selector]
+        [selectors ?? null, text ?? null]
       );
 
       return result;

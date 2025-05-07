@@ -50,61 +50,126 @@ export default function MessageComponent({ message }: Props) {
     return isHovered;
   };
 
+  const ScreenshotView = ({
+    data,
+  }: {
+    data: { screenshot: string; elementInfo?: any };
+  }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    return (
+      <div style={{ margin: "10px 0" }}>
+        <div
+          style={{
+            position: "relative",
+            cursor: "pointer",
+            maxWidth: isExpanded ? "100%" : "300px",
+          }}
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          <img
+            src={data.screenshot}
+            alt="Screenshot"
+            style={{
+              width: "100%",
+              borderRadius: "8px",
+              border: "1px solid #e5e7eb",
+            }}
+          />
+          {data.elementInfo && (
+            <div
+              style={{
+                position: "absolute",
+                left: data.elementInfo.x,
+                top: data.elementInfo.y,
+                width: data.elementInfo.width,
+                height: data.elementInfo.height,
+                border: "2px solid #3b82f6",
+                borderRadius: "4px",
+                pointerEvents: "none",
+              }}
+            />
+          )}
+        </div>
+        {data.elementInfo && (
+          <div style={{ marginTop: "8px", fontSize: "12px", color: "#666" }}>
+            Element: {data.elementInfo.tagName.toLowerCase()}
+            {data.elementInfo.text && ` - "${data.elementInfo.text}"`}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderToolCalls = () => {
-    // 只为 assistant 消息渲染工具调用
     if (message.role === "tool") return null;
     if (!message.toolCalls?.length && !message.tool_calls?.length) return null;
 
     const toolCalls = message.toolCalls || message.tool_calls;
-    return toolCalls?.map((toolCall) => (
-      <div
-        key={toolCall.id}
-        style={{
-          border: "1px solid #ccc",
-          borderRadius: "6px",
-          padding: "6px 8px",
-          margin: "4px 0",
-          fontSize: "12px",
-          lineHeight: "1.4",
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        <svg
-          style={{ marginRight: "6px" }}
-          xmlns="http://www.w3.org/2000/svg"
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="m15 12-8.5 8.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0a2.12 2.12 0 0 1 0-3L12 9" />
-          <path d="M17.64 15 22 10.64" />
-          <path d="m20.91 11.7-1.25-1.25c-.6-.6-.93-1.4-.93-2.25v-.86L16.01 4.6a5.56 5.56 0 0 0-3.94-1.64H9l.92.82A6.18 6.18 0 0 1 12 8.4v1.56l2 2h2.47l2.26 1.91" />
-        </svg>
-        Executed tool call{" "}
-        <span
+    return toolCalls?.map((toolCall) => {
+      // 处理截图工具调用
+      if (toolCall.function.name === "WebToolkit_screenshot") {
+        try {
+          const result = JSON.parse(toolCall.result?.data || "{}");
+          if (result.screenshot) {
+            return <ScreenshotView key={toolCall.id} data={result} />;
+          }
+        } catch (e) {
+          console.error("Error parsing screenshot data:", e);
+        }
+      }
+
+      // 处理其他工具调用
+      return (
+        <div
+          key={toolCall.id}
           style={{
-            display: "inline-block",
-            backgroundColor: "#f7f7f7",
-            color: "#999",
             border: "1px solid #ccc",
-            padding: "1px 6px",
-            borderRadius: "4px",
-            marginLeft: "6px",
-            fontSize: "11px",
+            borderRadius: "6px",
+            padding: "6px 8px",
+            margin: "4px 0",
+            fontSize: "12px",
+            lineHeight: "1.4",
+            display: "flex",
+            alignItems: "center",
           }}
         >
-          {toolCall.function.name
-            .replace("TabToolkit_", "")
-            .replace("WebToolkit_", "")}
-        </span>
-      </div>
-    ));
+          <svg
+            style={{ marginRight: "6px" }}
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="m15 12-8.5 8.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0a2.12 2.12 0 0 1 0-3L12 9" />
+            <path d="M17.64 15 22 10.64" />
+            <path d="m20.91 11.7-1.25-1.25c-.6-.6-.93-1.4-.93-2.25v-.86L16.01 4.6a5.56 5.56 0 0 0-3.94-1.64H9l.92.82A6.18 6.18 0 0 1 12 8.4v1.56l2 2h2.47l2.26 1.91" />
+          </svg>
+          Executed tool call{" "}
+          <span
+            style={{
+              display: "inline-block",
+              backgroundColor: "#f7f7f7",
+              color: "#999",
+              border: "1px solid #ccc",
+              padding: "1px 6px",
+              borderRadius: "4px",
+              marginLeft: "6px",
+              fontSize: "11px",
+            }}
+          >
+            {toolCall.function.name
+              .replace("TabToolkit_", "")
+              .replace("WebToolkit_", "")}
+          </span>
+        </div>
+      );
+    });
   };
 
   const renderContent = () => {
