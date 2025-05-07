@@ -8,6 +8,7 @@ import json
 import httpx
 import os
 import asyncio
+from decimal import Decimal
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -22,6 +23,7 @@ from edge_agent.utils.embeddings import (
     find_similar_messages,
     extract_text_from_content
 )
+from edge_agent.models.database import CreditLog
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("chat_route")
@@ -386,6 +388,72 @@ async def verify_auth(
             "username": user.username,
             "email": user.email,
             "api_key_enabled": user.api_key_enabled,
-    "api_key": user.api_key
+            "api_key": user.api_key,
+            "credits": user.credits
         }
     }
+
+class DeductCreditsRequest(BaseModel):
+    credits: float
+
+@router.post("/v1/credits/deduct", response_model=dict)
+async def deduct_credits(
+    request: Request,
+    credit_data: DeductCreditsRequest,
+    user: User = Depends(verify_api_key)
+):
+    """
+    Deduct credits from a user account using the authenticated user from the API key.
+    """
+    db = request.state.db
+    try:
+        # Use the authenticated user directly from the API key
+        target_user = user
+            
+        # Check if user has enough credits
+        if target_user.credits < Decimal(str(credit_data.credits)):
+            raise HTTPException(status_code=400, detail="Insufficient credits")
+            
+        # Deduct credits
+        # Convert float to Decimal to avoid type mismatch and handle precision
+        original_credits = float(target_user.credits)
+        credit_amount = Decimal(str(credit_data.credits))
+        
+        logger.info(f"Deducting {credit_amount} credits from user {user.id} with current balance {original_credits}")
+        
+        # Update the user's credits
+        target_user.credits = target_user.credits - credit_amount
+        logger.info(f"Deducting {credit_amount} from database")
+        
+        # Create a credit log entry
+        credit_log = CreditLog(
+            user_id=target_user.id,
+            amount=credit_amount,
+            type="deduction",
+            description="API credit deduction",
+            balance=target_user.credits
+        )
+        db.add(credit_log)
+        
+        # Ensure changes are saved to the database
+        db.add(target_user)
+        db.flush()
+        db.commit()
+        
+        # Verify the update by re-querying the user
+        db.refresh(target_user)
+        new_balance = float(target_user.credits)
+        logger.info(f"Updated credits for user {target_user.id}: {original_credits} -> {new_balance}")
+        logger.info(f"Created credit log entry: {credit_log.id}")
+        
+        return {
+            "success": True,
+            "remaining_credits": float(target_user.credits),
+            "user_id": target_user.id
+        }
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deducting credits: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to deduct credits: {str(e)}")

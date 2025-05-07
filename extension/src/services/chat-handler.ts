@@ -3,6 +3,8 @@ import { ChatMessage, Message } from "../types/messages";
 import { saveMessageApi, sendChatCompletion } from "./chat";
 import { toolExecutor } from "./tool-executor";
 import { db } from "~/utils/db";
+import { calculateAIUsageCredits } from "~/utils/creditCalculator";
+import { deductCreditsApi } from "./credit";
 
 interface ChatHandlerOptions {
   apiKey: string;
@@ -329,6 +331,20 @@ Now reply to user's message: ${currentPrompt}`,
 - Total tokens: ${tokenUsage.totalTokens}`;
 
       aiMessage.content += tokenSummary;
+      const aiCreditsToDeduct = calculateAIUsageCredits(tokenUsage, env.OPENAI_MODEL);
+
+      // Deduct credits from user account using API key
+      try {
+        // Convert Decimal to number for the database update
+        let creditsToDeduct = parseFloat(aiCreditsToDeduct.toString());
+        if (creditsToDeduct < 0.01) {
+          creditsToDeduct = 0.01;
+        }
+        // Use API key directly for credit deduction
+        await deductCreditsApi(creditsToDeduct);
+      } catch (error) {
+        console.error("Error deducting credits:", error);
+      }
 
       await this.updateMessage(aiMessage);
       await saveMessageApi({

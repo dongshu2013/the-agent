@@ -261,7 +261,7 @@ export default function ProfilePage() {
                   {loading ? (
                     <Loader2 className="h-6 w-6 animate-spin" />
                   ) : (
-                    <span>${user.credits}</span>
+                    <span>${parseFloat(user.credits).toFixed(2)}</span>
                   )}
                 </div>
               </div>
