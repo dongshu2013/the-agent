@@ -105,8 +105,8 @@ type StateProps =
 const CLEAR_DATE_SEARCH_PARAM = { date: undefined };
 const CLEAR_CHAT_SEARCH_PARAM = { id: undefined };
 
-// const TARGET_URL = 'http://localhost:3000/api/tg';
-const TARGET_URL = 'https://the-agent-production.up.railway.app/api/tg';
+const TARGET_URL = 'http://localhost:3000/api/tg';
+// const TARGET_URL = 'https://the-agent-production.up.railway.app/api/tg';
 
 // Add API functions for importing chats and messages
 const importGroups = async (chats: Record<string, ApiChat>) => {
