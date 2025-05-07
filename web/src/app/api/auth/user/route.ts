@@ -49,6 +49,7 @@ export async function GET(request: NextRequest) {
       email: user.email,
       apiKey: user.api_key,
       apiKeyEnabled: user.api_key_enabled,
+      credits: user.credits,
     });
   } catch (error) {
     console.error("Error getting user:", error);
@@ -103,6 +104,7 @@ export async function POST(request: NextRequest) {
         email: existingUser.email,
         apiKey: existingUser.api_key,
         apiKeyEnabled: existingUser.api_key_enabled,
+        credits: existingUser.credits,
       });
     }
 
@@ -123,6 +125,7 @@ export async function POST(request: NextRequest) {
       email: newUser.email,
       apiKey: newUser.api_key,
       apiKeyEnabled: newUser.api_key_enabled,
+      credits: newUser.credits,
     });
   } catch (error) {
     console.error("Error creating user:", error);

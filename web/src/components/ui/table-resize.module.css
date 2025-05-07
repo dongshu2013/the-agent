@@ -1,0 +1,45 @@
+.resizableTableHeader {
+  position: relative;
+  white-space: nowrap;
+  overflow: visible !important;
+  padding: 0 !important;
+  user-select: none;
+  table-layout: fixed;
+}
+
+.headerContent {
+  position: relative;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.resizeHandle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.resizeHandle.visible {
+  opacity: 1;
+}
+
+.resizeLine {
+  height: 100%;
+  width: 2px;
+  background-color: #e2e8f0;
+}
+
+.resizeLine.resizing {
+  background-color: #3b82f6;
+}

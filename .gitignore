@@ -20,6 +20,7 @@ eggs/
 .eggs/
 lib/
 !tg-webapp/src/lib/
+!web/src/lib/
 lib64/
 parts/
 sdist/

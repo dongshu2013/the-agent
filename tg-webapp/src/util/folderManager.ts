@@ -164,7 +164,9 @@ export function getAllNotificationsCount() {
 }
 
 export function getOrderKey(chatId: string, isForSaved?: boolean) {
-  const summary = prepared.chatSummariesById.get(chatId)!;
+  const summary = prepared.chatSummariesById.get(chatId);
+  // Return a default order (0) if summary is undefined
+  if (!summary) return 0;
   return isForSaved ? summary.orderInSaved : summary.orderInAll;
 }
 

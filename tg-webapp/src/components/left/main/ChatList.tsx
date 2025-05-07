@@ -4,7 +4,7 @@ import React, {
 } from '../../../lib/teact/teact';
 import { getActions } from '../../../global';
 
-import type { ApiSession } from '../../../api/types';
+import type { ApiSession, ApiChat } from '../../../api/types';
 import type { GlobalState } from '../../../global/types';
 import type { FolderEditDispatch } from '../../../hooks/reducers/useFoldersReducer';
 import type { SettingsScreens } from '../../../types';
@@ -54,6 +54,8 @@ type OwnProps = {
   foldersDispatch?: FolderEditDispatch;
   onSettingsScreenSelect?: (screen: SettingsScreens) => void;
   onLeftColumnContentChange?: (content: LeftColumnContent) => void;
+  searchQuery?: string;
+  filteredChats?: ApiChat[];
 };
 
 const INTERSECTION_THROTTLE = 200;
@@ -72,6 +74,8 @@ const ChatList: FC<OwnProps> = ({
   foldersDispatch,
   onSettingsScreenSelect,
   onLeftColumnContentChange,
+  searchQuery,
+  filteredChats,
 }) => {
   const {
     openChat,
@@ -93,7 +97,15 @@ const ChatList: FC<OwnProps> = ({
 
   const shouldDisplayArchive = isAllFolder && canDisplayArchive && archiveSettings;
 
-  const orderedIds = useFolderManagerForOrderedIds(resolvedFolderId);
+  // Use filtered chat IDs if search query is present, otherwise use folder IDs
+  const folderOrderedIds = useFolderManagerForOrderedIds(resolvedFolderId);
+  const orderedIds = useMemo(() => {
+    if (searchQuery && filteredChats?.length) {
+      return filteredChats.map(chat => chat.id);
+    }
+    return folderOrderedIds;
+  }, [folderOrderedIds, searchQuery, filteredChats]);
+  
   usePeerStoriesPolling(orderedIds);
 
   const chatsHeight = (orderedIds?.length || 0) * CHAT_HEIGHT_PX;
@@ -246,7 +258,7 @@ const ChatList: FC<OwnProps> = ({
 
   return (
     <InfiniteScroll
-      className={buildClassName('chat-list custom-scroll', isForumPanelOpen && 'forum-panel-open', className)}
+      className={buildClassName('chat-list custom-scroll', isForumPanelOpen && 'forum-panel-open', className, searchQuery && 'search-results')}
       ref={containerRef}
       items={viewportIds}
       itemSelector=".ListItem:not(.chat-item-archive)"
@@ -265,7 +277,7 @@ const ChatList: FC<OwnProps> = ({
           onHeightChange={setUnconfirmedSessionHeight}
         />
       )}
-      {shouldDisplayArchive && (
+      {shouldDisplayArchive && !searchQuery && (
         <Archive
           key="archive"
           archiveSettings={archiveSettings}
