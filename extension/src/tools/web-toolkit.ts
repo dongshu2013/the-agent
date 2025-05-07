@@ -279,14 +279,20 @@ export class WebToolkit {
     }
   }
 
-  async inputElement(
-    selector: string,
-    value: string,
+  async inputElement({
+    selector,
+    value,
+    options,
+  }: {
+    selector: string;
+    value: string;
     options?: {
       clearFirst?: boolean;
       delay?: number;
-    }
-  ): Promise<WebInteractionResult> {
+      pressEnterAfterInput?: boolean;
+    };
+  }): Promise<WebInteractionResult> {
+    console.log("🤭🤭 inputElement", selector, value, options);
     try {
       const tabs = await chrome.tabs.query({
         active: true,
@@ -430,7 +436,25 @@ export class WebToolkit {
         [selector]
       );
 
-      // 9. 分离调试器
+      // 9. 回车操作（如果需要）
+      if (options?.pressEnterAfterInput) {
+        await this.sendCommand("Input.dispatchKeyEvent", {
+          type: "keyDown",
+          key: "Enter",
+          code: "Enter",
+          windowsVirtualKeyCode: 13,
+          nativeVirtualKeyCode: 13,
+        });
+        await this.sendCommand("Input.dispatchKeyEvent", {
+          type: "keyUp",
+          key: "Enter",
+          code: "Enter",
+          windowsVirtualKeyCode: 13,
+          nativeVirtualKeyCode: 13,
+        });
+      }
+
+      // 10. 分离调试器
       await this.detachDebugger();
 
       if (!finalResult.success) {
@@ -440,6 +464,7 @@ export class WebToolkit {
         };
       }
 
+      console.log("😂😂 options", options);
       return {
         success: true,
         data: {

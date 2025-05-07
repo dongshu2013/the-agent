@@ -135,60 +135,60 @@ export const getToolDescriptions = (): ToolDescription[] => {
         },
       },
     },
-    {
-      name: "TgToolkit_searchMessages",
-      description: "Search messages based on vector similarity",
-      parameters: {
-        type: "object",
-        properties: {
-          query: {
-            type: "string",
-            description: "Search query",
-          },
-          chatId: {
-            type: "string",
-            description: "Optional chat ID to limit search to",
-          },
-          topK: {
-            type: "number",
-            description: "Maximum number of results to return (default: 10)",
-          },
-          messageRange: {
-            type: "number",
-            description:
-              "Number of messages before and after the match to include (default: 2)",
-          },
-          threshold: {
-            type: "number",
-            description: "Similarity threshold (default: 0.7)",
-          },
-          isPublic: {
-            type: "boolean",
-            description: "Optional filter by public status",
-          },
-          isFree: {
-            type: "boolean",
-            description: "Optional filter by free status",
-          },
-        },
-        required: ["query"],
-      },
-      returns: {
-        type: "object",
-        description: "Search results with matching messages and their context",
-        properties: {
-          success: {
-            type: "boolean",
-            description: "Whether the operation was successful",
-          },
-          data: {
-            type: "object",
-            description:
-              "Search results including matching messages and their context",
-          },
-        },
-      },
-    },
+    // {
+    //   name: "TgToolkit_searchMessages",
+    //   description: "Search messages based on vector similarity",
+    //   parameters: {
+    //     type: "object",
+    //     properties: {
+    //       query: {
+    //         type: "string",
+    //         description: "Search query",
+    //       },
+    //       chatId: {
+    //         type: "string",
+    //         description: "Optional chat ID to limit search to",
+    //       },
+    //       topK: {
+    //         type: "number",
+    //         description: "Maximum number of results to return (default: 10)",
+    //       },
+    //       messageRange: {
+    //         type: "number",
+    //         description:
+    //           "Number of messages before and after the match to include (default: 2)",
+    //       },
+    //       threshold: {
+    //         type: "number",
+    //         description: "Similarity threshold (default: 0.7)",
+    //       },
+    //       isPublic: {
+    //         type: "boolean",
+    //         description: "Optional filter by public status",
+    //       },
+    //       isFree: {
+    //         type: "boolean",
+    //         description: "Optional filter by free status",
+    //       },
+    //     },
+    //     required: ["query"],
+    //   },
+    //   returns: {
+    //     type: "object",
+    //     description: "Search results with matching messages and their context",
+    //     properties: {
+    //       success: {
+    //         type: "boolean",
+    //         description: "Whether the operation was successful",
+    //       },
+    //       data: {
+    //         type: "object",
+    //         description:
+    //           "Search results including matching messages and their context",
+    //       },
+    //     },
+    //   },
+    // },
     // Tab Toolkit Tools
     {
       name: "TabToolkit_openTab",
@@ -384,7 +384,7 @@ export const getToolDescriptions = (): ToolDescription[] => {
     {
       name: "WebToolkit_inputElement",
       description:
-        "Types text into a specified input element on the page. If the element is not found or not interactable, use listElements to find the correct selector. The selector can be a simple tag name (e.g., 'input'), a class name (e.g., '.username'), an ID (e.g., '#email'), or a combination of these with attributes (e.g., 'input[type=\"text\"]').",
+        "Types text into a specified input element on the page. If the element is not found or not interactable, use listElements to find the correct selector. The selector can be a simple tag name (e.g., 'input'), a class name (e.g., '.username'), an ID (e.g., '#email'), or a combination of these with attributes (e.g., 'input[type=\"text\"]'). Optionally, can clear the input first, add typing delay, and/or press Enter after inputting (to submit forms or trigger search).",
       parameters: {
         type: "object",
         properties: {
@@ -410,6 +410,11 @@ export const getToolDescriptions = (): ToolDescription[] => {
                 type: "number",
                 description:
                   "Delay (in milliseconds) between keystrokes. Default: 100",
+              },
+              pressEnterAfterInput: {
+                type: "boolean",
+                description:
+                  "If true, simulates pressing the Enter key after inputting the value. Useful for submitting search forms or triggering actions. Default: false",
               },
             },
           },

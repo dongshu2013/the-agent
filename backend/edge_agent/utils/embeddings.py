@@ -9,6 +9,9 @@ import openai
 from openai import OpenAI
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import text
+from sqlalchemy import column, func
+import psycopg2
+import psycopg2.extras
 
 from edge_agent.core.config import settings
 from edge_agent.models.database import Message, TelegramMessage
@@ -290,33 +293,32 @@ async def find_similar_messages(query_text: str, conversation_id: Optional[str] 
         embedding_str = "{" + ",".join(map(str, query_embedding)) + "}"
             
         # Build the query
-        query = text("""
+        query_str = """
         SELECT id, conversation_id, role, content, created_at, 
-               embedding <=> :query_embedding::vector AS distance
+               embedding <=> CAST(:query_embedding AS vector) AS distance
         FROM messages
         WHERE embedding IS NOT NULL
           AND (is_deleted = false OR is_deleted IS NULL)
-        """)
+        """
         
         params = {
-            "query_embedding": embedding_str,
+            "query_embedding": query_embedding,
             "limit": limit
         }
         
         # Add conversation filter if provided
         if conversation_id:
             logger.info(f"Filtering search to conversation: {conversation_id}")
-            query = text(str(query) + " AND conversation_id = :conversation_id")
+            query_str += " AND conversation_id = :conversation_id"
             params["conversation_id"] = conversation_id
         
         # Add ordering and limit
-        query = text(str(query) + """
+        query_str += """
         ORDER BY distance
         LIMIT :limit
-        """)
+        """
         
-        # Execute the query
-        logger.info(f"Executing vector similarity search with limit: {limit}")
+        query = text(query_str)
         result = db.execute(query, params)
         
         # Convert the result to Message objects

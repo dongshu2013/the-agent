@@ -4,7 +4,7 @@ export interface WebInteractionResult {
   error?: string;
 }
 
-const TAB_LOAD_TIMEOUT = 5000;
+const TAB_LOAD_TIMEOUT = 10000;
 
 export class TabToolkit {
   /**
@@ -210,7 +210,7 @@ export class TabToolkit {
             });
           }
 
-          if (tab.status === "complete") {
+          if (tab.status === "complete" || tab.status === "interactive") {
             return resolve({
               success: true,
               data: {

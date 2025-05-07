@@ -317,22 +317,23 @@ async def save_message(
             raise HTTPException(status_code=404, detail="Conversation not found or not authorized")
 
         # Convert tool_calls to a serializable format
+        tool_calls_raw = message_data.message.tool_calls or []
         tool_calls = []
-        if message_data.message.tool_calls:
-            tool_calls = message_data.message.tool_calls
-            
+        for tool_call in tool_calls_raw:
+            # 如果是 Pydantic 对象，先转 dict
+            if hasattr(tool_call, "dict"):
+                tool_call_dict = tool_call.dict()
+            elif isinstance(tool_call, dict):
+                tool_call_dict = tool_call
+            else:
+                continue  # 跳过异常类型
 
-        if message_data.message.toolCalls:
-            tool_calls = message_data.message.toolCalls
-           
-        if tool_calls:
-            for tool_call in tool_calls:
-                tool_calls.append({
-                    "id": tool_call.id,
-                    "type": tool_call.type,
-                    "function": tool_call.function,
-                    "result": tool_call.result
-                })
+            # function 字段也要转 dict
+            function = tool_call_dict.get("function")
+            if hasattr(function, "dict"):
+                tool_call_dict["function"] = function.dict()
+
+            tool_calls.append(tool_call_dict)
 
         # 保存消息
         message = Message(

@@ -71,10 +71,7 @@ chrome.runtime.onMessage.addListener((message: any, sender, sendResponse) => {
               result = await webToolkit.screenshot();
               break;
             case "inputElement":
-              result = await webToolkit.inputElement(
-                params.selector,
-                params.value
-              );
+              result = await webToolkit.inputElement(params);
               break;
             case "clickElement":
               result = await webToolkit.clickElement(params.selector);
