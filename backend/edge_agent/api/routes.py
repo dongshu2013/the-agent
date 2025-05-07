@@ -237,12 +237,28 @@ async def delete_conversation(
 @router.post("/v1/chat/completions")
 async def chat_completion(
     params: ChatCompletionCreateParam,
+    request: Request,
     user: User = Depends(verify_api_key)
 ):
     """
     Create a chat completion.
     """
     try:
+        # Check if user has enough credits
+        if user.credits <= Decimal('0'):
+            error_response = {
+                "error": {
+                    "message": "Insufficient credits. Please add more credits to your account.",
+                    "type": "insufficient_credits",
+                    "param": None,
+                    "code": "insufficient_credits"
+                }
+            }
+            return JSONResponse(
+                status_code=400,
+                content=error_response
+            )
+            
         if params.stream:
             return StreamingResponse(
                 stream_chat_response(params),
@@ -268,8 +284,9 @@ async def chat_completion(
                 "code": "server_error"
             }
         }
+        status_code = getattr(e, 'status_code', 500)
         return JSONResponse(
-            status_code=e.status_code,
+            status_code=status_code,
             content=error_response
         )
 
@@ -395,6 +412,24 @@ async def verify_auth(
 
 class DeductCreditsRequest(BaseModel):
     credits: float
+    
+@router.get("/v1/credits/balance", response_model=Dict[str, Any])
+async def get_credit_balance(
+    request: Request,
+    user: User = Depends(verify_api_key)
+):
+    """
+    Get the credit balance for the authenticated user.
+    """
+    try:
+        return {
+            "success": True,
+            "credits": float(user.credits),
+            "user_id": user.id
+        }
+    except Exception as e:
+        logger.error(f"Error getting credit balance: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get credit balance: {str(e)}")
 
 @router.post("/v1/credits/deduct", response_model=dict)
 async def deduct_credits(
