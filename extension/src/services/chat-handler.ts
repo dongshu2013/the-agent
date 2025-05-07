@@ -3,6 +3,8 @@ import { ChatMessage, Message } from "../types/messages";
 import { saveMessageApi, sendChatCompletion } from "./chat";
 import { toolExecutor } from "./tool-executor";
 import { db } from "~/utils/db";
+import { calculateAIUsageCredits } from "~/utils/creditCalculator";
+import { deductCreditsApi, getUserCredits } from "./credit";
 
 interface ChatHandlerOptions {
   apiKey: string;
@@ -31,6 +33,24 @@ export class ChatHandler {
       !this.options.apiKey ||
       !this.options.currentConversationId
     ) {
+      return;
+    }
+    
+    // Check if user has enough credits before proceeding
+    const creditsResponse = await getUserCredits();
+    if (!creditsResponse.success || !creditsResponse.credits || creditsResponse.credits <= 0) {
+      // Not enough credits, show error message
+      const errorMessage: Message = {
+        message_id: crypto.randomUUID(),
+        role: "system",
+        content: "You don't have enough credits to send messages. Please purchase more credits to continue.",
+        created_at: new Date().toISOString(),
+        conversation_id: this.options.currentConversationId,
+        status: "error",
+        error: "Insufficient credits"
+      };
+      await this.updateMessage(errorMessage);
+      this.options.onError({ message: "Insufficient credits" });
       return;
     }
 
@@ -331,6 +351,20 @@ Now reply to user's message: ${currentPrompt}`,
 - Total tokens: ${tokenUsage.totalTokens}`;
 
       aiMessage.content += tokenSummary;
+      const aiCreditsToDeduct = calculateAIUsageCredits(tokenUsage, env.OPENAI_MODEL);
+
+      // Deduct credits from user account using API key
+      try {
+        // Convert Decimal to number for the database update
+        let creditsToDeduct = parseFloat(aiCreditsToDeduct.toString());
+        if (creditsToDeduct < 0.01) {
+          creditsToDeduct = 0.01;
+        }
+        // Use API key directly for credit deduction
+        await deductCreditsApi(creditsToDeduct);
+      } catch (error) {
+        console.error("Error deducting credits:", error);
+      }
 
       await this.updateMessage(aiMessage);
       await saveMessageApi({

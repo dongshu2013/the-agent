@@ -19,6 +19,7 @@ class User(Base):
     email = Column(String, unique=True, nullable=True)
     api_key = Column(String, unique=True, nullable=False, default=generate_uuid)
     api_key_enabled = Column(Boolean, default=True, nullable=False)
+    credits = Column(Numeric, default=0, nullable=False)
     created_at = Column(DateTime, default=func.now(), nullable=False)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
 
@@ -129,3 +130,21 @@ class TelegramUser(Base):
 
     def __repr__(self):
         return f"<TelegramUser(id={self.id}, user_id={self.user_id}, username={self.username})>"
+
+
+class CreditLog(Base):
+    __tablename__ = "credit_logs"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    amount = Column(Numeric(10, 6), nullable=False)  # Amount of credits changed
+    type = Column(String, nullable=False)  # 'deduction', 'addition', etc.
+    description = Column(String, nullable=True)  # Description of the transaction
+    balance = Column(Numeric(10, 6), nullable=False)  # Balance after this transaction
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+    
+    # Relationship
+    user = relationship("User", backref="credit_logs")
+    
+    def __repr__(self):
+        return f"<CreditLog(id={self.id}, user_id={self.user_id}, amount={self.amount}, type={self.type})>"

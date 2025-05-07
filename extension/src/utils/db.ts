@@ -8,19 +8,32 @@ interface UserInfo {
   email: string | null;
   api_key_enabled: boolean;
   api_key: string;
+  credits: string; // Credits stored as string in IndexedDB
+}
+
+interface CreditLog {
+  id?: string;
+  user_id: string;
+  amount: number;
+  type: string; // 'deduction', 'addition', etc.
+  description?: string;
+  balance: string; // Balance after this transaction
+  created_at: string;
 }
 class MizuDB extends Dexie {
   conversations!: Table<Conversation>;
   messages!: Table<Message>;
   users!: Table<UserInfo>;
+  creditLogs!: Table<CreditLog>;
 
   constructor() {
     super("mizu-agent");
 
-    this.version(3).stores({
+    this.version(4).stores({
       conversations: "id, created_at, *messages",
       messages: "message_id, conversation_id, created_at",
       users: "id",
+      creditLogs: "++id, user_id, created_at",
     });
 
     // Add index definitions
@@ -43,6 +56,35 @@ class MizuDB extends Dexie {
 
   async deleteUser(userId: string): Promise<void> {
     await this.users.delete(userId);
+  }
+
+  async deductCredits(userId: string, creditsToDeduct: number, description: string = "Credit deduction"): Promise<void> {
+    const user = await this.getUser(userId);
+    if (!user) {
+      console.error(`User with ID ${userId} not found`);
+      return;
+    }
+    
+    const currentCredits = parseFloat(user.credits) || 0;
+    const newCredits = Math.max(0, currentCredits - creditsToDeduct);
+    const newCreditsStr = newCredits.toFixed(6);
+    
+    // Update user credits
+    await this.users.update(userId, { credits: newCreditsStr });
+    console.log(`Updated credits for user ${userId}: ${currentCredits} - ${creditsToDeduct} = ${newCreditsStr}`);
+    
+    // Log the credit transaction
+    const creditLog: CreditLog = {
+      user_id: userId,
+      amount: creditsToDeduct,
+      type: "deduction",
+      description: description,
+      balance: newCreditsStr,
+      created_at: new Date().toISOString()
+    };
+    
+    await this.creditLogs.add(creditLog);
+    console.log(`Credit log created: deducted ${creditsToDeduct} credits from user ${userId}`);
   }
 
   // Conversation operations
