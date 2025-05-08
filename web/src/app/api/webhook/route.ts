@@ -1,8 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { PrismaClient } from '@/generated/prisma';
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 // CORS headers
 const corsHeaders = {
@@ -15,7 +13,7 @@ export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders });
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
     const stripePrivateKey = process.env.STRIPE_PRIVATE_KEY;
     const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
