@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { prisma } from "@/lib/prisma";
+import { getUserCredits } from "@/lib/credits";
+import { TransactionType, OrderStatus } from "@/lib/constants";
 
 export async function POST(req: Request) {
   try {
@@ -25,7 +27,7 @@ export async function POST(req: Request) {
       stripeWebhookSecret
     );
 
-    console.log("stripe notify event: ", event);
+    // console.log("stripe notify event: ", event);
 
     // Handle the event
     switch (event.type) {
@@ -36,38 +38,28 @@ export async function POST(req: Request) {
         if (session.metadata?.orderId) {
           const order = await prisma.orders.update({
             where: { id: session.metadata.orderId },
-            data: { status: 'completed' },
+            data: { status: OrderStatus.COMPLETED },
           });
 
           // Add credits to user account
           if (order && session.metadata?.userId) {
-            // Get current user credits
-            const user = await prisma.users.findUnique({
-              where: { id: session.metadata.userId },
-              select: { credits: true },
-            });
-
-            if (user) {
-              const currentCredits = parseFloat(user.credits.toString());
-              const orderAmount = parseFloat(order.amount.toString());
+            // Get current user credits from the credits table
+            const currentCredits = await getUserCredits(session.metadata.userId);
+            const orderAmount = parseFloat(order.amount.toString());
+            const newUserCredits = currentCredits + orderAmount;
               
-              // Update user credits
-              await prisma.users.update({
-                where: { id: session.metadata.userId },
-                data: { credits: currentCredits + orderAmount },
-              });
-
-              // Log the credit addition
-              await prisma.credit_logs.create({
-                data: {
-                  user_id: session.metadata.userId,
-                  amount: orderAmount,
-                  type: 'addition',
-                  description: `Payment completed - Order ID: ${order.id}`,
-                  balance: currentCredits + orderAmount,
-                },
-              });
-            }
+            // Record the credit addition in the credits table
+            await prisma.credits.create({
+              data: {
+                user_id: session.metadata.userId,
+                order_id: order.id,
+                amount: orderAmount,
+                trans_credits: orderAmount,
+                user_credits: newUserCredits,
+                trans_type: TransactionType.ORDER_PAY,
+                created_at: new Date(),
+              }
+            });
           }
         }
         break;

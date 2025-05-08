@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { prisma } from "@/lib/prisma";
+import { OrderStatus } from "@/lib/constants";
 
 const stripe = new Stripe(process.env.STRIPE_PRIVATE_KEY || '');
 
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
         user_id: userId,
         user_email: userEmail,
         amount: amount,
-        status: 'pending',
+        status: OrderStatus.PENDING,
       },
     });
 

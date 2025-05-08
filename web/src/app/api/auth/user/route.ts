@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { authenticateRequest } from "@/lib/firebase-admin";
+import { getUserCredits, getInitialCredits } from "@/lib/credits";
+import { TransactionType } from "@/lib/constants";
 
 export async function GET(request: NextRequest) {
   try {
@@ -43,13 +45,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    // Get the latest user credits from the credits table
+    const userCredits = await getUserCredits(userId);
+
     return NextResponse.json({
       id: user.id,
       username: user.username,
       email: user.email,
       apiKey: user.api_key,
       apiKeyEnabled: user.api_key_enabled,
-      credits: user.credits,
+      credits: userCredits,
     });
   } catch (error) {
     console.error("Error getting user:", error);
@@ -98,13 +103,16 @@ export async function POST(request: NextRequest) {
     });
 
     if (existingUser) {
+      // Get the latest user credits from the credits table
+      const userCredits = await getUserCredits(id);
+
       return NextResponse.json({
         id: existingUser.id,
         username: existingUser.username,
         email: existingUser.email,
         apiKey: existingUser.api_key,
         apiKeyEnabled: existingUser.api_key_enabled,
-        credits: existingUser.credits,
+        credits: userCredits,
       });
     }
 
@@ -119,13 +127,27 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Get initial credits from environment variable
+    const initialCredits = getInitialCredits();
+    
+    // Create initial credits record for new user
+    await prisma.credits.create({
+      data: {
+        user_id: newUser.id,
+        trans_credits: initialCredits,
+        user_credits: initialCredits,
+        trans_type: TransactionType.NEW_USER,
+        created_at: new Date(),
+      }
+    });
+
     return NextResponse.json({
       id: newUser.id,
       username: newUser.username,
       email: newUser.email,
       apiKey: newUser.api_key,
       apiKeyEnabled: newUser.api_key_enabled,
-      credits: newUser.credits,
+      credits: initialCredits,
     });
   } catch (error) {
     console.error("Error creating user:", error);

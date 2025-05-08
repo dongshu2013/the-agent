@@ -14,11 +14,10 @@ model users {
   email           String?         @unique
   api_key         String          @unique @default(uuid())
   api_key_enabled Boolean         @default(true)
-  credits         Decimal         @default(0) @db.Decimal(10, 6)
   created_at      DateTime        @default(now())
   updated_at      DateTime        @updatedAt
   conversations   conversations[]
-  credit_logs     credit_logs[]
+  credits         credits[]
   orders          orders[]
 }
 
@@ -98,26 +97,44 @@ model tg_users {
   updated_at DateTime @default(now())
 }
 
-model credit_logs {
-  id          String   @id @default(uuid())
-  user_id     String
-  amount      Decimal  @db.Decimal(10, 6)
-  type        String   // 'deduction', 'addition', etc.
-  description String?
-  balance     Decimal  @db.Decimal(10, 6) // Balance after this transaction
-  created_at  DateTime @default(now())
-  user        users    @relation(fields: [user_id], references: [id])
+enum TransactionType {
+  new_user    // Initial credits for new user
+  order_pay   // Credits from payment
+  system_add  // Credits added by system
+  completion  // Credits used for completion
+}
+
+model credits {
+  id              String          @id @default(uuid())
+  user_id         String
+  order_id        String?
+  conversation_id String?
+  model           String?
+  amount          Decimal?        @db.Decimal(10, 6)
+  trans_credits   Decimal         @default(0) @db.Decimal(10, 6) // negative(-10) or positive(+20) transaction credits
+  user_credits    Decimal         @default(0) @db.Decimal(10, 6) // user credits
+  trans_type      TransactionType @default(new_user)
+  created_at      DateTime        @default(now())
+  expired_at      DateTime?
+  user            users           @relation(fields: [user_id], references: [id])
+}
+
+enum OrderStatus {
+  pending    // Order is created but not paid
+  completed  // Payment completed
+  cancelled  // Order cancelled
 }
 
 model orders {
-  id               String   @id @default(uuid())
-  user_id          String
-  user_email       String
-  amount           Decimal  @db.Decimal(10, 2)
-  currency         String   @default("usd")
-  status           String   @default("pending") // pending, completed, cancelled
+  id                String      @id @default(uuid())
+  user_id           String
+  user_email        String
+  amount            Decimal     @default(0) @db.Decimal(10, 6)
+  credits           Decimal     @default(0) @db.Decimal(10, 6)
+  currency          String      @default("usd")
+  status            OrderStatus @default(pending)
   stripe_session_id String?
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
-  user             users    @relation(fields: [user_id], references: [id])
+  created_at        DateTime    @default(now())
+  updated_at        DateTime    @updatedAt
+  user              users       @relation(fields: [user_id], references: [id])
 }

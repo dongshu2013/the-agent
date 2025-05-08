@@ -23,13 +23,28 @@ from edge_agent.utils.embeddings import (
     find_similar_messages,
     extract_text_from_content
 )
-from edge_agent.models.database import CreditLog
+from edge_agent.models.database import Credit
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("chat_route")
 
 # Create a Bearer token security scheme
 bearer_scheme = HTTPBearer(auto_error=True)
+
+
+def get_user_current_credits(db: Session, user_id: str) -> float:
+    """
+    Get the current user credits from the most recent credit record.
+    
+    Args:
+        db: Database session
+        user_id: User ID to get credits for
+        
+    Returns:
+        float: Current credit balance for the user, or 0.0 if no credit records exist
+    """
+    latest_credit = db.query(Credit).filter(Credit.user_id == user_id).order_by(Credit.created_at.desc()).first()
+    return float(latest_credit.user_credits) if latest_credit else 0.0
 
 async def verify_api_key(
     request: Request,
@@ -245,7 +260,12 @@ async def chat_completion(
     """
     try:
         # Check if user has enough credits
-        if user.credits <= Decimal('0'):
+        # Get the latest credit record to determine current balance
+        db = request.state.db
+        latest_credit = db.query(Credit).filter(Credit.user_id == user.id).order_by(Credit.created_at.desc()).first()
+        credits = Decimal(str(latest_credit.user_credits)) if latest_credit else Decimal('0')
+        
+        if credits <= Decimal('0'):
             error_response = {
                 "error": {
                     "message": "Insufficient credits. Please add more credits to your account.",
@@ -398,6 +418,10 @@ async def verify_auth(
     """
     Verify the API key and return user information.
     """
+    db = request.state.db
+    # Get the current user credits
+    credits = get_user_current_credits(db, user.id)
+    
     return {
         "success": True,    
         "user": {
@@ -406,12 +430,14 @@ async def verify_auth(
             "email": user.email,
             "api_key_enabled": user.api_key_enabled,
             "api_key": user.api_key,
-            "credits": user.credits
+            "credits": credits
         }
     }
 
 class DeductCreditsRequest(BaseModel):
     credits: float
+    conversation_id: Optional[str] = None
+    model: Optional[str] = None
     
 @router.get("/v1/credits/balance", response_model=Dict[str, Any])
 async def get_credit_balance(
@@ -421,12 +447,18 @@ async def get_credit_balance(
     """
     Get the credit balance for the authenticated user.
     """
+    db = request.state.db
     try:
-        return {
-            "success": True,
-            "credits": float(user.credits),
-            "user_id": user.id
-        }
+        # Get the current user credits
+        credits = get_user_current_credits(db, user.id)
+            
+        return JSONResponse(
+            content={
+                "success": True,
+                "credits": credits,
+                "user_id": user.id
+            }
+        )
     except Exception as e:
         logger.error(f"Error getting credit balance: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to get credit balance: {str(e)}")
@@ -444,48 +476,50 @@ async def deduct_credits(
     try:
         # Use the authenticated user directly from the API key
         target_user = user
+        
+        # Get the current user credits
+        current_credits = get_user_current_credits(db, target_user.id)
+        
+        if current_credits == 0.0:
+            raise HTTPException(status_code=400, detail="No credit record found for user")
             
-        # Check if user has enough credits
-        if target_user.credits < Decimal(str(credit_data.credits)):
-            raise HTTPException(status_code=400, detail="Insufficient credits")
-            
-        # Deduct credits
-        # Convert float to Decimal to avoid type mismatch and handle precision
-        original_credits = float(target_user.credits)
+        current_credits = Decimal(str(current_credits))
         credit_amount = Decimal(str(credit_data.credits))
         
-        logger.info(f"Deducting {credit_amount} credits from user {user.id} with current balance {original_credits}")
+        # Check if user has enough credits
+        if current_credits < credit_amount:
+            raise HTTPException(status_code=400, detail="Insufficient credits")
+            
+        logger.info(f"Deducting {credit_amount} credits from user {user.id} with current balance {float(current_credits)}")
         
-        # Update the user's credits
-        target_user.credits = target_user.credits - credit_amount
-        logger.info(f"Deducting {credit_amount} from database")
+        # Calculate new balance
+        new_balance = current_credits - credit_amount
         
-        # Create a credit log entry
-        credit_log = CreditLog(
+        # Create a new credit record
+        credit = Credit(
             user_id=target_user.id,
-            amount=credit_amount,
-            type="deduction",
-            description="API credit deduction",
-            balance=target_user.credits
+            trans_credits=-credit_amount,  # Negative for completion
+            user_credits=new_balance,      # New balance after completion
+            trans_type="completion",
+            conversation_id=credit_data.conversation_id,
+            model=credit_data.model
         )
-        db.add(credit_log)
+        db.add(credit)
         
-        # Ensure changes are saved to the database
-        db.add(target_user)
+        # Commit changes to the database
         db.flush()
         db.commit()
         
-        # Verify the update by re-querying the user
-        db.refresh(target_user)
-        new_balance = float(target_user.credits)
-        logger.info(f"Updated credits for user {target_user.id}: {original_credits} -> {new_balance}")
-        logger.info(f"Created credit log entry: {credit_log.id}")
+        logger.info(f"Updated credits for user {target_user.id}: {float(current_credits)} -> {float(new_balance)}")
+        logger.info(f"Created credit record: {credit.id}")
         
-        return {
-            "success": True,
-            "remaining_credits": float(target_user.credits),
-            "user_id": target_user.id
-        }
+        return JSONResponse(
+            content={
+                "success": True,
+                "remaining_credits": float(new_balance),
+                "user_id": target_user.id
+            }
+        )
     except HTTPException as e:
         raise e
     except Exception as e:
