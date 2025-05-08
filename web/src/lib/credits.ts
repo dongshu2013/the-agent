@@ -1,18 +1,17 @@
 import { prisma } from "./prisma";
 
 /**
- * Gets the latest user credits from the credits table
+ * Gets the user credits from the balances table
  * @param userId The user ID to get credits for
- * @returns The latest user credits amount
+ * @returns The user credits amount
  */
 export async function getUserCredits(userId: string): Promise<number> {
-  const latestCredit = await prisma.credits.findFirst({
+  const userBalance = await prisma.balances.findUnique({
     where: { user_id: userId },
-    orderBy: { created_at: 'desc' },
     select: { user_credits: true },
   });
 
-  return latestCredit ? parseFloat(latestCredit.user_credits.toString()) : 0;
+  return userBalance ? parseFloat(userBalance.user_credits.toString()) : 0;
 }
 
 /**

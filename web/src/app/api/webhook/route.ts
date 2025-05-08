@@ -43,23 +43,43 @@ export async function POST(req: Request) {
 
           // Add credits to user account
           if (order && session.metadata?.userId) {
-            // Get current user credits from the credits table
+            // Get current user credits from the balances table
             const currentCredits = await getUserCredits(session.metadata.userId);
             const orderAmount = parseFloat(order.amount.toString());
             const newUserCredits = currentCredits + orderAmount;
               
-            // Record the credit addition in the credits table
+            // Record the credit addition in the credits table (transaction record)
             await prisma.credits.create({
               data: {
                 user_id: session.metadata.userId,
                 order_id: order.id,
                 amount: orderAmount,
                 trans_credits: orderAmount,
-                user_credits: newUserCredits,
                 trans_type: TransactionType.ORDER_PAY,
                 created_at: new Date(),
               }
             });
+            
+            // Update user balance in the balances table
+            const userBalance = await prisma.balances.findUnique({
+              where: { user_id: session.metadata.userId }
+            });
+            
+            if (userBalance) {
+              // Update existing balance
+              await prisma.balances.update({
+                where: { user_id: session.metadata.userId },
+                data: { user_credits: newUserCredits }
+              });
+            } else {
+              // Create new balance record if it doesn't exist
+              await prisma.balances.create({
+                data: {
+                  user_id: session.metadata.userId,
+                  user_credits: newUserCredits
+                }
+              });
+            }
           }
         }
         break;

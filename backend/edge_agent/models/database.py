@@ -25,6 +25,7 @@ class User(Base):
     # Relationships
     conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
     credits = relationship("Credit", back_populates="user", cascade="all, delete-orphan")
+    balance = relationship("Balance", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User(id={self.id}, username={self.username})>"
@@ -142,7 +143,6 @@ class Credit(Base):
     model = Column(String, nullable=True)
     amount = Column(Numeric(10, 6), nullable=True)
     trans_credits = Column(Numeric(10, 6), default=0, nullable=False)  # Transaction credits
-    user_credits = Column(Numeric(10, 6), default=0, nullable=False)  # User credits after transaction
     trans_type = Column(String, default="new_user", nullable=False)  # TransactionType enum value
     created_at = Column(DateTime, default=func.now(), nullable=False)
     expired_at = Column(DateTime, nullable=True)
@@ -152,3 +152,19 @@ class Credit(Base):
     
     def __repr__(self):
         return f"<Credit(id={self.id}, user_id={self.user_id}, trans_credits={self.trans_credits}, trans_type={self.trans_type})>"
+
+
+class Balance(Base):
+    __tablename__ = "balances"
+    
+    id = Column(String, primary_key=True, default=generate_uuid)
+    user_id = Column(String, ForeignKey("users.id"), unique=True, nullable=False)
+    user_credits = Column(Numeric(10, 6), default=0, nullable=False)  # User's current balance
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
+    
+    # Relationship
+    user = relationship("User", back_populates="balance")
+    
+    def __repr__(self):
+        return f"<Balance(id={self.id}, user_id={self.user_id}, user_credits={self.user_credits})>"

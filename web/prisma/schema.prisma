@@ -19,6 +19,7 @@ model users {
   conversations   conversations[]
   credits         credits[]
   orders          orders[]
+  balance         balances?
 }
 
 model conversations {
@@ -112,7 +113,6 @@ model credits {
   model           String?
   amount          Decimal?        @db.Decimal(10, 6)
   trans_credits   Decimal         @default(0) @db.Decimal(10, 6) // negative(-10) or positive(+20) transaction credits
-  user_credits    Decimal         @default(0) @db.Decimal(10, 6) // user credits
   trans_type      TransactionType @default(new_user)
   created_at      DateTime        @default(now())
   expired_at      DateTime?
@@ -137,4 +137,13 @@ model orders {
   created_at        DateTime    @default(now())
   updated_at        DateTime    @updatedAt
   user              users       @relation(fields: [user_id], references: [id])
+}
+
+model balances {
+  id           String   @id @default(uuid())
+  user_id      String   @unique
+  user_credits Decimal  @default(0) @db.Decimal(10, 6)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  user         users    @relation(fields: [user_id], references: [id])
 }

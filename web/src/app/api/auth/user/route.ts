@@ -130,14 +130,21 @@ export async function POST(request: NextRequest) {
     // Get initial credits from environment variable
     const initialCredits = getInitialCredits();
     
-    // Create initial credits record for new user
+    // Create initial credits record for new user (transaction record)
     await prisma.credits.create({
       data: {
         user_id: newUser.id,
         trans_credits: initialCredits,
-        user_credits: initialCredits,
         trans_type: TransactionType.NEW_USER,
         created_at: new Date(),
+      }
+    });
+    
+    // Create initial balance record for new user
+    await prisma.balances.create({
+      data: {
+        user_id: newUser.id,
+        user_credits: initialCredits,
       }
     });
 

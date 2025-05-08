@@ -23,7 +23,7 @@ from edge_agent.utils.embeddings import (
     find_similar_messages,
     extract_text_from_content
 )
-from edge_agent.models.database import Credit
+from edge_agent.models.database import Credit, Balance
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("chat_route")
@@ -34,17 +34,17 @@ bearer_scheme = HTTPBearer(auto_error=True)
 
 def get_user_current_credits(db: Session, user_id: str) -> float:
     """
-    Get the current user credits from the most recent credit record.
+    Get the current user credits from the balances table.
     
     Args:
         db: Database session
         user_id: User ID to get credits for
         
     Returns:
-        float: Current credit balance for the user, or 0.0 if no credit records exist
+        float: Current credit balance for the user, or 0.0 if no balance record exists
     """
-    latest_credit = db.query(Credit).filter(Credit.user_id == user_id).order_by(Credit.created_at.desc()).first()
-    return float(latest_credit.user_credits) if latest_credit else 0.0
+    user_balance = db.query(Balance).filter(Balance.user_id == user_id).first()
+    return float(user_balance.user_credits) if user_balance else 0.0
 
 async def verify_api_key(
     request: Request,
@@ -258,13 +258,11 @@ async def chat_completion(
     """
     Create a chat completion.
     """
+    db = request.state.db
     try:
+        # Get the current user credits
+        credits = get_user_current_credits(db, user.id)
         # Check if user has enough credits
-        # Get the latest credit record to determine current balance
-        db = request.state.db
-        latest_credit = db.query(Credit).filter(Credit.user_id == user.id).order_by(Credit.created_at.desc()).first()
-        credits = Decimal(str(latest_credit.user_credits)) if latest_credit else Decimal('0')
-        
         if credits <= Decimal('0'):
             error_response = {
                 "error": {
@@ -477,11 +475,11 @@ async def deduct_credits(
         # Use the authenticated user directly from the API key
         target_user = user
         
-        # Get the current user credits
+        # Get the current user credits from balances table
         current_credits = get_user_current_credits(db, target_user.id)
         
         if current_credits == 0.0:
-            raise HTTPException(status_code=400, detail="No credit record found for user")
+            raise HTTPException(status_code=400, detail="No balance record found for user")
             
         current_credits = Decimal(str(current_credits))
         credit_amount = Decimal(str(credit_data.credits))
@@ -495,16 +493,28 @@ async def deduct_credits(
         # Calculate new balance
         new_balance = current_credits - credit_amount
         
-        # Create a new credit record
+        # Create a transaction record in credits table
         credit = Credit(
             user_id=target_user.id,
             trans_credits=-credit_amount,  # Negative for completion
-            user_credits=new_balance,      # New balance after completion
             trans_type="completion",
             conversation_id=credit_data.conversation_id,
             model=credit_data.model
         )
         db.add(credit)
+        
+        # Update user balance in balances table
+        user_balance = db.query(Balance).filter(Balance.user_id == target_user.id).first()
+        if user_balance:
+            user_balance.user_credits = new_balance
+            user_balance.updated_at = datetime.now()
+        else:
+            # Create balance record if it doesn't exist
+            user_balance = Balance(
+                user_id=target_user.id,
+                user_credits=new_balance
+            )
+            db.add(user_balance)
         
         # Commit changes to the database
         db.flush()
