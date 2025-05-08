@@ -2,17 +2,6 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { prisma } from "@/lib/prisma";
 
-// CORS headers
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
-
-export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
-}
-
 export async function POST(req: Request) {
   try {
     const stripePrivateKey = process.env.STRIPE_PRIVATE_KEY;
@@ -89,9 +78,9 @@ export async function POST(req: Request) {
     console.error('Webhook signature verification failed:', err);
     return NextResponse.json(
       { error: 'Webhook signature verification failed' },
-      { status: 400, headers: corsHeaders }
+      { status: 400 }
     );
   }
 
-  return NextResponse.json({ received: true }, { headers: corsHeaders });
+  return NextResponse.json({ received: true });
 }
