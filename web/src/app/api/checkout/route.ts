@@ -4,17 +4,6 @@ import { prisma } from "@/lib/prisma";
 
 const stripe = new Stripe(process.env.STRIPE_PRIVATE_KEY || '');
 
-// CORS headers as mentioned in the memory
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
-
-export async function OPTIONS() {
-  return NextResponse.json({}, { headers: corsHeaders });
-}
-
 export async function POST(req: Request) {
   try {
     const { amount, userId, userEmail } = await req.json();
@@ -22,14 +11,14 @@ export async function POST(req: Request) {
     if (!amount || amount < 5) {
       return NextResponse.json(
         { error: 'Amount must be at least 5' },
-        { status: 400, headers: corsHeaders }
+        { status: 400 }
       );
     }
 
     if (!userId) {
       return NextResponse.json(
         { error: 'User ID is required' },
-        { status: 400, headers: corsHeaders }
+        { status: 400 }
       );
     }
 
@@ -82,14 +71,13 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(
-      { public_key: process.env.STRIPE_PUBLIC_KEY, session_id: session.id, url: session.url },
-      { headers: corsHeaders }
+      { public_key: process.env.STRIPE_PUBLIC_KEY, session_id: session.id, url: session.url }
     );
   } catch (error) {
     console.error('Checkout error:', error);
     return NextResponse.json(
       { error: 'Failed to create checkout session' },
-      { status: 500, headers: corsHeaders }
+      { status: 500 }
     );
   }
 }
