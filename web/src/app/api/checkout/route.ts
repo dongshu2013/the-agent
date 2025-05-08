@@ -1,8 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { PrismaClient } from '@/generated/prisma';
+import { prisma } from "@/lib/prisma";
 
-const prisma = new PrismaClient();
 const stripe = new Stripe(process.env.STRIPE_PRIVATE_KEY || '');
 
 // CORS headers as mentioned in the memory
@@ -16,7 +15,7 @@ export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders });
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
     const { amount, userId, userEmail } = await req.json();
 
