@@ -5,18 +5,13 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
-import { Copy, Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
-
-const paymentServiceUrl = process.env.NEXT_PUBLIC_PAYMENT_SERVICE_URL;
-const paymentServiceApplicationId = 'curifi';
+import { loadStripe } from '@stripe/stripe-js';
+import { toast } from 'sonner';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -38,20 +33,6 @@ export const PaymentModal = ({
 
   const { user } = useAuth();
   const isAmountValid = amount !== undefined && amount >= 5;
-
-  const ongoingOrderQuery = useQuery({
-    queryKey: ['payment-user-ongoing-order', user?.id],
-    staleTime: Infinity,
-    refetchOnWindowFocus: false,
-    enabled: isOpen && !!user?.id, // Only enable the query when the modal is open and user exists
-    queryFn: async () => {
-      const resJson = await fetch(
-        `${paymentServiceUrl}/user-ongoing-order?payerId=${user?.id}&applicationId=${paymentServiceApplicationId}`
-      ).then((res) => res.json());
-
-      return resJson?.data?.order;
-    }
-  });
 
   // Reset copy states when modal closes
   useEffect(() => {
@@ -76,7 +57,7 @@ export const PaymentModal = ({
     }
   };
 
-  const createOrder = async () => {
+  const handleCheckout = async () => {
     if (!isAmountValid) {
       setError('Amount must be at least 5');
       return;
@@ -84,117 +65,45 @@ export const PaymentModal = ({
 
     setIsSubmitting(true);
     try {
-      const resJson = await fetch(`${paymentServiceUrl}/create-order`, {
+      // Call the checkout API endpoint
+      const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        // 84532: Base
-        // 56: BSC
         body: JSON.stringify({
-          chainId: 84532,
-          // chainId: 56,
           amount: amount,
-          payerId: user?.id,
-          applicationId: paymentServiceApplicationId
+          userId: user?.id,
+          userEmail: user?.email
         })
-      }).then((res) => res.json());
+      });
 
-      if (resJson.status === 0 && resJson.data?.order) {
-        // 将订单保存到数据库
-        await fetch('/api/orders', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${user?.idToken}`
-          },
-          body: JSON.stringify(resJson.data.order)
-        });
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create checkout session');
       }
 
-      ongoingOrderQuery.refetch();
-      setError(null);
+      const { public_key, session_id } = data;
+      
+      const stripe = await loadStripe(public_key);
+      if (!stripe) {
+        toast.error("checkout failed");
+        return;
+      }
+
+      const result = await stripe.redirectToCheckout({
+        sessionId: session_id,
+      });
+      
+      if (result.error) {
+        toast.error(result.error.message);
+      }
     } catch (err) {
-      console.error('Failed to create order:', err);
-      setError('Failed to create order. Please try again.');
+      console.error('Checkout error:', err);
+      toast.error("checkout failed");
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const checkOrder = async (orderId: string) => {
-    try {
-      const resJson = await fetch(
-        `${paymentServiceUrl}/order-detail?orderId=${orderId}`
-      ).then((res) => res.json());
-
-      if (resJson.data?.order) {
-        // 更新订单状态
-        await fetch('/api/orders/update', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${user?.idToken}`
-          },
-          body: JSON.stringify({
-            payer_id: resJson.data.order.payer_id,
-            external_order_id: resJson.data.order.id,
-            status: resJson.data.order.status, // 0: pending, 1: success, 2: failed, 3: cancelled, 4: expired
-            transfer_hash: resJson.data.order.transfer_hash,
-            finish_timestamp: resJson.data.order.finish_timestamp
-          })
-        });
-
-        if (resJson.data.order.status === 1) {
-          setError(null);
-          onSuccess();
-        } else {
-          setError('Order is not paid');
-        }
-      } else {
-        setError('Failed to check order status');
-      }
-    } catch (err) {
-      console.error('Failed to check order:', err);
-      setError('Failed to check order status');
-    }
-  };
-
-  const cancelOrder = async (orderId: string) => {
-    try {
-      setIsCancelling(true);
-      const resJson = await fetch(`${paymentServiceUrl}/cancel-order`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          orderId: orderId
-        })
-      }).then((res) => res.json());
-
-      if (resJson.status === 0) {
-        // update order status to cancelled
-        await fetch('/api/orders/update', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${user?.idToken}`
-          },
-          body: JSON.stringify({
-            payer_id: resJson.data.order.payer_id,
-            external_order_id: resJson.data.order.id,
-            status: 3 // cancelled
-          })
-        });
-        onClose();
-      } else {
-        setError(resJson.message || 'Failed to cancel order');
-      }
-    } catch (err) {
-      setError('Failed to cancel order');
-    } finally {
-      setIsCancelling(false);
     }
   };
 
@@ -275,112 +184,6 @@ export const PaymentModal = ({
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-
-            {ongoingOrderQuery.data ? (
-              <Card>
-                <CardContent className="pt-6">
-                  <Alert className="mb-4">
-                    <AlertDescription>
-                      You have an ongoing order. Please complete it before
-                      paying again.
-                    </AlertDescription>
-                  </Alert>
-
-                  <div className="space-y-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <Label>Transfer Address</Label>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={cn(
-                            'h-8 px-2 text-muted-foreground hover:text-foreground',
-                            copiedAddress && 'text-green-500'
-                          )}
-                          onClick={() =>
-                            copyToClipboard(
-                              ongoingOrderQuery.data.transfer_address,
-                              'address'
-                            )
-                          }
-                        >
-                          {copiedAddress ? (
-                            <Check className="h-4 w-4" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                      <p className="text-sm font-mono bg-muted p-2 rounded-md break-all">
-                        {ongoingOrderQuery.data.transfer_address}
-                      </p>
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <Label>Transfer Amount</Label>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={cn(
-                            'h-8 px-2 text-muted-foreground hover:text-foreground',
-                            copiedAmount && 'text-green-500'
-                          )}
-                          onClick={() =>
-                            copyToClipboard(
-                              String(
-                                Number(
-                                  ongoingOrderQuery.data
-                                    .transfer_amount_on_chain
-                                ) /
-                                  Math.pow(
-                                    10,
-                                    ongoingOrderQuery.data.token_decimals
-                                  )
-                              ),
-                              'amount'
-                            )
-                          }
-                        >
-                          {copiedAmount ? (
-                            <Check className="h-4 w-4" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                      <p className="text-sm font-mono bg-muted p-2 rounded-md">
-                        {Number(
-                          ongoingOrderQuery.data.transfer_amount_on_chain
-                        ) /
-                          Math.pow(
-                            10,
-                            ongoingOrderQuery.data.token_decimals
-                          )}{' '}
-                        USDT
-                      </p>
-                    </div>
-
-                    <div className="flex space-x-2 pt-2">
-                      <Button
-                        disabled={isSubmitting || isCancelling}
-                        onClick={() => checkOrder(ongoingOrderQuery.data.id)}
-                      >
-                        I have paid
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        onClick={() => cancelOrder(ongoingOrderQuery.data.id)}
-                        disabled={isCancelling || isSubmitting}
-                      >
-                        {isCancelling ? 'Cancelling...' : 'Cancel'}
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
               <div className="flex justify-end space-x-2">
                 <button onClick={onClose}
                 className="px-4 py-2 text-sm font-medium text-black bg-white rounded-md border border-black focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
@@ -388,13 +191,12 @@ export const PaymentModal = ({
                 </button>
                 <button
                   disabled={isSubmitting || !isAmountValid}
-                  onClick={createOrder}
+                  onClick={handleCheckout}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   {isSubmitting ? 'Processing...' : 'Pay Now'}
                 </button>
               </div>
-            )}
           </div>
         </div>
       </DialogContent>

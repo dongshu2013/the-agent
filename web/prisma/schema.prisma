@@ -19,6 +19,7 @@ model users {
   updated_at      DateTime        @updatedAt
   conversations   conversations[]
   credit_logs     credit_logs[]
+  orders          orders[]
 }
 
 model conversations {
@@ -106,4 +107,17 @@ model credit_logs {
   balance     Decimal  @db.Decimal(10, 6) // Balance after this transaction
   created_at  DateTime @default(now())
   user        users    @relation(fields: [user_id], references: [id])
+}
+
+model orders {
+  id               String   @id @default(uuid())
+  user_id          String
+  user_email       String
+  amount           Decimal  @db.Decimal(10, 2)
+  currency         String   @default("usd")
+  status           String   @default("pending") // pending, completed, cancelled
+  stripe_session_id String?
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+  user             users    @relation(fields: [user_id], references: [id])
 }
