@@ -361,7 +361,7 @@ Now reply to user's message: ${currentPrompt}`,
           creditsToDeduct = 0.01;
         }
         // Use API key directly for credit deduction
-        await deductCreditsApi(creditsToDeduct);
+        await deductCreditsApi(creditsToDeduct, this.options.currentConversationId, env.OPENAI_MODEL);
       } catch (error) {
         console.error("Error deducting credits:", error);
       }

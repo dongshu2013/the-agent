@@ -34,17 +34,17 @@ const Popup = () => {
         onClick={openSidePanel}
         style={{
           padding: "8px 16px",
-          backgroundColor: "#2563eb",
+          backgroundColor: "black",
           color: "white",
           border: "none",
           borderRadius: "6px",
           cursor: "pointer",
           fontSize: "14px",
           fontWeight: "500",
-          transition: "background-color 0.2s",
+          transition: "opacity 0.2s",
         }}
-        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = "#1d4ed8")}
-        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = "#2563eb")}
+        onMouseOver={(e) => (e.currentTarget.style.opacity = "0.7")}
+        onMouseOut={(e) => (e.currentTarget.style.opacity = "1")}
       >
         Open Side Panel
       </button>
