@@ -73,6 +73,7 @@ export const PaymentModal = ({
         },
         body: JSON.stringify({
           amount: amount,
+          credits: amount,
           userId: user?.id,
           userEmail: user?.email
         })
