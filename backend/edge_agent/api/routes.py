@@ -17,7 +17,7 @@ from sqlalchemy.dialects.postgresql import insert
 from datetime import datetime
 from edge_agent.core.config import settings
 from edge_agent.utils.database import get_db
-from edge_agent.models.database import User, Conversation, Message
+from edge_agent.models.database import User, Conversation, Message, Model
 from edge_agent.utils.embeddings import (
     update_message_embedding,
     find_similar_messages,
@@ -74,7 +74,7 @@ class ChatCompletionCreateParam(BaseModel):
     Parameters for creating a chat completion, compatible with OpenAI API.
     """
     messages: List[ChatMessage]
-    model: str = Field(default_factory=lambda: settings.DEFAULT_MODEL)
+    model_id: Optional[str] = None  # Add model_id parameter
     frequency_penalty: Optional[float] = None
     logit_bias: Optional[Dict[str, float]] = None
     max_tokens: Optional[int] = None
@@ -115,16 +115,17 @@ class SaveMessageRequest(BaseModel):
     message: ChatMessageWithId
     top_k_related: int = 0
 
-router = APIRouter(tags=["chat"])
+class ModelRequest(BaseModel):
+    id: Optional[str] = None
+    type: str
+    name: str
+    api_key: str
+    api_url: str
 
-llm = AsyncOpenAI(
-    api_key=settings.LLM_API_KEY,
-    base_url=settings.LLM_API_URL,
-    default_headers={
-        "HTTP-Referer": "https://mizu.technology",
-        "X-Title": settings.PROJECT_NAME,
-    },
-)
+class DeleteModelRequest(BaseModel):
+    id: str
+
+router = APIRouter(tags=["chat"])
 
 def get_conversation(conversation_id: str, request: Request):
     """
@@ -234,6 +235,36 @@ async def delete_conversation(
         logger.error(f"Error deleting conversation: {str(e)}")
         raise HTTPException(status_code=e.status_code, detail=f"Error deleting conversation: {str(e)}")
 
+async def get_model_config(model_id: str, db: Session, user: User) -> Dict[str, Any]:
+    """
+    Get model configuration based on model_id.
+    If model_id is not provided or not found, use default model.
+    """
+    if not model_id:
+        return {
+            "model": settings.DEFAULT_MODEL,
+            "api_key": settings.LLM_API_KEY,
+            "api_url": settings.LLM_API_URL
+        }
+
+    model = db.query(Model).filter(
+        Model.id == model_id,
+        Model.user_id == user.id
+    ).first()
+
+    if not model:
+        return {
+            "model": settings.DEFAULT_MODEL,
+            "api_key": settings.LLM_API_KEY,
+            "api_url": settings.LLM_API_URL
+        }
+
+    return {
+        "model": model.name,
+        "api_key": model.api_key,
+        "api_url": model.api_url
+    }
+
 @router.post("/v1/chat/completions")
 async def chat_completion(
     params: ChatCompletionCreateParam,
@@ -241,7 +272,7 @@ async def chat_completion(
     user: User = Depends(verify_api_key)
 ):
     """
-    Create a chat completion.
+    Create a chat completion using the specified model.
     """
     try:
         # Check if user has enough credits
@@ -258,10 +289,23 @@ async def chat_completion(
                 status_code=400,
                 content=error_response
             )
+
+        # Get model configuration
+        model_config = await get_model_config(params.model_id, request.state.db, user)
+        
+        # Create LLM client with model-specific configuration
+        llm = AsyncOpenAI(
+            api_key=model_config["api_key"],
+            base_url=model_config["api_url"],
+            default_headers={
+                "HTTP-Referer": "https://mizu.technology",
+                "X-Title": settings.PROJECT_NAME,
+            },
+        )
             
         if params.stream:
             return StreamingResponse(
-                stream_chat_response(params),
+                stream_chat_response(params, llm),
                 media_type="text/event-stream",
                 headers={
                     "Cache-Control": "no-cache",
@@ -271,7 +315,10 @@ async def chat_completion(
                 }
             )
         else:
-            response = await llm.chat.completions.create(**params.to_dict())
+            # Update model name in params
+            params_dict = params.to_dict()
+            params_dict["model"] = model_config["model"]
+            response = await llm.chat.completions.create(**params_dict)
             return response.model_dump()
 
     except Exception as e:
@@ -290,12 +337,12 @@ async def chat_completion(
             content=error_response
         )
 
-async def stream_chat_response(params: ChatCompletionCreateParam):
+async def stream_chat_response(params: ChatCompletionCreateParam, llm: AsyncOpenAI):
     """
     Stream chat completions directly from the LLM provider.
     """
     try:
-        params_dict = params.to_dict()        
+        params_dict = params.to_dict()
         stream = await llm.chat.completions.create(**params_dict)
 
         async for chunk in stream:
@@ -493,3 +540,110 @@ async def deduct_credits(
         db.rollback()
         logger.error(f"Error deducting credits: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to deduct credits: {str(e)}")
+
+@router.get("/v1/models", response_model=List[dict])
+async def get_user_models(
+    request: Request,
+    user: User = Depends(verify_api_key)
+):
+    """
+    Get all models for the authenticated user.
+    """
+    db = request.state.db
+    try:
+        models = db.query(Model).filter(Model.user_id == user.id).all()
+        return [
+            {
+                "id": model.id,
+                "type": model.type,
+                "name": model.name,
+                "api_key": model.api_key,
+                "api_url": model.api_url,
+                "created_at": model.created_at.isoformat(),
+                "updated_at": model.updated_at.isoformat()
+            }
+            for model in models
+        ]
+    except Exception as e:
+        logger.error(f"Error fetching user models: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching models: {str(e)}")
+
+@router.post("/v1/models", response_model=dict)
+async def create_or_update_model(
+    request: Request,
+    model_data: ModelRequest,
+    user: User = Depends(verify_api_key)
+):
+    """
+    Create or update a model for the authenticated user.
+    """
+    db = request.state.db
+    try:
+        if model_data.id:
+            # Update existing model
+            model = db.query(Model).filter(
+                Model.id == model_data.id,
+                Model.user_id == user.id
+            ).first()
+            if not model:
+                raise HTTPException(status_code=404, detail="Model not found")
+            
+            model.name = model_data.name
+            model.api_key = model_data.api_key
+            model.api_url = model_data.api_url
+            model.type = model_data.type
+        else:
+            # Create new model
+            model = Model(
+                type=model_data.type,
+                name=model_data.name,
+                user_id=user.id,
+                api_key=model_data.api_key,
+                api_url=model_data.api_url
+            )
+            db.add(model)
+        
+        db.commit()
+        db.refresh(model)
+        
+        return {
+            "success": True,
+            "model": {
+                "id": model.id,
+                "type": model.type,
+                "name": model.name,
+                "api_key": model.api_key,
+                "api_url": model.api_url,
+                "created_at": model.created_at.isoformat(),
+                "updated_at": model.updated_at.isoformat()
+            }
+        }
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error saving model: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error saving model: {str(e)}")
+
+@router.post("/v1/models/delete", response_model=dict)
+async def delete_model_post(
+    request: Request,
+    body: DeleteModelRequest,
+    user: User = Depends(verify_api_key)
+):
+    db = request.state.db
+    try:
+        model = db.query(Model).filter(
+            Model.id == body.id,
+            Model.user_id == user.id
+        ).first()
+        if not model:
+            raise HTTPException(status_code=404, detail="Model not found")
+        db.delete(model)
+        db.commit()
+        return {
+            "success": True,
+            "message": "Model deleted successfully"
+        }
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting model: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error deleting model: {str(e)}")

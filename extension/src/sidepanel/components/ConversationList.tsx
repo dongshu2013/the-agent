@@ -210,66 +210,71 @@ const ConversationList = ({
         <div
           style={{
             position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.18)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            zIndex: 100,
+            zIndex: 2000,
           }}
           onClick={handleCancelDelete}
         >
           <div
             style={{
-              backgroundColor: "white",
-              borderRadius: "8px",
-              padding: "24px",
+              background: "#fff",
+              borderRadius: 16,
+              padding: "32px 32px 24px 32px",
+              minWidth: 340,
+              boxShadow: "0 8px 32px 0 rgba(0,0,0,0.18)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
               width: "90%",
               maxWidth: "400px",
-              boxShadow:
-                "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
             }}
             onClick={(e) => e.stopPropagation()}
           >
             <h3
               style={{
-                fontSize: "18px",
-                fontWeight: 600,
-                color: "#111827",
-                marginBottom: "12px",
+                fontSize: 20,
+                fontWeight: 700,
+                marginBottom: 18,
               }}
             >
               Delete Conversation
             </h3>
-            <p
+            <div
               style={{
-                fontSize: "14px",
-                color: "#4b5563",
-                marginBottom: "20px",
+                fontSize: 15,
+                color: "#374151",
+                marginBottom: 28,
+                textAlign: "center",
               }}
             >
               Are you sure you want to delete this conversation? This action
               cannot be undone.
-            </p>
+            </div>
             <div
               style={{
                 display: "flex",
-                justifyContent: "flex-end",
-                gap: "12px",
+                gap: 16,
               }}
             >
               <button
                 onClick={handleCancelDelete}
                 style={{
-                  padding: "8px 16px",
-                  borderRadius: "6px",
-                  backgroundColor: "#e5e7eb",
-                  border: "none",
-                  color: "#374151",
-                  fontSize: "14px",
+                  padding: "9px 22px",
+                  borderRadius: 7,
+                  border: "1px solid #D1D5DB",
+                  background: "#fff",
+                  color: "#111827",
                   fontWeight: 500,
+                  fontSize: 15,
                   cursor: "pointer",
-                  transition: "all 0.2s",
+                  transition: "background 0.2s, border 0.2s",
                 }}
               >
                 Cancel
@@ -277,15 +282,16 @@ const ConversationList = ({
               <button
                 onClick={(e) => handleConfirmDelete(confirmDelete, e)}
                 style={{
-                  padding: "8px 16px",
-                  borderRadius: "6px",
-                  backgroundColor: "#ef4444",
+                  padding: "9px 22px",
+                  borderRadius: 7,
                   border: "none",
-                  color: "white",
-                  fontSize: "14px",
-                  fontWeight: 500,
+                  background: "#DC2626",
+                  color: "#fff",
+                  fontWeight: 600,
+                  fontSize: 15,
                   cursor: "pointer",
-                  transition: "all 0.2s",
+                  boxShadow: "0 2px 8px 0 rgba(220,38,38,0.08)",
+                  transition: "background 0.2s",
                 }}
               >
                 Delete

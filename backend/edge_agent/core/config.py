@@ -17,6 +17,7 @@ class Settings(BaseSettings):
 
     # Default Model
     DEFAULT_MODEL: str = "google/gemini-2.5-pro-exp-03-25:free"
+    DEFAULT_MODEL_TYPE: str = "system"  # 'system' or 'custom'
 
     # Database Configuration
     DATABASE_URL: str = ""

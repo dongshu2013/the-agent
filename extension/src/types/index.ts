@@ -103,3 +103,15 @@ export interface CacheData<T> {
   data: T;
   timestamp: number;
 }
+
+export enum ModelType {
+  system = "SYSTEM",
+  custom = "CUSTOM",
+}
+
+export interface Model {
+  id: string;
+  name: string;
+  type: ModelType;
+  apiKey: string;
+}

@@ -5,6 +5,7 @@ from sqlalchemy.sql import func
 import uuid
 from sqlalchemy.dialects.postgresql import ARRAY, FLOAT
 from pgvector.sqlalchemy import Vector
+from sqlalchemy import UniqueConstraint
 
 from edge_agent.utils.database import Base
 
@@ -148,3 +149,29 @@ class CreditLog(Base):
     
     def __repr__(self):
         return f"<CreditLog(id={self.id}, user_id={self.user_id}, amount={self.amount}, type={self.type})>"
+
+
+class Model(Base):
+    __tablename__ = "models"
+    __table_args__ = (
+        UniqueConstraint('name', 'user_id', name='uq_model_name_user_id'),
+    )
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    type = Column(String, nullable=False)  # 'system' or 'custom'
+    name = Column(String, nullable=False)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    api_key = Column(String, nullable=False)
+    api_url = Column(String, nullable=False)
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
+
+    # Relationship
+    user = relationship("User", backref="models")
+    
+
+    def __repr__(self):
+        return f"<Model(id={self.id}, name={self.name}, type={self.type})>"
+
+
+     

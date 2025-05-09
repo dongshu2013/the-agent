@@ -9,6 +9,10 @@ interface UserInfo {
   api_key_enabled: boolean;
   api_key: string;
   credits: string; // Credits stored as string in IndexedDB
+  created_at: string;
+  updated_at: string;
+  selectedModelId: string;
+  api_url: string;
 }
 
 interface CreditLog {
@@ -20,20 +24,29 @@ interface CreditLog {
   balance: string; // Balance after this transaction
   created_at: string;
 }
+
 class MizuDB extends Dexie {
   conversations!: Table<Conversation>;
   messages!: Table<Message>;
   users!: Table<UserInfo>;
   creditLogs!: Table<CreditLog>;
+  models!: Table<{
+    id: string;
+    type: string;
+    name: string;
+    userId: string;
+    apiKey: string;
+  }>;
 
   constructor() {
     super("mizu-agent");
 
-    this.version(4).stores({
+    this.version(6).stores({
       conversations: "id, created_at, *messages",
       messages: "message_id, conversation_id, created_at",
-      users: "id",
+      users: "id, updated_at",
       creditLogs: "++id, user_id, created_at",
+      models: "id, userId, type",
     });
 
     // Add index definitions
@@ -58,21 +71,27 @@ class MizuDB extends Dexie {
     await this.users.delete(userId);
   }
 
-  async deductCredits(userId: string, creditsToDeduct: number, description: string = "Credit deduction"): Promise<void> {
+  async deductCredits(
+    userId: string,
+    creditsToDeduct: number,
+    description: string = "Credit deduction"
+  ): Promise<void> {
     const user = await this.getUser(userId);
     if (!user) {
       console.error(`User with ID ${userId} not found`);
       return;
     }
-    
+
     const currentCredits = parseFloat(user.credits) || 0;
     const newCredits = Math.max(0, currentCredits - creditsToDeduct);
     const newCreditsStr = newCredits.toFixed(6);
-    
+
     // Update user credits
     await this.users.update(userId, { credits: newCreditsStr });
-    console.log(`Updated credits for user ${userId}: ${currentCredits} - ${creditsToDeduct} = ${newCreditsStr}`);
-    
+    console.log(
+      `Updated credits for user ${userId}: ${currentCredits} - ${creditsToDeduct} = ${newCreditsStr}`
+    );
+
     // Log the credit transaction
     const creditLog: CreditLog = {
       user_id: userId,
@@ -80,11 +99,42 @@ class MizuDB extends Dexie {
       type: "deduction",
       description: description,
       balance: newCreditsStr,
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
     };
-    
+
     await this.creditLogs.add(creditLog);
-    console.log(`Credit log created: deducted ${creditsToDeduct} credits from user ${userId}`);
+    console.log(
+      `Credit log created: deducted ${creditsToDeduct} credits from user ${userId}`
+    );
+  }
+
+  // Model operations
+  async getUserModels(userId: string) {
+    if (!userId) {
+      throw new Error("User ID is required to get models");
+    }
+    try {
+      return await this.models.where("userId").equals(userId).toArray();
+    } catch (error) {
+      console.error("Error getting user models:", error);
+      throw new Error(
+        `Failed to get user models: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  }
+
+  async addOrUpdateModel(model: {
+    id: string;
+    type: string;
+    name: string;
+    userId: string;
+    apiKey: string;
+    apiUrl: string;
+  }) {
+    await this.models.put(model);
+  }
+  async deleteModel(modelId: string) {
+    await this.models.delete(modelId);
   }
 
   // Conversation operations
@@ -276,6 +326,56 @@ class MizuDB extends Dexie {
         await this.conversations.where("user_id").equals(userId).delete();
       }
     );
+  }
+
+  // 新增：获取当前用户（取 updated_at 最新的用户）
+  async getCurrentUser(): Promise<UserInfo | null> {
+    try {
+      const users = await this.users.orderBy("updated_at").reverse().toArray();
+      return users[0] || null;
+    } catch (error) {
+      console.error("Error getting current user:", error);
+      throw new Error(
+        `Failed to get current user: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
+  }
+
+  async saveOrUpdateUser(user: UserInfo): Promise<void> {
+    if (!user || !user.id) {
+      throw new Error("Invalid user data: user ID is required");
+    }
+
+    try {
+      const now = new Date().toISOString();
+      const existing = await this.users.get(user.id);
+      const systemModelId = "system";
+      const systemModel = {
+        id: systemModelId,
+        type: "system",
+        name: "Mysta",
+        userId: user.id,
+        apiKey: user.api_key,
+        apiUrl: user.api_url,
+      };
+
+      if (existing) {
+        await this.users.put({
+          ...user,
+          created_at: existing.created_at,
+          updated_at: now,
+        });
+      } else {
+        await this.users.put({ ...user, created_at: now, updated_at: now });
+      }
+
+      await this.models.put(systemModel);
+    } catch (error) {
+      console.error("Error saving/updating user:", error);
+      throw new Error(
+        `Failed to save/update user: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    }
   }
 }
 

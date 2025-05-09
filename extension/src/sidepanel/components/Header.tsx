@@ -2,12 +2,15 @@ import {
   Cog6ToothIcon,
   ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
+import { db } from "~/utils/db";
+import React, { useState, useEffect } from "react";
 
 interface HeaderProps {
   setShowSettings: (value: boolean) => void;
   createNewConversation: () => void;
   setShowConversationList: () => void;
   showSettings: boolean;
+  onModelChange?: (model: string) => void;
 }
 
 const Header = ({
@@ -15,7 +18,40 @@ const Header = ({
   createNewConversation,
   setShowConversationList,
   showSettings,
+  onModelChange,
 }: HeaderProps) => {
+  const [models, setModels] = useState<
+    { id: string; type: string; name: string; userId: string }[]
+  >([]);
+  const [selectedModelId, setSelectedModelId] = useState<string>("");
+
+  useEffect(() => {
+    const init = async () => {
+      const user = await db.getCurrentUser();
+      if (user) {
+        setSelectedModelId(user.selectedModelId || "system");
+        const userModels = await db.getUserModels(user.id);
+        setModels(userModels);
+      }
+    };
+    init();
+  }, []);
+
+  const handleModelChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newModelId = e.target.value;
+    setSelectedModelId(newModelId);
+    if (onModelChange) {
+      onModelChange(newModelId);
+    }
+    const user = await db.getCurrentUser();
+    if (user) {
+      await db.saveOrUpdateUser({
+        ...user,
+        selectedModelId: newModelId,
+      });
+    }
+  };
+
   return (
     <div
       style={{
@@ -23,66 +59,96 @@ const Header = ({
         justifyContent: "space-between",
         alignItems: "center",
         backgroundColor: "#ffffff",
+        padding: "0 16px",
+        height: "64px",
+        borderBottom: "1px solid #E5E7EB",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
         <button
           onClick={setShowConversationList}
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            width: "56px",
-            height: "56px",
+            width: "40px",
+            height: "40px",
             color: "#6b7280",
             background: "none",
             border: "none",
             padding: 0,
             cursor: "pointer",
             transition: "all 0.2s",
+            borderRadius: "8px",
           }}
           onMouseOver={(e) => {
             e.currentTarget.style.color = "#374151";
+            e.currentTarget.style.backgroundColor = "#F3F4F6";
           }}
           onMouseOut={(e) => {
             e.currentTarget.style.color = "#6b7280";
+            e.currentTarget.style.backgroundColor = "transparent";
           }}
         >
-          <ChatBubbleLeftRightIcon className="w-6 h-6" />
+          <ChatBubbleLeftRightIcon className="w-5 h-5" />
         </button>
         <span
           style={{
             fontSize: "16px",
-            fontWeight: 500,
+            fontWeight: 600,
             color: "#111827",
-            marginLeft: "8px",
           }}
         >
           Mysta Agent
         </span>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        <select
+          value={selectedModelId}
+          onChange={handleModelChange}
+          style={{
+            padding: "4px 8px",
+            fontSize: "14px",
+            borderRadius: "6px",
+            border: "1px solid #D1D5DB",
+            outline: "none",
+            backgroundColor: "#ffffff",
+            color: "#374151",
+            cursor: "pointer",
+            fontWeight: 500,
+          }}
+        >
+          {models.map((model) => (
+            <option key={model.id} value={model.id}>
+              {model.name}
+            </option>
+          ))}
+        </select>
+
         <button
           onClick={createNewConversation}
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            width: "56px",
-            height: "56px",
+            width: "40px",
+            height: "40px",
             color: "#6b7280",
             background: "none",
             border: "none",
             padding: 0,
             cursor: "pointer",
             transition: "all 0.2s",
+            borderRadius: "8px",
           }}
           onMouseOver={(e) => {
             e.currentTarget.style.color = "#374151";
+            e.currentTarget.style.backgroundColor = "#F3F4F6";
           }}
           onMouseOut={(e) => {
             e.currentTarget.style.color = "#6b7280";
+            e.currentTarget.style.backgroundColor = "transparent";
           }}
         >
           <svg
@@ -91,7 +157,7 @@ const Header = ({
             viewBox="0 0 24 24"
             strokeWidth={1.5}
             stroke="currentColor"
-            className="w-6 h-6"
+            className="w-5 h-5"
           >
             <path
               strokeLinecap="round"
@@ -107,27 +173,30 @@ const Header = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            width: "56px",
-            height: "56px",
-            color: showSettings ? "#111827" : "#6b7280",
-            background: "none",
+            width: "40px",
+            height: "40px",
+            color: showSettings ? "#2563EB" : "#6b7280",
+            background: showSettings ? "#EFF6FF" : "none",
             border: "none",
             padding: 0,
             cursor: "pointer",
             transition: "all 0.2s",
+            borderRadius: "8px",
           }}
           onMouseOver={(e) => {
             if (!showSettings) {
               e.currentTarget.style.color = "#374151";
+              e.currentTarget.style.backgroundColor = "#F3F4F6";
             }
           }}
           onMouseOut={(e) => {
             if (!showSettings) {
               e.currentTarget.style.color = "#6b7280";
+              e.currentTarget.style.backgroundColor = "transparent";
             }
           }}
         >
-          <Cog6ToothIcon className="w-6 h-6" />
+          <Cog6ToothIcon className="w-5 h-5" />
         </button>
       </div>
     </div>

@@ -22,7 +22,7 @@ const Sidepanel = () => {
   const [apiKey, setApiKey] = useStorage("apiKey");
   const [isLoading, setIsLoading] = useState(false);
   const [prompt, setPrompt] = useState("");
-  const [showSettings, setShowSettings] = useState(false);
+  const [showSettings, setShowSettings] = useState(true);
   const [apiKeyValidationError, setApiKeyValidationError] =
     useState<string>("");
   const [currentConversationId, setCurrentConversationId] = useStorage<
@@ -84,6 +84,7 @@ const Sidepanel = () => {
 
       try {
         const storedApiKey = await getApiKey();
+        console.log("[DEBUG] initializeApp storedApiKey:", storedApiKey);
 
         if (!storedApiKey) {
           setShowSettings(true);
@@ -129,6 +130,7 @@ const Sidepanel = () => {
   // 监听API Key变化
   useEffect(() => {
     if (!isInitialized) return;
+    console.log("[DEBUG] apiKey in useEffect:", apiKey);
 
     const validateAndInitialize = async () => {
       if (!apiKey) {
@@ -522,6 +524,8 @@ const Sidepanel = () => {
           setApiKey={handleSetApiKey}
           onClose={() => toggleSettings(false)}
           initialValidationError={apiKeyValidationError}
+          autoCloseOnSuccess={true}
+          onSuccess={() => setShowSettings(false)}
         />
       )}
     </div>
