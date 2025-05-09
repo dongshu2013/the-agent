@@ -387,7 +387,7 @@ const Sidepanel = () => {
           left: 0,
           right: 0,
           backgroundColor: "white",
-          borderBottom: "1px solid #e5e7eb",
+          borderBottom: "1px solid #f0f0f0",
           zIndex: 10,
         }}
       >
@@ -403,8 +403,8 @@ const Sidepanel = () => {
       <div
         style={{
           position: "absolute",
-          top: "50px",
-          bottom: "82px",
+          top: "44px",
+          bottom: "90px",
           left: 0,
           right: 0,
           overflowY: "auto",
@@ -490,7 +490,6 @@ const Sidepanel = () => {
           left: 0,
           right: 0,
           backgroundColor: "white",
-          borderTop: "1px solid #e5e7eb",
           zIndex: 10,
         }}
       >

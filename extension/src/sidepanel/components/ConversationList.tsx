@@ -54,10 +54,11 @@ const ConversationList = ({
             alignItems: "center",
             justifyContent: "space-between",
             padding: "0 16px",
-            borderBottom: "1px solid rgba(0, 0, 0, 0.1)",
+            height: "44px",
+            borderBottom: "1px solid #f0f0f0",
           }}
         >
-          <h2 style={{ fontSize: "18px", fontWeight: 600, color: "#111827" }}>
+          <h2 style={{ fontSize: "15px", fontWeight: 600, color: "#111827" }}>
             All Chats
           </h2>
           <button
@@ -100,12 +101,12 @@ const ConversationList = ({
             flex: 1,
             overflowY: "auto",
             padding: "16px",
-            height: "calc(100vh - 65px)",
+            height: "calc(100vh - 44px)",
           }}
         >
           {conversations && conversations.length > 0 ? (
             <nav
-              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+              style={{ display: "flex", flexDirection: "column", gap: "4px" }}
             >
               {conversations.map((conversation, index) => (
                 <div
@@ -114,17 +115,17 @@ const ConversationList = ({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    gap: "8px",
-                    padding: "8px 16px",
+                    gap: "6px",
+                    padding: "6px 12px",
                     borderRadius: "8px",
                     cursor: "pointer",
                     backgroundColor:
                       conversation.id === currentConversationId
-                        ? "rgba(37, 99, 235, 0.1)"
+                        ? "#f3f4f6"
                         : "transparent",
                     color:
                       conversation.id === currentConversationId
-                        ? "#2563eb"
+                        ? "#111827"
                         : "#4b5563",
                     transition: "all 0.2s",
                   }}

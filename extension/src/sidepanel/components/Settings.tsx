@@ -99,13 +99,13 @@ const Settings: React.FC<SettingsProps> = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "16px",
-            borderBottom: "1px solid rgba(0, 0, 0, 0.1)",
-            height: "56px",
+            padding: "0 16px",
+            borderBottom: "1px solid #f0f0f0",
+            height: "44px",
             boxSizing: "border-box",
           }}
         >
-          <h2 style={{ fontSize: "18px", fontWeight: 600, color: "#111827" }}>
+          <h2 style={{ fontSize: "15px", fontWeight: 600, color: "#111827" }}>
             Settings
           </h2>
           <button
@@ -148,7 +148,7 @@ const Settings: React.FC<SettingsProps> = ({
         <div
           style={{
             padding: "16px",
-            height: "calc(100vh - 56px)",
+            height: "calc(100vh - 44px)",
             overflowY: "auto",
             boxSizing: "border-box",
           }}
@@ -278,7 +278,7 @@ const Settings: React.FC<SettingsProps> = ({
                 style={{
                   width: "100%",
                   padding: "12px",
-                  backgroundColor: isValidating ? "#93C5FD" : "#2563eb",
+                  backgroundColor: isValidating ? "#d1d5db" : "#000000",
                   color: "white",
                   border: "none",
                   borderRadius: "8px",
@@ -291,12 +291,12 @@ const Settings: React.FC<SettingsProps> = ({
                 }}
                 onMouseOver={(e) => {
                   if (!isValidating) {
-                    e.currentTarget.style.backgroundColor = "#1d4ed8";
+                    e.currentTarget.style.opacity = "0.7";
                   }
                 }}
                 onMouseOut={(e) => {
                   if (!isValidating) {
-                    e.currentTarget.style.backgroundColor = "#2563eb";
+                    e.currentTarget.style.opacity = "1";
                   }
                 }}
               >
