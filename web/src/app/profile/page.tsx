@@ -4,14 +4,14 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Loader2, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { PaymentModal } from "./PaymentModal";
 import { OrdersModal } from "./OrdersModal";
 import { CreditsCharts } from "./CreditsCharts";
 import { CreditsTable } from "./CreditsTable";
 
 export default function ProfilePage() {
-  const { user, loading, signOut, rotateApiKey, toggleApiKey } = useAuth();
+  const { user, loading, signOut, rotateApiKey, toggleApiKey, refreshUserData } = useAuth();
   const [isCopied, setIsCopied] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
@@ -355,8 +355,10 @@ export default function ProfilePage() {
                 onClick={async () => {
                   setIsRefreshing(true);
                   try {
-                    // Refresh user data
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    // Refresh user data including credits
+                    await refreshUserData();
+                  } catch (error) {
+                    console.error('Error refreshing credits:', error);
                   } finally {
                     setIsRefreshing(false);
                   }
