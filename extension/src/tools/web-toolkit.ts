@@ -645,12 +645,9 @@ export class WebToolkit {
     }
   }
 
-  async listElements(
-    selectors?: string,
-    text?: string
-  ): Promise<WebInteractionResult> {
+  async listElements(selectors?: string): Promise<WebInteractionResult> {
     try {
-      if (!selectors && !text) {
+      if (!selectors) {
         throw new Error("At least one of selectors or text is required.");
       }
 
@@ -719,7 +716,7 @@ export class WebToolkit {
             },
           };
         },
-        [selectors ?? null, text ?? null]
+        [selectors ?? null]
       );
 
       return result;
