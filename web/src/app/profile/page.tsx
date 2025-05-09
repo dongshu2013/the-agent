@@ -8,6 +8,7 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { PaymentModal } from "./PaymentModal";
 import { OrdersModal } from "./OrdersModal";
 import { CreditsCharts } from "./CreditsCharts";
+import { CreditsTable } from "./CreditsTable";
 
 export default function ProfilePage() {
   const { user, loading, signOut, rotateApiKey, toggleApiKey } = useAuth();
@@ -391,6 +392,11 @@ export default function ProfilePage() {
           {/* Credits Charts */}
           <div className="p-6">
             <CreditsCharts />
+          </div>
+
+          {/* Credits Table */}
+          <div className="px-6 pb-6">
+            <CreditsTable />
           </div>
         </div>
       </main>
