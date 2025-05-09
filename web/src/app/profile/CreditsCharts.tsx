@@ -8,6 +8,8 @@ import {
   ResponsiveContainer, 
   Tooltip
 } from 'recharts';
+import { cn } from '@/lib/utils';
+import { Expand } from 'lucide-react';
 
 interface CreditTransaction {
   id: string;
@@ -137,17 +139,13 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
   return (
     <div className={className}>
       {/* Spend Chart */}
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm">
+      <div className={cn(
+        "bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700",
+        "hover:border-gray-300 hover:text-gray-900 dark:hover:border-gray-600 dark:hover:text-gray-50 shadow-sm hover:shadow-lg cursor-pointer transition-colors"
+      )}>
         <div className="flex justify-between items-center mb-2">
           <h3 className="text-lg font-medium">Spend</h3>
-          <button className="text-gray-500 hover:text-gray-700">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="15 3 21 3 21 9"></polyline>
-              <polyline points="9 21 3 21 3 15"></polyline>
-              <line x1="21" y1="3" x2="14" y2="10"></line>
-              <line x1="3" y1="21" x2="10" y2="14"></line>
-            </svg>
-          </button>
+          <Expand className="w-4 h-4" />
         </div>
         
         <div className="h-64">
@@ -155,7 +153,7 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
             <div className="flex justify-center items-center h-full">
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
             </div>
-          ) : (
+          ) : spendData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={spendData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
                 <XAxis dataKey="name" tick={{ fontSize: 12 }} />
@@ -164,16 +162,30 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
                 <Bar dataKey="value" fill="#4F46E5" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+          ) : (
+            <div className="flex flex-col justify-center items-center h-full text-gray-500 dark:text-gray-400">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-2">
+                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                <line x1="3" x2="21" y1="9" y2="9"></line>
+                <path d="M8 14h.01"></path>
+                <path d="M12 14h.01"></path>
+                <path d="M16 14h.01"></path>
+                <path d="M8 18h.01"></path>
+                <path d="M12 18h.01"></path>
+                <path d="M16 18h.01"></path>
+              </svg>
+              <p className="text-sm">No data available</p>
+            </div>
           )}
         </div>
         
         <div className="flex justify-between mt-4">
           <div>
-            <p className="text-xs text-gray-500">Last day</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Last day</p>
             <p className="text-lg font-medium">${lastDaySpend}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500">Last week</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Last week</p>
             <p className="text-lg font-medium">${lastWeekSpend}</p>
           </div>
         </div>

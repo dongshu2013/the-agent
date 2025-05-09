@@ -110,7 +110,7 @@ export const CreditsTable = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
       {/* Filter Section */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex flex-col md:flex-row gap-4 items-end">
