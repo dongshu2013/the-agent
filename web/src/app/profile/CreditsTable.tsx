@@ -177,7 +177,7 @@ export const CreditsTable = () => {
           <div className="flex-none">
             <button
               onClick={resetFilters}
-              className="px-4 h-9 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="px-4 h-9 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               Reset
             </button>
@@ -221,7 +221,7 @@ export const CreditsTable = () => {
               </tr>
             ) : (
               credits.map((credit) => (
-                <tr key={credit.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                <tr key={credit.id} className="hover:bg-gray-100 dark:hover:bg-gray-800">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                     {formatDate(credit.created_at)}
                   </td>

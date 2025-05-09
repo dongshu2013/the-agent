@@ -81,7 +81,7 @@ export const OrdersModal = ({
         <div className="mt-4">
           {isLoading ? (
             <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-black"></div>
             </div>
           ) : orders.length === 0 ? (
             <p className="text-center py-8 text-gray-500">No orders found</p>
