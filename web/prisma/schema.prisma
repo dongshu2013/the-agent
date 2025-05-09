@@ -16,7 +16,6 @@ model users {
   api_key_enabled Boolean         @default(true)
   created_at      DateTime        @default(now())
   updated_at      DateTime        @updatedAt
-  credits         Decimal         @default(0) @db.Decimal(10, 6)
   conversations   conversations[]
   credits         credits[]
   orders          orders[]
