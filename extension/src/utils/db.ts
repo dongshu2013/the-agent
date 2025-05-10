@@ -311,7 +311,7 @@ class MizuDB extends Dexie {
         name: selectedModel.name,
         type: selectedModel.type as ModelType,
         apiKey: selectedModel.apiKey,
-        apiUrl: selectedModel.apiKey,
+        apiUrl: selectedModel.apiUrl,
       };
     } catch (error) {
       console.error("Error getting selected model:", error);

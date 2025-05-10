@@ -20,6 +20,7 @@ export interface Env {
   SERVER_URL: string;
   LLM_API_URL: string;
   LLM_API_KEY: string;
+  OPENAI_API_KEY: string;
 }
 /**
  * Default configuration for the background service

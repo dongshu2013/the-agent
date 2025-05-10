@@ -37,27 +37,27 @@ export class ChatHandler {
     }
 
     // Check if user has enough credits before proceeding
-    const creditsResponse = await getUserCredits();
-    if (
-      !creditsResponse.success ||
-      !creditsResponse.credits ||
-      creditsResponse.credits <= 0
-    ) {
-      // Not enough credits, show error message
-      const errorMessage: Message = {
-        message_id: crypto.randomUUID(),
-        role: "system",
-        content:
-          "You don't have enough credits to send messages. Please purchase more credits to continue.",
-        created_at: new Date().toISOString(),
-        conversation_id: this.options.currentConversationId,
-        status: "error",
-        error: "Insufficient credits",
-      };
-      await this.updateMessage(errorMessage);
-      this.options.onError({ message: "Insufficient credits" });
-      return;
-    }
+    // const creditsResponse = await getUserCredits();
+    // if (
+    //   !creditsResponse.success ||
+    //   !creditsResponse.credits ||
+    //   creditsResponse.credits <= 0
+    // ) {
+    //   // Not enough credits, show error message
+    //   const errorMessage: Message = {
+    //     message_id: crypto.randomUUID(),
+    //     role: "system",
+    //     content:
+    //       "You don't have enough credits to send messages. Please purchase more credits to continue.",
+    //     created_at: new Date().toISOString(),
+    //     conversation_id: this.options.currentConversationId,
+    //     status: "error",
+    //     error: "Insufficient credits",
+    //   };
+    //   await this.updateMessage(errorMessage);
+    //   this.options.onError({ message: "Insufficient credits" });
+    //   return;
+    // }
 
     const currentPrompt = prompt.trim();
     const userMessageId = crypto.randomUUID();
@@ -374,7 +374,11 @@ Now reply to user's message: ${currentPrompt}`,
           creditsToDeduct = 0.01;
         }
         // Use API key directly for credit deduction
-        await deductCreditsApi(creditsToDeduct, this.options.currentConversationId, env.OPENAI_MODEL);
+        await deductCreditsApi(
+          creditsToDeduct,
+          this.options.currentConversationId,
+          env.OPENAI_MODEL
+        );
       } catch (error) {
         console.error("Error deducting credits:", error);
       }

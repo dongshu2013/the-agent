@@ -17,7 +17,7 @@ from sqlalchemy.dialects.postgresql import insert
 from datetime import datetime
 from edge_agent.core.config import settings
 from edge_agent.utils.database import get_db
-from edge_agent.models.database import User, Conversation, Message, Model
+from edge_agent.models.database import User, Conversation, Message
 from edge_agent.utils.embeddings import (
     update_message_embedding,
     find_similar_messages,
@@ -89,7 +89,7 @@ class ChatCompletionCreateParam(BaseModel):
     Parameters for creating a chat completion, compatible with OpenAI API.
     """
     messages: List[ChatMessage]
-    modelId: str  # Add model_id parameter
+    model: str
     frequency_penalty: Optional[float] = None
     logit_bias: Optional[Dict[str, float]] = None
     max_tokens: Optional[int] = None
@@ -249,37 +249,8 @@ async def delete_conversation(
     except Exception as e:
         logger.error(f"Error deleting conversation: {str(e)}")
         raise HTTPException(status_code=e.status_code, detail=f"Error deleting conversation: {str(e)}")
-
-async def get_model_config(model_id: str, db: Session, user: User) -> Dict[str, Any]:
-    """
-    Get model configuration based on model_id.
-    If model_id is not provided or not found, use default model.
-    """
-    if not model_id:
-        return {
-            "model": settings.DEFAULT_MODEL,
-            "api_key": settings.LLM_API_KEY,
-            "api_url": settings.LLM_API_URL
-        }
-
-    model = db.query(Model).filter(
-        Model.id == model_id,
-        Model.user_id == user.id
-    ).first()
-
-    if not model:
-        return {
-            "model": settings.DEFAULT_MODEL,
-            "api_key": settings.LLM_API_KEY,
-            "api_url": settings.LLM_API_URL
-        }
-
-    return {
-        "model": model.name,
-        "api_key": model.api_key,
-        "api_url": model.api_url
-    }
-
+    
+    
 @router.post("/v1/chat/completions")
 async def chat_completion(
     params: ChatCompletionCreateParam,
@@ -309,7 +280,11 @@ async def chat_completion(
             )
 
         # Get model configuration
-        model_config = await get_model_config(params.model, request.state.db, user)
+        model_config = parse_model_config(request.query_params)
+        if not model_config or not model_config["api_key"] or not model_config["api_url"]:
+            raise HTTPException(status_code=400, detail="Missing or invalid modelConfig in query params")
+
+        logger.error(f"model_config: {str(model_config)}")
         
         # Create LLM client with model-specific configuration
         llm = AsyncOpenAI(
@@ -323,10 +298,10 @@ async def chat_completion(
 
         params = {
             **params.dict(),
-            "model": model_config["model"]
+            "model": settings.DEFAULT_MODEL if model_config["model"] == "Mysta Model" else model_config["model"]
         }
-            
-        if params.stream:
+        
+        if params["stream"]:
             return StreamingResponse(
                 stream_chat_response(params, llm),
                 media_type="text/event-stream",
@@ -359,13 +334,12 @@ async def chat_completion(
             content=error_response
         )
 
-async def stream_chat_response(params: ChatCompletionCreateParam, llm: AsyncOpenAI):
+async def stream_chat_response(params, llm):
     """
     Stream chat completions directly from the LLM provider.
     """
     try:
-        params_dict = params.to_dict()
-        stream = await llm.chat.completions.create(**params_dict)
+        stream = await llm.chat.completions.create(**params)
 
         async for chunk in stream:
             chunk_data = json.dumps(chunk.model_dump())
@@ -589,111 +563,18 @@ async def deduct_credits(
         logger.error(f"Error deducting credits: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to deduct credits: {str(e)}")
 
-@router.get("/v1/models", response_model=List[dict])
-async def get_user_models(
-    request: Request,
-    user: User = Depends(verify_api_key)
-):
-    """
-    Get all models for the authenticated user.
-    """
-    db = request.state.db
-    try:
-        models = db.query(Model).filter(Model.user_id == user.id).all()
-        return [
-            {
-                "id": model.id,
-                "type": model.type,
-                "name": model.name,
-                "api_key": model.api_key,
-                "api_url": model.api_url,
-                "created_at": model.created_at.isoformat(),
-                "updated_at": model.updated_at.isoformat()
-            }
-            for model in models
-        ]
-    except Exception as e:
-        logger.error(f"Error fetching user models: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error fetching models: {str(e)}")
-
-@router.post("/v1/models", response_model=dict)
-async def create_or_update_model(
-    request: Request,
-    model_data: ModelRequest,
-    user: User = Depends(verify_api_key)
-):
-    """
-    Create or update a model for the authenticated user.
-    """
-    db = request.state.db
-    try:
-        if model_data.id:
-            # Update existing model
-            model = db.query(Model).filter(
-                Model.id == model_data.id,
-                Model.user_id == user.id
-            ).first()
-            if not model:
-                raise HTTPException(status_code=404, detail="Model not found")
-            
-            model.name = model_data.name
-            model.api_key = model_data.api_key
-            model.api_url = model_data.api_url
-            model.type = model_data.type
-        else:
-            # Create new model
-            model = Model(
-                type=model_data.type,
-                name=model_data.name,
-                user_id=user.id,
-                api_key=model_data.api_key,
-                api_url=model_data.api_url
-            )
-            db.add(model)
-        
-        db.commit()
-        db.refresh(model)
-        
-        return {
-            "success": True,
-            "model": {
-                "id": model.id,
-                "type": model.type,
-                "name": model.name,
-                "api_key": model.api_key,
-                "api_url": model.api_url,
-                "created_at": model.created_at.isoformat(),
-                "updated_at": model.updated_at.isoformat()
-            }
-        }
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error saving model: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error saving model: {str(e)}")
-
-@router.post("/v1/models/delete", response_model=dict)
-async def delete_model_post(
-    request: Request,
-    body: DeleteModelRequest,
-    user: User = Depends(verify_api_key)
-):
-    db = request.state.db
-    try:
-        model = db.query(Model).filter(
-            Model.id == body.id,
-            Model.user_id == user.id
-        ).first()
-        logger.error(f"DeleteModelRequest body: {body}, user: {user} model: {model}")
-        if not model:
-            raise HTTPException(status_code=404, detail="Model not found")
-        db.delete(model)
-        db.commit()
-
-        return {
-            "success": True,
-            "message": "Model deleted successfully"
-        }
-    except Exception as e:
-        db.rollback()
-        logger.error(f"Error deleting model: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Error deleting model: {str(e)}")
+def parse_model_config(query_params):
+    model_config = {}
+    for k, v in query_params.items():
+        if k.startswith("modelConfig[") and k.endswith("]"):
+            key = k[len("modelConfig["):-1]
+            model_config[key] = v
+    # 统一 key 命名，兼容前端 camelCase
+    return {
+        "id": model_config.get("id"),
+        "name": model_config.get("name"),
+        "type": model_config.get("type"),
+        "api_key": model_config.get("apiKey"),
+        "api_url": model_config.get("apiUrl"),
+        "model": model_config.get("name"),  # 用 name 作为 model
+    }

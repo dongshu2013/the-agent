@@ -16,10 +16,10 @@ model users {
   api_key_enabled Boolean         @default(true)
   created_at      DateTime        @default(now())
   updated_at      DateTime        @updatedAt
+  balance         balances?
   conversations   conversations[]
   credits         credits[]
   orders          orders[]
-  balance         balances?
 }
 
 model conversations {
@@ -98,13 +98,6 @@ model tg_users {
   updated_at DateTime @default(now())
 }
 
-enum TransactionType {
-  new_user    // Initial credits for new user
-  order_pay   // Credits from payment
-  system_add  // Credits added by system
-  completion  // Credits used for completion
-}
-
 model credits {
   id              String          @id @default(uuid())
   user_id         String
@@ -112,17 +105,11 @@ model credits {
   conversation_id String?
   model           String?
   amount          Decimal?        @db.Decimal(10, 6)
-  trans_credits   Decimal         @default(0) @db.Decimal(10, 6) // negative(-10) or positive(+20) transaction credits
+  trans_credits   Decimal         @default(0) @db.Decimal(10, 6)
   trans_type      TransactionType @default(new_user)
   created_at      DateTime        @default(now())
   expired_at      DateTime?
   user            users           @relation(fields: [user_id], references: [id])
-}
-
-enum OrderStatus {
-  pending    // Order is created but not paid
-  completed  // Payment completed
-  cancelled  // Order cancelled
 }
 
 model orders {
@@ -130,12 +117,12 @@ model orders {
   user_id           String
   user_email        String
   amount            Decimal     @default(0) @db.Decimal(10, 6)
-  credits           Decimal     @default(0) @db.Decimal(10, 6)
   currency          String      @default("usd")
-  status            OrderStatus @default(pending)
   stripe_session_id String?
   created_at        DateTime    @default(now())
   updated_at        DateTime    @updatedAt
+  credits           Decimal     @default(0) @db.Decimal(10, 6)
+  status            OrderStatus @default(pending)
   user              users       @relation(fields: [user_id], references: [id])
 }
 
@@ -146,4 +133,17 @@ model balances {
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
   user         users    @relation(fields: [user_id], references: [id])
+}
+
+enum TransactionType {
+  new_user
+  order_pay
+  system_add
+  completion
+}
+
+enum OrderStatus {
+  pending
+  completed
+  cancelled
 }

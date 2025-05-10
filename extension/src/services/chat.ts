@@ -46,7 +46,12 @@ export const sendChatCompletion = async (
         tools: tools,
         tool_choice: "auto",
       },
-      { signal: options.signal, query: request.currentModel?.id }
+      {
+        signal: options.signal,
+        query: {
+          modelConfig: request.currentModel,
+        },
+      }
     );
   } catch (error: any) {
     throw new Error(error.message || "Failed to send chat request");
