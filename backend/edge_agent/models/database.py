@@ -20,7 +20,7 @@ class User(Base):
     email = Column(String, unique=True, nullable=True)
     api_key = Column(String, unique=True, nullable=False, default=generate_uuid)
     api_key_enabled = Column(Boolean, default=True, nullable=False)
-    credits = Column(Numeric, default=0, nullable=False)
+    credits = Column(Numeric(10, 6), default=0, nullable=False)
     created_at = Column(DateTime, default=func.now(), nullable=False)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
 

@@ -3,17 +3,14 @@
  */
 
 import { env } from "~/utils/env";
-import { Storage } from "@plasmohq/storage";
+import { db } from "~/utils/db";
 /**
  * Gets the API key from local storage
  */
 export const getApiKey = async (): Promise<string | null> => {
   try {
-    const storage = new Storage({
-      area: "local",
-    });
-    const value = await storage.get("apiKey");
-    return value || null;
+    const user = await db.getCurrentUser();
+    return user?.api_key ? user.api_key : null;
   } catch (e) {
     console.error("Failed to get API key from localStorage:", e);
     return null;

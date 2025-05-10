@@ -29,7 +29,11 @@ const Header = ({
     const init = async () => {
       const user = await db.getCurrentUser();
       if (user) {
-        setSelectedModelId(user.selectedModelId || "system");
+        setSelectedModelId(
+          !user.selectedModelId || user.selectedModelId === ""
+            ? "system"
+            : user.selectedModelId
+        );
         const userModels = await db.getUserModels(user.id);
         setModels(userModels);
       }

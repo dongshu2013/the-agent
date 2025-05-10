@@ -3,6 +3,7 @@
  * Defines all API-related interfaces used in the application
  */
 
+import { Model } from ".";
 import {
   CreateConversationResponse,
   SaveMessageResponse,
@@ -13,7 +14,7 @@ import { ChatMessage } from "./messages";
  * Chat request interface
  */
 export interface ChatRequest {
-  model?: string;
+  currentModel: Model | null;
   messages: ChatMessage[];
   max_tokens?: number;
   stream?: boolean;

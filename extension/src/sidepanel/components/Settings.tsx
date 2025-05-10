@@ -61,7 +61,7 @@ const Settings: React.FC<SettingsProps> = ({
       });
       const verifyData = await verifyResponse.json();
 
-      if (!verifyResponse.ok) {
+      if (!verifyResponse || !verifyResponse?.ok) {
         setIsSettingsValid(false);
         throw new Error(verifyData.message || "API verification failed");
       }
@@ -86,7 +86,7 @@ const Settings: React.FC<SettingsProps> = ({
         } catch (dbError) {
           console.error("Database error:", dbError);
           setSaveStatus(
-            `Failed to save user data: ${dbError instanceof Error ? dbError.message : "Unknown error"}`
+            `Failed to save user data: ${dbError instanceof Error ? dbError?.message : "Unknown error"}`
           );
           setIsSettingsValid(false);
         }
@@ -97,7 +97,7 @@ const Settings: React.FC<SettingsProps> = ({
     } catch (error) {
       console.error("Verification error:", error);
       setSaveStatus(
-        `${error instanceof Error ? error.message : "Failed to verify API Key"}`
+        `${error instanceof Error ? error?.message : "Failed to verify API Key"}`
       );
       setIsSettingsValid(false);
     } finally {
@@ -109,12 +109,13 @@ const Settings: React.FC<SettingsProps> = ({
     const value = e.target.value;
     setApiKeyState(value);
     setShowWarning(false);
+    console.log(",,,,,,value", value.trim());
     if (value.trim()) {
       handleVerifyAndSet(value);
     }
   };
 
-  const refreshModels = async (uid?: string) => {
+  const refreshModels = async () => {
     try {
       const response = await fetch(`${env.BACKEND_URL}/v1/models`, {
         method: "GET",

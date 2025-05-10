@@ -6,7 +6,7 @@ import { Message } from "../types/messages";
 import { SaveMessageResponse } from "../types/conversations";
 import OpenAI from "openai";
 import { env } from "../utils/env";
-import { handleAuthError, getApiKey } from "./utils";
+import { handleAuthError } from "./utils";
 import { db } from "../utils/db";
 import { ChatRequest } from "../types/api";
 import { getToolDescriptions } from "../tools/tool-descriptions";
@@ -18,7 +18,8 @@ export const sendChatCompletion = async (
   options: { stream?: boolean; signal?: AbortSignal } = {}
 ): Promise<any> => {
   try {
-    const apiKeyToUse = apiKey || (await getApiKey());
+    const currentUser = await db.getCurrentUser();
+    const apiKeyToUse = apiKey || currentUser?.api_key;
     if (!apiKeyToUse) {
       return handleAuthError();
     }
@@ -40,12 +41,12 @@ export const sendChatCompletion = async (
 
     return client.beta.chat.completions.stream(
       {
-        model: env.OPENAI_MODEL,
+        model: request.currentModel?.name || env.OPENAI_MODEL,
         messages: request.messages as OpenAI.Chat.ChatCompletionMessageParam[],
         tools: tools,
         tool_choice: "auto",
       },
-      { signal: options.signal }
+      { signal: options.signal, query: request.currentModel?.id }
     );
   } catch (error: any) {
     throw new Error(error.message || "Failed to send chat request");
@@ -68,7 +69,8 @@ export const saveMessageApi = async ({
 }): Promise<SaveMessageResponse> => {
   try {
     const API_ENDPOINT = "/v1/message/save";
-    const apiKeyToUse = apiKey || (await getApiKey());
+    const user = await db.getCurrentUser();
+    const apiKeyToUse = apiKey || user?.api_key;
     if (!apiKeyToUse) {
       return handleAuthError();
     }

@@ -74,7 +74,7 @@ class ChatCompletionCreateParam(BaseModel):
     Parameters for creating a chat completion, compatible with OpenAI API.
     """
     messages: List[ChatMessage]
-    model_id: Optional[str] = None  # Add model_id parameter
+    modelId: str  # Add model_id parameter
     frequency_penalty: Optional[float] = None
     logit_bias: Optional[Dict[str, float]] = None
     max_tokens: Optional[int] = None
@@ -274,6 +274,9 @@ async def chat_completion(
     """
     Create a chat completion using the specified model.
     """
+
+    logger.error(f"Error in chat completion: {str(params)} request: {request}")
+    
     try:
         # Check if user has enough credits
         if user.credits <= Decimal('0'):
@@ -291,7 +294,7 @@ async def chat_completion(
             )
 
         # Get model configuration
-        model_config = await get_model_config(params.model_id, request.state.db, user)
+        model_config = await get_model_config(params.model, request.state.db, user)
         
         # Create LLM client with model-specific configuration
         llm = AsyncOpenAI(
@@ -302,6 +305,11 @@ async def chat_completion(
                 "X-Title": settings.PROJECT_NAME,
             },
         )
+
+        params = {
+            **params.dict(),
+            "model": model_config["model"]
+        }
             
         if params.stream:
             return StreamingResponse(
@@ -317,7 +325,6 @@ async def chat_completion(
         else:
             # Update model name in params
             params_dict = params.to_dict()
-            params_dict["model"] = model_config["model"]
             response = await llm.chat.completions.create(**params_dict)
             return response.model_dump()
 
@@ -635,10 +642,12 @@ async def delete_model_post(
             Model.id == body.id,
             Model.user_id == user.id
         ).first()
+        logger.error(f"DeleteModelRequest body: {body}, user: {user} model: {model}")
         if not model:
             raise HTTPException(status_code=404, detail="Model not found")
         db.delete(model)
         db.commit()
+
         return {
             "success": True,
             "message": "Model deleted successfully"

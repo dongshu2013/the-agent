@@ -35,19 +35,24 @@ export class ChatHandler {
     ) {
       return;
     }
-    
+
     // Check if user has enough credits before proceeding
     const creditsResponse = await getUserCredits();
-    if (!creditsResponse.success || !creditsResponse.credits || creditsResponse.credits <= 0) {
+    if (
+      !creditsResponse.success ||
+      !creditsResponse.credits ||
+      creditsResponse.credits <= 0
+    ) {
       // Not enough credits, show error message
       const errorMessage: Message = {
         message_id: crypto.randomUUID(),
         role: "system",
-        content: "You don't have enough credits to send messages. Please purchase more credits to continue.",
+        content:
+          "You don't have enough credits to send messages. Please purchase more credits to continue.",
         created_at: new Date().toISOString(),
         conversation_id: this.options.currentConversationId,
         status: "error",
-        error: "Insufficient credits"
+        error: "Insufficient credits",
       };
       await this.updateMessage(errorMessage);
       this.options.onError({ message: "Insufficient credits" });
@@ -165,6 +170,8 @@ Keep responses concise and focused on the current task.
       let toolCallCount = 0;
       const MAX_TOOL_CALLS = 20;
 
+      const currentModel = await db.getSelectModel();
+
       const processRequest = async (inputMessages: ChatMessage[]) => {
         let accumulatedContent = "";
         let totalTokenUsage = {
@@ -178,7 +185,10 @@ Keep responses concise and focused on the current task.
             if (!this.isStreaming) break;
 
             const stream = await sendChatCompletion(
-              { messages: [systemMessage, ...inputMessages] },
+              {
+                messages: [systemMessage, ...inputMessages],
+                currentModel,
+              },
               this.options.apiKey,
               {
                 signal: this.abortController?.signal,
@@ -351,7 +361,10 @@ Now reply to user's message: ${currentPrompt}`,
 - Total tokens: ${tokenUsage.totalTokens}`;
 
       aiMessage.content += tokenSummary;
-      const aiCreditsToDeduct = calculateAIUsageCredits(tokenUsage, env.OPENAI_MODEL);
+      const aiCreditsToDeduct = calculateAIUsageCredits(
+        tokenUsage,
+        env.OPENAI_MODEL
+      );
 
       // Deduct credits from user account using API key
       try {

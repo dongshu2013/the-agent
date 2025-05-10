@@ -1,6 +1,8 @@
 import { Message } from "../types/messages";
 import { Conversation } from "../types/conversations";
 import Dexie, { Table } from "dexie";
+import { env } from "./env";
+import { Model, ModelType } from "~/types";
 
 interface UserInfo {
   id: string;
@@ -36,6 +38,7 @@ class MizuDB extends Dexie {
     name: string;
     userId: string;
     apiKey: string;
+    apiUrl: string;
   }>;
 
   constructor() {
@@ -341,7 +344,32 @@ class MizuDB extends Dexie {
     }
   }
 
+  async getSelectModel(): Promise<Model | null> {
+    try {
+      const user = await this.getCurrentUser();
+      if (!user) return null;
+
+      const selectedModel = await this.models
+        .where("id")
+        .equals(user.selectedModelId)
+        .first();
+      if (!selectedModel) return null;
+
+      return {
+        id: selectedModel.id,
+        name: selectedModel.name,
+        type: selectedModel.type as ModelType,
+        apiKey: selectedModel.apiKey,
+        apiUrl: selectedModel.apiKey,
+      };
+    } catch (error) {
+      console.error("Error getting selected model:", error);
+      return null;
+    }
+  }
+
   async saveOrUpdateUser(user: UserInfo): Promise<void> {
+    console.log("saveOrUpdateUser = ", user);
     if (!user || !user.id) {
       throw new Error("Invalid user data: user ID is required");
     }
@@ -350,18 +378,21 @@ class MizuDB extends Dexie {
       const now = new Date().toISOString();
       const existing = await this.users.get(user.id);
       const systemModelId = "system";
+
+      console.log(".....", env.LLM_API_KEY, env.LLM_API_URL);
       const systemModel = {
         id: systemModelId,
         type: "system",
-        name: "Mysta",
+        name: "Mysta Model",
         userId: user.id,
-        apiKey: user.api_key,
-        apiUrl: user.api_url,
+        apiKey: env.LLM_API_KEY,
+        apiUrl: env.LLM_API_URL,
       };
 
       if (existing) {
         await this.users.put({
           ...user,
+          selectedModelId: systemModelId,
           created_at: existing.created_at,
           updated_at: now,
         });

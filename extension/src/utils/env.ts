@@ -15,9 +15,10 @@ Always format tool calls as a JSON array, like this:
   }
 ]`,
   SERVER_URL: "https://the-agent-production.up.railway.app",
+  LLM_API_URL: "",
+  LLM_API_KEY: "",
 };
 
-// Try to get values from process.env, fallback to defaults
 export const env: Env = {
   OPENAI_MODEL:
     process.env.PLASMO_PUBLIC_OPENAI_MODEL || defaultEnv.OPENAI_MODEL,
@@ -25,4 +26,6 @@ export const env: Env = {
     process.env.PLASMO_PUBLIC_SYSTEM_PROMPT || defaultEnv.SYSTEM_PROMPT,
   BACKEND_URL: process.env.PLASMO_PUBLIC_BACKEND_URL || defaultEnv.BACKEND_URL,
   SERVER_URL: process.env.PLASMO_PUBLIC_SERVER_URL || defaultEnv.SERVER_URL,
+  LLM_API_URL: process.env.PLASMO_PUBLIC_LLM_API_URL || defaultEnv.LLM_API_URL,
+  LLM_API_KEY: process.env.PLASMO_PUBLIC_LLM_API_KEY || defaultEnv.LLM_API_KEY,
 };

@@ -18,6 +18,8 @@ export interface Env {
   BACKEND_URL: string;
   SYSTEM_PROMPT: string;
   SERVER_URL: string;
+  LLM_API_URL: string;
+  LLM_API_KEY: string;
 }
 /**
  * Default configuration for the background service
@@ -114,4 +116,5 @@ export interface Model {
   name: string;
   type: ModelType;
   apiKey: string;
+  apiUrl: string;
 }
