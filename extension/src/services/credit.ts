@@ -67,7 +67,7 @@ export const getUserCredits = async (): Promise<{ success: boolean; credits?: nu
  * Deduct credits from user account by calling the backend API
  * Uses the API key for authentication without requiring a user ID
  */
-export const deductCreditsApi = async (creditsToDeduct: number, description: string = "API credit deduction") => {
+export const deductCreditsApi = async (creditsToDeduct: number, conversationId?: string, model?: string) => {
   try {
     const API_ENDPOINT = "/v1/credits/deduct";
     const apiKey = await getApiKey();
@@ -82,7 +82,9 @@ export const deductCreditsApi = async (creditsToDeduct: number, description: str
     };
 
     const requestBody = {
-      credits: creditsToDeduct
+      credits: creditsToDeduct,
+      conversation_id: conversationId,
+      model: model
     };
 
     const response = await fetch(`${env.BACKEND_URL}${API_ENDPOINT}`, {
@@ -107,20 +109,7 @@ export const deductCreditsApi = async (creditsToDeduct: number, description: str
 
     const data = await response.json();
     
-    if (data.success) {
-      try {
-        // Update local database only if the API call was successful
-        // Use the user_id returned from the API response
-        if (data.user_id) {
-          await db.deductCredits(data.user_id, creditsToDeduct, description);
-          console.log(`Local database updated: deducted ${creditsToDeduct} credits from user ${data.user_id}`);
-        }
-      } catch (dbError) {
-        console.error("Failed to update local database:", dbError);
-        // We don't throw here as the server-side update was successful
-        // Just log the error for debugging purposes
-      }
-    } else {
+    if (!data.success) {
       console.error("API returned success: false", data);
       throw new Error(data.detail || "Unknown error occurred during credit deduction");
     }

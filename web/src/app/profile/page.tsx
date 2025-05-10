@@ -4,11 +4,14 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Loader2 } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { PaymentModal } from "./PaymentModal";
+import { OrdersModal } from "./OrdersModal";
+import { CreditsCharts } from "./CreditsCharts";
+import { CreditsTable } from "./CreditsTable";
 
 export default function ProfilePage() {
-  const { user, loading, signOut, rotateApiKey, toggleApiKey } = useAuth();
+  const { user, loading, signOut, rotateApiKey, toggleApiKey, refreshUserData } = useAuth();
   const [isCopied, setIsCopied] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
@@ -16,6 +19,8 @@ export default function ProfilePage() {
   const [isLoadingTelegramStats, setIsLoadingTelegramStats] = useState(false);
   const router = useRouter();
   const [buyCreditsOpen, setBuyCreditsOpen] = useState(false);
+  const [ordersModalOpen, setOrdersModalOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -92,7 +97,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-black"></div>
       </div>
     );
   }
@@ -120,7 +125,7 @@ export default function ProfilePage() {
           </div>
           <button
             onClick={signOut}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 rounded-md"
           >
             Sign Out
           </button>
@@ -139,7 +144,7 @@ export default function ProfilePage() {
                 className="rounded-full mr-4"
               />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white mr-4">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center text-white mr-4">
                 {user?.displayName?.charAt(0) || user?.email?.charAt(0) || "U"}
               </div>
             )}
@@ -169,8 +174,8 @@ export default function ProfilePage() {
                 <button
                   onClick={handleToggleApiKey}
                   disabled={isToggling}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                    user.apiKeyEnabled ? "bg-blue-600" : "bg-gray-200"
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    user.apiKeyEnabled ? "bg-black" : "bg-gray-200"
                   }`}
                 >
                   <span
@@ -199,7 +204,7 @@ export default function ProfilePage() {
                     user?.apiKeyEnabled
                       ? "bg-gray-50 dark:bg-gray-700"
                       : "bg-gray-100 dark:bg-gray-800"
-                  } text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500`}
+                  } text-gray-900 dark:text-gray-100`}
                   disabled={!user?.apiKeyEnabled}
                 />
                 {user?.apiKeyEnabled && (
@@ -232,7 +237,7 @@ export default function ProfilePage() {
               <button
                 onClick={handleRotateApiKey}
                 disabled={isRotating || !user?.apiKeyEnabled}
-                className={`px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                className={`px-4 py-2 text-sm font-medium text-white bg-black rounded-md hover:opacity-70 transition-opacity ${
                   isRotating || !user?.apiKeyEnabled
                     ? "opacity-50 cursor-not-allowed"
                     : ""
@@ -241,45 +246,6 @@ export default function ProfilePage() {
                 {isRotating ? "Rotating..." : "Rotate Key"}
               </button>
             </div>
-          </div>
-
-          {/* Credits Section */}
-          <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-5 sm:p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-                Your Credits
-              </h3>
-            </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Manage your credits balance and purchases
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex items-center justify-between px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 gap-4">
-                <h3>Current Balance</h3>
-                <div className="font-bold">
-                  {loading ? (
-                    <Loader2 className="h-6 w-6 animate-spin" />
-                  ) : (
-                    <span>${parseFloat(user.credits).toFixed(2)}</span>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={() => setBuyCreditsOpen(true)}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Buy Credits
-              </button>
-            </div>
-
-            <PaymentModal
-              isOpen={buyCreditsOpen}
-              onClose={() => setBuyCreditsOpen(false)}
-              onSuccess={() => {
-                setBuyCreditsOpen(false);
-              }}
-            />
           </div>
         </div>
 
@@ -319,7 +285,7 @@ export default function ProfilePage() {
                   )}
                 </p>
                 <button
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="px-4 py-2 text-sm font-medium text-white bg-black rounded-md hover:opacity-70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black transition-opacity"
                   onClick={() => window.open(process.env.NEXT_PUBLIC_TG_WEBAPP_URL || '#', '_blank')}
                 >
                   Import Telegram Data
@@ -378,11 +344,79 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* Credits Section */}
+        <div className="mt-8 bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+          {/* Credits Header */}
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+            <div className="flex items-center space-x-2">
+              <h2 className="text-lg font-medium text-gray-900 dark:text-white">Credits</h2>
+              <button 
+                onClick={async () => {
+                  setIsRefreshing(true);
+                  try {
+                    // Refresh user data including credits
+                    await refreshUserData();
+                  } catch (error) {
+                    console.error('Error refreshing credits:', error);
+                  } finally {
+                    setIsRefreshing(false);
+                  }
+                }}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
+                disabled={isRefreshing}
+              >
+                <RefreshCw size={18} className={`${isRefreshing ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <div className="text-lg font-bold text-gray-900 dark:text-white">
+                $ {user.credits ? parseFloat(user.credits.toString()).toFixed(3) : '0.000'}
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setBuyCreditsOpen(true)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-black rounded-md hover:opacity-70 transition-opacity"
+                >
+                  Add Credits
+                </button>
+                <button
+                  onClick={() => setOrdersModalOpen(true)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 rounded-md transition-opacity"
+                >
+                  View Orders
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          {/* Credits Charts */}
+          <div className="p-6">
+            <CreditsCharts />
+          </div>
+
+          {/* Credits Table */}
+          <div className="px-6 pb-6">
+            <CreditsTable />
+          </div>
+        </div>
       </main>
 
       <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
         {new Date().getFullYear()} Mysta Agent. All rights reserved.
       </footer>
+      
+      {/* Modals */}
+      <PaymentModal 
+        isOpen={buyCreditsOpen} 
+        onClose={() => setBuyCreditsOpen(false)} 
+        onSuccess={() => setBuyCreditsOpen(false)} 
+      />
+      <OrdersModal 
+        isOpen={ordersModalOpen} 
+        onClose={() => setOrdersModalOpen(false)} 
+      />
     </div>
   );
 }

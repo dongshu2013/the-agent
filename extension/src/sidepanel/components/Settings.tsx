@@ -300,13 +300,13 @@ const Settings: React.FC<SettingsProps> = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "16px 24px",
-            borderBottom: "1px solid #E5E7EB",
-            height: "64px",
+            padding: "0 16px",
+            borderBottom: "1px solid #f0f0f0",
+            height: "44px",
             boxSizing: "border-box",
           }}
         >
-          <h2 style={{ fontSize: "18px", fontWeight: 600, color: "#111827" }}>
+          <h2 style={{ fontSize: "15px", fontWeight: 600, color: "#111827" }}>
             Settings
           </h2>
           <button
@@ -355,8 +355,8 @@ const Settings: React.FC<SettingsProps> = ({
         {/* Content */}
         <div
           style={{
-            padding: "24px",
-            height: "calc(100vh - 64px)",
+            padding: "16px",
+            height: "calc(100vh - 44px)",
             overflowY: "auto",
             boxSizing: "border-box",
           }}
@@ -797,7 +797,7 @@ const Settings: React.FC<SettingsProps> = ({
                 style={{
                   width: "100%",
                   padding: "12px",
-                  backgroundColor: isValidating ? "#93C5FD" : "#2563EB",
+                  backgroundColor: isValidating ? "#d1d5db" : "#000000",
                   color: "white",
                   border: "none",
                   borderRadius: "8px",
@@ -810,12 +810,12 @@ const Settings: React.FC<SettingsProps> = ({
                 }}
                 onMouseOver={(e) => {
                   if (!isValidating) {
-                    e.currentTarget.style.backgroundColor = "#1D4ED8";
+                    e.currentTarget.style.opacity = "0.7";
                   }
                 }}
                 onMouseOut={(e) => {
                   if (!isValidating) {
-                    e.currentTarget.style.backgroundColor = "#2563EB";
+                    e.currentTarget.style.opacity = "1";
                   }
                 }}
               >

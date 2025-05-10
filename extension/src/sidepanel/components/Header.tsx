@@ -1,7 +1,4 @@
-import {
-  Cog6ToothIcon,
-  ChatBubbleLeftRightIcon,
-} from "@heroicons/react/24/outline";
+import { MessageCircleMore, SquarePen, Settings } from "lucide-react";
 import { db } from "~/utils/db";
 import React, { useState, useEffect } from "react";
 
@@ -64,19 +61,19 @@ const Header = ({
         alignItems: "center",
         backgroundColor: "#ffffff",
         padding: "0 16px",
-        height: "64px",
-        borderBottom: "1px solid #E5E7EB",
+        height: "44px",
+        borderBottom: "1px solid #f0f0f0",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+      <div style={{ display: "flex", alignItems: "center", height: "44px", gap: "12px" }}>
         <button
           onClick={setShowConversationList}
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            width: "40px",
-            height: "40px",
+            width: "44px",
+            height: "44px",
             color: "#6b7280",
             background: "none",
             border: "none",
@@ -94,17 +91,10 @@ const Header = ({
             e.currentTarget.style.backgroundColor = "transparent";
           }}
         >
-          <ChatBubbleLeftRightIcon className="w-5 h-5" />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <MessageCircleMore size={20} />
+          </div>
         </button>
-        <span
-          style={{
-            fontSize: "16px",
-            fontWeight: 600,
-            color: "#111827",
-          }}
-        >
-          Mysta Agent
-        </span>
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
@@ -136,8 +126,8 @@ const Header = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            width: "40px",
-            height: "40px",
+            width: "44px",
+            height: "44px",
             color: "#6b7280",
             background: "none",
             border: "none",
@@ -155,20 +145,7 @@ const Header = ({
             e.currentTarget.style.backgroundColor = "transparent";
           }}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-            className="w-5 h-5"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
-            />
-          </svg>
+          <SquarePen size={20} />
         </button>
 
         <button
@@ -177,10 +154,10 @@ const Header = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            width: "40px",
-            height: "40px",
-            color: showSettings ? "#2563EB" : "#6b7280",
-            background: showSettings ? "#EFF6FF" : "none",
+            width: "44px",
+            height: "44px",
+            color: showSettings ? "#111827" : "#6b7280",
+            background: "none",
             border: "none",
             padding: 0,
             cursor: "pointer",
@@ -200,7 +177,7 @@ const Header = ({
             }
           }}
         >
-          <Cog6ToothIcon className="w-5 h-5" />
+          <Settings size={20} />
         </button>
       </div>
     </div>

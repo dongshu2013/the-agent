@@ -34,7 +34,7 @@ export default function Home() {
 
           <button
             onClick={signInWithGoogle}
-            className="flex items-center justify-center gap-3 w-full max-w-xs bg-white hover:bg-gray-50 text-gray-700 rounded-lg py-3 px-6 shadow-md transition-all hover:shadow-lg"
+            className="flex items-center justify-center gap-3 w-full max-w-xs bg-white hover:bg-gray-100 text-gray-700 rounded-lg py-3 px-6 shadow-md transition-all hover:shadow-lg"
           >
             <Image
               src="/google-logo.svg"

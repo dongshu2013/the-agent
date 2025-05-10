@@ -16,11 +16,10 @@ model users {
   api_key_enabled Boolean         @default(true)
   created_at      DateTime        @default(now())
   updated_at      DateTime        @updatedAt
-  credits         Decimal         @default(0) @db.Decimal(10, 6)
   conversations   conversations[]
-  credit_logs     credit_logs[]
-  models          models[]
+  credits         credits[]
   orders          orders[]
+  balance         balances?
 }
 
 model conversations {
@@ -99,41 +98,52 @@ model tg_users {
   updated_at DateTime @default(now())
 }
 
-model credit_logs {
-  id          String   @id @default(uuid())
-  user_id     String
-  amount      Decimal  @db.Decimal(10, 6)
-  type        String
-  description String?
-  balance     Decimal  @db.Decimal(10, 6)
-  created_at  DateTime @default(now())
-  user        users    @relation(fields: [user_id], references: [id])
+enum TransactionType {
+  new_user    // Initial credits for new user
+  order_pay   // Credits from payment
+  system_add  // Credits added by system
+  completion  // Credits used for completion
+}
+
+model credits {
+  id              String          @id @default(uuid())
+  user_id         String
+  order_id        String?
+  conversation_id String?
+  model           String?
+  amount          Decimal?        @db.Decimal(10, 6)
+  trans_credits   Decimal         @default(0) @db.Decimal(10, 6) // negative(-10) or positive(+20) transaction credits
+  trans_type      TransactionType @default(new_user)
+  created_at      DateTime        @default(now())
+  expired_at      DateTime?
+  user            users           @relation(fields: [user_id], references: [id])
+}
+
+enum OrderStatus {
+  pending    // Order is created but not paid
+  completed  // Payment completed
+  cancelled  // Order cancelled
 }
 
 model orders {
-  id                String   @id @default(uuid())
+  id                String      @id @default(uuid())
   user_id           String
   user_email        String
-  amount            Decimal  @db.Decimal(10, 2)
-  currency          String   @default("usd")
-  status            String   @default("pending")
+  amount            Decimal     @default(0) @db.Decimal(10, 6)
+  credits           Decimal     @default(0) @db.Decimal(10, 6)
+  currency          String      @default("usd")
+  status            OrderStatus @default(pending)
   stripe_session_id String?
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
-  user              users    @relation(fields: [user_id], references: [id])
+  created_at        DateTime    @default(now())
+  updated_at        DateTime    @updatedAt
+  user              users       @relation(fields: [user_id], references: [id])
 }
 
-model models {
-  id         String   @id @default(uuid())
-  type       String
-  name       String
-  user_id    String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  api_key    String
-  api_url    String
-  user       users    @relation(fields: [user_id], references: [id])
-
-  @@unique([name, user_id])
-  @@index([user_id])
+model balances {
+  id           String   @id @default(uuid())
+  user_id      String   @unique
+  user_credits Decimal  @default(0) @db.Decimal(10, 6)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+  user         users    @relation(fields: [user_id], references: [id])
 }

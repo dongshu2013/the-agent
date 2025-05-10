@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { prisma } from "@/lib/prisma";
+import { OrderStatus } from "@/lib/constants";
 
 const stripe = new Stripe(process.env.STRIPE_PRIVATE_KEY || '');
 
 export async function POST(req: Request) {
   try {
-    const { amount, userId, userEmail } = await req.json();
+    const { amount, credits, userId, userEmail } = await req.json();
 
     if (!amount || amount < 5) {
       return NextResponse.json(
@@ -28,7 +29,8 @@ export async function POST(req: Request) {
         user_id: userId,
         user_email: userEmail,
         amount: amount,
-        status: 'pending',
+        credits: credits,
+        status: OrderStatus.PENDING,
       },
     });
 
@@ -40,7 +42,7 @@ export async function POST(req: Request) {
             currency: 'usd',
             product_data: {
               name: 'Credits',
-              description: `${amount} credits for your account`,
+              description: `${credits} credits for your account`,
             },
             unit_amount: amount * 100, // Convert to cents
           },

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { prisma } from "@/lib/prisma";
+import { getUserCredits } from "@/lib/credits";
+import { TransactionType, OrderStatus } from "@/lib/constants";
 
 export async function POST(req: Request) {
   try {
@@ -25,7 +27,7 @@ export async function POST(req: Request) {
       stripeWebhookSecret
     );
 
-    console.log("stripe notify event: ", event);
+    // console.log("stripe notify event: ", event);
 
     // Handle the event
     switch (event.type) {
@@ -36,36 +38,46 @@ export async function POST(req: Request) {
         if (session.metadata?.orderId) {
           const order = await prisma.orders.update({
             where: { id: session.metadata.orderId },
-            data: { status: 'completed' },
+            data: { status: OrderStatus.COMPLETED },
           });
 
           // Add credits to user account
           if (order && session.metadata?.userId) {
-            // Get current user credits
-            const user = await prisma.users.findUnique({
-              where: { id: session.metadata.userId },
-              select: { credits: true },
-            });
-
-            if (user) {
-              const currentCredits = parseFloat(user.credits.toString());
-              const orderAmount = parseFloat(order.amount.toString());
+            // Get current user credits from the balances table
+            const currentCredits = await getUserCredits(session.metadata.userId);
+            const orderAmount = parseFloat(order.amount.toString());
+            const newUserCredits = currentCredits + orderAmount;
               
-              // Update user credits
-              await prisma.users.update({
-                where: { id: session.metadata.userId },
-                data: { credits: currentCredits + orderAmount },
+            // Record the credit addition in the credits table (transaction record)
+            await prisma.credits.create({
+              data: {
+                user_id: session.metadata.userId,
+                order_id: order.id,
+                amount: orderAmount,
+                trans_credits: orderAmount,
+                trans_type: TransactionType.ORDER_PAY,
+                created_at: new Date(),
+              }
+            });
+            
+            // Update user balance in the balances table
+            const userBalance = await prisma.balances.findUnique({
+              where: { user_id: session.metadata.userId }
+            });
+            
+            if (userBalance) {
+              // Update existing balance
+              await prisma.balances.update({
+                where: { user_id: session.metadata.userId },
+                data: { user_credits: newUserCredits }
               });
-
-              // Log the credit addition
-              await prisma.credit_logs.create({
+            } else {
+              // Create new balance record if it doesn't exist
+              await prisma.balances.create({
                 data: {
                   user_id: session.metadata.userId,
-                  amount: orderAmount,
-                  type: 'addition',
-                  description: `Payment completed - Order ID: ${order.id}`,
-                  balance: currentCredits + orderAmount,
-                },
+                  user_credits: newUserCredits
+                }
               });
             }
           }

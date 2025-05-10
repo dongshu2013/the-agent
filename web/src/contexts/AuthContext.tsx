@@ -37,6 +37,7 @@ interface AuthContextType {
   rotateApiKey: () => Promise<string | null>;
   toggleApiKey: (enabled: boolean) => Promise<boolean>;
   refreshToken: () => Promise<string | null>;
+  refreshUserData: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -279,6 +280,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Function to refresh user data including credits
+  const refreshUserData = async (): Promise<void> => {
+    if (!auth.currentUser || !user) return;
+
+    try {
+      // Get a fresh token
+      const token = await getToken(auth.currentUser);
+      
+      // Fetch the latest user data
+      const response = await fetch(`/api/auth/user?userId=${user.id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        
+        // Update the user state with the fresh data
+        setUser({
+          ...user,
+          apiKey: userData.apiKey,
+          apiKeyEnabled: userData.apiKeyEnabled,
+          credits: userData.credits,
+          idToken: token,
+        });
+      } else {
+        console.error('Failed to refresh user data');
+      }
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -289,6 +324,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         rotateApiKey,
         toggleApiKey,
         refreshToken,
+        refreshUserData,
       }}
     >
       {children}

@@ -20,12 +20,13 @@ class User(Base):
     email = Column(String, unique=True, nullable=True)
     api_key = Column(String, unique=True, nullable=False, default=generate_uuid)
     api_key_enabled = Column(Boolean, default=True, nullable=False)
-    credits = Column(Numeric(10, 6), default=0, nullable=False)
     created_at = Column(DateTime, default=func.now(), nullable=False)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
 
     # Relationships
     conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
+    credits = relationship("Credit", back_populates="user", cascade="all, delete-orphan")
+    balance = relationship("Balance", back_populates="user", uselist=False, cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User(id={self.id}, username={self.username})>"
@@ -133,22 +134,41 @@ class TelegramUser(Base):
         return f"<TelegramUser(id={self.id}, user_id={self.user_id}, username={self.username})>"
 
 
-class CreditLog(Base):
-    __tablename__ = "credit_logs"
+class Credit(Base):
+    __tablename__ = "credits"
 
     id = Column(String, primary_key=True, default=generate_uuid)
     user_id = Column(String, ForeignKey("users.id"), nullable=False)
-    amount = Column(Numeric(10, 6), nullable=False)  # Amount of credits changed
-    type = Column(String, nullable=False)  # 'deduction', 'addition', etc.
-    description = Column(String, nullable=True)  # Description of the transaction
-    balance = Column(Numeric(10, 6), nullable=False)  # Balance after this transaction
+    order_id = Column(String, nullable=True)
+    conversation_id = Column(String, nullable=True)
+    model = Column(String, nullable=True)
+    amount = Column(Numeric(10, 6), nullable=True)
+    trans_credits = Column(Numeric(10, 6), default=0, nullable=False)  # Transaction credits
+    trans_type = Column(String, default="new_user", nullable=False)  # TransactionType enum value
     created_at = Column(DateTime, default=func.now(), nullable=False)
+    expired_at = Column(DateTime, nullable=True)
     
     # Relationship
-    user = relationship("User", backref="credit_logs")
+    user = relationship("User", back_populates="credits")
     
     def __repr__(self):
-        return f"<CreditLog(id={self.id}, user_id={self.user_id}, amount={self.amount}, type={self.type})>"
+        return f"<Credit(id={self.id}, user_id={self.user_id}, trans_credits={self.trans_credits}, trans_type={self.trans_type})>"
+
+
+class Balance(Base):
+    __tablename__ = "balances"
+    
+    id = Column(String, primary_key=True, default=generate_uuid)
+    user_id = Column(String, ForeignKey("users.id"), unique=True, nullable=False)
+    user_credits = Column(Numeric(10, 6), default=0, nullable=False)  # User's current balance
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
+    
+    # Relationship
+    user = relationship("User", back_populates="balance")
+    
+    def __repr__(self):
+        return f"<Balance(id={self.id}, user_id={self.user_id}, user_credits={self.user_credits})>"
 
 
 class Model(Base):
