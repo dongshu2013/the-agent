@@ -280,8 +280,8 @@ async def chat_completion(
             )
 
         # Get model configuration
-        model_config = params.modelConfig
-        if not model_config or not model_config["api_key"] or not model_config["api_url"]:
+        model_config = json.loads(request.query_params.get("modelConfig", "{}"))
+        if not model_config or not model_config.get("api_key") or not model_config.get("api_url"):
             raise HTTPException(status_code=400, detail="Missing or invalid modelConfig in query params")
 
         logger.error(f"model_config: {str(model_config)}")

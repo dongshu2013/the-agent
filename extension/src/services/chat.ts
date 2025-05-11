@@ -54,8 +54,9 @@ export const sendChatCompletion = async (
       {
         signal: options.signal,
         query: {
-          modelConfig: {
-            ...request.currentModel,
+          modelConfig: JSON.stringify({
+            id: request.currentModel?.id,
+            type: request.currentModel?.type,
             name:
               request.currentModel?.id === "system"
                 ? env.OPENAI_MODEL
@@ -65,7 +66,7 @@ export const sendChatCompletion = async (
               request.currentModel?.id === "system"
                 ? env.LLM_API_URL
                 : request.currentModel?.apiUrl,
-          },
+          }),
         },
       }
     );
