@@ -57,7 +57,7 @@ const ModelCascader: React.FC<ModelCascaderProps> = ({
     label: provider.type.charAt(0).toUpperCase() + provider.type.slice(1),
     children: provider.models.map((model) => ({
       value: model.id,
-      label: model.name,
+      label: model.id === "system" ? "Mysta(default)" : model.name,
     })),
   }));
 

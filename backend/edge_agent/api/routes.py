@@ -280,7 +280,7 @@ async def chat_completion(
             )
 
         # Get model configuration
-        model_config = parse_model_config(request.query_params)
+        model_config = params.modelConfig
         if not model_config or not model_config["api_key"] or not model_config["api_url"]:
             raise HTTPException(status_code=400, detail="Missing or invalid modelConfig in query params")
 
@@ -298,7 +298,7 @@ async def chat_completion(
 
         params = {
             **params.dict(),
-            "model": settings.DEFAULT_MODEL if model_config["model"] == "Mysta Model" else model_config["model"]
+            "model": model_config["name"]
         }
         
         if params["stream"]:
@@ -562,19 +562,3 @@ async def deduct_credits(
         db.rollback()
         logger.error(f"Error deducting credits: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to deduct credits: {str(e)}")
-
-def parse_model_config(query_params):
-    model_config = {}
-    for k, v in query_params.items():
-        if k.startswith("modelConfig[") and k.endswith("]"):
-            key = k[len("modelConfig["):-1]
-            model_config[key] = v
-    # 统一 key 命名，兼容前端 camelCase
-    return {
-        "id": model_config.get("id"),
-        "name": model_config.get("name"),
-        "type": model_config.get("type"),
-        "api_key": model_config.get("apiKey"),
-        "api_url": model_config.get("apiUrl"),
-        "model": model_config.get("name"),  # 用 name 作为 model
-    }

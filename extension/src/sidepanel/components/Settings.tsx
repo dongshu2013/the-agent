@@ -71,10 +71,12 @@ const Settings: React.FC<SettingsProps> = ({
           const allModels = PROVIDER_MODELS.flatMap((provider) =>
             provider.models.map((model) => ({
               ...model,
-              type: provider.type,
               userId,
-              apiKey: "",
-              apiUrl: model.apiUrl || "",
+              apiKey: model.id === "system" ? env.LLM_API_KEY || "" : "",
+              apiUrl:
+                model.id === "system" ? env.LLM_API_URL || "" : model.apiUrl,
+              name: model.id === "system" ? env.OPENAI_MODEL || "" : model.name,
+              type: model.id === "system" ? "SYSTEM" : provider.type,
             }))
           );
           await db.models.bulkPut(allModels);

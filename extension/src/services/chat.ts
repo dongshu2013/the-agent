@@ -39,9 +39,14 @@ export const sendChatCompletion = async (
       },
     }));
 
+    console.log("request.currentModel", request.currentModel);
+
     return client.beta.chat.completions.stream(
       {
-        model: request.currentModel?.name || env.OPENAI_MODEL,
+        model:
+          request.currentModel?.id === "system"
+            ? env.OPENAI_MODEL || ""
+            : request.currentModel?.name || "",
         messages: request.messages as OpenAI.Chat.ChatCompletionMessageParam[],
         tools: tools,
         tool_choice: "auto",
@@ -49,7 +54,18 @@ export const sendChatCompletion = async (
       {
         signal: options.signal,
         query: {
-          modelConfig: request.currentModel,
+          modelConfig: {
+            ...request.currentModel,
+            name:
+              request.currentModel?.id === "system"
+                ? env.OPENAI_MODEL
+                : request.currentModel?.name,
+            api_key: request.currentModel?.apiKey,
+            api_url:
+              request.currentModel?.id === "system"
+                ? env.LLM_API_URL
+                : request.currentModel?.apiUrl,
+          },
         },
       }
     );

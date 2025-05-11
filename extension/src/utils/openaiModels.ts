@@ -40,7 +40,7 @@ export const PROVIDER_MODELS = [
       {
         id: "system",
         name: "Mysta(default)",
-        apiUrl: "https://api.system.com",
+        apiUrl: env.LLM_API_URL,
       },
     ],
   },

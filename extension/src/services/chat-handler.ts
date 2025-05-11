@@ -354,13 +354,10 @@ Now reply to user's message: ${currentPrompt}`,
         ).toISOString(),
       };
 
-      // 在最后添加 token 使用统计
-      const tokenSummary = `\n\n---\nToken usage statistics:
-- Prompt tokens: ${tokenUsage.promptTokens}
-- Completion tokens: ${tokenUsage.completionTokens}
-- Total tokens: ${tokenUsage.totalTokens}`;
+      // 只打印到控制台，不显示在界面
+      console.log(`Token usage statistics:`, tokenUsage);
+      console.log(`Total tokens: ${tokenUsage.totalTokens}`);
 
-      aiMessage.content += tokenSummary;
       const aiCreditsToDeduct = calculateAIUsageCredits(
         tokenUsage,
         env.OPENAI_MODEL

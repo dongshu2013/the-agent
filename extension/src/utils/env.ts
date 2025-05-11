@@ -17,6 +17,7 @@ Always format tool calls as a JSON array, like this:
   SERVER_URL: "https://the-agent-production.up.railway.app",
   LLM_API_URL: "",
   LLM_API_KEY: "",
+  OPENAI_API_KEY: "",
 };
 
 export const env: Env = {
@@ -28,4 +29,6 @@ export const env: Env = {
   SERVER_URL: process.env.PLASMO_PUBLIC_SERVER_URL || defaultEnv.SERVER_URL,
   LLM_API_URL: process.env.PLASMO_PUBLIC_LLM_API_URL || defaultEnv.LLM_API_URL,
   LLM_API_KEY: process.env.PLASMO_PUBLIC_LLM_API_KEY || defaultEnv.LLM_API_KEY,
+  OPENAI_API_KEY:
+    process.env.PLASMO_PUBLIC_OPENAI_API_KEY || defaultEnv.OPENAI_API_KEY,
 };
