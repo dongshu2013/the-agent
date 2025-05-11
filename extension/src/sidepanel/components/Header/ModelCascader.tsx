@@ -1,5 +1,5 @@
 import React from "react";
-import { Cascader, Tooltip } from "antd";
+import { Cascader } from "antd";
 import { Settings as SettingsIcon } from "lucide-react";
 
 export interface ProviderGroup {
@@ -29,13 +29,6 @@ const providerIcons: Record<string, React.ReactNode> = {
       alt="OpenAI"
     />
   ),
-  anthropic: (
-    <img
-      src="/icons/anthropic.svg"
-      style={{ width: 20, height: 20 }}
-      alt="Anthropic"
-    />
-  ),
   google: (
     <img
       src="/icons/google.svg"
@@ -43,7 +36,14 @@ const providerIcons: Record<string, React.ReactNode> = {
       alt="Google"
     />
   ),
-  default: <SettingsIcon size={20} />,
+  anthropic: (
+    <img
+      src="/icons/anthropic.svg"
+      style={{ width: 20, height: 20 }}
+      alt="Anthropic"
+    />
+  ),
+  default: null,
 };
 
 const ModelCascader: React.FC<ModelCascaderProps> = ({
@@ -64,7 +64,9 @@ const ModelCascader: React.FC<ModelCascaderProps> = ({
   const displayRender = (labels: string[]) => labels[labels.length - 1] || "";
 
   const optionRender = (option: any, context?: { level: number }) => {
-    if (context && context.level === 0) {
+    const isProvider =
+      Array.isArray(option.children) && option.children.length > 0;
+    if ((context && context.level === 0) || isProvider) {
       return (
         <div
           style={{
@@ -75,19 +77,30 @@ const ModelCascader: React.FC<ModelCascaderProps> = ({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {providerIcons[option.value] || providerIcons.default}
+            {/* {providerIcons[option.value] || providerIcons.default} */}
             <span>{option.label}</span>
           </div>
-          <Tooltip title="设置API Key">
-            <SettingsIcon
-              size={18}
-              style={{ marginLeft: 8, cursor: "pointer", color: "#aaa" }}
+          {option.value !== "system" && (
+            <button
+              style={{
+                background: "none",
+                border: "none",
+                padding: 0,
+                marginLeft: 8,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                color: "#aaa",
+              }}
               onClick={(e) => {
                 e.stopPropagation();
                 onProviderSetting?.(option.value);
               }}
-            />
-          </Tooltip>
+              title="设置API Key"
+            >
+              <SettingsIcon size={18} />
+            </button>
+          )}
         </div>
       );
     }
@@ -99,11 +112,9 @@ const ModelCascader: React.FC<ModelCascaderProps> = ({
       options={cascaderOptions}
       value={value}
       onChange={(val) => onChange?.(val as [string, string])}
-      placeholder="Please select a model"
-      showSearch
-      style={{ width: 320 }}
       displayRender={displayRender}
       optionRender={optionRender}
+      style={{ width: "100%" }}
     />
   );
 };

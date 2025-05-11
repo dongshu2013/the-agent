@@ -7,6 +7,7 @@ import { db } from "~/utils/db";
 import React, { useState, useEffect } from "react";
 import { Modal } from "antd";
 import ModelCascader, { ProviderGroup } from "./ModelCascader";
+import { PROVIDER_MODELS } from "~/utils/openaiModels";
 
 interface HeaderProps {
   setShowSettings: (value: boolean) => void;
@@ -32,43 +33,12 @@ const Header = ({
   const [apiModalOpen, setApiModalOpen] = useState(false);
 
   useEffect(() => {
-    const init = async () => {
-      const user = await db.getCurrentUser();
-      console.log("user", user);
-      if (user) {
-        const userModels = await db.getUserModels(user.id);
-        console.log("userModels", userModels);
-        // 构建 fullProviderGroups（含完整模型信息）
-        const fullGroups: Record<string, any> = {};
-        userModels.forEach((model) => {
-          if (!fullGroups[model.type]) {
-            fullGroups[model.type] = {
-              type: model.type,
-              models: [],
-            };
-          }
-          fullGroups[model.type].models.push(model); // 保留完整对象
-        });
-        const fullProviderGroups = Object.values(fullGroups);
-
-        // 构建 providerGroups（只含 id, name）
-        const providerGroups = fullProviderGroups.map((g: any) => ({
-          type: g.type,
-          models: g.models.map((m: any) => ({ id: m.id, name: m.name })),
-        }));
-        console.log("groupArr", providerGroups);
-        setProviderGroups(providerGroups);
-        // Set default provider/model
-        if (providerGroups.length > 0) {
-          setSelectedProvider((prev) => prev || providerGroups[0].type);
-          const firstModel = providerGroups[0].models[0];
-          setSelectedModelId(
-            (prev) => prev || (firstModel ? firstModel.id : "")
-          );
-        }
-      }
-    };
-    init();
+    setProviderGroups(PROVIDER_MODELS);
+    if (PROVIDER_MODELS.length > 0) {
+      setSelectedProvider((prev) => prev || PROVIDER_MODELS[0].type);
+      const firstModel = PROVIDER_MODELS[0].models[0];
+      setSelectedModelId((prev) => prev || (firstModel ? firstModel.id : ""));
+    }
   }, []);
 
   // When provider changes, update model selection
@@ -82,54 +52,8 @@ const Header = ({
     }
   }, [selectedProvider, providerGroups]);
 
-  // Use string label for both provider and model
-  const cascaderOptions = providerGroups.map((provider) => ({
-    value: provider.type,
-    label: provider.type.charAt(0).toUpperCase() + provider.type.slice(1),
-    children: provider.models.map((model) => ({
-      value: model.id,
-      label: model.name,
-    })),
-  }));
-
-  // Only show the model name in the input after selection
-  const displayRender = (labels: string[]) => labels[labels.length - 1] || "";
-
-  // optionRender for v5: show icon, name, and settings button for provider rows only
-  const optionRender = (option: any, context?: { level: number }) => {
-    console.log("optionRender", option, context);
-    if (context && context.level === 0) {
-      return (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            width: "100%",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {/* providerIcons[option.value] || providerIcons.default */}
-            <span>{option.label}</span>
-          </div>
-          <SettingsIcon
-            size={18}
-            style={{ marginLeft: 8, cursor: "pointer", color: "#aaa" }}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleProviderSetting(option.value);
-            }}
-          />
-        </div>
-      );
-    }
-    // model row or context is undefined
-    return <span>{option.label}</span>;
-  };
-
   // Handler for cascader change
   const handleCascaderChange = (value: string[]) => {
-    // value: [providerType, modelId]
     if (value.length === 2) {
       setSelectedProvider(value[0]);
       setSelectedModelId(value[1]);
@@ -161,34 +85,30 @@ const Header = ({
   const handleApiKeySave = async () => {
     setIsSavingApiKey(true);
     try {
-      // Update all models for this provider with the new API key
       const user = await db.getCurrentUser();
-      if (user) {
-        const userModels = await db.getUserModels(user.id);
-        const modelsToUpdate = userModels.filter(
-          (m: any) => m.type === editingProvider
-        );
-        for (const model of modelsToUpdate) {
-          await db.addOrUpdateModel({
-            ...model,
-            apiKey: apiKeyInput,
-            type: editingProvider || "",
-          });
-        }
-        // Refresh provider groups
-        const groups: Record<string, ProviderGroup> = {};
-        userModels.forEach((model: any) => {
-          if (!groups[model.type]) {
-            groups[model.type] = {
-              type: model.type,
-              models: [],
-            };
-          }
-          groups[model.type].models.push({ id: model.id, name: model.name });
-        });
-        setProviderGroups(Object.values(groups));
+      if (!user) {
+        console.error("No user found");
+        return;
       }
+      const userModels = await db.getUserModels(user.id);
+      const modelsToUpdate = userModels.filter(
+        (m: any) => m.type === editingProvider
+      );
+      if (modelsToUpdate.length === 0) {
+        console.error("No models found for provider:", editingProvider);
+        return;
+      }
+
+      await db.updateModels(
+        modelsToUpdate.map((model) => ({
+          ...model,
+          apiKey: apiKeyInput,
+        }))
+      );
       setApiModalOpen(false);
+      setApiKeyInput("");
+    } catch (error) {
+      console.error("Error saving API key:", error);
     } finally {
       setIsSavingApiKey(false);
     }
@@ -252,12 +172,14 @@ const Header = ({
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-        <ModelCascader
-          providerGroups={providerGroups as ProviderGroup[]}
-          value={cascaderValue as [string, string]}
-          onChange={handleCascaderChange}
-          onProviderSetting={handleProviderSetting}
-        />
+        <div style={{ width: "200px" }}>
+          <ModelCascader
+            providerGroups={providerGroups as ProviderGroup[]}
+            value={cascaderValue as [string, string]}
+            onChange={handleCascaderChange}
+            onProviderSetting={handleProviderSetting}
+          />
+        </div>
         <button
           onClick={createNewConversation}
           style={{
@@ -325,77 +247,105 @@ const Header = ({
         footer={null}
         centered
         closable
-        width={500}
-        bodyStyle={{
-          background: "#181818",
-          borderRadius: 20,
-          color: "#fff",
-          padding: 32,
+        style={{
+          background: "#fff",
+          borderRadius: 10,
+          color: "#111",
+          padding: 16,
         }}
       >
-        <div style={{ fontSize: 24, fontWeight: 700, marginBottom: 24 }}>
+        <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>
           设置 API 密钥：
           {editingProvider
             ? editingProvider.charAt(0).toUpperCase() + editingProvider.slice(1)
             : ""}
         </div>
-        <div style={{ color: "#f87171", marginBottom: 16 }}>
+        {/* <div style={{ color: "#f87171", fontSize: 12, marginBottom: 8 }}>
           您的密钥将永远有效
         </div>
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 8 }}>
           <select
-            style={{ width: 220, height: 40, borderRadius: 12, fontSize: 16 }}
+            style={{
+              width: 120,
+              height: 28,
+              borderRadius: 6,
+              fontSize: 13,
+              border: "1px solid #d1d5db",
+              fontWeight: 500,
+              paddingLeft: 8,
+            }}
+            defaultValue="Expires never"
           >
-            <option>Expires in 12 hours</option>
+            <option>Expires never</option>
           </select>
+        </div> */}
+        <div style={{ fontWeight: 600, marginBottom: 4, fontSize: 13 }}>
+          {editingProvider
+            ? `${editingProvider.charAt(0).toUpperCase() + editingProvider.slice(1)} API Key`
+            : "API Key"}
         </div>
-        <div style={{ fontWeight: 600, marginBottom: 8 }}>OpenAI API Key</div>
-        <input
-          placeholder="输入值：OpenAI API Key"
-          value={apiKeyInput}
-          onChange={(e) => setApiKeyInput(e.target.value)}
-          style={{
-            width: "100%",
-            height: 40,
-            borderRadius: 8,
-            border: "1px solid #333",
-            background: "#222",
-            color: "#fff",
-            padding: "0 12px",
-            marginBottom: 24,
-          }}
-        />
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 16 }}>
-          <button
+        <div style={{ width: "100%" }}>
+          <input
+            placeholder={`输入值：${editingProvider ? editingProvider.charAt(0).toUpperCase() + editingProvider.slice(1) + " API Key" : "API Key"}`}
+            value={apiKeyInput}
+            onChange={(e) => setApiKeyInput(e.target.value)}
             style={{
-              background: "#dc2626",
-              color: "#fff",
-              border: "none",
-              borderRadius: 8,
-              padding: "10px 32px",
-              fontWeight: 600,
-              fontSize: 16,
-              cursor: "pointer",
+              width: "100%",
+              height: 32,
+              borderRadius: 6,
+              border: "1px solid #e5e7eb",
+              background: "#fafafa",
+              color: "#111",
+              padding: "0 8px",
+              marginBottom: 10,
+              fontSize: 13,
+              boxSizing: "border-box",
             }}
-            onClick={() => setApiModalOpen(false)}
-          >
-            Cancel
-          </button>
-          <button
+          />
+          <div
             style={{
-              background: "#22c55e",
-              color: "#fff",
-              border: "none",
-              borderRadius: 8,
-              padding: "10px 32px",
-              fontWeight: 600,
-              fontSize: 16,
-              cursor: "pointer",
+              display: "flex",
+              flexDirection: "column",
+              gap: 0,
+              width: "100%",
             }}
-            onClick={handleApiKeySave}
           >
-            Save
-          </button>
+            <button
+              style={{
+                background: "#22c55e",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                padding: "7px 0",
+                fontWeight: 600,
+                fontSize: 14,
+                cursor: "pointer",
+                width: "100%",
+                marginBottom: 8,
+                boxSizing: "border-box",
+              }}
+              onClick={handleApiKeySave}
+            >
+              提交
+            </button>
+            <button
+              style={{
+                background: "#dc2626",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                padding: "7px 0",
+                fontWeight: 600,
+                fontSize: 14,
+                cursor: "pointer",
+                width: "100%",
+                boxSizing: "border-box",
+              }}
+              onClick={() => setApiModalOpen(false)}
+            >
+              取消
+            </button>
+          </div>
         </div>
       </Modal>
     </div>

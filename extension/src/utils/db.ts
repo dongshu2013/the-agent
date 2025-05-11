@@ -87,6 +87,20 @@ class MizuDB extends Dexie {
   }) {
     await this.models.put(model);
   }
+
+  async updateModels(
+    models: {
+      id: string;
+      type: string;
+      name: string;
+      userId: string;
+      apiKey: string;
+      apiUrl: string;
+    }[]
+  ) {
+    await this.models.bulkPut(models);
+  }
+
   async deleteModel(modelId: string) {
     await this.models.delete(modelId);
   }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { env } from "../../utils/env";
 import { db } from "~/utils/db";
-import { getOpenAIModels } from "~/utils/openaiModels";
+import { PROVIDER_MODELS } from "~/utils/openaiModels";
 
 interface SettingsProps {
   setApiKey: (key: string) => void;
@@ -18,18 +18,13 @@ const Settings: React.FC<SettingsProps> = ({
   autoCloseOnSuccess = false,
   onSuccess,
 }) => {
-  const [userId, setUserId] = useState<string>("");
   const [apiKey, setApiKeyState] = useState("");
-  const [models, setModels] = useState<any[]>([]);
   const [selectedModelId, setSelectedModelId] = useState<string>("");
   const [saveStatus, setSaveStatus] = useState("");
   const [showWarning, setShowWarning] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingModel, setEditingModel] = useState<any | null>(null);
   const [isSettingsValid, setIsSettingsValid] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -37,23 +32,6 @@ const Settings: React.FC<SettingsProps> = ({
       if (user && user.api_key) {
         setApiKeyState(user.api_key);
         setSelectedModelId(user.selectedModelId || "");
-        setUserId(user.id);
-        const userModels = await db.getUserModels(user.id);
-        let openaiModels = await db.models
-          .where("type")
-          .equals("openai")
-          .toArray();
-        if (!openaiModels || openaiModels.length === 0) {
-          try {
-            openaiModels = await getOpenAIModels(db, user.id, user.api_key);
-          } catch (e) {
-            setSaveStatus(
-              "OpenAI model pull error: " +
-                (e instanceof Error ? e.message : "")
-            );
-          }
-        }
-        setModels([...userModels, ...openaiModels]);
       } else {
         setApiKeyState("");
         setIsSettingsValid(false);
@@ -82,33 +60,29 @@ const Settings: React.FC<SettingsProps> = ({
       }
 
       if (verifyData.success && verifyData.user) {
-        const newUserId = verifyData.user.id;
         try {
           await db.saveOrUpdateUser({
             ...verifyData.user,
             api_key: formattedKey,
             selectedModelId,
           });
-          setUserId(newUserId);
+
+          const userId = verifyData.user.id;
+          const allModels = PROVIDER_MODELS.flatMap((provider) =>
+            provider.models.map((model) => ({
+              ...model,
+              type: provider.type,
+              userId,
+              apiKey: "",
+              apiUrl: model.apiUrl || "",
+            }))
+          );
+          await db.models.bulkPut(allModels);
+
           setApiKeyState(formattedKey);
           setSaveStatus("");
           setApiKey(formattedKey);
           setIsSettingsValid(true);
-          let openaiModels = await db.models
-            .where("type")
-            .equals("openai")
-            .toArray();
-          if (!openaiModels || openaiModels.length === 0) {
-            try {
-              openaiModels = await getOpenAIModels(db, newUserId, formattedKey);
-            } catch (e) {
-              setSaveStatus(
-                "OpenAI模型拉取失败：" + (e instanceof Error ? e.message : "")
-              );
-            }
-          }
-          const userModels = await db.getUserModels(newUserId);
-          setModels([...userModels, ...openaiModels]);
           if (autoCloseOnSuccess) {
             onClose();
             if (onSuccess) onSuccess();
@@ -139,7 +113,6 @@ const Settings: React.FC<SettingsProps> = ({
     const value = e.target.value;
     setApiKeyState(value);
     setShowWarning(false);
-    console.log(",,,,,,value", value.trim());
     if (value.trim()) {
       handleVerifyAndSet(value);
     }
