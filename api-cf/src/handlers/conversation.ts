@@ -27,8 +27,6 @@ export class CreateConversation extends OpenAPIRoute {
     };
 
     async handle(c: GatewayServiceContext) {
-        console.log('CreateConversation with env', c.env.SUPABASE_KEY);
-        console.log('CreateConversation with env', c.env.SUPABASE_URL);
         console.log('CreateConversation for user', c.get('userId'));
         return c.json({
             message: 'ok',

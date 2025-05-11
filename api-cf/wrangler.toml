@@ -1,6 +1,0 @@
-name = "mizu_node_gateway"
-main = "src/index.ts"
-compatibility_date = "2023-12-18"
-
-[observability.logs]
-enabled = true

@@ -1,0 +1,10 @@
+name = "mizu_node_gateway"
+main = "src/index.ts"
+compatibility_date = "2023-12-18"\
+
+[env]
+SUPERBASE_KEY=your-SUPERBASE_KEY
+SUPERBASE_URL=your-SUPERBASE_URL
+
+[observability.logs]
+enabled = true

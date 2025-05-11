@@ -63,3 +63,6 @@ web/node_modules
 
 # prisma generated files
 /web/src/generated/prisma
+
+# wrangler
+wrangler.toml
