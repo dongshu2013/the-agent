@@ -7,7 +7,10 @@ import { apiKeyAuthMiddleware } from './auth';
 import { GatewayServiceError } from './types';
 import { CreateConversation } from './handlers';
 
-const app = new Hono<{ Bindings: { SUPERBASE: string } }>();
+const app = new Hono<{ Bindings: {
+  SUPABASE_KEY: string;
+  SUPABASE_URL: string;
+} }>();
 
 // CORS middleware
 app.use(

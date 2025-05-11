@@ -13,7 +13,8 @@ export class GatewayServiceError extends Error {
 
 export type GatewayServiceContext = Context<{
   Bindings: {
-    SUPERBASE: string;
+    SUPABASE_KEY: string;
+    SUPABASE_URL: string;
   };
   Variables: {
     userId: string;
