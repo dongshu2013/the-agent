@@ -66,7 +66,7 @@ export class AgentContext extends DurableObject<Env> {
       for (let message of messages) {
         msgs.push({
           id: message.id as number,
-          conversation_id: message.conversation_id as string,
+          conversation_id: message.conversation_id as number,
           role: message.role as string,
           content: JSON.parse(message.content as string) as AgentMessage[],
           tool_calls: JSON.parse(message.tool_calls as string) as ToolCall[],

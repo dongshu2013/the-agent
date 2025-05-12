@@ -3,14 +3,14 @@ export interface TextMessage {
   text: {
     value: string;
     annotations: string[];
-  }
+  };
 }
 
 export interface ImageMessage {
   type: "image";
   image_url: {
     url: string;
-  }
+  };
 }
 
 export type AgentMessage = TextMessage | ImageMessage;
@@ -26,7 +26,7 @@ export interface ToolCall {
 
 export interface Message {
   id: number;
-  conversation_id: string;
+  conversation_id: number;
   role: string;
   content: AgentMessage[];
   tool_calls: ToolCall[];

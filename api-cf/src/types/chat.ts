@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 // Tool call related types
 export const ToolCallFunctionSchema = z.object({
@@ -30,7 +30,7 @@ export const ChatMessageSchema = z.object({
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
 
 export const ChatMessageWithIdSchema = ChatMessageSchema.extend({
-  message_id: z.string(),
+  message_id: z.number(),
   created_at: z.string(),
 });
 
@@ -56,11 +56,13 @@ export const ChatCompletionCreateParamSchema = z.object({
   user: z.string().optional(),
 });
 
-export type ChatCompletionCreateParam = z.infer<typeof ChatCompletionCreateParamSchema>;
+export type ChatCompletionCreateParam = z.infer<
+  typeof ChatCompletionCreateParamSchema
+>;
 
 // Request types for other endpoints
 export const SaveMessageRequestSchema = z.object({
-  conversation_id: z.string(),
+  conversation_id: z.number(),
   message: ChatMessageWithIdSchema,
   top_k_related: z.number().default(0),
 });
@@ -81,7 +83,9 @@ export const SimilaritySearchRequestSchema = z.object({
   conversation_id: z.string().optional(),
 });
 
-export type SimilaritySearchRequest = z.infer<typeof SimilaritySearchRequestSchema>;
+export type SimilaritySearchRequest = z.infer<
+  typeof SimilaritySearchRequestSchema
+>;
 
 // Response types
 export const ConversationResponseSchema = z.object({

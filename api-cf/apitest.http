@@ -29,9 +29,9 @@ Content-Type: application/json
 Authorization: Bearer {{apiKey}}
 
 {
-  "conversation_id": "{conversationId}",
+  "conversation_id": 1747067974956,
   "message": {
-    "message_id": "msg_123456",
+    "message_id": 1747067974956,
     "created_at": "2025-05-12T11:46:06+08:00",
     "role": "user",
     "content": "Hello, this is a test message"
