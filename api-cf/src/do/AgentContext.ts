@@ -37,11 +37,7 @@ export class AgentContext extends DurableObject<Env> {
 
   deleteConversation(conversationId: number): void {
     this.sql.exec(
-      `DELETE FROM agent_messages WHERE conversation_id = $1`,
-      [conversationId]
-    );
-    this.sql.exec(
-      `DELETE FROM agent_conversations WHERE id = $1`,
+      `UPDATE agent_conversations SET status = 'deleted' WHERE id = $1`,
       [conversationId]
     );
   }

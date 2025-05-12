@@ -43,7 +43,8 @@ const app = new Hono<{
     SUPABASE_URL: string;
     OPENAI_API_KEY: string;
     EMBEDDING_API_KEY: string;
-    AgentContext: DurableObjectNamespace<AgentContext>
+    AgentContext: DurableObjectNamespace<AgentContext>;
+    UDB: D1Database;
   }
 }>();
 
