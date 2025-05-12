@@ -41,7 +41,9 @@ const app = new Hono<{
     MYTSTA_E5_INDEX: Vectorize;
     SUPABASE_KEY: string;
     SUPABASE_URL: string;
-    OPENAI_API_KEY: string;
+    LLM_API_URL: string;
+    LLM_API_KEY: string;
+    DEFAULT_MODEL: string;
     EMBEDDING_API_KEY: string;
     AgentContext: DurableObjectNamespace<AgentContext>;
     UDB: D1Database;

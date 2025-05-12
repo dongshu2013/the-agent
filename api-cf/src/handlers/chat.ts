@@ -75,8 +75,11 @@ export class ChatCompletions extends OpenAPIRoute {
       // Create OpenAI client
       // Note: In a real implementation, you'd get the API key from a secure source
       // or use a service like OpenRouter
-      const openAIKey = env.OPENAI_API_KEY || 'demo-key';
-      const client = createOpenAIClient(openAIKey);
+      const llmApiKey = env.LLM_API_KEY;
+      const llmApiUrl = env.LLM_API_URL;
+      const client = createOpenAIClient(llmApiKey, llmApiUrl);
+
+      params.model = env.DEFAULT_MODEL;
       
       // Handle streaming response
       if (params.stream) {

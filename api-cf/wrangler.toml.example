@@ -1,11 +1,23 @@
-name = "mizu_node_gateway"
+name = "mysta-api-server"
 main = "src/index.ts"
-compatibility_date = "2023-12-18"
+compatibility_date = "2025-05-12"
 
 [env]
-SUPERBASE_KEY = "your-SUPERBASE_KEY"
-SUPERBASE_URL = "your-SUPERBASE_URL"
-OPENAI_API_KEY = "your-OPENAI_API_KEY"
+SUPERBASE_KEY = ""
+SUPERBASE_URL = ""
+LLM_API_KEY = ""
+LLM_API_URL = ""
+DEFAULT_MODEL = ""
+EMBEDDING_API_KEY = ""
 
 [observability.logs]
 enabled = true
+
+[[vectorize]]
+binding = "MYTSTA_E5_INDEX"
+index_name = ""
+
+[[d1]]
+binding = "UDB"
+database_name = ""
+database_id = ""
