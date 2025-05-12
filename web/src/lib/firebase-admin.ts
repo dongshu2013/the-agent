@@ -52,3 +52,9 @@ export async function authenticateRequest(authHeader: string | null) {
 
   return { isAuthenticated: true, uid, email };
 }
+
+export async function createCustomToken(uid: string, email: string) {
+    return await adminAuth.createCustomToken(uid, {
+        email,
+    });
+}

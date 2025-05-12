@@ -1,4 +1,4 @@
-import { authenticateRequest } from "@/lib/firebase-admin";
+import { authenticateRequest, createCustomToken } from "@/lib/firebase-admin";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -6,6 +6,9 @@ export async function POST(request: Request) {
     const { isAuthenticated, uid, email } = await authenticateRequest(
         body.token
     );
-    const signJwt = await adminAuth.createCustomToken(uid); 
-    return NextResponse.json({ isAuthenticated, uid, email, signJwt });
+    if (!isAuthenticated) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const token = await createCustomToken(uid, email);
+    return NextResponse.json({ isAuthenticated, jwt: token });
 }
