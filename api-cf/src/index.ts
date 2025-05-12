@@ -11,11 +11,17 @@ import {
   ListConversations,
   SaveMessage,
   ChatCompletions,
+  GetTelegramDialogs,
+  GetTelegramMessages,
+  SearchTelegramMessages,
   handleCreateConversationOptions,
   handleDeleteConversationOptions,
   handleListConversationsOptions,
   handleSaveMessageOptions,
-  handleChatCompletionsOptions
+  handleChatCompletionsOptions,
+  handleGetTelegramDialogsOptions,
+  handleGetTelegramMessagesOptions,
+  handleSearchTelegramMessagesOptions
 } from './handlers';
 
 // CORS headers as specified in the memory
@@ -53,6 +59,9 @@ app.options('/v1/conversation/delete', handleDeleteConversationOptions);
 app.options('/v1/conversation/list', handleListConversationsOptions);
 app.options('/v1/message/save', handleSaveMessageOptions);
 app.options('/v1/chat/completions', handleChatCompletionsOptions);
+app.options('/v1/tg/get_dialogs', handleGetTelegramDialogsOptions);
+app.options('/v1/tg/get_messages', handleGetTelegramMessagesOptions);
+app.options('/v1/tg/search_messages', handleSearchTelegramMessagesOptions);
 
 // Authenticated routes
 app.use('/v1/conversation/create', apiKeyAuthMiddleware);
@@ -60,6 +69,9 @@ app.use('/v1/conversation/delete', apiKeyAuthMiddleware);
 app.use('/v1/conversation/list', apiKeyAuthMiddleware);
 app.use('/v1/message/save', apiKeyAuthMiddleware);
 app.use('/v1/chat/completions', apiKeyAuthMiddleware);
+app.use('/v1/tg/get_dialogs', apiKeyAuthMiddleware);
+app.use('/v1/tg/get_messages', apiKeyAuthMiddleware);
+app.use('/v1/tg/search_messages', apiKeyAuthMiddleware);
 
 app.onError(async (err, c) => {
   if (err instanceof GatewayServiceError) {
@@ -99,6 +111,11 @@ openapi.post('/v1/message/save', SaveMessage);
 
 // Register chat completion route
 openapi.post('/v1/chat/completions', ChatCompletions);
+
+// Register telegram routes
+openapi.get('/v1/tg/get_dialogs', GetTelegramDialogs);
+openapi.get('/v1/tg/get_messages', GetTelegramMessages);
+openapi.get('/v1/tg/search_messages', SearchTelegramMessages);
 
 // OpenAPI documentation endpoints
 app.get('/docs/openapi.json', (c) => {
