@@ -1,29 +1,29 @@
 ### Variables
 @baseUrl = http://localhost:8787
-@apiKey = mizu-test-api-key
+@apiKey = mizu-test-api-key-1
 
 ### Health Check
 GET {{baseUrl}}/health
 Content-Type: application/json
 
 ### Create Conversation
-POST {{baseUrl}}/v1/conversation/create
+POST {{baseUrl}}/v2/conversation/create
 Content-Type: application/json
 Authorization: Bearer {{apiKey}}
 
 ### List Conversations
-GET {{baseUrl}}/v1/conversation/list
+GET {{baseUrl}}/v2/conversation/list
 Content-Type: application/json
 Authorization: Bearer {{apiKey}}
 
 ### Delete Conversation
 # Replace {conversationId} with an actual conversation ID
-POST {{baseUrl}}/v1/conversation/delete?conversationId={conversationId}
+POST {{baseUrl}}/v2/conversation/delete?conversationId={conversationId}
 Content-Type: application/json
 Authorization: Bearer {{apiKey}}
 
 ### Save Message
-POST {{baseUrl}}/v1/message/save
+POST {{baseUrl}}/v2/message/save
 Content-Type: application/json
 Authorization: Bearer {{apiKey}}
 
@@ -39,7 +39,7 @@ Authorization: Bearer {{apiKey}}
 }
 
 ### Chat Completion
-POST {{baseUrl}}/v1/chat/completions
+POST {{baseUrl}}/v2/chat/completions
 Content-Type: application/json
 Authorization: Bearer {{apiKey}}
 
@@ -54,7 +54,7 @@ Authorization: Bearer {{apiKey}}
 }
 
 ### Chat Completion with Streaming
-POST {{baseUrl}}/v1/chat/completions
+POST {{baseUrl}}/v2/chat/completions
 Content-Type: application/json
 Authorization: Bearer {{apiKey}}
 

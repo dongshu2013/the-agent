@@ -183,3 +183,6 @@ app.get('/docs', (c) => {
 });
 
 export default app;
+
+// Export the Durable Object class for Cloudflare Workers
+export { AgentContext };

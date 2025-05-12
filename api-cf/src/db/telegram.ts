@@ -358,15 +358,15 @@ async function generateEmbedding(env: any, text: string): Promise<number[]> {
   // This is a placeholder for the actual embedding generation
   // In a real implementation, you would call an embedding service like OpenAI
   try {
-    const response = await fetch('https://api.openai.com/v1/embeddings', {
+    const response = await fetch(env.LLM_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${env.OPENAI_API_KEY}`
+        'Authorization': `Bearer ${env.LLM_API_KEY}`
       },
       body: JSON.stringify({
         input: text,
-        model: 'text-embedding-ada-002'
+        model: env.DEFAULT_MODEL
       })
     });
     

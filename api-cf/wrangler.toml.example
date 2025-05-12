@@ -2,7 +2,7 @@ name = "mysta-api-server"
 main = "src/index.ts"
 compatibility_date = "2025-05-12"
 
-[env]
+[vars]
 SUPERBASE_KEY = ""
 SUPERBASE_URL = ""
 LLM_API_KEY = ""
@@ -17,7 +17,15 @@ enabled = true
 binding = "MYTSTA_E5_INDEX"
 index_name = ""
 
-[[d1]]
+[[d1_databases]]
 binding = "UDB"
 database_name = ""
 database_id = ""
+
+[[durable_objects.bindings]]
+name = "AgentContext"
+class_name = "AgentContext"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["AgentContext"]
