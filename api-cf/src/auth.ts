@@ -1,6 +1,6 @@
 import { Next } from "hono";
 
-import { GatewayServiceContext } from "./types";
+import { GatewayServiceContext } from "./types/service";
 import { getUserFromApiKey } from "./d1/user";
 
 // Authentication layer for API_KEY (external users)

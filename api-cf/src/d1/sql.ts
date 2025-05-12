@@ -1,0 +1,18 @@
+export const CREATE_USER_TABLE_QUERY = `CREATE TABLE IF NOT EXISTS users(
+    id TEXT PRIMARY KEY,
+    api_key TEXT NOT NULL,
+    api_key_enabled INTEGER NOT NULL DEFAULT 1 CHECK(api_key_enabled IN (0, 1)),
+    balance INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);`;
+
+export const CREATE_CREDIT_HISTORY_TABLE_QUERY = `CREATE TABLE IF NOT EXISTS credit_history(
+    id INTEGER PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    tx_credits INTEGER NOT NULL,
+    tx_type TEXT NOT NULL,
+    model TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);`;

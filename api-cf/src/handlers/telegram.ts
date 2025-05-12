@@ -104,8 +104,7 @@ export class GetTelegramDialogs extends OpenAPIRoute {
           success: true,
           data: result,
         },
-        200,
-        corsHeaders
+        200
       );
     } catch (error) {
       console.error("Error getting Telegram dialogs:", error);
@@ -121,8 +120,7 @@ export class GetTelegramDialogs extends OpenAPIRoute {
                 : "An unknown error occurred",
           },
         },
-        500,
-        corsHeaders
+        500
       );
     }
   }
@@ -226,8 +224,7 @@ export class GetTelegramMessages extends OpenAPIRoute {
               message: "Chat ID is required",
             },
           },
-          400,
-          corsHeaders
+          400
         );
       }
 
@@ -267,8 +264,7 @@ export class GetTelegramMessages extends OpenAPIRoute {
           success: true,
           data: result,
         },
-        200,
-        corsHeaders
+        200
       );
     } catch (error) {
       console.error("Error getting Telegram messages:", error);
@@ -287,8 +283,7 @@ export class GetTelegramMessages extends OpenAPIRoute {
               message: error.message,
             },
           },
-          404,
-          corsHeaders
+          404
         );
       }
 
@@ -303,8 +298,7 @@ export class GetTelegramMessages extends OpenAPIRoute {
                 : "An unknown error occurred",
           },
         },
-        500,
-        corsHeaders
+        500
       );
     }
   }
@@ -402,8 +396,7 @@ export class SearchTelegramMessages extends OpenAPIRoute {
               message: "Search query is required",
             },
           },
-          400,
-          corsHeaders
+          400
         );
       }
 
@@ -433,8 +426,7 @@ export class SearchTelegramMessages extends OpenAPIRoute {
           success: true,
           data: result,
         },
-        200,
-        corsHeaders
+        200
       );
     } catch (error) {
       console.error("Error searching Telegram messages:", error);
@@ -450,8 +442,7 @@ export class SearchTelegramMessages extends OpenAPIRoute {
                 : "An unknown error occurred",
           },
         },
-        500,
-        corsHeaders
+        500
       );
     }
   }
@@ -508,8 +499,7 @@ export class SyncTelegramChat extends OpenAPIRoute {
           success: true,
           chat_id: result,
         },
-        200,
-        corsHeaders
+        200
       );
     } catch (error) {
       console.error("Error syncing Telegram chat:", error);
@@ -525,8 +515,7 @@ export class SyncTelegramChat extends OpenAPIRoute {
                 : "An unknown error occurred",
           },
         },
-        500,
-        corsHeaders
+        500
       );
     }
   }
@@ -623,8 +612,7 @@ export class SyncTelegramMessages extends OpenAPIRoute {
               message: error.message,
             },
           },
-          404,
-          corsHeaders
+          404
         );
       }
 
@@ -639,48 +627,8 @@ export class SyncTelegramMessages extends OpenAPIRoute {
                 : "An unknown error occurred",
           },
         },
-        500,
-        corsHeaders
+        500
       );
     }
   }
 }
-
-// ===== OPTIONS HANDLERS =====
-
-export async function handleGetTelegramDialogsOptions(_c: Context) {
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders,
-  });
-}
-
-export async function handleGetTelegramMessagesOptions(_c: Context) {
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders,
-  });
-}
-
-export async function handleSearchTelegramMessagesOptions(_c: Context) {
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders,
-  });
-}
-
-export async function handleSyncTelegramChatOptions(_c: Context) {
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders,
-  });
-}
-
-export async function handleSyncTelegramMessagesOptions(_c: Context) {
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders,
-  });
-}
-
-// ===== OPTIONS HANDLERS =====

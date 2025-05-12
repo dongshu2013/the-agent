@@ -2,7 +2,6 @@ import { OpenAPIRoute } from "chanfana";
 import { z } from "zod";
 import { Context } from "hono";
 import { SaveMessageRequestSchema } from "../types/chat";
-import { corsHeaders } from "../utils/common";
 
 export class SaveMessage extends OpenAPIRoute {
   schema = {
@@ -64,8 +63,7 @@ export class SaveMessage extends OpenAPIRoute {
           success,
           top_k_message_ids: topKMessageIds,
         },
-        200,
-        corsHeaders
+        200
       );
     } catch (error) {
       console.error("Error saving message:", error);
@@ -80,17 +78,8 @@ export class SaveMessage extends OpenAPIRoute {
             code: "server_error",
           },
         },
-        500,
-        corsHeaders
+        500
       );
     }
   }
-}
-
-// Handle OPTIONS requests for CORS preflight
-export async function handleSaveMessageOptions(_c: Context) {
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders,
-  });
 }

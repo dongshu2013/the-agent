@@ -2,7 +2,7 @@ import { OpenAPIRoute } from 'chanfana';
 import { z } from 'zod';
 import { Context } from 'hono';
 import { createOpenAIClient } from '../utils/openai';
-import { getUserCredits, deductUserCredits } from '../db';
+import { getUserCredits, deductUserCredits } from '../d1/user';
 import { ChatCompletionCreateParamSchema } from '../types/chat';
 
 // CORS headers as specified in the memory

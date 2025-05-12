@@ -1,7 +1,6 @@
 import { OpenAPIRoute } from 'chanfana';
 import { z } from 'zod';
 import { Context } from 'hono';
-import { corsHeaders } from '../utils/common';
 
 // ===== CREATE CONVERSATION =====
 
@@ -32,7 +31,7 @@ export class CreateConversation extends OpenAPIRoute {
       return c.json({
         success: true,
         conversation: conversationId
-      }, 200, corsHeaders);
+      }, 200);
     } catch (error) {
       console.error('Error creating conversation:', error);
 
@@ -42,17 +41,9 @@ export class CreateConversation extends OpenAPIRoute {
           message: error instanceof Error ? error.message : 'An unknown error occurred',
           code: 'server_error'
         }
-      }, 500, corsHeaders);
+      }, 500);
     }
   }
-}
-
-// Handle OPTIONS requests for CORS preflight
-export async function handleCreateConversationOptions(_c: Context) {
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders
-  });
 }
 
 // ===== DELETE CONVERSATION =====
@@ -116,7 +107,7 @@ export class DeleteConversation extends OpenAPIRoute {
       await stub.deleteConversation(conversationId)
       return c.json({
         success: true
-      }, 200, corsHeaders);
+      }, 200);
     } catch (error) {
       console.error('Error deleting conversation:', error);
       return c.json({
@@ -125,19 +116,10 @@ export class DeleteConversation extends OpenAPIRoute {
           message: error instanceof Error ? error.message : 'An unknown error occurred',
           code: 'server_error'
         }
-      }, 500, corsHeaders);
+      }, 500);
     }
   }
 }
-
-// Handle OPTIONS requests for CORS preflight
-export async function handleDeleteConversationOptions(_c: Context) {
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders
-  });
-}
-
 // ===== LIST CONVERSATIONS =====
 
 export class ListConversations extends OpenAPIRoute {
@@ -181,7 +163,7 @@ export class ListConversations extends OpenAPIRoute {
       return c.json({
         success: true,
         conversations
-      }, 200, corsHeaders);
+      }, 200);
     } catch (error) {
       console.error('Error listing conversations:', error);
       return c.json({
@@ -190,15 +172,7 @@ export class ListConversations extends OpenAPIRoute {
           message: error instanceof Error ? error.message : 'An unknown error occurred',
           code: 'server_error'
         }
-      }, 500, corsHeaders);
+      }, 500);
     }
   }
-}
-
-// Handle OPTIONS requests for CORS preflight
-export async function handleListConversationsOptions(_c: Context) {
-  return new Response(null, {
-    status: 204,
-    headers: corsHeaders
-  });
 }

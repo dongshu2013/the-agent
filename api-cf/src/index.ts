@@ -3,16 +3,13 @@ import { cors } from "hono/cors";
 import { fromHono } from "chanfana";
 
 import { apiKeyAuthMiddleware } from "./auth";
-import { GatewayServiceError } from "./types";
+import { GatewayServiceError } from "./types/service";
 
-import { SaveMessage, handleSaveMessageOptions } from "./handlers/message";
+import { SaveMessage } from "./handlers/message";
 import {
   CreateConversation,
   DeleteConversation,
   ListConversations,
-  handleCreateConversationOptions,
-  handleDeleteConversationOptions,
-  handleListConversationsOptions,
 } from "./handlers/conversation";
 import { ChatCompletions } from "./handlers/chat";
 import {
@@ -21,11 +18,6 @@ import {
   SearchTelegramMessages,
   SyncTelegramChat,
   SyncTelegramMessages,
-  handleGetTelegramDialogsOptions,
-  handleGetTelegramMessagesOptions,
-  handleSearchTelegramMessagesOptions,
-  handleSyncTelegramChatOptions,
-  handleSyncTelegramMessagesOptions,
 } from "./handlers/telegram";
 import { AgentContext } from "./do/AgentContext";
 import { TgContext } from "./do/TgContext";
@@ -51,22 +43,14 @@ app.get("/health", (c) =>
   c.json({ status: "OK", version: "0.0.1" }, 200, corsHeaders)
 );
 
-// OPTIONS handlers for CORS preflight requests
-app.options("/v1/conversation/create", handleCreateConversationOptions);
-app.options("/v1/conversation/delete", handleDeleteConversationOptions);
-app.options("/v1/conversation/list", handleListConversationsOptions);
-app.options("/v1/message/save", handleSaveMessageOptions);
-app.options("/v1/tg/get_dialogs", handleGetTelegramDialogsOptions);
-app.options("/v1/tg/get_messages", handleGetTelegramMessagesOptions);
-app.options("/v1/tg/search_messages", handleSearchTelegramMessagesOptions);
-app.options("/v1/tg/sync_chat", handleSyncTelegramChatOptions);
-app.options("/v1/tg/sync_messages", handleSyncTelegramMessagesOptions);
-
 // Authenticated routes
 app.use("/v1/conversation/create", apiKeyAuthMiddleware);
 app.use("/v1/conversation/delete", apiKeyAuthMiddleware);
 app.use("/v1/conversation/list", apiKeyAuthMiddleware);
+
+app.use("/v1/chat/completions", apiKeyAuthMiddleware);
 app.use("/v1/message/save", apiKeyAuthMiddleware);
+
 app.use("/v1/tg/get_dialogs", apiKeyAuthMiddleware);
 app.use("/v1/tg/get_messages", apiKeyAuthMiddleware);
 app.use("/v1/tg/search_messages", apiKeyAuthMiddleware);

@@ -29,8 +29,8 @@ CREATE TABLE IF NOT EXISTS telegram_dialogs (
   subscription_fee NUMERIC NOT NULL DEFAULT 0,
   last_synced_at TEXT,
   status TEXT NOT NULL DEFAULT 'active',
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(chat_id)
 )`;
 
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS telegram_messages (
   sender_firstname TEXT,
   sender_lastname TEXT,
   embedding_id TEXT,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(chat_id, message_id),
   FOREIGN KEY(chat_id) REFERENCES telegram_dialogs(chat_id)
 )`;
