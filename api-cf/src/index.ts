@@ -5,11 +5,30 @@ import { fromHono } from 'chanfana';
 import { apiKeyAuthMiddleware } from './auth';
 
 import { GatewayServiceError } from './types';
-import { CreateConversation } from './handlers';
+import {
+  CreateConversation,
+  DeleteConversation,
+  ListConversations,
+  SaveMessage,
+  ChatCompletions,
+  handleCreateConversationOptions,
+  handleDeleteConversationOptions,
+  handleListConversationsOptions,
+  handleSaveMessageOptions,
+  handleChatCompletionsOptions
+} from './handlers';
+
+// CORS headers as specified in the memory
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key'
+};
 
 const app = new Hono<{ Bindings: {
   SUPABASE_KEY: string;
   SUPABASE_URL: string;
+  OPENAI_API_KEY: string;
 } }>();
 
 // CORS middleware
@@ -17,24 +36,30 @@ app.use(
   '*',
   cors({
     origin: '*',
-    allowMethods: ['GET', 'POST'],
-    allowHeaders: ['Content-Type', 'Authorization'],
+    allowMethods: ['GET', 'POST', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
+    exposeHeaders: ['*'],
+    maxAge: 86400, // 24 hours
   }),
 );
 
 // Add unauthenticated routes
 app.get('/', c => c.text(''));
-app.get('/health', c => c.json({ status: 'OK' }));
+app.get('/health', c => c.json({ status: 'OK', version: '0.0.1' }, 200, corsHeaders));
+
+// OPTIONS handlers for CORS preflight requests
+app.options('/v1/conversation/create', handleCreateConversationOptions);
+app.options('/v1/conversation/delete', handleDeleteConversationOptions);
+app.options('/v1/conversation/list', handleListConversationsOptions);
+app.options('/v1/message/save', handleSaveMessageOptions);
+app.options('/v1/chat/completions', handleChatCompletionsOptions);
 
 // Authenticated routes
 app.use('/v1/conversation/create', apiKeyAuthMiddleware);
-// app.use('/v1/conversation/delete', apiKeyAuthMiddleware);
-// app.use('/v1/conversation/list', apiKeyAuthMiddleware);
-
-// app.use('/v1/messsage/save', apiKeyAuthMiddleware);
-// app.use('/v1/messsage/search', apiKeyAuthMiddleware);
-
-// app.use('/v1/chat/completions', apiKeyAuthMiddleware);
+app.use('/v1/conversation/delete', apiKeyAuthMiddleware);
+app.use('/v1/conversation/list', apiKeyAuthMiddleware);
+app.use('/v1/message/save', apiKeyAuthMiddleware);
+app.use('/v1/chat/completions', apiKeyAuthMiddleware);
 
 app.onError(async (err, c) => {
   if (err instanceof GatewayServiceError) {
@@ -49,6 +74,7 @@ const openapi = fromHono(app, {
     info: {
       title: 'Mizu Node Gateway',
       version: '0.0.1',
+      description: 'API Gateway for Mizu AI Agent'
     },
     security: [
       {
@@ -63,13 +89,50 @@ openapi.registry.registerComponent('securitySchemes', 'BearerAuth', {
   scheme: 'bearer',
 });
 
+// Register conversation routes
 openapi.post('/v1/conversation/create', CreateConversation);
-// openapi.post('/v1/conversation/delete', DeleteConversation);
-// openapi.get('/v1/conversation/list', ListConversations);
+openapi.post('/v1/conversation/delete', DeleteConversation);
+openapi.get('/v1/conversation/list', ListConversations);
 
-// openapi.post('/v1/message/save', SaveMessage);
-// openapi.get('/v1/message/search', SearchMessage);
+// Register message routes
+openapi.post('/v1/message/save', SaveMessage);
 
-// openapi.post('/v1/chat/completions', ChatCompletions);
+// Register chat completion route
+openapi.post('/v1/chat/completions', ChatCompletions);
+
+// OpenAPI documentation endpoints
+app.get('/docs/openapi.json', (c) => {
+  // Access the OpenAPI schema through the registry
+  // @ts-ignore - Workaround for TypeScript error
+  const schema = openapi.schema || openapi.getGeneratedSchema?.() || {};
+  return c.json(schema);
+});
+
+app.get('/docs', (c) => {
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mizu API Documentation</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.0.0/swagger-ui.css" />
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://unpkg.com/swagger-ui-dist@5.0.0/swagger-ui-bundle.js"></script>
+  <script>
+    window.onload = () => {
+      window.ui = SwaggerUIBundle({
+        url: '/docs/openapi.json',
+        dom_id: '#swagger-ui',
+      });
+    };
+  </script>
+</body>
+</html>
+  `;
+  return c.html(html);
+});
 
 export default app;

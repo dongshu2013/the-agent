@@ -65,4 +65,6 @@ web/node_modules
 /web/src/generated/prisma
 
 # wrangler
-wrangler.toml
+.wrangler
+!wrangler.toml.example
+wrangler*.toml

@@ -1,10 +1,11 @@
 name = "mizu_node_gateway"
 main = "src/index.ts"
-compatibility_date = "2023-12-18"\
+compatibility_date = "2023-12-18"
 
 [env]
-SUPERBASE_KEY=your-SUPERBASE_KEY
-SUPERBASE_URL=your-SUPERBASE_URL
+SUPERBASE_KEY = "your-SUPERBASE_KEY"
+SUPERBASE_URL = "your-SUPERBASE_URL"
+OPENAI_API_KEY = "your-OPENAI_API_KEY"
 
 [observability.logs]
 enabled = true

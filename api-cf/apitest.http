@@ -1,0 +1,70 @@
+### Variables
+@baseUrl = http://localhost:8787
+@apiKey = mizu-test-api-key
+
+### Health Check
+GET {{baseUrl}}/health
+Content-Type: application/json
+
+### Create Conversation
+POST {{baseUrl}}/v1/conversation/create
+Content-Type: application/json
+Authorization: Bearer {{apiKey}}
+
+### List Conversations
+GET {{baseUrl}}/v1/conversation/list
+Content-Type: application/json
+Authorization: Bearer {{apiKey}}
+
+### Delete Conversation
+# Replace {conversationId} with an actual conversation ID
+POST {{baseUrl}}/v1/conversation/delete?conversationId={conversationId}
+Content-Type: application/json
+Authorization: Bearer {{apiKey}}
+
+### Save Message
+POST {{baseUrl}}/v1/message/save
+Content-Type: application/json
+Authorization: Bearer {{apiKey}}
+
+{
+  "conversation_id": "{conversationId}",
+  "message": {
+    "message_id": "msg_123456",
+    "created_at": "2025-05-12T11:46:06+08:00",
+    "role": "user",
+    "content": "Hello, this is a test message"
+  },
+  "top_k_related": 0
+}
+
+### Chat Completion
+POST {{baseUrl}}/v1/chat/completions
+Content-Type: application/json
+Authorization: Bearer {{apiKey}}
+
+{
+  "messages": [
+    {"role": "system", "content": "你是一个有用的AI助手。"},
+    {"role": "user", "content": "你好，请介绍一下自己。"}
+  ],
+  "model": "gpt-3.5-turbo",
+  "temperature": 0.7,
+  "max_tokens": 500
+}
+
+### Chat Completion with Streaming
+POST {{baseUrl}}/v1/chat/completions
+Content-Type: application/json
+Authorization: Bearer {{apiKey}}
+
+{
+  "messages": [
+    {"role": "system", "content": "你是一个有用的AI助手。"},
+    {"role": "user", "content": "你好，请介绍一下自己。"}
+  ],
+  "model": "gpt-3.5-turbo",
+  "temperature": 0.7,
+  "max_tokens": 500,
+  "stream": true
+}
