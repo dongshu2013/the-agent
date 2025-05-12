@@ -5,8 +5,8 @@ import {
   CREATE_TELEGRAM_MESSAGES_TABLE_QUERY,
 } from "./sql";
 import {
-  ChatInfo,
-  MessageInfo,
+  TgChatInfo,
+  TgMessageInfo,
   TelegramChatData,
   TelegramMessageData,
 } from "./types";
@@ -205,7 +205,7 @@ export class TgContext extends DurableObject<Env> {
     }
 
     // Prepare chat info for response
-    const chatInfo: ChatInfo = {
+    const chatInfo: TgChatInfo = {
       id: chat.id as string,
       chat_id: chat.chat_id as string,
       chat_title: chat.chat_title as string,
@@ -337,7 +337,7 @@ export class TgContext extends DurableObject<Env> {
         }
 
         // Prepare chat info
-        const chatInfo: ChatInfo = {
+        const chatInfo: TgChatInfo = {
           id: matchMessage.dialog_id as string,
           chat_id: matchMessage.chat_id as string,
           chat_title: matchMessage.chat_title as string,
@@ -356,7 +356,7 @@ export class TgContext extends DurableObject<Env> {
                 )
               : null;
 
-            const result: MessageInfo = {
+            const result: TgMessageInfo = {
               id: msg.id as string,
               message_id: msg.message_id as string,
               message_text: msg.message_text as string,
@@ -550,9 +550,7 @@ export class TgContext extends DurableObject<Env> {
           }
         }
       }
-
-      this.sql.exec("COMMIT");
-
+  
       // Update chat's last_synced_at and updated_at
       const now = new Date().toISOString();
       this.sql.exec(

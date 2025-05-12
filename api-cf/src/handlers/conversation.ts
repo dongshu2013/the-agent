@@ -1,14 +1,7 @@
 import { OpenAPIRoute } from 'chanfana';
 import { z } from 'zod';
 import { Context } from 'hono';
-import { createConversation, deleteConversation, listUserConversations } from '../db';
-
-// CORS headers as specified in the memory
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key'
-};
+import { corsHeaders } from '../utils/common';
 
 // ===== CREATE CONVERSATION =====
 
@@ -21,12 +14,7 @@ export class CreateConversation extends OpenAPIRoute {
           'application/json': {
             schema: z.object({
               success: z.boolean(),
-              conversation: z.object({
-                id: z.string(),
-                user_id: z.string(),
-                created_at: z.string(),
-                status: z.string()
-              })
+              conversation: z.number()
             })
           }
         }
@@ -37,24 +25,17 @@ export class CreateConversation extends OpenAPIRoute {
   async handle(c: Context) {
     try {
       const userId = c.get('userId');
-      const env = c.env;
-      
-      // Create a new conversation
-      const conversationId = await createConversation(env, userId);
-      
-      // Return success response with CORS headers
+      const id = c.env.AgentContext.idFromName(userId)
+      const stub = c.env.AgentContext.get(id)
+      const conversationId = await stub.createConversation()
+
       return c.json({
         success: true,
-        conversation: {
-          id: conversationId,
-          user_id: userId,
-          created_at: new Date().toISOString(),
-          status: 'active'
-        }
+        conversation: conversationId
       }, 200, corsHeaders);
     } catch (error) {
       console.error('Error creating conversation:', error);
-      
+
       return c.json({
         success: false,
         error: {
@@ -80,7 +61,7 @@ export class DeleteConversation extends OpenAPIRoute {
   schema = {
     request: {
       query: z.object({
-        conversationId: z.string(),
+        conversationId: z.number(),
       }),
     },
     responses: {
@@ -128,42 +109,16 @@ export class DeleteConversation extends OpenAPIRoute {
   async handle(c: Context) {
     try {
       const userId = c.get('userId');
-      const env = c.env;
       const { conversationId } = c.req.query();
       
-      if (!conversationId) {
-        return c.json({
-          success: false,
-          error: {
-            message: 'Conversation ID is required',
-            code: 'missing_conversation_id'
-          }
-        }, 400, corsHeaders);
-      }
-      
-      // Delete the conversation
-      const success = await deleteConversation(env, conversationId, userId);
-      
-      // Return success response with CORS headers
+      const id = c.env.AgentContext.idFromName(userId)
+      const stub = c.env.AgentContext.get(id)
+      await stub.deleteConversation(conversationId)
       return c.json({
-        success
+        success: true
       }, 200, corsHeaders);
     } catch (error) {
       console.error('Error deleting conversation:', error);
-      
-      // Handle specific error cases
-      if (error instanceof Error) {
-        if (error.message.includes('not found') || error.message.includes('permission')) {
-          return c.json({
-            success: false,
-            error: {
-              message: error.message,
-              code: error.message.includes('permission') ? 'permission_denied' : 'not_found'
-            }
-          }, error.message.includes('permission') ? 403 : 404, corsHeaders);
-        }
-      }
-      
       return c.json({
         success: false,
         error: {
@@ -196,16 +151,12 @@ export class ListConversations extends OpenAPIRoute {
               success: z.boolean(),
               conversations: z.array(
                 z.object({
-                  id: z.string(),
-                  user_id: z.string(),
-                  created_at: z.string(),
-                  status: z.string(),
+                  id: z.number(),
                   messages: z.array(
                     z.object({
-                      id: z.string(),
+                      id: z.number(),
                       role: z.string(),
                       content: z.string().optional(),
-                      timestamp: z.string(),
                       tool_calls: z.any().optional(),
                       tool_call_id: z.string().optional()
                     })
@@ -224,17 +175,15 @@ export class ListConversations extends OpenAPIRoute {
       const userId = c.get('userId');
       const env = c.env;
       
-      // List user conversations
-      const conversations = await listUserConversations(env, userId);
-      
-      // Return success response with CORS headers
+      const id = env.AgentContext.idFromName(userId)
+      const stub = env.AgentContext.get(id)
+      const conversations = await stub.listConversations()
       return c.json({
         success: true,
         conversations
       }, 200, corsHeaders);
     } catch (error) {
       console.error('Error listing conversations:', error);
-      
       return c.json({
         success: false,
         error: {

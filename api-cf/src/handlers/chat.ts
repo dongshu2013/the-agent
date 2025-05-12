@@ -55,10 +55,10 @@ export class ChatCompletions extends OpenAPIRoute {
       const env = c.env;
       const userId = c.get('userId');
       const params = await c.req.json();
-      
+
       // Get user credits
       const credits = await getUserCredits(env, userId);
-      
+
       // Check if user has enough credits (assuming 0.01 credits per request for simplicity)
       const requiredCredits = 0.01;
       if (credits < requiredCredits) {
@@ -71,7 +71,7 @@ export class ChatCompletions extends OpenAPIRoute {
           }
         }, 402, corsHeaders);
       }
-      
+
       // Create OpenAI client
       // Note: In a real implementation, you'd get the API key from a secure source
       // or use a service like OpenRouter
@@ -80,7 +80,7 @@ export class ChatCompletions extends OpenAPIRoute {
       const client = createOpenAIClient(llmApiKey, llmApiUrl);
 
       params.model = env.DEFAULT_MODEL;
-      
+
       // Handle streaming response
       if (params.stream) {
         const stream = await client.streamChatCompletion(params);

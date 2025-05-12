@@ -60,7 +60,7 @@ export interface TelegramMessageData {
 }
 
 // Interface for chat info in responses
-export interface ChatInfo {
+export interface TgChatInfo {
   id: string;
   chat_id: string;
   chat_title: string;
@@ -70,7 +70,7 @@ export interface ChatInfo {
 }
 
 // Interface for message info in responses
-export interface MessageInfo {
+export interface TgMessageInfo {
   id: string;
   message_id: string;
   message_text: string;

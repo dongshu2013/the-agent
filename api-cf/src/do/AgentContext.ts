@@ -105,7 +105,7 @@ export class AgentContext extends DurableObject<Env> {
         message.id,
         message.conversation_id,
       ]
-    )
+    );
     const texts = message.content
       .filter((m): m is TextMessage => m.type === "text")
       .map((m) => m.text?.value)
