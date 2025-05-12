@@ -271,13 +271,22 @@ Keep responses concise and focused on the current task.
                   message_id: toolMessageId,
                   role: "tool",
                   name: toolCall.function.name,
-                  content: `I will ${simplifiedName}.\n${toolResult.success ? "success" : "failed"} ${JSON.stringify(toolResult.data)}`,
+                  content:
+                    toolCall.function.name === "WebToolkit_screenshot"
+                      ? `I will take a screenshot.\n`
+                      : `I will ${simplifiedName}.\n${toolResult.success ? "success" : "failed"} ${JSON.stringify(toolResult.data)}`,
                   created_at: new Date(
                     baseTimestamp.getTime() + (toolCallCount + 2) * 1000
                   ).toISOString(),
                   conversation_id: this.options.currentConversationId,
                   status: "completed",
                   tool_call_id: toolCall.id,
+                  tool_calls: [
+                    {
+                      ...toolCall,
+                      result: toolResult.data,
+                    },
+                  ],
                 };
 
                 await this.updateMessage(toolMessage);
@@ -286,11 +295,14 @@ Keep responses concise and focused on the current task.
                   message: toolMessage,
                 });
 
-                // 添加工具响应到输入消息列表
+                // 添加工具响应到输入消息列表，对于截图只发送成功状态
                 inputMessages.push({
                   role: "tool",
                   name: toolCall.function.name,
-                  content: `${toolResult.success ? "success" : "failed"} ${JSON.stringify(toolResult.data)}`,
+                  content:
+                    toolCall.function.name === "WebToolkit_screenshot"
+                      ? `${toolResult.success ? "success" : "failed"}`
+                      : `${toolResult.success ? "success" : "failed"} ${JSON.stringify(toolResult.data)}`,
                   tool_call_id: toolCall.id,
                 });
               }

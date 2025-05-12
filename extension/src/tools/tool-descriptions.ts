@@ -372,7 +372,8 @@ export const getToolDescriptions = (): ToolDescription[] => {
         properties: {
           dataUrl: {
             type: "string",
-            description: "Base64 encoded data of the screenshot",
+            description:
+              "Base64 encoded data of the screenshot or image. If the screenshot is not available, the dataUrl will be an empty string.",
           },
           success: {
             type: "boolean",
