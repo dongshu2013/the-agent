@@ -32,9 +32,11 @@ const corsHeaders = {
 };
 
 const app = new Hono<{ Bindings: {
+  MYTSTA_E5_INDEX: Vectorize;
   SUPABASE_KEY: string;
   SUPABASE_URL: string;
   OPENAI_API_KEY: string;
+  EMBEDDING_API_KEY: string;
 } }>();
 
 // CORS middleware
