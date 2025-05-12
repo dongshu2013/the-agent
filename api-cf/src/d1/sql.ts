@@ -26,7 +26,7 @@ export const CREATE_ORDER_TABLE_QUERY = `CREATE TABLE IF NOT EXISTS orders(
     id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
     amount INTEGER NOT NULL,
-    currency TEXT NOT NOT NULL DEFAULT 'usd',
+    currency TEXT NOT NULL DEFAULT 'usd',
     stripe_session_id TEXT,
     credits INTEGER NOT NULL,
     status TEXT NOT NULL CHECK(status IN ('pending', 'completed', 'cancelled', 'failed', 'finalized')) DEFAULT('pending'),
