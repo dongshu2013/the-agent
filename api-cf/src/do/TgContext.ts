@@ -31,11 +31,11 @@ declare global {
 
 export class TgContext extends DurableObject<Env> {
   openai: OpenAI;
-  sql: D1Database;
+  sql: SqlStorage;
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
-    this.sql = ctx.storage.sql as unknown as D1Database;
+    this.sql = ctx.storage.sql;
 
     // Initialize database tables
     this.sql.exec(CREATE_TELEGRAM_DIALOGS_TABLE_QUERY);
@@ -70,24 +70,25 @@ export class TgContext extends DurableObject<Env> {
     `;
 
     const params: any[] = [];
+    let paramIndex = 1;
 
     if (chatTitle) {
-      query += ` AND d.chat_title LIKE ?`;
+      query += ` AND d.chat_title LIKE $${paramIndex++}`;
       params.push(`%${chatTitle}%`);
     }
 
     if (isPublic !== undefined) {
-      query += ` AND d.is_public = ?`;
+      query += ` AND d.is_public = $${paramIndex++}`;
       params.push(isPublic ? 1 : 0);
     }
 
     if (isFree !== undefined) {
-      query += ` AND d.is_free = ?`;
+      query += ` AND d.is_free = $${paramIndex++}`;
       params.push(isFree ? 1 : 0);
     }
 
     if (status) {
-      query += ` AND d.status = ?`;
+      query += ` AND d.status = $${paramIndex++}`;
       params.push(status);
     } else {
       query += ` AND d.status = 'active'`;
@@ -98,19 +99,28 @@ export class TgContext extends DurableObject<Env> {
       SELECT COUNT(*) as total_count
       FROM (${query})
     `;
-    const countStmt = this.sql.prepare(countQuery).bind(...params);
-    const countResult = await countStmt.first();
-    const totalCount = (countResult?.total_count as number) || 0;
+
+    const countResultCursor = this.sql.exec(countQuery, params);
+    const countResults = [];
+    for (const result of countResultCursor) {
+      countResults.push(result);
+    }
+    const totalCount =
+      countResults.length > 0
+        ? (countResults[0].total_count as number) || 0
+        : 0;
 
     // Add sorting and pagination
     query += ` ORDER BY d.${sortBy} ${sortOrder === "asc" ? "ASC" : "DESC"}`;
-    query += ` LIMIT ? OFFSET ?`;
+    query += ` LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
     params.push(limit, offset);
 
     // Execute the final query
-    const stmt = this.sql.prepare(query).bind(...params);
-    const result = await stmt.all();
-    const dialogs = result.results;
+    const dialogsCursor = this.sql.exec(query, params);
+    const dialogs = [];
+    for (const dialog of dialogsCursor) {
+      dialogs.push(dialog);
+    }
 
     return {
       dialogs,
@@ -134,49 +144,52 @@ export class TgContext extends DurableObject<Env> {
     sortOrder: string = "desc"
   ) {
     // Check if chat exists and user has access to it
-    const chatStmt = this.sql
-      .prepare(
-        `
-      SELECT * FROM telegram_dialogs WHERE chat_id = ? AND status = 'active'
-    `
-      )
-      .bind(chatId);
+    const chatCursor = this.sql.exec(
+      `SELECT * FROM telegram_dialogs WHERE chat_id = $1 AND status = 'active'`,
+      [chatId]
+    );
 
-    const chat = await chatStmt.first();
+    const chats = [];
+    for (const chat of chatCursor) {
+      chats.push(chat);
+    }
 
-    if (!chat) {
+    if (chats.length === 0) {
       throw new Error(`Chat with ID ${chatId} not found or not accessible`);
     }
 
+    const chat = chats[0];
+
     // Build the query with filters
     let query = `
-      SELECT * FROM telegram_messages WHERE chat_id = ?
+      SELECT * FROM telegram_messages WHERE chat_id = $1
     `;
 
     const params: any[] = [chatId];
+    let paramIndex = 2;
 
     if (messageText) {
-      query += ` AND message_text LIKE ?`;
+      query += ` AND message_text LIKE $${paramIndex++}`;
       params.push(`%${messageText}%`);
     }
 
     if (senderId) {
-      query += ` AND sender_id = ?`;
+      query += ` AND sender_id = $${paramIndex++}`;
       params.push(senderId);
     }
 
     if (senderUsername) {
-      query += ` AND sender_username LIKE ?`;
+      query += ` AND sender_username LIKE $${paramIndex++}`;
       params.push(`%${senderUsername}%`);
     }
 
     if (startTimestamp) {
-      query += ` AND message_timestamp >= ?`;
+      query += ` AND message_timestamp >= $${paramIndex++}`;
       params.push(startTimestamp);
     }
 
     if (endTimestamp) {
-      query += ` AND message_timestamp <= ?`;
+      query += ` AND message_timestamp <= $${paramIndex++}`;
       params.push(endTimestamp);
     }
 
@@ -185,19 +198,28 @@ export class TgContext extends DurableObject<Env> {
       SELECT COUNT(*) as total_count
       FROM (${query})
     `;
-    const countStmt = this.sql.prepare(countQuery).bind(...params);
-    const countResult = await countStmt.first();
-    const totalCount = (countResult?.total_count as number) || 0;
+
+    const countResultCursor = this.sql.exec(countQuery, params);
+    const countResults = [];
+    for (const result of countResultCursor) {
+      countResults.push(result);
+    }
+    const totalCount =
+      countResults.length > 0
+        ? (countResults[0].total_count as number) || 0
+        : 0;
 
     // Add sorting and pagination
     query += ` ORDER BY ${sortBy} ${sortOrder === "asc" ? "ASC" : "DESC"}`;
-    query += ` LIMIT ? OFFSET ?`;
+    query += ` LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
     params.push(limit, offset);
 
     // Execute the final query
-    const messagesStmt = this.sql.prepare(query).bind(...params);
-    const result = await messagesStmt.all();
-    const messages = result.results as Record<string, unknown>[];
+    const messagesCursor = this.sql.exec(query, params);
+    const messages = [];
+    for (const message of messagesCursor) {
+      messages.push(message);
+    }
 
     // Prepare chat info for response
     const chatInfo: ChatInfo = {
@@ -210,7 +232,7 @@ export class TgContext extends DurableObject<Env> {
     };
 
     // Transform messages to correct type
-    const messageInfos = messages.map((msg) => ({
+    const messageInfos = messages.map((msg: Record<string, unknown>) => ({
       id: msg.id as string,
       message_id: msg.message_id as string,
       message_text: msg.message_text as string,
@@ -283,20 +305,23 @@ export class TgContext extends DurableObject<Env> {
       // Get matching messages and surrounding context
       for (const matchId of matchIds) {
         // Get the matching message
-        const matchStmt = this.sql
-          .prepare(
-            `
+        const matchMessageCursor = this.sql.exec(
+          `
           SELECT m.*, d.id as dialog_id, d.chat_title, d.chat_type, d.is_public, d.is_free
           FROM telegram_messages m
           JOIN telegram_dialogs d ON m.chat_id = d.chat_id
-          WHERE m.id = ? AND d.status = 'active'
-        `
-          )
-          .bind(matchId);
+          WHERE m.id = $1 AND d.status = 'active'
+          `,
+          [matchId]
+        );
 
-        const matchMessage = await matchStmt.first();
+        const matchMessages = [];
+        for (const message of matchMessageCursor) {
+          matchMessages.push(message);
+        }
 
-        if (!matchMessage) continue;
+        if (matchMessages.length === 0) continue;
+        const matchMessage = matchMessages[0];
 
         // Apply additional filters on the database level
         if (
@@ -311,25 +336,27 @@ export class TgContext extends DurableObject<Env> {
         const contextQuery = `
           SELECT m.*
           FROM telegram_messages m
-          WHERE m.chat_id = ?
+          WHERE m.chat_id = $1
           AND m.message_timestamp BETWEEN 
-            (SELECT message_timestamp FROM telegram_messages WHERE id = ?) - ${
+            (SELECT message_timestamp FROM telegram_messages WHERE id = $2) - ${
               messageRange * 3600
             } 
-            AND (SELECT message_timestamp FROM telegram_messages WHERE id = ?) + ${
+            AND (SELECT message_timestamp FROM telegram_messages WHERE id = $3) + ${
               messageRange * 3600
             }
           ORDER BY m.message_timestamp
         `;
 
-        const contextStmt = this.sql
-          .prepare(contextQuery)
-          .bind(matchMessage.chat_id, matchId, matchId);
-        const contextResult = await contextStmt.all();
-        const contextMessages = contextResult.results as Record<
-          string,
-          unknown
-        >[];
+        const contextMessagesCursor = this.sql.exec(contextQuery, [
+          matchMessage.chat_id,
+          matchId,
+          matchId,
+        ]);
+
+        const contextMessages = [];
+        for (const message of contextMessagesCursor) {
+          contextMessages.push(message);
+        }
 
         // Prepare chat info
         const chatInfo: ChatInfo = {
@@ -345,6 +372,12 @@ export class TgContext extends DurableObject<Env> {
         const messageChunk = contextMessages.map(
           (msg: Record<string, unknown>) => {
             const isMatch = msg.id === matchId;
+            const matchResult = isMatch
+              ? vectorResults.matches.find(
+                  (m: any) => m.metadata?.message_id === matchId
+                )
+              : null;
+
             const result: MessageInfo = {
               id: msg.id as string,
               message_id: msg.message_id as string,
@@ -355,11 +388,7 @@ export class TgContext extends DurableObject<Env> {
               sender_firstname: msg.sender_firstname as string | null,
               sender_lastname: msg.sender_lastname as string | null,
               is_match: isMatch,
-              similarity: isMatch
-                ? vectorResults.matches.find(
-                    (m) => (m.metadata as any)?.message_id === matchId
-                  )?.score || null
-                : null,
+              similarity: matchResult?.score || null,
             };
             return result;
           }
@@ -397,37 +426,36 @@ export class TgContext extends DurableObject<Env> {
     } = chatData;
 
     // Check if chat already exists
-    const chatStmt = this.sql
-      .prepare(
-        `
-      SELECT * FROM telegram_dialogs WHERE chat_id = ?
-    `
-      )
-      .bind(chat_id);
+    const existingChatCursor = this.sql.exec(
+      `SELECT * FROM telegram_dialogs WHERE chat_id = $1`,
+      [chat_id]
+    );
 
-    const existingChat = await chatStmt.first();
+    const existingChats = [];
+    for (const chat of existingChatCursor) {
+      existingChats.push(chat);
+    }
+    const existingChat = existingChats.length > 0 ? existingChats[0] : null;
 
     const now = new Date().toISOString();
 
     if (existingChat) {
       // Update existing chat
-      const updateStmt = this.sql
-        .prepare(
-          `
+      this.sql.exec(
+        `
         UPDATE telegram_dialogs
         SET 
-          chat_title = ?,
-          chat_type = ?,
-          is_public = ?,
-          is_free = ?,
-          subscription_fee = ?,
-          last_synced_at = ?,
-          updated_at = ?,
+          chat_title = $1,
+          chat_type = $2,
+          is_public = $3,
+          is_free = $4,
+          subscription_fee = $5,
+          last_synced_at = $6,
+          updated_at = $7,
           status = 'active'
-        WHERE chat_id = ?
-      `
-        )
-        .bind(
+        WHERE chat_id = $8
+        `,
+        [
           chat_title,
           chat_type,
           is_public ? 1 : 0,
@@ -435,25 +463,22 @@ export class TgContext extends DurableObject<Env> {
           subscription_fee,
           now,
           now,
-          chat_id
-        );
-
-      await updateStmt.run();
+          chat_id,
+        ]
+      );
 
       return chat_id;
     } else {
       // Insert new chat
       const id = crypto.randomUUID();
 
-      const insertStmt = this.sql
-        .prepare(
-          `
+      this.sql.exec(
+        `
         INSERT INTO telegram_dialogs
         (id, chat_id, chat_title, chat_type, is_public, is_free, subscription_fee, last_synced_at, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `
-        )
-        .bind(
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        `,
+        [
           id,
           chat_id,
           chat_title,
@@ -463,10 +488,9 @@ export class TgContext extends DurableObject<Env> {
           subscription_fee,
           now,
           now,
-          now
-        );
-
-      await insertStmt.run();
+          now,
+        ]
+      );
 
       return chat_id;
     }
@@ -478,17 +502,17 @@ export class TgContext extends DurableObject<Env> {
     messages: TelegramMessageData[]
   ): Promise<number> {
     // Check if chat exists
-    const chatStmt = this.sql
-      .prepare(
-        `
-      SELECT * FROM telegram_dialogs WHERE chat_id = ? AND status = 'active'
-    `
-      )
-      .bind(chatId);
+    const chatCursor = this.sql.exec(
+      `SELECT * FROM telegram_dialogs WHERE chat_id = $1 AND status = 'active'`,
+      [chatId]
+    );
 
-    const chat = await chatStmt.first();
+    const chats = [];
+    for (const chat of chatCursor) {
+      chats.push(chat);
+    }
 
-    if (!chat) {
+    if (chats.length === 0) {
       throw new Error(`Chat with ID ${chatId} not found or not accessible`);
     }
 
@@ -496,34 +520,34 @@ export class TgContext extends DurableObject<Env> {
     const messagesToEmbed: { id: string; text: string }[] = [];
 
     // Insert messages in transaction
-    await this.sql.exec("BEGIN TRANSACTION");
+    this.sql.exec("BEGIN TRANSACTION");
 
     try {
       for (const message of messages) {
         const id = crypto.randomUUID();
 
         // Check if message already exists
-        const msgStmt = this.sql
-          .prepare(
-            `
-          SELECT * FROM telegram_messages WHERE chat_id = ? AND message_id = ?
-        `
-          )
-          .bind(chatId, message.message_id);
+        const existingMessageCursor = this.sql.exec(
+          `SELECT * FROM telegram_messages WHERE chat_id = $1 AND message_id = $2`,
+          [chatId, message.message_id]
+        );
 
-        const existingMessage = await msgStmt.first();
+        const existingMessages = [];
+        for (const msg of existingMessageCursor) {
+          existingMessages.push(msg);
+        }
+        const existingMessage =
+          existingMessages.length > 0 ? existingMessages[0] : null;
 
         if (!existingMessage) {
           // Insert new message
-          const insertStmt = this.sql
-            .prepare(
-              `
+          this.sql.exec(
+            `
             INSERT INTO telegram_messages
             (id, chat_id, message_id, message_text, message_timestamp, sender_id, sender_username, sender_firstname, sender_lastname)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `
-            )
-            .bind(
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            `,
+            [
               id,
               chatId,
               message.message_id,
@@ -532,10 +556,9 @@ export class TgContext extends DurableObject<Env> {
               message.sender_id,
               message.sender_username,
               message.sender_firstname,
-              message.sender_lastname
-            );
-
-          await insertStmt.run();
+              message.sender_lastname,
+            ]
+          );
 
           insertedCount++;
 
@@ -549,21 +572,18 @@ export class TgContext extends DurableObject<Env> {
         }
       }
 
-      await this.sql.exec("COMMIT");
+      this.sql.exec("COMMIT");
 
       // Update chat's last_synced_at and updated_at
       const now = new Date().toISOString();
-      const updateStmt = this.sql
-        .prepare(
-          `
+      this.sql.exec(
+        `
         UPDATE telegram_dialogs
-        SET last_synced_at = ?, updated_at = ?
-        WHERE chat_id = ?
-      `
-        )
-        .bind(now, now, chatId);
-
-      await updateStmt.run();
+        SET last_synced_at = $1, updated_at = $2
+        WHERE chat_id = $3
+        `,
+        [now, now, chatId]
+      );
 
       // Generate embeddings for new messages in batches
       if (messagesToEmbed.length > 0) {
@@ -578,7 +598,7 @@ export class TgContext extends DurableObject<Env> {
       return insertedCount;
     } catch (error) {
       // Rollback on error
-      await this.sql.exec("ROLLBACK");
+      this.sql.exec("ROLLBACK");
       throw error;
     }
   }
@@ -618,17 +638,14 @@ export class TgContext extends DurableObject<Env> {
 
       // Update messages with embedding_id
       for (const message of messages) {
-        const updateStmt = this.sql
-          .prepare(
-            `
+        this.sql.exec(
+          `
           UPDATE telegram_messages
-          SET embedding_id = ?
-          WHERE id = ?
-        `
-          )
-          .bind(message.id, message.id);
-
-        await updateStmt.run();
+          SET embedding_id = $1
+          WHERE id = $2
+          `,
+          [message.id, message.id]
+        );
       }
     } catch (error) {
       console.error("Error generating embeddings:", error);
