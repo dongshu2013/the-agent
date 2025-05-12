@@ -50,7 +50,7 @@ const corsHeaders = {
 const app = new Hono<{
   Bindings: {
     MYTSTA_E5_INDEX: Vectorize;
-    TELEGRAM_E5_INDEX: Vectorize;
+    MYSTA_TG_INDEX: Vectorize;
     SUPABASE_KEY: string;
     SUPABASE_URL: string;
     LLM_API_URL: string;

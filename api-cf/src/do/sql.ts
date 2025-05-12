@@ -12,7 +12,9 @@ export const CREATE_MESSAGE_TABLE_QUERY = `CREATE TABLE IF NOT EXISTS agent_mess
 // id is the epoch time of creation
 export const CREATE_CONVERSATION_TABLE_QUERY = `CREATE TABLE IF NOT EXISTS agent_conversations(
   id INTEGER PRIMARY KEY,
-  status TEXT DEFAULT 'active'
+  status TEXT DEFAULT 'active',
+  last_message_at INTEGER,
+  title TEXT,
 );`;
 
 // SQL queries for table creation

@@ -83,7 +83,8 @@ export class AgentContext extends DurableObject<Env> {
 
   async saveMessage(
     message: Message,
-    topK = 3
+    topK = 3,
+    threshold: number = 0.7,
   ): Promise<{ success: boolean; topKMessageIds: string[] }> {
     this.sql.exec(
       `INSERT INTO agent_messages
@@ -98,6 +99,13 @@ export class AgentContext extends DurableObject<Env> {
         message.tool_call_id,
       ]
     );
+    this.sql.exec(
+      `UPDATE agent_conversations SET last_message_at = $1 WHERE id = $2`,
+      [
+        message.id,
+        message.conversation_id,
+      ]
+    )
     const texts = message.content
       .filter((m): m is TextMessage => m.type === "text")
       .map((m) => m.text?.value)
@@ -120,7 +128,6 @@ export class AgentContext extends DurableObject<Env> {
         values: embedding,
         metadata: {
           conversation_id: message.conversation_id,
-          message_id: message.id,
         },
         namespace: DEFAULT_VECTOR_NAMESPACE,
       },
@@ -138,9 +145,9 @@ export class AgentContext extends DurableObject<Env> {
         }),
         this.env.MYTSTA_E5_INDEX.insert(toInsert),
       ]);
-      const topKMessageIds = topKMessages.matches
-        .map((m) => m.metadata?.message_id)
-        .filter((id): id is string => id !== undefined);
+      const topKMessageIds = topKMessages.matches.filter(
+        (m) => m.score && m.score >= threshold
+      ).map((m) => m.id);
       return {
         success: true,
         topKMessageIds,

@@ -13,7 +13,7 @@ import {
 
 const EMBEDDING_MODEL = "intfloat/multilingual-e5-large";
 const EMBEDDING_API_BASE_URL = "https://api.deepinfra.com/v1/openai";
-const DEFAULT_VECTOR_NAMESPACE = "default";
+const TG_VECTOR_NAMESPACE = "tg";
 
 export class TgContext extends DurableObject<Env> {
   openai: OpenAI;
@@ -266,24 +266,19 @@ export class TgContext extends DurableObject<Env> {
       }
 
       // Search vector database for similar messages
-      const vectorResults = await this.env.MYTSTA_E5_INDEX.query(embedding, {
+      const vectorResults = await this.env.MYSTA_TG_INDEX.query(embedding, {
         topK,
-        namespace: DEFAULT_VECTOR_NAMESPACE,
+        namespace: TG_VECTOR_NAMESPACE,
         filter,
         returnValues: false,
         returnMetadata: "indexed",
       });
 
       // Process vector search results
-      const matchIds = new Set<string>();
-      for (const match of vectorResults.matches) {
-        if (match.score && match.score >= threshold) {
-          const metadata = match.metadata as any;
-          if (metadata && metadata.message_id) {
-            matchIds.add(metadata.message_id);
-          }
-        }
-      }
+
+      const matchIds = vectorResults.matches.filter(
+        (m) => m.score && m.score >= threshold
+      ).map((m) => m.id);
 
       // Get matching messages and surrounding context
       for (const matchId of matchIds) {
@@ -482,7 +477,8 @@ export class TgContext extends DurableObject<Env> {
   // Sync messages for a chat
   async syncMessages(
     chatId: string,
-    messages: TelegramMessageData[]
+    messages: TelegramMessageData[],
+    batchSize: number = 10
   ): Promise<number> {
     // Check if chat exists
     const chatCursor = this.sql.exec(
@@ -570,8 +566,6 @@ export class TgContext extends DurableObject<Env> {
 
       // Generate embeddings for new messages in batches
       if (messagesToEmbed.length > 0) {
-        // Process in batches of 10
-        const batchSize = 10;
         for (let i = 0; i < messagesToEmbed.length; i += batchSize) {
           const batch = messagesToEmbed.slice(i, i + batchSize);
           await this._generateAndStoreEmbeddings(batch, chatId);
@@ -609,15 +603,14 @@ export class TgContext extends DurableObject<Env> {
           id: messages[index].id,
           values: item.embedding,
           metadata: {
-            message_id: messages[index].id,
             chat_id: chatId,
           },
-          namespace: DEFAULT_VECTOR_NAMESPACE,
+          namespace: TG_VECTOR_NAMESPACE,
         };
       });
 
       // Insert embeddings into vector database
-      await this.env.MYTSTA_E5_INDEX.insert(toInsert);
+      await this.env.MYSTA_TG_INDEX.insert(toInsert);
 
       // Update messages with embedding_id
       for (const message of messages) {
