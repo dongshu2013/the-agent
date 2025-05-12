@@ -5,7 +5,7 @@ export class OpenAIClient {
   private apiKey: string;
   private baseURL: string;
 
-  constructor(apiKey: string, baseURL: string = 'https://api.openai.com/v1') {
+  constructor(apiKey: string, baseURL = 'https://api.openai.com/v1') {
     this.apiKey = apiKey;
     this.baseURL = baseURL;
   }
@@ -18,34 +18,41 @@ export class OpenAIClient {
   }
 
   // Create a chat completion
-  async createChatCompletion(params: ChatCompletionCreateParam): Promise<Response> {
+  async createChatCompletion(
+    params: ChatCompletionCreateParam
+  ): Promise<Response> {
     const url = `${this.baseURL}/chat/completions`;
-    
+
     // Filter out undefined values
     const filteredParams = this.filterUndefined(params as Record<string, any>);
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${this.apiKey}`
+        Authorization: `Bearer ${this.apiKey}`,
       },
-      body: JSON.stringify(filteredParams)
+      body: JSON.stringify(filteredParams),
     });
 
     return response;
   }
 
   // Stream a chat completion
-  async streamChatCompletion(params: ChatCompletionCreateParam): Promise<Response> {
+  async streamChatCompletion(
+    params: ChatCompletionCreateParam
+  ): Promise<Response> {
     // Ensure stream is set to true
     const streamParams = { ...params, stream: true };
-    
+
     return this.createChatCompletion(streamParams);
   }
 }
 
 // Factory function to create an OpenAI client
-export function createOpenAIClient(apiKey: string, baseURL?: string): OpenAIClient {
+export function createOpenAIClient(
+  apiKey: string,
+  baseURL?: string
+): OpenAIClient {
   return new OpenAIClient(apiKey, baseURL);
 }

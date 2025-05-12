@@ -1,5 +1,5 @@
 export interface TextMessage {
-  type: "text";
+  type: 'text';
   text: {
     value: string;
     annotations: string[];
@@ -7,7 +7,7 @@ export interface TextMessage {
 }
 
 export interface ImageMessage {
-  type: "image";
+  type: 'image';
   image_url: {
     url: string;
   };

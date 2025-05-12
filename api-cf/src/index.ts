@@ -1,94 +1,93 @@
-import { Hono } from "hono";
-import { cors } from "hono/cors";
-import { fromHono } from "chanfana";
+import { Hono } from 'hono';
+import { cors } from 'hono/cors';
+import { fromHono } from 'chanfana';
 
-import { apiKeyAuthMiddleware } from "./auth";
-import { GatewayServiceError } from "./types/service";
+import { apiKeyAuthMiddleware } from './auth';
+import { GatewayServiceError } from './types/service';
 
-import { SaveMessage } from "./handlers/message";
+import { SaveMessage } from './handlers/message';
 import {
   CreateConversation,
   DeleteConversation,
   ListConversations,
-} from "./handlers/conversation";
-import { ChatCompletions } from "./handlers/chat";
+} from './handlers/conversation';
+import { ChatCompletions } from './handlers/chat';
 import {
   GetTelegramDialogs,
   GetTelegramMessages,
   SearchTelegramMessages,
   SyncTelegramChat,
   SyncTelegramMessages,
-} from "./handlers/telegram";
-import { AgentContext } from "./do/AgentContext";
-import { TgContext } from "./do/TgContext";
-import { corsHeaders } from "./utils/common";
-import { StripeCheckout, StripeWebhook } from "./handlers/stripe";
+} from './handlers/telegram';
+import { AgentContext } from './do/AgentContext';
+import { TgContext } from './do/TgContext';
+import { corsHeaders } from './utils/common';
+import { StripeCheckout, StripeWebhook } from './handlers/stripe';
 import {
   GetCreditLogs,
   GetUser,
   GetUserBalance,
   RotateApiKey,
   ToggleApiKeyEnabled,
-} from "./handlers/user";
+} from './handlers/user';
 
 const app = new Hono<{ Bindings: Env }>();
 
 // CORS middleware
 app.use(
-  "*",
+  '*',
   cors({
-    origin: "*",
-    allowMethods: ["GET", "POST", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization", "X-API-Key"],
-    exposeHeaders: ["*"],
+    origin: '*',
+    allowMethods: ['GET', 'POST', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
+    exposeHeaders: ['*'],
     maxAge: 86400, // 24 hours
   })
 );
 
 // Add unauthenticated routes
-app.get("/", (c) => c.text(""));
-app.get("/health", (c) =>
-  c.json({ status: "OK", version: "0.0.1" }, 200, corsHeaders)
+app.get('/', (c) => c.text(''));
+app.get('/health', (c) =>
+  c.json({ status: 'OK', version: '0.0.1' }, 200, corsHeaders)
 );
 
 // Authenticated routes
-app.use("/v1/conversation/create", apiKeyAuthMiddleware);
-app.use("/v1/conversation/delete", apiKeyAuthMiddleware);
-app.use("/v1/conversation/list", apiKeyAuthMiddleware);
+app.use('/v1/conversation/create', apiKeyAuthMiddleware);
+app.use('/v1/conversation/delete', apiKeyAuthMiddleware);
+app.use('/v1/conversation/list', apiKeyAuthMiddleware);
 
-app.use("/v1/chat/completions", apiKeyAuthMiddleware);
-app.use("/v1/message/save", apiKeyAuthMiddleware);
+app.use('/v1/chat/completions', apiKeyAuthMiddleware);
+app.use('/v1/message/save', apiKeyAuthMiddleware);
 
-app.use("/v1/tg/get_dialogs", apiKeyAuthMiddleware);
-app.use("/v1/tg/get_messages", apiKeyAuthMiddleware);
-app.use("/v1/tg/search_messages", apiKeyAuthMiddleware);
-app.use("/v1/tg/sync_chat", apiKeyAuthMiddleware);
-app.use("/v1/tg/sync_messages", apiKeyAuthMiddleware);
+app.use('/v1/tg/get_dialogs', apiKeyAuthMiddleware);
+app.use('/v1/tg/get_messages', apiKeyAuthMiddleware);
+app.use('/v1/tg/search_messages', apiKeyAuthMiddleware);
+app.use('/v1/tg/sync_chat', apiKeyAuthMiddleware);
+app.use('/v1/tg/sync_messages', apiKeyAuthMiddleware);
 
-app.use("/v1/stripe/checkout", apiKeyAuthMiddleware);
-app.use("/v1/stripe/webhook", apiKeyAuthMiddleware);
+app.use('/v1/stripe/checkout', apiKeyAuthMiddleware);
+app.use('/v1/stripe/webhook', apiKeyAuthMiddleware);
 
-app.use("/v1/user/balance", apiKeyAuthMiddleware);
-app.use("/v1/user/credit_history", apiKeyAuthMiddleware);
-app.use("/v1/user", apiKeyAuthMiddleware);
-app.use("/v1/user/rotate_api_key", apiKeyAuthMiddleware);
-app.use("/v1/user/toggle_api_key_enabled", apiKeyAuthMiddleware);
-
+app.use('/v1/user/balance', apiKeyAuthMiddleware);
+app.use('/v1/user/credit_history', apiKeyAuthMiddleware);
+app.use('/v1/user', apiKeyAuthMiddleware);
+app.use('/v1/user/rotate_api_key', apiKeyAuthMiddleware);
+app.use('/v1/user/toggle_api_key_enabled', apiKeyAuthMiddleware);
 
 app.onError(async (err, c) => {
   if (err instanceof GatewayServiceError) {
     return c.text(err.message, err.code);
   }
   console.error(err);
-  return c.text("Internal Server Error", 500);
+  return c.text('Internal Server Error', 500);
 });
 
 const openapi = fromHono(app, {
   schema: {
     info: {
-      title: "Mizu Node Gateway",
-      version: "0.0.1",
-      description: "API Gateway for Mizu AI Agent",
+      title: 'Mizu Node Gateway',
+      version: '0.0.1',
+      description: 'API Gateway for Mizu AI Agent',
     },
     security: [
       {
@@ -98,46 +97,45 @@ const openapi = fromHono(app, {
   },
 });
 
-openapi.registry.registerComponent("securitySchemes", "BearerAuth", {
-  type: "http",
-  scheme: "bearer",
+openapi.registry.registerComponent('securitySchemes', 'BearerAuth', {
+  type: 'http',
+  scheme: 'bearer',
 });
 
 // agent core endpoints
-openapi.post("/v1/conversation/create", CreateConversation);
-openapi.post("/v1/conversation/delete", DeleteConversation);
-openapi.get("/v1/conversation/list", ListConversations);
-openapi.post("/v1/message/save", SaveMessage);
+openapi.post('/v1/conversation/create', CreateConversation);
+openapi.post('/v1/conversation/delete', DeleteConversation);
+openapi.get('/v1/conversation/list', ListConversations);
+openapi.post('/v1/message/save', SaveMessage);
 
 // telegram routes
-openapi.get("/v1/tg/get_dialogs", GetTelegramDialogs);
-openapi.get("/v1/tg/get_messages", GetTelegramMessages);
-openapi.get("/v1/tg/search_messages", SearchTelegramMessages);
-openapi.post("/v1/tg/sync_chat", SyncTelegramChat);
-openapi.post("/v1/tg/sync_messages", SyncTelegramMessages);
+openapi.get('/v1/tg/get_dialogs', GetTelegramDialogs);
+openapi.get('/v1/tg/get_messages', GetTelegramMessages);
+openapi.get('/v1/tg/search_messages', SearchTelegramMessages);
+openapi.post('/v1/tg/sync_chat', SyncTelegramChat);
+openapi.post('/v1/tg/sync_messages', SyncTelegramMessages);
 
-openapi.post("/v1/stripe/checkout", StripeCheckout);
-openapi.post("/v1/stripe/webhook", StripeWebhook);
+openapi.post('/v1/stripe/checkout', StripeCheckout);
+openapi.post('/v1/stripe/webhook', StripeWebhook);
 
-openapi.post("/v1/user/rotate_api_key", RotateApiKey);
-openapi.post("/v1/user/toggle_api_key_enabled", ToggleApiKeyEnabled);
+openapi.post('/v1/user/rotate_api_key', RotateApiKey);
+openapi.post('/v1/user/toggle_api_key_enabled', ToggleApiKeyEnabled);
 
-openapi.get("/v1/user/balance", GetUserBalance);
-openapi.get("/v1/user/credit_logs", GetCreditLogs);
-openapi.get("/v1/user", GetUser);
+openapi.get('/v1/user/balance', GetUserBalance);
+openapi.get('/v1/user/credit_logs', GetCreditLogs);
+openapi.get('/v1/user', GetUser);
 
 // Register chat completion route
-openapi.post("/v1/chat/completions", ChatCompletions);
+openapi.post('/v1/chat/completions', ChatCompletions);
 
 // OpenAPI documentation endpoints
-app.get("/docs/openapi.json", (c) => {
-  // Access the OpenAPI schema through the registry
-  // @ts-ignore - Workaround for TypeScript error
-  const schema = openapi.schema || openapi.getGeneratedSchema?.() || {};
+app.get('/docs/openapi.json', (c) => {
+  const schema =
+    (openapi as any).schema || (openapi as any).getGeneratedSchema?.() || {};
   return c.json(schema);
 });
 
-app.get("/docs", (c) => {
+app.get('/docs', (c) => {
   const html = `
 <!DOCTYPE html>
 <html lang="en">

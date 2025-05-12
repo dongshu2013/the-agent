@@ -1,24 +1,24 @@
-import { OpenAPIRoute } from "chanfana";
-import { z } from "zod";
-import { Context } from "hono";
-import { SaveMessageRequestSchema } from "../types/chat";
+import { OpenAPIRoute } from 'chanfana';
+import { z } from 'zod';
+import { Context } from 'hono';
+import { SaveMessageRequestSchema } from '../types/chat';
 
 export class SaveMessage extends OpenAPIRoute {
   schema = {
     request: {
       body: {
         content: {
-          "application/json": {
+          'application/json': {
             schema: SaveMessageRequestSchema,
           },
         },
       },
     },
     responses: {
-      "200": {
-        description: "Message saved successfully",
+      '200': {
+        description: 'Message saved successfully',
         content: {
-          "application/json": {
+          'application/json': {
             schema: z.object({
               success: z.boolean(),
               top_k_message_ids: z.array(z.string()),
@@ -26,10 +26,10 @@ export class SaveMessage extends OpenAPIRoute {
           },
         },
       },
-      "500": {
-        description: "Internal server error",
+      '500': {
+        description: 'Internal server error',
         content: {
-          "application/json": {
+          'application/json': {
             schema: z.object({
               success: z.boolean(),
               error: z.object({
@@ -45,7 +45,7 @@ export class SaveMessage extends OpenAPIRoute {
 
   async handle(c: Context) {
     try {
-      const userId = c.get("userId");
+      const userId = c.get('userId');
       const body = await c.req.json();
 
       // Save the message
@@ -66,7 +66,7 @@ export class SaveMessage extends OpenAPIRoute {
         200
       );
     } catch (error) {
-      console.error("Error saving message:", error);
+      console.error('Error saving message:', error);
       return c.json(
         {
           success: false,
@@ -74,8 +74,8 @@ export class SaveMessage extends OpenAPIRoute {
             message:
               error instanceof Error
                 ? error.message
-                : "An unknown error occurred",
-            code: "server_error",
+                : 'An unknown error occurred',
+            code: 'server_error',
           },
         },
         500

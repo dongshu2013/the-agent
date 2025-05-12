@@ -1,21 +1,21 @@
-import { DurableObject } from "cloudflare:workers";
-import OpenAI from "openai";
+import { DurableObject } from 'cloudflare:workers';
+import OpenAI from 'openai';
 import {
   AgentMessage,
   Conversation,
   Message,
   TextMessage,
   ToolCall,
-} from "./types";
+} from './types';
 import {
   CREATE_CONVERSATION_TABLE_QUERY,
   CREATE_MESSAGE_TABLE_QUERY,
-} from "./sql";
+} from './sql';
 
-const EMBEDDING_MODEL = "intfloat/multilingual-e5-large";
-const EMBEDDING_API_BASE_URL = "https://api.deepinfra.com/v1/openai";
+const EMBEDDING_MODEL = 'intfloat/multilingual-e5-large';
+const EMBEDDING_API_BASE_URL = 'https://api.deepinfra.com/v1/openai';
 
-const DEFAULT_VECTOR_NAMESPACE = "default";
+const DEFAULT_VECTOR_NAMESPACE = 'default';
 
 export class AgentContext extends DurableObject<Env> {
   openai: OpenAI;
@@ -56,13 +56,13 @@ export class AgentContext extends DurableObject<Env> {
         ORDER BY c.id DESC
         LIMIT ${limit}`
     );
-    for (let row of conversations) {
+    for (const row of conversations) {
       const messages = this.sql.exec(
         `SELECT * FROM agent_messages WHERE conversation_id = $1`,
         [row.id]
       );
       const msgs: Message[] = [];
-      for (let message of messages) {
+      for (const message of messages) {
         msgs.push({
           id: message.id as number,
           conversation_id: message.conversation_id as number,
@@ -83,7 +83,7 @@ export class AgentContext extends DurableObject<Env> {
   async saveMessage(
     message: Message,
     topK = 3,
-    threshold: number = 0.7,
+    threshold = 0.7
   ): Promise<{ success: boolean; topKMessageIds: string[] }> {
     this.sql.exec(
       `INSERT INTO agent_messages
@@ -100,13 +100,10 @@ export class AgentContext extends DurableObject<Env> {
     );
     this.sql.exec(
       `UPDATE agent_conversations SET last_message_at = $1 WHERE id = $2`,
-      [
-        message.id,
-        message.conversation_id,
-      ]
+      [message.id, message.conversation_id]
     );
     const texts = message.content
-      .filter((m): m is TextMessage => m.type === "text")
+      .filter((m): m is TextMessage => m.type === 'text')
       .map((m) => m.text?.value)
       .filter((v): v is string => v?.trim().length > 0);
     if (texts.length === 0) {
@@ -116,9 +113,9 @@ export class AgentContext extends DurableObject<Env> {
       };
     }
     const response = await this.openai.embeddings.create({
-      input: texts.join("\n"),
+      input: texts.join('\n'),
       model: EMBEDDING_MODEL,
-      encoding_format: "float",
+      encoding_format: 'float',
     });
     const embedding = response.data[0].embedding;
     const toInsert = [
@@ -140,13 +137,13 @@ export class AgentContext extends DurableObject<Env> {
             conversation_id: { $eq: message.conversation_id },
           },
           returnValues: false,
-          returnMetadata: "indexed",
+          returnMetadata: 'indexed',
         }),
         this.env.MYTSTA_E5_INDEX.insert(toInsert),
       ]);
-      const topKMessageIds = topKMessages.matches.filter(
-        (m) => m.score && m.score >= threshold
-      ).map((m) => m.id);
+      const topKMessageIds = topKMessages.matches
+        .filter((m) => m.score && m.score >= threshold)
+        .map((m) => m.id);
       return {
         success: true,
         topKMessageIds,

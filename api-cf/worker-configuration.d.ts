@@ -5,6 +5,7 @@ interface Env {
   DEFAULT_MODEL: string;
   EMBEDDING_API_KEY: string;
   STRIPE_PRIVATE_KEY: string;
+  STRIPE_WEBHOOK_SECRET: string;
   MYSTA_PUBLIC_DOMAIN: string;
   // bindings
   MYSTA_TG_INDEX: Vectorize;

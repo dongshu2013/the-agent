@@ -1,7 +1,7 @@
-import { OpenAPIRoute } from "chanfana";
-import { z } from "zod";
-import { Context } from "hono";
-import { corsHeaders } from "../utils/common";
+import { OpenAPIRoute } from 'chanfana';
+import { z } from 'zod';
+import { Context } from 'hono';
+import { corsHeaders } from '../utils/common';
 
 // ===== GET TELEGRAM DIALOGS =====
 
@@ -22,24 +22,24 @@ export class GetTelegramDialogs extends OpenAPIRoute {
           .string()
           .optional()
           .transform((val) =>
-            val === "true" ? true : val === "false" ? false : undefined
+            val === 'true' ? true : val === 'false' ? false : undefined
           ),
         is_free: z
           .string()
           .optional()
           .transform((val) =>
-            val === "true" ? true : val === "false" ? false : undefined
+            val === 'true' ? true : val === 'false' ? false : undefined
           ),
         status: z.string().optional(),
-        sort_by: z.string().optional().default("updated_at"),
-        sort_order: z.string().optional().default("desc"),
+        sort_by: z.string().optional().default('updated_at'),
+        sort_order: z.string().optional().default('desc'),
       }),
     },
     responses: {
-      "200": {
-        description: "List of Telegram dialogs",
+      '200': {
+        description: 'List of Telegram dialogs',
         content: {
-          "application/json": {
+          'application/json': {
             schema: z.object({
               success: z.boolean(),
               data: z.object({
@@ -72,17 +72,17 @@ export class GetTelegramDialogs extends OpenAPIRoute {
 
   async handle(c: Context) {
     try {
-      const userId = c.get("userId");
+      const userId = c.get('userId');
       const query = c.req.query();
 
-      const limit = parseInt(query.limit || "100", 10);
-      const offset = parseInt(query.offset || "0", 10);
+      const limit = parseInt(query.limit || '100', 10);
+      const offset = parseInt(query.offset || '0', 10);
       const chatTitle = query.chat_title;
-      const isPublic = query.is_public ? query.is_public === "true" : undefined;
-      const isFree = query.is_free ? query.is_free === "true" : undefined;
+      const isPublic = query.is_public ? query.is_public === 'true' : undefined;
+      const isFree = query.is_free ? query.is_free === 'true' : undefined;
       const status = query.status;
-      const sortBy = query.sort_by || "updated_at";
-      const sortOrder = query.sort_order || "desc";
+      const sortBy = query.sort_by || 'updated_at';
+      const sortOrder = query.sort_order || 'desc';
 
       // Use Durable Object to get Telegram dialogs
       const id = c.env.TgContext.idFromName(userId);
@@ -107,17 +107,17 @@ export class GetTelegramDialogs extends OpenAPIRoute {
         200
       );
     } catch (error) {
-      console.error("Error getting Telegram dialogs:", error);
+      console.error('Error getting Telegram dialogs:', error);
 
       return c.json(
         {
           success: false,
           error: {
-            code: "INTERNAL_ERROR",
+            code: 'INTERNAL_ERROR',
             message:
               error instanceof Error
                 ? error.message
-                : "An unknown error occurred",
+                : 'An unknown error occurred',
           },
         },
         500
@@ -152,15 +152,15 @@ export class GetTelegramMessages extends OpenAPIRoute {
           .string()
           .optional()
           .transform((val) => (val ? parseInt(val, 10) : undefined)),
-        sort_by: z.string().optional().default("message_timestamp"),
-        sort_order: z.string().optional().default("desc"),
+        sort_by: z.string().optional().default('message_timestamp'),
+        sort_order: z.string().optional().default('desc'),
       }),
     },
     responses: {
-      "200": {
-        description: "List of Telegram messages",
+      '200': {
+        description: 'List of Telegram messages',
         content: {
-          "application/json": {
+          'application/json': {
             schema: z.object({
               success: z.boolean(),
               data: z.object({
@@ -192,10 +192,10 @@ export class GetTelegramMessages extends OpenAPIRoute {
           },
         },
       },
-      "404": {
-        description: "Chat not found",
+      '404': {
+        description: 'Chat not found',
         content: {
-          "application/json": {
+          'application/json': {
             schema: z.object({
               success: z.boolean(),
               error: z.object({
@@ -211,7 +211,7 @@ export class GetTelegramMessages extends OpenAPIRoute {
 
   async handle(c: Context) {
     try {
-      const userId = c.get("userId");
+      const userId = c.get('userId');
       const query = c.req.query();
 
       const chatId = query.chat_id;
@@ -220,16 +220,16 @@ export class GetTelegramMessages extends OpenAPIRoute {
           {
             success: false,
             error: {
-              code: "MISSING_CHAT_ID",
-              message: "Chat ID is required",
+              code: 'MISSING_CHAT_ID',
+              message: 'Chat ID is required',
             },
           },
           400
         );
       }
 
-      const limit = parseInt(query.limit || "100", 10);
-      const offset = parseInt(query.offset || "0", 10);
+      const limit = parseInt(query.limit || '100', 10);
+      const offset = parseInt(query.offset || '0', 10);
       const messageText = query.message_text;
       const senderId = query.sender_id;
       const senderUsername = query.sender_username;
@@ -239,8 +239,8 @@ export class GetTelegramMessages extends OpenAPIRoute {
       const endTimestamp = query.end_timestamp
         ? parseInt(query.end_timestamp, 10)
         : undefined;
-      const sortBy = query.sort_by || "message_timestamp";
-      const sortOrder = query.sort_order || "desc";
+      const sortBy = query.sort_by || 'message_timestamp';
+      const sortOrder = query.sort_order || 'desc';
 
       // Use Durable Object to get Telegram messages
       const id = c.env.TgContext.idFromName(userId);
@@ -267,19 +267,19 @@ export class GetTelegramMessages extends OpenAPIRoute {
         200
       );
     } catch (error) {
-      console.error("Error getting Telegram messages:", error);
+      console.error('Error getting Telegram messages:', error);
 
       // Handle specific error cases
       if (
         error instanceof Error &&
-        (error.message.includes("not found") ||
-          error.message.includes("permission"))
+        (error.message.includes('not found') ||
+          error.message.includes('permission'))
       ) {
         return c.json(
           {
             success: false,
             error: {
-              code: "NOT_FOUND",
+              code: 'NOT_FOUND',
               message: error.message,
             },
           },
@@ -291,11 +291,11 @@ export class GetTelegramMessages extends OpenAPIRoute {
         {
           success: false,
           error: {
-            code: "INTERNAL_ERROR",
+            code: 'INTERNAL_ERROR',
             message:
               error instanceof Error
                 ? error.message
-                : "An unknown error occurred",
+                : 'An unknown error occurred',
           },
         },
         500
@@ -328,21 +328,21 @@ export class SearchTelegramMessages extends OpenAPIRoute {
           .string()
           .optional()
           .transform((val) =>
-            val === "true" ? true : val === "false" ? false : undefined
+            val === 'true' ? true : val === 'false' ? false : undefined
           ),
         is_free: z
           .string()
           .optional()
           .transform((val) =>
-            val === "true" ? true : val === "false" ? false : undefined
+            val === 'true' ? true : val === 'false' ? false : undefined
           ),
       }),
     },
     responses: {
-      "200": {
-        description: "Search results",
+      '200': {
+        description: 'Search results',
         content: {
-          "application/json": {
+          'application/json': {
             schema: z.object({
               success: z.boolean(),
               data: z.object({
@@ -383,7 +383,7 @@ export class SearchTelegramMessages extends OpenAPIRoute {
 
   async handle(c: Context) {
     try {
-      const userId = c.get("userId");
+      const userId = c.get('userId');
       const query = c.req.query();
 
       const searchQuery = query.query;
@@ -392,8 +392,8 @@ export class SearchTelegramMessages extends OpenAPIRoute {
           {
             success: false,
             error: {
-              code: "MISSING_QUERY",
-              message: "Search query is required",
+              code: 'MISSING_QUERY',
+              message: 'Search query is required',
             },
           },
           400
@@ -401,11 +401,11 @@ export class SearchTelegramMessages extends OpenAPIRoute {
       }
 
       const chatId = query.chat_id;
-      const topK = parseInt(query.top_k || "10", 10);
-      const messageRange = parseInt(query.message_range || "2", 10);
-      const threshold = parseFloat(query.threshold || "0.7");
-      const isPublic = query.is_public ? query.is_public === "true" : undefined;
-      const isFree = query.is_free ? query.is_free === "true" : undefined;
+      const topK = parseInt(query.top_k || '10', 10);
+      const messageRange = parseInt(query.message_range || '2', 10);
+      const threshold = parseFloat(query.threshold || '0.7');
+      const isPublic = query.is_public ? query.is_public === 'true' : undefined;
+      const isFree = query.is_free ? query.is_free === 'true' : undefined;
 
       // Use Durable Object to search Telegram messages
       const id = c.env.TgContext.idFromName(userId);
@@ -429,17 +429,17 @@ export class SearchTelegramMessages extends OpenAPIRoute {
         200
       );
     } catch (error) {
-      console.error("Error searching Telegram messages:", error);
+      console.error('Error searching Telegram messages:', error);
 
       return c.json(
         {
           success: false,
           error: {
-            code: "INTERNAL_ERROR",
+            code: 'INTERNAL_ERROR',
             message:
               error instanceof Error
                 ? error.message
-                : "An unknown error occurred",
+                : 'An unknown error occurred',
           },
         },
         500
@@ -455,7 +455,7 @@ export class SyncTelegramChat extends OpenAPIRoute {
     request: {
       body: {
         content: {
-          "application/json": {
+          'application/json': {
             schema: z.object({
               chat_id: z.string(),
               chat_title: z.string(),
@@ -469,10 +469,10 @@ export class SyncTelegramChat extends OpenAPIRoute {
       },
     },
     responses: {
-      "200": {
-        description: "Chat synchronized successfully",
+      '200': {
+        description: 'Chat synchronized successfully',
         content: {
-          "application/json": {
+          'application/json': {
             schema: z.object({
               success: z.boolean(),
               chat_id: z.string(),
@@ -485,7 +485,7 @@ export class SyncTelegramChat extends OpenAPIRoute {
 
   async handle(c: Context) {
     try {
-      const userId = c.get("userId");
+      const userId = c.get('userId');
       const body = await c.req.json();
 
       // Use Durable Object to sync Telegram chat
@@ -502,17 +502,17 @@ export class SyncTelegramChat extends OpenAPIRoute {
         200
       );
     } catch (error) {
-      console.error("Error syncing Telegram chat:", error);
+      console.error('Error syncing Telegram chat:', error);
 
       return c.json(
         {
           success: false,
           error: {
-            code: "INTERNAL_ERROR",
+            code: 'INTERNAL_ERROR',
             message:
               error instanceof Error
                 ? error.message
-                : "An unknown error occurred",
+                : 'An unknown error occurred',
           },
         },
         500
@@ -528,7 +528,7 @@ export class SyncTelegramMessages extends OpenAPIRoute {
     request: {
       body: {
         content: {
-          "application/json": {
+          'application/json': {
             schema: z.object({
               chat_id: z.string(),
               messages: z.array(
@@ -548,10 +548,10 @@ export class SyncTelegramMessages extends OpenAPIRoute {
       },
     },
     responses: {
-      "200": {
-        description: "Messages synchronized successfully",
+      '200': {
+        description: 'Messages synchronized successfully',
         content: {
-          "application/json": {
+          'application/json': {
             schema: z.object({
               success: z.boolean(),
               count: z.number(),
@@ -559,10 +559,10 @@ export class SyncTelegramMessages extends OpenAPIRoute {
           },
         },
       },
-      "404": {
-        description: "Chat not found",
+      '404': {
+        description: 'Chat not found',
         content: {
-          "application/json": {
+          'application/json': {
             schema: z.object({
               success: z.boolean(),
               error: z.object({
@@ -578,7 +578,7 @@ export class SyncTelegramMessages extends OpenAPIRoute {
 
   async handle(c: Context) {
     try {
-      const userId = c.get("userId");
+      const userId = c.get('userId');
       const body = await c.req.json();
 
       // Use Durable Object to sync Telegram messages
@@ -596,19 +596,19 @@ export class SyncTelegramMessages extends OpenAPIRoute {
         corsHeaders
       );
     } catch (error) {
-      console.error("Error syncing Telegram messages:", error);
+      console.error('Error syncing Telegram messages:', error);
 
       // Handle specific error cases
       if (
         error instanceof Error &&
-        (error.message.includes("not found") ||
-          error.message.includes("permission"))
+        (error.message.includes('not found') ||
+          error.message.includes('permission'))
       ) {
         return c.json(
           {
             success: false,
             error: {
-              code: "NOT_FOUND",
+              code: 'NOT_FOUND',
               message: error.message,
             },
           },
@@ -620,11 +620,11 @@ export class SyncTelegramMessages extends OpenAPIRoute {
         {
           success: false,
           error: {
-            code: "INTERNAL_ERROR",
+            code: 'INTERNAL_ERROR',
             message:
               error instanceof Error
                 ? error.message
-                : "An unknown error occurred",
+                : 'An unknown error occurred',
           },
         },
         500

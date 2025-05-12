@@ -1,4 +1,3 @@
-
 // id is the epoch time of creation
 export const CREATE_CONVERSATION_TABLE_QUERY = `CREATE TABLE IF NOT EXISTS agent_conversations(
   id INTEGER PRIMARY KEY,

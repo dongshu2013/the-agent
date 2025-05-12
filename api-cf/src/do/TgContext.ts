@@ -1,19 +1,19 @@
-import { DurableObject } from "cloudflare:workers";
-import OpenAI from "openai";
+import { DurableObject } from 'cloudflare:workers';
+import OpenAI from 'openai';
 import {
   CREATE_TELEGRAM_DIALOGS_TABLE_QUERY,
   CREATE_TELEGRAM_MESSAGES_TABLE_QUERY,
-} from "./sql";
+} from './sql';
 import {
   TgChatInfo,
   TgMessageInfo,
   TelegramChatData,
   TelegramMessageData,
-} from "./types";
+} from './types';
 
-const EMBEDDING_MODEL = "intfloat/multilingual-e5-large";
-const EMBEDDING_API_BASE_URL = "https://api.deepinfra.com/v1/openai";
-const TG_VECTOR_NAMESPACE = "tg";
+const EMBEDDING_MODEL = 'intfloat/multilingual-e5-large';
+const EMBEDDING_API_BASE_URL = 'https://api.deepinfra.com/v1/openai';
+const TG_VECTOR_NAMESPACE = 'tg';
 
 export class TgContext extends DurableObject<Env> {
   openai: OpenAI;
@@ -33,14 +33,14 @@ export class TgContext extends DurableObject<Env> {
 
   // Get all dialogs with filtering options
   async getDialogs(
-    limit: number = 100,
-    offset: number = 0,
+    limit = 100,
+    offset = 0,
     chatTitle?: string,
     isPublic?: boolean,
     isFree?: boolean,
     status?: string,
-    sortBy: string = "updated_at",
-    sortOrder: string = "desc"
+    sortBy = 'updated_at',
+    sortOrder = 'desc'
   ) {
     // Build the query with filters
     let query = `
@@ -94,7 +94,7 @@ export class TgContext extends DurableObject<Env> {
         : 0;
 
     // Add sorting and pagination
-    query += ` ORDER BY d.${sortBy} ${sortOrder === "asc" ? "ASC" : "DESC"}`;
+    query += ` ORDER BY d.${sortBy} ${sortOrder === 'asc' ? 'ASC' : 'DESC'}`;
     query += ` LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
     params.push(limit, offset);
 
@@ -116,15 +116,15 @@ export class TgContext extends DurableObject<Env> {
   // Get messages for a specific chat with filtering options
   async getMessages(
     chatId: string,
-    limit: number = 100,
-    offset: number = 0,
+    limit = 100,
+    offset = 0,
     messageText?: string,
     senderId?: string,
     senderUsername?: string,
     startTimestamp?: number,
     endTimestamp?: number,
-    sortBy: string = "message_timestamp",
-    sortOrder: string = "desc"
+    sortBy = 'message_timestamp',
+    sortOrder = 'desc'
   ) {
     // Check if chat exists and user has access to it
     const chatCursor = this.sql.exec(
@@ -193,7 +193,7 @@ export class TgContext extends DurableObject<Env> {
         : 0;
 
     // Add sorting and pagination
-    query += ` ORDER BY ${sortBy} ${sortOrder === "asc" ? "ASC" : "DESC"}`;
+    query += ` ORDER BY ${sortBy} ${sortOrder === 'asc' ? 'ASC' : 'DESC'}`;
     query += ` LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
     params.push(limit, offset);
 
@@ -239,21 +239,21 @@ export class TgContext extends DurableObject<Env> {
   async searchMessages(
     query: string,
     chatId?: string,
-    topK: number = 10,
-    messageRange: number = 2,
-    threshold: number = 0.7,
+    topK = 10,
+    messageRange = 2,
+    threshold = 0.7,
     isPublic?: boolean,
     isFree?: boolean
   ) {
     // Generate embedding for the search query
     let queryEmbeddingAvailable = false;
-    let results: any[] = [];
+    const results: any[] = [];
 
     try {
       const response = await this.openai.embeddings.create({
         input: query,
         model: EMBEDDING_MODEL,
-        encoding_format: "float",
+        encoding_format: 'float',
       });
       const embedding = response.data[0].embedding;
       queryEmbeddingAvailable = true;
@@ -271,14 +271,14 @@ export class TgContext extends DurableObject<Env> {
         namespace: TG_VECTOR_NAMESPACE,
         filter,
         returnValues: false,
-        returnMetadata: "indexed",
+        returnMetadata: 'indexed',
       });
 
       // Process vector search results
 
-      const matchIds = vectorResults.matches.filter(
-        (m) => m.score && m.score >= threshold
-      ).map((m) => m.id);
+      const matchIds = vectorResults.matches
+        .filter((m) => m.score && m.score >= threshold)
+        .map((m) => m.id);
 
       // Get matching messages and surrounding context
       for (const matchId of matchIds) {
@@ -379,7 +379,7 @@ export class TgContext extends DurableObject<Env> {
         });
       }
     } catch (error) {
-      console.error("Error generating embedding or searching:", error);
+      console.error('Error generating embedding or searching:', error);
       // Fall back to simple text search if embedding fails
       if (!queryEmbeddingAvailable) {
         // TODO: Implement fallback text search if needed
@@ -478,7 +478,7 @@ export class TgContext extends DurableObject<Env> {
   async syncMessages(
     chatId: string,
     messages: TelegramMessageData[],
-    batchSize: number = 10
+    batchSize = 10
   ): Promise<number> {
     // Check if chat exists
     const chatCursor = this.sql.exec(
@@ -499,7 +499,7 @@ export class TgContext extends DurableObject<Env> {
     const messagesToEmbed: { id: string; text: string }[] = [];
 
     // Insert messages in transaction
-    this.sql.exec("BEGIN TRANSACTION");
+    this.sql.exec('BEGIN TRANSACTION');
 
     try {
       for (const message of messages) {
@@ -550,7 +550,7 @@ export class TgContext extends DurableObject<Env> {
           }
         }
       }
-  
+
       // Update chat's last_synced_at and updated_at
       const now = new Date().toISOString();
       this.sql.exec(
@@ -573,7 +573,7 @@ export class TgContext extends DurableObject<Env> {
       return insertedCount;
     } catch (error) {
       // Rollback on error
-      this.sql.exec("ROLLBACK");
+      this.sql.exec('ROLLBACK');
       throw error;
     }
   }
@@ -593,7 +593,7 @@ export class TgContext extends DurableObject<Env> {
       const response = await this.openai.embeddings.create({
         input: texts,
         model: EMBEDDING_MODEL,
-        encoding_format: "float",
+        encoding_format: 'float',
       });
 
       const toInsert = response.data.map((item, index) => {
@@ -622,7 +622,7 @@ export class TgContext extends DurableObject<Env> {
         );
       }
     } catch (error) {
-      console.error("Error generating embeddings:", error);
+      console.error('Error generating embeddings:', error);
       // Continue execution even if embedding fails
     }
   }
