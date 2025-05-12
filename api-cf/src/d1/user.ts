@@ -1,5 +1,29 @@
 import { CreditLog, UserInfo } from './types';
 
+export async function createUser(
+  env: Env,
+  userId: string,
+  email: string
+): Promise<UserInfo> {
+  const db = env.UDB;
+  const result = await db
+    .prepare(
+      'INSERT INTO users (userId, email, api_key, api_key_enabled) VALUES (?, ?, ?, ?)'
+    )
+    .bind(userId, email, crypto.randomUUID(), 1)
+    .run();
+  if (!result.success) {
+    throw new Error('Failed to create user');
+  }
+  return {
+    id: userId,
+    email: email,
+    api_key: result.results[0].api_key as string,
+    api_key_enabled: (result.results[0].api_key_enabled as number) === 1,
+    balance: 0,
+  };
+}
+
 export async function getUserInfo(
   env: Env,
   userId: string

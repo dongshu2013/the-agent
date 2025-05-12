@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { fromHono } from 'chanfana';
 
-import { apiKeyAuthMiddleware } from './auth';
+import { jwtOrApiKeyAuthMiddleware } from './auth';
 import { GatewayServiceError } from './types/service';
 
 import { SaveMessage } from './handlers/message';
@@ -24,6 +24,7 @@ import { TgContext } from './do/TgContext';
 import { corsHeaders } from './utils/common';
 import { StripeCheckout, StripeWebhook } from './handlers/stripe';
 import {
+  CreateUser,
   GetCreditLogs,
   GetUser,
   GetUserBalance,
@@ -52,27 +53,28 @@ app.get('/health', (c) =>
 );
 
 // Authenticated routes
-app.use('/v1/conversation/create', apiKeyAuthMiddleware);
-app.use('/v1/conversation/delete', apiKeyAuthMiddleware);
-app.use('/v1/conversation/list', apiKeyAuthMiddleware);
+app.use('/v1/conversation/create', jwtOrApiKeyAuthMiddleware);
+app.use('/v1/conversation/delete', jwtOrApiKeyAuthMiddleware);
+app.use('/v1/conversation/list', jwtOrApiKeyAuthMiddleware);
 
-app.use('/v1/chat/completions', apiKeyAuthMiddleware);
-app.use('/v1/message/save', apiKeyAuthMiddleware);
+app.use('/v1/chat/completions', jwtOrApiKeyAuthMiddleware);
+app.use('/v1/message/save', jwtOrApiKeyAuthMiddleware);
 
-app.use('/v1/tg/get_dialogs', apiKeyAuthMiddleware);
-app.use('/v1/tg/get_messages', apiKeyAuthMiddleware);
-app.use('/v1/tg/search_messages', apiKeyAuthMiddleware);
-app.use('/v1/tg/sync_chat', apiKeyAuthMiddleware);
-app.use('/v1/tg/sync_messages', apiKeyAuthMiddleware);
+app.use('/v1/tg/get_dialogs', jwtOrApiKeyAuthMiddleware);
+app.use('/v1/tg/get_messages', jwtOrApiKeyAuthMiddleware);
+app.use('/v1/tg/search_messages', jwtOrApiKeyAuthMiddleware);
+app.use('/v1/tg/sync_chat', jwtOrApiKeyAuthMiddleware);
+app.use('/v1/tg/sync_messages', jwtOrApiKeyAuthMiddleware);
 
-app.use('/v1/stripe/checkout', apiKeyAuthMiddleware);
-app.use('/v1/stripe/webhook', apiKeyAuthMiddleware);
+app.use('/v1/stripe/checkout', jwtOrApiKeyAuthMiddleware);
 
-app.use('/v1/user/balance', apiKeyAuthMiddleware);
-app.use('/v1/user/credit_history', apiKeyAuthMiddleware);
-app.use('/v1/user', apiKeyAuthMiddleware);
-app.use('/v1/user/rotate_api_key', apiKeyAuthMiddleware);
-app.use('/v1/user/toggle_api_key_enabled', apiKeyAuthMiddleware);
+app.use('/v1/user/balance', jwtOrApiKeyAuthMiddleware);
+app.use('/v1/user/credit_history', jwtOrApiKeyAuthMiddleware);
+app.use('/v1/user', jwtOrApiKeyAuthMiddleware);
+app.use('/v1/user/rotate_api_key', jwtOrApiKeyAuthMiddleware);
+app.use('/v1/user/toggle_api_key_enabled', jwtOrApiKeyAuthMiddleware);
+
+app.use('/v1/user/create', jwtOrApiKeyAuthMiddleware);
 
 app.onError(async (err, c) => {
   if (err instanceof GatewayServiceError) {
@@ -108,6 +110,9 @@ openapi.post('/v1/conversation/delete', DeleteConversation);
 openapi.get('/v1/conversation/list', ListConversations);
 openapi.post('/v1/message/save', SaveMessage);
 
+// Register chat completion route
+openapi.post('/v1/chat/completions', ChatCompletions);
+
 // telegram routes
 openapi.get('/v1/tg/get_dialogs', GetTelegramDialogs);
 openapi.get('/v1/tg/get_messages', GetTelegramMessages);
@@ -125,8 +130,7 @@ openapi.get('/v1/user/balance', GetUserBalance);
 openapi.get('/v1/user/credit_logs', GetCreditLogs);
 openapi.get('/v1/user', GetUser);
 
-// Register chat completion route
-openapi.post('/v1/chat/completions', ChatCompletions);
+openapi.post('/v1/user/create', CreateUser);
 
 // OpenAPI documentation endpoints
 app.get('/docs/openapi.json', (c) => {
