@@ -51,7 +51,7 @@ export class AgentContext extends DurableObject<Env> {
   listConversations(limit = 10): Conversation[] {
     const results: Conversation[] = [];
     const conversations = this.sql.exec(
-      `SELECT c.id,
+      `SELECT c.id
         FROM agent_conversations c
         WHERE c.status = 'active'
         ORDER BY c.id DESC
