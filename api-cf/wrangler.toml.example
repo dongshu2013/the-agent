@@ -17,6 +17,10 @@ enabled = true
 binding = "MYTSTA_E5_INDEX"
 index_name = ""
 
+[[vectorize]]
+binding = "TELEGRAM_E5_INDEX"
+index_name = ""
+
 [[d1_databases]]
 binding = "UDB"
 database_name = ""
@@ -26,6 +30,10 @@ database_id = ""
 name = "AgentContext"
 class_name = "AgentContext"
 
+[[durable_objects.bindings]]
+name = "TgContext"
+class_name = "TgContext"
+
 [[migrations]]
 tag = "v1"
-new_sqlite_classes = ["AgentContext"]
+new_sqlite_classes = ["AgentContext", "TgContext"]
