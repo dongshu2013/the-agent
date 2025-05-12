@@ -11,23 +11,9 @@ import {
   TelegramMessageData,
 } from "./types";
 
-// Constants for embedding model
 const EMBEDDING_MODEL = "intfloat/multilingual-e5-large";
 const EMBEDDING_API_BASE_URL = "https://api.deepinfra.com/v1/openai";
-const DEFAULT_VECTOR_NAMESPACE = "telegram";
-
-// Interface for Vector Index
-interface VectorizeIndex {
-  query(vector: number[], options: any): Promise<any>;
-  insert(vectors: any[]): Promise<any>;
-}
-
-// Extend env type to include the vector index
-declare global {
-  interface Env {
-    TELEGRAM_E5_INDEX: VectorizeIndex;
-  }
-}
+const DEFAULT_VECTOR_NAMESPACE = "default";
 
 export class TgContext extends DurableObject<Env> {
   openai: OpenAI;
@@ -36,12 +22,9 @@ export class TgContext extends DurableObject<Env> {
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     this.sql = ctx.storage.sql;
-
-    // Initialize database tables
     this.sql.exec(CREATE_TELEGRAM_DIALOGS_TABLE_QUERY);
     this.sql.exec(CREATE_TELEGRAM_MESSAGES_TABLE_QUERY);
 
-    // Initialize OpenAI client for embeddings
     this.openai = new OpenAI({
       apiKey: env.EMBEDDING_API_KEY,
       baseURL: EMBEDDING_API_BASE_URL,
@@ -283,7 +266,7 @@ export class TgContext extends DurableObject<Env> {
       }
 
       // Search vector database for similar messages
-      const vectorResults = await this.env.TELEGRAM_E5_INDEX.query(embedding, {
+      const vectorResults = await this.env.MYTSTA_E5_INDEX.query(embedding, {
         topK,
         namespace: DEFAULT_VECTOR_NAMESPACE,
         filter,
@@ -634,7 +617,7 @@ export class TgContext extends DurableObject<Env> {
       });
 
       // Insert embeddings into vector database
-      await this.env.TELEGRAM_E5_INDEX.insert(toInsert);
+      await this.env.MYTSTA_E5_INDEX.insert(toInsert);
 
       // Update messages with embedding_id
       for (const message of messages) {

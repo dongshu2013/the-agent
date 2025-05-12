@@ -17,10 +17,6 @@ enabled = true
 binding = "MYTSTA_E5_INDEX"
 index_name = ""
 
-[[vectorize]]
-binding = "TELEGRAM_E5_INDEX"
-index_name = ""
-
 [[d1_databases]]
 binding = "UDB"
 database_name = ""
