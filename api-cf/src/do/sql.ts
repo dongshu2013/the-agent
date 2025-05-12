@@ -1,3 +1,12 @@
+
+// id is the epoch time of creation
+export const CREATE_CONVERSATION_TABLE_QUERY = `CREATE TABLE IF NOT EXISTS agent_conversations(
+  id INTEGER PRIMARY KEY,
+  status TEXT DEFAULT 'active',
+  last_message_at INTEGER,
+  title TEXT,
+);`;
+
 // id is the epoch time of creation
 export const CREATE_MESSAGE_TABLE_QUERY = `CREATE TABLE IF NOT EXISTS agent_messages(
   id INTEGER PRIMARY KEY,
@@ -7,14 +16,6 @@ export const CREATE_MESSAGE_TABLE_QUERY = `CREATE TABLE IF NOT EXISTS agent_mess
   tool_calls JSONB,
   tool_call_id TEXT,
   FOREIGN KEY (conversation_id) REFERENCES agent_conversations(id)
-);`;
-
-// id is the epoch time of creation
-export const CREATE_CONVERSATION_TABLE_QUERY = `CREATE TABLE IF NOT EXISTS agent_conversations(
-  id INTEGER PRIMARY KEY,
-  status TEXT DEFAULT 'active',
-  last_message_at INTEGER,
-  title TEXT,
 );`;
 
 // SQL queries for table creation

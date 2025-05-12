@@ -22,6 +22,8 @@ import {
 import { AgentContext } from "./do/AgentContext";
 import { TgContext } from "./do/TgContext";
 import { corsHeaders } from "./utils/common";
+import { StripeCheckout, StripeWebhook } from "./handlers/stripe";
+import { GetCreditLogs, GetUser } from "./handlers/user";
 
 const app = new Hono<{Bindings: Env}>();
 
@@ -56,6 +58,13 @@ app.use("/v1/tg/get_messages", apiKeyAuthMiddleware);
 app.use("/v1/tg/search_messages", apiKeyAuthMiddleware);
 app.use("/v1/tg/sync_chat", apiKeyAuthMiddleware);
 app.use("/v1/tg/sync_messages", apiKeyAuthMiddleware);
+
+app.use("/v1/stripe/checkout", apiKeyAuthMiddleware);
+app.use("/v1/stripe/webhook", apiKeyAuthMiddleware);
+
+app.use("/v1/user/balance", apiKeyAuthMiddleware);
+app.use("/v1/user/credit_history", apiKeyAuthMiddleware);
+app.use("/v1/user", apiKeyAuthMiddleware);
 
 app.onError(async (err, c) => {
   if (err instanceof GatewayServiceError) {
@@ -97,6 +106,12 @@ openapi.get("/v1/tg/get_messages", GetTelegramMessages);
 openapi.get("/v1/tg/search_messages", SearchTelegramMessages);
 openapi.post("/v1/tg/sync_chat", SyncTelegramChat);
 openapi.post("/v1/tg/sync_messages", SyncTelegramMessages);
+
+openapi.post("/v1/stripe/checkout", StripeCheckout);
+openapi.post("/v1/stripe/webhook", StripeWebhook);
+
+openapi.get("/v1/user/credit_logs", GetCreditLogs);
+openapi.get("/v1/user", GetUser);
 
 // Register chat completion route
 openapi.post("/v1/chat/completions", ChatCompletions);

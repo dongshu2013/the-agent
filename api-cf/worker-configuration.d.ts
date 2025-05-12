@@ -4,6 +4,8 @@ interface Env {
   LLM_API_URL: string;
   DEFAULT_MODEL: string;
   EMBEDDING_API_KEY: string;
+  STRIPE_PRIVATE_KEY: string;
+  MYSTA_PUBLIC_DOMAIN: string;
   // bindings
   MYSTA_TG_INDEX: Vectorize;
   MYTSTA_E5_INDEX: Vectorize;

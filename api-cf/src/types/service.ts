@@ -18,6 +18,7 @@ export type GatewayServiceContext = Context<{
   };
   Variables: {
     userId: string;
+    userEmail: string;
     userKey: string;
   };
 }>;

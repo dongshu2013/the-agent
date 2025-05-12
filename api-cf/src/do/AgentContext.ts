@@ -24,8 +24,8 @@ export class AgentContext extends DurableObject<Env> {
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     this.sql = ctx.storage.sql;
-    this.sql.exec(CREATE_MESSAGE_TABLE_QUERY);
     this.sql.exec(CREATE_CONVERSATION_TABLE_QUERY);
+    this.sql.exec(CREATE_MESSAGE_TABLE_QUERY);
 
     this.openai = new OpenAI({
       apiKey: env.EMBEDDING_API_KEY,
@@ -33,8 +33,7 @@ export class AgentContext extends DurableObject<Env> {
     });
   }
 
-  createConversation(): number {
-    const conversationId = Date.now();
+  createConversation(conversationId: number): number {
     this.sql.exec(`INSERT INTO agent_conversations (id) VALUES ($1)`, [
       conversationId,
     ]);

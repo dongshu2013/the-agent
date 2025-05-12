@@ -4,13 +4,7 @@ import { Context } from 'hono';
 import { createOpenAIClient } from '../utils/openai';
 import { getUserCredits, deductUserCredits } from '../d1/user';
 import { ChatCompletionCreateParamSchema } from '../types/chat';
-
-// CORS headers as specified in the memory
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key'
-};
+import { DEFAULT_MODEL } from '../utils/common';
 
 export class ChatCompletions extends OpenAPIRoute {
   schema = {
@@ -69,7 +63,7 @@ export class ChatCompletions extends OpenAPIRoute {
             param: null,
             code: 'insufficient_credits'
           }
-        }, 402, corsHeaders);
+        }, 402);
       }
 
       // Create OpenAI client
@@ -79,7 +73,7 @@ export class ChatCompletions extends OpenAPIRoute {
       const llmApiUrl = env.LLM_API_URL;
       const client = createOpenAIClient(llmApiKey, llmApiUrl);
 
-      params.model = env.DEFAULT_MODEL;
+      params.model = DEFAULT_MODEL;
 
       // Handle streaming response
       if (params.stream) {
@@ -124,7 +118,7 @@ export class ChatCompletions extends OpenAPIRoute {
         
         // Deduct credits in the background
         // In a real implementation, you'd want to track token usage and charge accordingly
-        deductUserCredits(env, userId, requiredCredits, undefined, params.model);
+        deductUserCredits(env, userId, requiredCredits, params.model);
         
         // Return the streaming response with proper headers
         return new Response(readable, {
@@ -132,7 +126,6 @@ export class ChatCompletions extends OpenAPIRoute {
             'Content-Type': 'text/event-stream',
             'Cache-Control': 'no-cache',
             'Connection': 'keep-alive',
-            ...corsHeaders
           }
         });
       } else {
@@ -141,10 +134,10 @@ export class ChatCompletions extends OpenAPIRoute {
         const result = await response.json();
         
         // Deduct credits
-        await deductUserCredits(env, userId, requiredCredits, undefined, params.model);
+        await deductUserCredits(env, userId, requiredCredits, params.model);
         
-        // Return the response with CORS headers
-        return c.json(result as Record<string, unknown>, 200, corsHeaders);
+        // Return the response
+        return c.json(result as Record<string, unknown>, 200);
       }
     } catch (error) {
       console.error('Error in chat completion:', error);
@@ -156,7 +149,7 @@ export class ChatCompletions extends OpenAPIRoute {
           param: null,
           code: 'server_error'
         }
-      }, 500, corsHeaders);
+      }, 500);
     }
   }
 }
@@ -165,6 +158,5 @@ export class ChatCompletions extends OpenAPIRoute {
 export async function handleChatCompletionsOptions(_c: Context) {
   return new Response(null, {
     status: 204,
-    headers: corsHeaders
   });
 }

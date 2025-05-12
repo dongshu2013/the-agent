@@ -13,15 +13,17 @@ export async function apiKeyAuthMiddleware(
     // TODO For Test
     if (token === "mizu-test-api-key-1") {
       c.set("userId", "test-userid-1");
+      c.set("userEmail", "mysta-test-user@gmail.com");
       await next();
       return;
     }
     if (token.startsWith("mizu-")) {
-      const userId = await getUserFromApiKey(c.env, token);
-      if (!userId) {
+      const user = await getUserFromApiKey(c.env, token);
+      if (!user || !user.id || !user.email) {
         return c.text("Unauthorized", 401);
       }
-      c.set("userId", userId.toString());
+      c.set("userId", user.id);
+      c.set("userEmail", user.email);
     } else {
       return c.text("Unauthorized", 401);
     }
