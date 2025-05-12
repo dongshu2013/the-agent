@@ -7,7 +7,7 @@ export async function getUserInfo(env: Env, userId: string): Promise<UserInfo | 
       "SELECT id, email, api_key, api_key_enabled, balance FROM users WHERE id = ?"
   ).bind(userId).all();
   if (!result.success || result.results.length === 0) {
-      return null;
+      throw new Error('User not found');
   }
   return {
     id: result.results[0].id as string,
@@ -28,12 +28,41 @@ export async function getUserFromApiKey(
       " WHERE api_key = ? and api_key_enabled = 1"
   ).bind(apiKey).all();
   if (!result.success || result.results.length === 0) {
-      return null;
+      throw new Error('User not found');
   }
   return {
     id: result.results[0].id as string,
     email: result.results[0].email as string,
   };
+}
+
+export async function rotateApiKey(
+  env: Env,
+  userId: string
+): Promise<string> {
+  const db = env.UDB;
+  const newApiKey = crypto.randomUUID();
+  const result = await db.prepare(
+      "UPDATE users SET api_key = ? WHERE id = ?"
+  ).bind(newApiKey, userId).run();
+  if (!result.success) {
+      throw new Error('Failed to rotate API key');
+  }
+  return newApiKey;
+}
+
+export async function toggleApiKeyEnabled(
+  env: Env,
+  userId: string,
+  enabled: boolean
+): Promise<void> {
+  const db = env.UDB;
+  const result = await db.prepare(
+      "UPDATE users SET api_key_enabled = ? WHERE id = ?"
+  ).bind(enabled ? 1 : 0, userId).run();
+  if (!result.success) {
+      throw new Error('Failed to toggle API key enabled');
+  }
 }
 
 export async function getCreditLogs(env: Env, userId: string): Promise<CreditLog[]> {
@@ -45,7 +74,7 @@ export async function getCreditLogs(env: Env, userId: string): Promise<CreditLog
       " ORDER BY created_at DESC"
   ).bind(userId).all();
   if (!result.success || result.results.length === 0) {
-      return [];
+      throw new Error('No credit logs found');
   }
   return result.results.map((r) => ({
     id: r.id as number,
@@ -63,13 +92,11 @@ export async function getUserBalance(env: Env, userId: string): Promise<number> 
         "SELECT balance FROM users WHERE id = ?"
     ).bind(userId).all();
     if (!result.success || result.results.length === 0) {
-      console.error('Error fetching user credits:', result.error);
-      return 0;
+      throw new Error('User not found');
     }
     return result.results[0].balance as number || 0;
   } catch (error) {
-    console.error('Error fetching user credits:', error);
-    return 0;
+    throw error;
   }
 }
 
@@ -86,7 +113,7 @@ export async function deductUserCredits(
     // Get current credits
     const currentCredits = await getUserBalance(env, userId);
     if (currentCredits < amount) {
-      return { success: false, remainingCredits: currentCredits };
+      throw new Error('Insufficient credits');
     }
 
     // Record the transaction
@@ -104,12 +131,10 @@ export async function deductUserCredits(
         updateBalanceStmt.bind(amount, userId)
     ]);
     if (!result1.success || !result2.success) {
-      console.error('Error deducting credits:', result1.error || result2.error);
-      return { success: false, remainingCredits: currentCredits };
+      throw new Error('Error deducting credits');
     }
     return { success: true, remainingCredits: currentCredits - amount };
   } catch (error) {
-    console.error('Error deducting credits:', error);
-    return { success: false, remainingCredits: 0 };
+    throw error;
   }
 }

@@ -23,9 +23,15 @@ import { AgentContext } from "./do/AgentContext";
 import { TgContext } from "./do/TgContext";
 import { corsHeaders } from "./utils/common";
 import { StripeCheckout, StripeWebhook } from "./handlers/stripe";
-import { GetCreditLogs, GetUser } from "./handlers/user";
+import {
+  GetCreditLogs,
+  GetUser,
+  GetUserBalance,
+  RotateApiKey,
+  ToggleApiKeyEnabled,
+} from "./handlers/user";
 
-const app = new Hono<{Bindings: Env}>();
+const app = new Hono<{ Bindings: Env }>();
 
 // CORS middleware
 app.use(
@@ -65,6 +71,9 @@ app.use("/v1/stripe/webhook", apiKeyAuthMiddleware);
 app.use("/v1/user/balance", apiKeyAuthMiddleware);
 app.use("/v1/user/credit_history", apiKeyAuthMiddleware);
 app.use("/v1/user", apiKeyAuthMiddleware);
+app.use("/v1/user/rotate_api_key", apiKeyAuthMiddleware);
+app.use("/v1/user/toggle_api_key_enabled", apiKeyAuthMiddleware);
+
 
 app.onError(async (err, c) => {
   if (err instanceof GatewayServiceError) {
@@ -110,6 +119,10 @@ openapi.post("/v1/tg/sync_messages", SyncTelegramMessages);
 openapi.post("/v1/stripe/checkout", StripeCheckout);
 openapi.post("/v1/stripe/webhook", StripeWebhook);
 
+openapi.post("/v1/user/rotate_api_key", RotateApiKey);
+openapi.post("/v1/user/toggle_api_key_enabled", ToggleApiKeyEnabled);
+
+openapi.get("/v1/user/balance", GetUserBalance);
 openapi.get("/v1/user/credit_logs", GetCreditLogs);
 openapi.get("/v1/user", GetUser);
 
