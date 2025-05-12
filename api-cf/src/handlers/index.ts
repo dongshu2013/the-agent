@@ -1,17 +1,13 @@
 // Re-export conversation handlers
-export { CreateConversation } from './conversation/create';
-export { DeleteConversation } from './conversation/delete';
-export { ListConversations } from './conversation/list';
+export { CreateConversation, DeleteConversation, ListConversations } from './conversation';
 
 // Re-export message handlers
-export { SaveMessage } from './message/save';
+export { SaveMessage } from './message';
 
 // Re-export chat handlers
-export { ChatCompletions } from './chat/completions';
+export { ChatCompletions } from './chat';
 
 // Re-export CORS options handlers
-export { handleCreateConversationOptions } from './conversation/create';
-export { handleDeleteConversationOptions } from './conversation/delete';
-export { handleListConversationsOptions } from './conversation/list';
-export { handleSaveMessageOptions } from './message/save';
-export { handleChatCompletionsOptions } from './chat/completions';
+export { handleCreateConversationOptions, handleDeleteConversationOptions, handleListConversationsOptions } from './conversation';
+export { handleSaveMessageOptions } from './message';
+export { handleChatCompletionsOptions } from './chat';

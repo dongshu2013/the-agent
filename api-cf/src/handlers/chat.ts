@@ -1,9 +1,9 @@
 import { OpenAPIRoute } from 'chanfana';
 import { z } from 'zod';
 import { Context } from 'hono';
-import { createOpenAIClient } from '../../utils/openai';
-import { getUserCredits, deductUserCredits } from '../../db';
-import { ChatCompletionCreateParamSchema } from '../../types/chat';
+import { createOpenAIClient } from '../utils/openai';
+import { getUserCredits, deductUserCredits } from '../db';
+import { ChatCompletionCreateParamSchema } from '../types/chat';
 
 // CORS headers as specified in the memory
 const corsHeaders = {
@@ -121,7 +121,7 @@ export class ChatCompletions extends OpenAPIRoute {
         
         // Deduct credits in the background
         // In a real implementation, you'd want to track token usage and charge accordingly
-        deductUserCredits(env, userId, requiredCredits, null, params.model);
+        deductUserCredits(env, userId, requiredCredits, undefined, params.model);
         
         // Return the streaming response with proper headers
         return new Response(readable, {
@@ -138,10 +138,10 @@ export class ChatCompletions extends OpenAPIRoute {
         const result = await response.json();
         
         // Deduct credits
-        await deductUserCredits(env, userId, requiredCredits, null, params.model);
+        await deductUserCredits(env, userId, requiredCredits, undefined, params.model);
         
         // Return the response with CORS headers
-        return c.json(result, 200, corsHeaders);
+        return c.json(result as Record<string, unknown>, 200, corsHeaders);
       }
     } catch (error) {
       console.error('Error in chat completion:', error);
@@ -159,7 +159,7 @@ export class ChatCompletions extends OpenAPIRoute {
 }
 
 // Handle OPTIONS requests for CORS preflight
-export async function handleChatCompletionsOptions(c: Context) {
+export async function handleChatCompletionsOptions(_c: Context) {
   return new Response(null, {
     status: 204,
     headers: corsHeaders

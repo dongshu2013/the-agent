@@ -1,8 +1,8 @@
 import { OpenAPIRoute } from 'chanfana';
 import { z } from 'zod';
 import { Context } from 'hono';
-import { saveMessage } from '../../db';
-import { SaveMessageRequestSchema } from '../../types/chat';
+import { saveMessage } from '../db';
+import { SaveMessageRequestSchema } from '../types/chat';
 
 // CORS headers as specified in the memory
 const corsHeaders = {
@@ -99,7 +99,7 @@ export class SaveMessage extends OpenAPIRoute {
 }
 
 // Handle OPTIONS requests for CORS preflight
-export async function handleSaveMessageOptions(c: Context) {
+export async function handleSaveMessageOptions(_c: Context) {
   return new Response(null, {
     status: 204,
     headers: corsHeaders
