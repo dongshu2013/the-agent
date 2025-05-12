@@ -18,7 +18,8 @@ Authorization: Bearer {{apiKey}}
 
 ### Delete Conversation
 # Replace {conversationId} with an actual conversation ID
-POST {{baseUrl}}/v2/conversation/delete?conversationId={conversationId}
+@conversationId = 1747056387705
+POST {{baseUrl}}/v2/conversation/delete?conversationId={{conversationId}}
 Content-Type: application/json
 Authorization: Bearer {{apiKey}}
 
