@@ -79,7 +79,7 @@ export class AgentContext extends DurableObject<Env> {
     return results;
   }
 
-  async saveMessage(message: Message, topK = 3): Promise<void> {
+  async saveMessage(message: Message, topK = 3): Promise<{ success: boolean, topKMessageIds: string[] }> {
     this.sql.exec(
       `INSERT INTO agent_messages
         (id, conversation_id, role, content, tool_calls, tool_call_id)
@@ -98,7 +98,10 @@ export class AgentContext extends DurableObject<Env> {
     ).map((m) => m.text?.value)
     .filter((v): v is string => v?.trim().length > 0)
     if (texts.length === 0) {
-      return;
+      return {
+        success: true,
+        topKMessageIds: []
+      }
     }
     const response = await this.openai.embeddings.create({
       input: texts.join("\n"),
@@ -118,7 +121,7 @@ export class AgentContext extends DurableObject<Env> {
       }
     ];
     if (topK > 0) {
-      await Promise.all([
+      const [topKMessages, _] = await Promise.all([
         this.env.MYTSTA_E5_INDEX.query(
           embedding,
           {
@@ -133,8 +136,19 @@ export class AgentContext extends DurableObject<Env> {
         ),
         this.env.MYTSTA_E5_INDEX.insert(toInsert),
       ])
+      const topKMessageIds = topKMessages.matches.map(
+        (m) => m.metadata?.message_id
+      ).filter((id): id is string => id !== undefined)
+      return {
+        success: true,
+        topKMessageIds
+      }
     } else {
       await this.env.MYTSTA_E5_INDEX.insert(toInsert);
+      return {
+        success: true,
+        topKMessageIds: []
+      }
     }
   }
 }

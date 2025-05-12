@@ -15,3 +15,6 @@ export { handleCreateConversationOptions, handleDeleteConversationOptions, handl
 export { handleSaveMessageOptions } from './message';
 export { handleChatCompletionsOptions } from './chat';
 export { handleGetTelegramDialogsOptions, handleGetTelegramMessagesOptions, handleSearchTelegramMessagesOptions } from './telegram';
+
+export { CreateConversationV2, DeleteConversationV2, ListConversationsV2 } from './conversationV2';
+export { SaveMessageV2 } from './messageV2';

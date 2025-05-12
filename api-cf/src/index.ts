@@ -21,8 +21,13 @@ import {
   handleChatCompletionsOptions,
   handleGetTelegramDialogsOptions,
   handleGetTelegramMessagesOptions,
-  handleSearchTelegramMessagesOptions
+  handleSearchTelegramMessagesOptions,
+  CreateConversationV2,
+  DeleteConversationV2,
+  ListConversationsV2,
+  SaveMessageV2
 } from './handlers';
+import { AgentContext } from './do/AgentContext';
 
 // CORS headers as specified in the memory
 const corsHeaders = {
@@ -31,13 +36,16 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key'
 };
 
-const app = new Hono<{ Bindings: {
-  MYTSTA_E5_INDEX: Vectorize;
-  SUPABASE_KEY: string;
-  SUPABASE_URL: string;
-  OPENAI_API_KEY: string;
-  EMBEDDING_API_KEY: string;
-} }>();
+const app = new Hono<{
+  Bindings: {
+    MYTSTA_E5_INDEX: Vectorize;
+    SUPABASE_KEY: string;
+    SUPABASE_URL: string;
+    OPENAI_API_KEY: string;
+    EMBEDDING_API_KEY: string;
+    AgentContext: DurableObjectNamespace<AgentContext>
+  }
+}>();
 
 // CORS middleware
 app.use(
@@ -65,6 +73,11 @@ app.options('/v1/tg/get_dialogs', handleGetTelegramDialogsOptions);
 app.options('/v1/tg/get_messages', handleGetTelegramMessagesOptions);
 app.options('/v1/tg/search_messages', handleSearchTelegramMessagesOptions);
 
+app.options('/v2/conversation/create', handleCreateConversationOptions);
+app.options('/v2/conversation/delete', handleDeleteConversationOptions);
+app.options('/v2/conversation/list', handleListConversationsOptions);
+app.options('/v2/message/save', handleSaveMessageOptions);
+
 // Authenticated routes
 app.use('/v1/conversation/create', apiKeyAuthMiddleware);
 app.use('/v1/conversation/delete', apiKeyAuthMiddleware);
@@ -74,6 +87,11 @@ app.use('/v1/chat/completions', apiKeyAuthMiddleware);
 app.use('/v1/tg/get_dialogs', apiKeyAuthMiddleware);
 app.use('/v1/tg/get_messages', apiKeyAuthMiddleware);
 app.use('/v1/tg/search_messages', apiKeyAuthMiddleware);
+
+app.use('/v2/conversation/create', apiKeyAuthMiddleware);
+app.use('/v2/conversation/delete', apiKeyAuthMiddleware);
+app.use('/v2/conversation/list', apiKeyAuthMiddleware);
+app.use('/v2/message/save', apiKeyAuthMiddleware);
 
 app.onError(async (err, c) => {
   if (err instanceof GatewayServiceError) {
@@ -102,6 +120,13 @@ openapi.registry.registerComponent('securitySchemes', 'BearerAuth', {
   type: 'http',
   scheme: 'bearer',
 });
+
+
+//v2 endpoints
+openapi.post('/v2/conversation/create', CreateConversationV2);
+openapi.post('/v2/conversation/delete', DeleteConversationV2);
+openapi.get('/v2/conversation/list', ListConversationsV2);
+openapi.post('/v2/message/save', SaveMessageV2);
 
 // Register conversation routes
 openapi.post('/v1/conversation/create', CreateConversation);
