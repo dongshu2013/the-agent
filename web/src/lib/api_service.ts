@@ -63,3 +63,12 @@ export interface GetCreditHistoryResponse {
 export async function getCreditHistory(token: string): Promise<GetCreditHistoryResponse> {
     return await getApiService("/v1/user/credit_history", token);
 }
+
+export interface GetTelegramStatsResponse {
+    channels_count: number;
+    messages_count: number;
+}
+
+export async function getTelegramStats(token: string): Promise<GetTelegramStatsResponse> {
+    return await getApiService("/v1/tg/stats", token);
+}

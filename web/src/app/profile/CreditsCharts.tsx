@@ -8,7 +8,6 @@ import {
   ResponsiveContainer, 
   Tooltip
 } from 'recharts';
-import { cn } from '@/lib/utils';
 import { Expand } from 'lucide-react';
 import { getCreditHistory } from '@/lib/api_service';
 import { CreditLog } from '@/types';
@@ -126,10 +125,9 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
   return (
     <div className={className}>
       {/* Spend Chart */}
-      <div className={cn(
-        "bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700",
-        "hover:border-gray-300 hover:text-gray-900 dark:hover:border-gray-600 dark:hover:text-gray-50 shadow-sm hover:shadow-lg cursor-pointer transition-colors"
-      )}>
+      <div className={
+        "bg-white p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:text-gray-900 shadow-sm hover:shadow-lg cursor-pointer transition-colors"
+      }>
         <div className="flex justify-between items-center mb-2">
           <h3 className="text-lg font-medium">Spend</h3>
           <Expand className="w-4 h-4" />

@@ -8,6 +8,7 @@ import { RefreshCw } from "lucide-react";
 import { PaymentModal } from "./PaymentModal";
 import { CreditsCharts } from "./CreditsCharts";
 import { CreditsTable } from "./CreditsTable";
+import { getTelegramStats } from "@/lib/api_service";
 
 export default function ProfilePage() {
   const { user, loading, signOut, rotateApiKey, toggleApiKey, refreshUserData } = useAuth();
@@ -18,7 +19,6 @@ export default function ProfilePage() {
   const [isLoadingTelegramStats, setIsLoadingTelegramStats] = useState(false);
   const router = useRouter();
   const [buyCreditsOpen, setBuyCreditsOpen] = useState(false);
-  const [ordersModalOpen, setOrdersModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Redirect to login if not authenticated
@@ -30,34 +30,23 @@ export default function ProfilePage() {
 
   // Fetch Telegram stats when user is loaded
   useEffect(() => {
-    const fetchTelegramStats = async () => {
-      if (user?.apiKey && user?.apiKeyEnabled) {
-        setIsLoadingTelegramStats(true);
-        try {
-          const response = await fetch('/api/tg/stats', {
-            headers: {
-              'Authorization': `Bearer ${user.apiKey}`,
-            },
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            setTelegramStats(data);
-          } else {
-            console.error('Failed to fetch Telegram stats');
-          }
-        } catch (error) {
-          console.error('Error fetching Telegram stats:', error);
-        } finally {
-          setIsLoadingTelegramStats(false);
-        }
-      }
-    };
-
     if (user) {
       fetchTelegramStats();
     }
   }, [user]);
+
+  const fetchTelegramStats = async () => {
+    if (!user || !user.idToken) return;
+    setIsLoadingTelegramStats(true);
+    try {
+      const response = await getTelegramStats(user.idToken);
+      setTelegramStats(response);
+    } catch (error) {
+      console.error('Error fetching Telegram stats:', error);
+    } finally {
+      setIsLoadingTelegramStats(false);
+    }
+  };
 
   const handleCopyApiKey = async () => {
     if (user?.apiKey) {
@@ -379,12 +368,6 @@ export default function ProfilePage() {
                   className="px-4 py-2 text-sm font-medium text-white bg-black rounded-md hover:opacity-70 transition-opacity"
                 >
                   Add Credits
-                </button>
-                <button
-                  onClick={() => setOrdersModalOpen(true)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 rounded-md transition-opacity"
-                >
-                  View Orders
                 </button>
               </div>
             </div>

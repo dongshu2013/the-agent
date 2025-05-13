@@ -15,6 +15,7 @@ import { ChatCompletions } from './handlers/chat';
 import {
   GetTelegramDialogs,
   GetTelegramMessages,
+  GetTelegramStats,
   SearchTelegramMessages,
   SyncTelegramChat,
   SyncTelegramMessages,
@@ -59,6 +60,7 @@ app.use('/v1/conversation/list', jwtOrApiKeyAuthMiddleware);
 app.use('/v1/chat/completions', jwtOrApiKeyAuthMiddleware);
 app.use('/v1/message/save', jwtOrApiKeyAuthMiddleware);
 
+app.use('/v1/tg/stats', jwtOrApiKeyAuthMiddleware);
 app.use('/v1/tg/get_dialogs', jwtOrApiKeyAuthMiddleware);
 app.use('/v1/tg/get_messages', jwtOrApiKeyAuthMiddleware);
 app.use('/v1/tg/search_messages', jwtOrApiKeyAuthMiddleware);
@@ -111,6 +113,7 @@ openapi.post('/v1/message/save', SaveMessage);
 openapi.post('/v1/chat/completions', ChatCompletions);
 
 // telegram routes
+openapi.get('/v1/tg/stats', GetTelegramStats)
 openapi.get('/v1/tg/get_dialogs', GetTelegramDialogs);
 openapi.get('/v1/tg/get_messages', GetTelegramMessages);
 openapi.get('/v1/tg/search_messages', SearchTelegramMessages);

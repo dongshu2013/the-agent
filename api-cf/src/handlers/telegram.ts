@@ -3,6 +3,62 @@ import { z } from 'zod';
 import { Context } from 'hono';
 import { corsHeaders } from '../utils/common';
 
+// ===== GET TELEGRAM STATS =====
+
+export class GetTelegramStats extends OpenAPIRoute {
+  schema = {
+    responses: {
+      '200': {
+        description: 'Telegram stats',
+        content: {
+          'application/json': {
+            schema: z.object({
+              success: z.boolean(),
+              data: z.object({
+                channels_count: z.number(),
+                messages_count: z.number(),
+              }),
+            }),
+          },
+        },
+      },
+    },
+  };
+
+  async handle(c: Context) {
+    try {
+      const userId = c.get('userId');
+      const id = c.env.TgContext.idFromName(userId);
+      const stub = c.env.TgContext.get(id);
+      const result = await stub.getStats();
+
+      return c.json(
+        {
+          success: true,
+          data: result,
+        },
+        200
+      );
+    } catch (error) {
+      console.error('Error getting Telegram stats:', error);
+
+      return c.json(
+        {
+          success: false,
+          error: {
+            code: 'INTERNAL_ERROR',
+            message:
+              error instanceof Error
+                ? error.message
+                : 'An unknown error occurred',
+          },
+        },
+        500
+      );
+    }
+  }
+}
+
 // ===== GET TELEGRAM DIALOGS =====
 
 export class GetTelegramDialogs extends OpenAPIRoute {
