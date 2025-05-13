@@ -17,7 +17,11 @@ import {
   signInWithCustomToken,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { getUserInfo, postRotateApiKey, postToggleApiKey } from "@/lib/api_service";
+import {
+  getUserInfo,
+  postRotateApiKey,
+  postToggleApiKey,
+} from "@/lib/api_service";
 
 interface User {
   id: string;
@@ -26,7 +30,7 @@ interface User {
   photoURL: string | null;
   apiKey: string | null;
   apiKeyEnabled: boolean;
-  credits: string;
+  credits: number;
   idToken: string | null;
 }
 
@@ -54,16 +58,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const idToken = await getIdToken(firebaseUser);
           const user = await getUserInfo(idToken);
+          // console.log("---user:", user);
           setUser({
-              id: firebaseUser.uid,
-              email: firebaseUser.email,
-              displayName: firebaseUser.displayName,
-              photoURL: firebaseUser.photoURL,
-              apiKey: user.user.api_key,
-              apiKeyEnabled: user.user.api_key_enabled,
-              credits: user.user.balance.toString(),
-              idToken,
-            });
+            id: firebaseUser.uid,
+            email: firebaseUser.email,
+            displayName: firebaseUser.displayName,
+            photoURL: firebaseUser.photoURL,
+            apiKey: user.api_key,
+            apiKeyEnabled: user.api_key_enabled,
+            credits: user.balance,
+            idToken,
+          });
         } catch (error) {
           console.error("Error setting up user:", error);
         }
@@ -89,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             photoURL: user.photoURL,
             apiKey: null,
             apiKeyEnabled: false,
-            credits: "0",
+            credits: 0,
             idToken,
           });
         }
@@ -150,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         photoURL: user.photoURL,
         apiKey: null,
         apiKeyEnabled: false,
-        credits: "0",
+        credits: 0,
         idToken: jwt,
       });
     } catch (error) {
@@ -185,10 +190,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       await postToggleApiKey(user.idToken, enabled);
-      setUser((prev) =>
-          prev ? { ...prev, apiKeyEnabled: enabled } : null
-        );
-        return enabled;
+      setUser((prev) => (prev ? { ...prev, apiKeyEnabled: enabled } : null));
+      return enabled;
     } catch (error) {
       console.error("Error toggling API key:", error);
       return false;
@@ -203,9 +206,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData = await getUserInfo(token);
       setUser({
         ...user,
-        apiKey: userData.user.api_key,
-        apiKeyEnabled: userData.user.api_key_enabled,
-        credits: userData.user.balance.toString(),
+        apiKey: userData.api_key,
+        apiKeyEnabled: userData.api_key_enabled,
+        credits: userData.balance,
         idToken: token,
       });
     } catch (error) {
