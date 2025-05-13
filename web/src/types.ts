@@ -11,8 +11,10 @@ export interface CreditLog {
 
 
 export interface GetUserResponse {
-    api_key: string;
-    api_key_enabled: boolean;
-    balance: number;
-    email: string;
+    user: {
+        api_key: string;
+        api_key_enabled: boolean;
+        balance: number;
+        email: string;
+    }
 }

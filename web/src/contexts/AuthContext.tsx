@@ -57,16 +57,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (firebaseUser) {
         try {
           const idToken = await getIdToken(firebaseUser);
-          const user = await getUserInfo(idToken);
-          // console.log("---user:", user);
+          const userData = await getUserInfo(idToken);
           setUser({
             id: firebaseUser.uid,
             email: firebaseUser.email,
             displayName: firebaseUser.displayName,
             photoURL: firebaseUser.photoURL,
-            apiKey: user.api_key,
-            apiKeyEnabled: user.api_key_enabled,
-            credits: user.balance,
+            apiKey: userData.user.api_key,
+            apiKeyEnabled: userData.user.api_key_enabled,
+            credits: userData.user.balance,
             idToken,
           });
         } catch (error) {
@@ -206,9 +205,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData = await getUserInfo(token);
       setUser({
         ...user,
-        apiKey: userData.api_key,
-        apiKeyEnabled: userData.api_key_enabled,
-        credits: userData.balance,
+        apiKey: userData.user.api_key,
+        apiKeyEnabled: userData.user.api_key_enabled,
+        credits: userData.user.balance,
         idToken: token,
       });
     } catch (error) {
