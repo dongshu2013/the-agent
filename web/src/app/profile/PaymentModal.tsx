@@ -9,10 +9,7 @@ interface PaymentModalProps {
   onClose: () => void;
 }
 
-export const PaymentModal = ({
-  isOpen,
-  onClose,
-}: PaymentModalProps) => {
+export const PaymentModal = ({ isOpen, onClose }: PaymentModalProps) => {
   const [amount, setAmount] = useState<number | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,24 +28,24 @@ export const PaymentModal = ({
     try {
       const data = await postCheckout(user.idToken, amount);
       // console.log("---checkout data:", data);
-      
+
       const { public_key, session_id } = data.data;
       const stripe = await loadStripe(public_key);
       if (!stripe) {
-        toast.error("checkout failed");
+        toast.error('checkout failed');
         return;
       }
 
       const result = await stripe.redirectToCheckout({
         sessionId: session_id,
       });
-      
+
       if (result.error) {
         toast.error(result.error.message);
       }
     } catch (err) {
       console.error('Checkout error:', err);
-      toast.error("checkout failed");
+      toast.error('checkout failed');
     } finally {
       setIsSubmitting(false);
     }
@@ -56,7 +53,7 @@ export const PaymentModal = ({
 
   // Handle clicking outside the modal to close it
   const modalRef = useRef<HTMLDivElement>(null);
-  
+
   useEffect(() => {
     // Prevent body scrolling when modal is open
     if (isOpen) {
@@ -64,57 +61,68 @@ export const PaymentModal = ({
     } else {
       document.body.style.overflow = 'unset';
     }
-    
+
     // Cleanup function
     return () => {
       document.body.style.overflow = 'unset';
     };
   }, [isOpen]);
-  
+
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
         onClose();
       }
     };
-    
+
     const handleClickOutside = (e: MouseEvent) => {
       if (modalRef.current && !modalRef.current.contains(e.target as Node) && isOpen) {
         onClose();
       }
     };
-    
+
     document.addEventListener('keydown', handleEscape);
     document.addEventListener('mousedown', handleClickOutside);
-    
+
     return () => {
       document.removeEventListener('keydown', handleEscape);
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isOpen, onClose]);
-  
+
   if (!isOpen) return null;
-  
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div 
+      <div
         ref={modalRef}
         className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden animate-in fade-in duration-200"
       >
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Complete Payment</h2>
-            <button 
+            <button
               onClick={onClose}
               className="text-gray-500 hover:text-gray-700 focus:outline-none"
               aria-label="Close"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
-          
+
           <div className="space-y-4 py-2">
             <p className="text-sm text-gray-500">
               Enter the amount of Token you would like to pay.
@@ -144,7 +152,9 @@ export const PaymentModal = ({
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="amount" className="block text-sm font-medium text-gray-700">Amount</label>
+                <label htmlFor="amount" className="block text-sm font-medium text-gray-700">
+                  Amount
+                </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <span className="text-sm font-medium">$</span>
@@ -156,32 +166,23 @@ export const PaymentModal = ({
                     value={amount === undefined ? '' : amount}
                     min={5}
                     onChange={(e) => {
-                      const val =
-                        e.target.value === ''
-                          ? undefined
-                          : Number(e.target.value);
+                      const val = e.target.value === '' ? undefined : Number(e.target.value);
                       setAmount(val);
                     }}
                     className="w-full pl-8 pr-16 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50"
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none bg-gradient-to-r from-primary/80 to-primary rounded-r-md">
-                    <span className="text-sm font-medium text-primary-foreground">
-                      USD
-                    </span>
+                    <span className="text-sm font-medium text-primary-foreground">USD</span>
                   </div>
                 </div>
                 {amount !== undefined && amount < 5 && (
-                  <p className="text-sm text-red-500">
-                    Custom amount must be at least $5
-                  </p>
+                  <p className="text-sm text-red-500">Custom amount must be at least $5</p>
                 )}
               </div>
 
-              {error && (
-                <p className="text-sm text-red-500">{error}</p>
-              )}
+              {error && <p className="text-sm text-red-500">{error}</p>}
               <div className="flex justify-end space-x-2 pt-2">
-                <button 
+                <button
                   onClick={onClose}
                   className="px-4 py-2 text-sm font-medium text-black bg-white rounded-md border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300"
                 >

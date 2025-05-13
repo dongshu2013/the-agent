@@ -1,10 +1,9 @@
-"use client";
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { CreditLog, TransactionReason } from '@/types';
-
 
 interface FilterOptions {
   models: string[];
@@ -16,15 +15,15 @@ export const CreditsTable = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     models: [],
-    txTypes: [] as TransactionReason[]
+    txTypes: [] as TransactionReason[],
   });
-  
+
   // Filter states
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<string>('');
   const [selectedTransType, setSelectedTransType] = useState<TransactionReason | ''>('');
-  
+
   const { user } = useAuth();
 
   useEffect(() => {
@@ -35,7 +34,7 @@ export const CreditsTable = () => {
 
   const fetchCreditsData = async () => {
     if (!user || !user.idToken) return;
-    
+
     setIsLoading(true);
     try {
       // Build query parameters
@@ -44,18 +43,18 @@ export const CreditsTable = () => {
       if (endDate) params.append('endDate', endDate);
       if (selectedModel) params.append('model', selectedModel);
       if (selectedTransType) params.append('transType', selectedTransType);
-      
+
       const queryString = params.toString();
       const url = `/api/credits${queryString ? `?${queryString}` : ''}`;
-      
+
       const response = await fetch(url, {
         headers: {
-          'Authorization': `Bearer ${user.idToken}`,
+          Authorization: `Bearer ${user.idToken}`,
           'Content-Type': 'application/json',
           'Access-Control-Allow-Origin': '*',
         },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setCredits(data.credits || []);
@@ -106,7 +105,10 @@ export const CreditsTable = () => {
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex flex-col md:flex-row gap-4 items-end">
           <div className="flex-1">
-            <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label
+              htmlFor="startDate"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
               Start Date
             </label>
             <input
@@ -117,9 +119,12 @@ export const CreditsTable = () => {
               className="w-full h-9 rounded-md border border-gray-300 dark:border-gray-600 px-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
-          
+
           <div className="flex-1">
-            <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label
+              htmlFor="endDate"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
               End Date
             </label>
             <input
@@ -130,9 +135,12 @@ export const CreditsTable = () => {
               className="w-full h-9 rounded-md border border-gray-300 dark:border-gray-600 px-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
-          
+
           <div className="flex-1">
-            <label htmlFor="model" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label
+              htmlFor="model"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
               Model
             </label>
             <select
@@ -143,13 +151,18 @@ export const CreditsTable = () => {
             >
               <option value="">All Models</option>
               {filterOptions.models.map((model) => (
-                <option key={model} value={model}>{model}</option>
+                <option key={model} value={model}>
+                  {model}
+                </option>
               ))}
             </select>
           </div>
-          
+
           <div className="flex-1">
-            <label htmlFor="transType" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label
+              htmlFor="transType"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
               Transaction Type
             </label>
             <select
@@ -160,11 +173,13 @@ export const CreditsTable = () => {
             >
               <option value="">All Types</option>
               {filterOptions.txTypes.map((type) => (
-                <option key={type} value={type}>{formatTransType(type)}</option>
+                <option key={type} value={type}>
+                  {formatTransType(type)}
+                </option>
               ))}
             </select>
           </div>
-          
+
           <div className="flex-none">
             <button
               onClick={resetFilters}
@@ -175,22 +190,34 @@ export const CreditsTable = () => {
           </div>
         </div>
       </div>
-      
+
       {/* Table Section */}
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
                 Date
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
                 Type
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
                 Model
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
                 Credits
               </th>
             </tr>
@@ -206,7 +233,10 @@ export const CreditsTable = () => {
               </tr>
             ) : credits.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                <td
+                  colSpan={4}
+                  className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400"
+                >
                   No credits data found
                 </td>
               </tr>
@@ -222,8 +252,15 @@ export const CreditsTable = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                     {credit.model || '-'}
                   </td>
-                  <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${credit.tx_type === 'credit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                    {credit.tx_type === 'credit' ? '+' : '-'}{Number(credit.tx_credits).toFixed(6)}
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                      credit.tx_type === 'credit'
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-red-600 dark:text-red-400'
+                    }`}
+                  >
+                    {credit.tx_type === 'credit' ? '+' : '-'}
+                    {Number(credit.tx_credits).toFixed(6)}
                   </td>
                 </tr>
               ))
@@ -231,7 +268,7 @@ export const CreditsTable = () => {
           </tbody>
         </table>
       </div>
-      
+
       {/* Pagination could be added here in the future */}
     </div>
   );

@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import Image from 'next/image';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function Home() {
   const { user, loading, signInWithGoogle } = useAuth();
@@ -11,7 +11,7 @@ export default function Home() {
 
   useEffect(() => {
     if (user && !loading) {
-      router.push("/profile");
+      router.push('/profile');
     }
   }, [user, loading, router]);
 

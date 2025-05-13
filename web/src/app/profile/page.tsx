@@ -1,24 +1,17 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { RefreshCw } from "lucide-react";
-import { PaymentModal } from "./PaymentModal";
-import { CreditsCharts } from "./CreditsCharts";
-import { CreditsTable } from "./CreditsTable";
-import { getTelegramStats } from "@/lib/api_service";
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { RefreshCw } from 'lucide-react';
+import { PaymentModal } from './PaymentModal';
+import { CreditsCharts } from './CreditsCharts';
+import { CreditsTable } from './CreditsTable';
+import { getTelegramStats } from '@/lib/api_service';
 
 export default function ProfilePage() {
-  const {
-    user,
-    loading,
-    signOut,
-    rotateApiKey,
-    toggleApiKey,
-    refreshUserData,
-  } = useAuth();
+  const { user, loading, signOut, rotateApiKey, toggleApiKey, refreshUserData } = useAuth();
   const [isCopied, setIsCopied] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
@@ -34,7 +27,7 @@ export default function ProfilePage() {
   // Redirect to login if not authenticated
   useEffect(() => {
     if (!loading && !user) {
-      router.push("/");
+      router.push('/');
     }
   }, [user, loading, router]);
 
@@ -52,7 +45,7 @@ export default function ProfilePage() {
       const response = await getTelegramStats(user.idToken);
       setTelegramStats(response);
     } catch (error) {
-      console.error("Error fetching Telegram stats:", error);
+      console.error('Error fetching Telegram stats:', error);
     } finally {
       setIsLoadingTelegramStats(false);
     }
@@ -72,7 +65,7 @@ export default function ProfilePage() {
       try {
         await rotateApiKey();
       } catch (error) {
-        console.error("Error rotating API key:", error);
+        console.error('Error rotating API key:', error);
       } finally {
         setIsRotating(false);
       }
@@ -85,7 +78,7 @@ export default function ProfilePage() {
       try {
         await toggleApiKey(!user.apiKeyEnabled);
       } catch (error) {
-        console.error("Error toggling API key:", error);
+        console.error('Error toggling API key:', error);
       } finally {
         setIsToggling(false);
       }
@@ -143,12 +136,12 @@ export default function ProfilePage() {
               />
             ) : (
               <div className="w-12 h-12 rounded-full flex items-center justify-center text-white mr-4">
-                {user?.displayName?.charAt(0) || user?.email?.charAt(0) || "U"}
+                {user?.displayName?.charAt(0) || user?.email?.charAt(0) || 'U'}
               </div>
             )}
             <div>
               <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-                {user?.displayName || "User"}
+                {user?.displayName || 'User'}
               </h3>
               <p className="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
                 {user?.email}
@@ -164,22 +157,22 @@ export default function ProfilePage() {
               <div className="flex items-center">
                 <span
                   className={`mr-2 text-sm ${
-                    user.apiKeyEnabled ? "text-green-500" : "text-red-500"
+                    user.apiKeyEnabled ? 'text-green-500' : 'text-red-500'
                   }`}
                 >
-                  {user.apiKeyEnabled ? "Enabled" : "Disabled"}
+                  {user.apiKeyEnabled ? 'Enabled' : 'Disabled'}
                 </span>
                 <button
                   onClick={handleToggleApiKey}
                   disabled={isToggling}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    user.apiKeyEnabled ? "bg-black" : "bg-gray-200"
+                    user.apiKeyEnabled ? 'bg-black' : 'bg-gray-200'
                   }`}
                 >
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      user.apiKeyEnabled ? "translate-x-6" : "translate-x-1"
-                    } ${isToggling ? "opacity-50" : ""}`}
+                      user.apiKeyEnabled ? 'translate-x-6' : 'translate-x-1'
+                    } ${isToggling ? 'opacity-50' : ''}`}
                   />
                 </button>
               </div>
@@ -193,15 +186,11 @@ export default function ProfilePage() {
                 <input
                   type="text"
                   readOnly
-                  value={
-                    user?.apiKeyEnabled
-                      ? user?.apiKey || ""
-                      : "••••••••••••••••••••••••"
-                  }
+                  value={user?.apiKeyEnabled ? user?.apiKey || '' : '••••••••••••••••••••••••'}
                   className={`w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md ${
                     user?.apiKeyEnabled
-                      ? "bg-gray-50 dark:bg-gray-700"
-                      : "bg-gray-100 dark:bg-gray-800"
+                      ? 'bg-gray-50 dark:bg-gray-700'
+                      : 'bg-gray-100 dark:bg-gray-800'
                   } text-gray-900 dark:text-gray-100`}
                   disabled={!user?.apiKeyEnabled}
                 />
@@ -236,12 +225,10 @@ export default function ProfilePage() {
                 onClick={handleRotateApiKey}
                 disabled={isRotating || !user?.apiKeyEnabled}
                 className={`px-4 py-2 text-sm font-medium text-white bg-black rounded-md hover:opacity-70 transition-opacity ${
-                  isRotating || !user?.apiKeyEnabled
-                    ? "opacity-50 cursor-not-allowed"
-                    : ""
+                  isRotating || !user?.apiKeyEnabled ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
-                {isRotating ? "Rotating..." : "Rotate Key"}
+                {isRotating ? 'Rotating...' : 'Rotate Key'}
               </button>
             </div>
           </div>
@@ -270,23 +257,18 @@ export default function ProfilePage() {
                     className="rounded-full"
                   />
                 </div>
-                <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-1">
-                  Telegram
-                </h4>
+                <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-1">Telegram</h4>
                 <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
                   {isLoadingTelegramStats
-                    ? "Loading Telegram data..."
+                    ? 'Loading Telegram data...'
                     : telegramStats && telegramStats.channels_count > 0
                     ? `${telegramStats.channels_count} chats imported, ${telegramStats.messages_count} messages imported`
-                    : "No data has been imported yet..."}
+                    : 'No data has been imported yet...'}
                 </p>
                 <button
                   className="px-4 py-2 text-sm font-medium text-white bg-black rounded-md hover:opacity-70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black transition-opacity"
                   onClick={() =>
-                    window.open(
-                      process.env.NEXT_PUBLIC_TG_WEBAPP_URL || "#",
-                      "_blank"
-                    )
+                    window.open(process.env.NEXT_PUBLIC_TG_WEBAPP_URL || '#', '_blank')
                   }
                 >
                   Import Telegram Data
@@ -304,9 +286,7 @@ export default function ProfilePage() {
                     className="rounded-full"
                   />
                 </div>
-                <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-1">
-                  Twitter
-                </h4>
+                <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-1">Twitter</h4>
                 <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
                   No data has been imported yet...
                 </p>
@@ -351,9 +331,7 @@ export default function ProfilePage() {
           {/* Credits Header */}
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
             <div className="flex items-center space-x-2">
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white">
-                Credits
-              </h2>
+              <h2 className="text-lg font-medium text-gray-900 dark:text-white">Credits</h2>
               <button
                 onClick={async () => {
                   setIsRefreshing(true);
@@ -361,7 +339,7 @@ export default function ProfilePage() {
                     // Refresh user data including credits
                     await refreshUserData();
                   } catch (error) {
-                    console.error("Error refreshing credits:", error);
+                    console.error('Error refreshing credits:', error);
                   } finally {
                     setIsRefreshing(false);
                   }
@@ -369,16 +347,13 @@ export default function ProfilePage() {
                 className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
                 disabled={isRefreshing}
               >
-                <RefreshCw
-                  size={18}
-                  className={`${isRefreshing ? "animate-spin" : ""}`}
-                />
+                <RefreshCw size={18} className={`${isRefreshing ? 'animate-spin' : ''}`} />
               </button>
             </div>
 
             <div className="flex items-center space-x-4">
               <div className="text-lg font-bold text-gray-900 dark:text-white">
-                ${user.credits ? (user.credits / 1000000).toFixed(2) : "0.00"}
+                ${user.credits ? (user.credits / 1000000).toFixed(2) : '0.00'}
               </div>
               <div className="flex space-x-2">
                 <button
@@ -408,10 +383,7 @@ export default function ProfilePage() {
       </footer>
 
       {/* Modals */}
-      <PaymentModal
-        isOpen={buyCreditsOpen}
-        onClose={() => setBuyCreditsOpen(false)}
-      />
+      <PaymentModal isOpen={buyCreditsOpen} onClose={() => setBuyCreditsOpen(false)} />
     </div>
   );
 }

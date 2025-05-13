@@ -1,12 +1,6 @@
-"use client";
+'use client';
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import {
   GoogleAuthProvider,
   signInWithPopup,
@@ -15,13 +9,9 @@ import {
   onAuthStateChanged,
   getIdToken,
   signInWithCustomToken,
-} from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import {
-  getUserInfo,
-  postRotateApiKey,
-  postToggleApiKey,
-} from "@/lib/api_service";
+} from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { getUserInfo, postRotateApiKey, postToggleApiKey } from '@/lib/api_service';
 
 interface User {
   id: string;
@@ -69,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             idToken,
           });
         } catch (error) {
-          console.error("Error setting up user:", error);
+          console.error('Error setting up user:', error);
         }
       } else {
         setUser(null);
@@ -99,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
         }
       } catch (error) {
-        console.error("Error handling redirect:", error);
+        console.error('Error handling redirect:', error);
       }
     };
     handleRedirect();
@@ -114,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser((prev) => (prev ? { ...prev, idToken: newToken } : null));
       return newToken;
     } catch (error) {
-      console.error("Error refreshing token:", error);
+      console.error('Error refreshing token:', error);
       return null;
     }
   };
@@ -124,31 +114,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Configure auth provider with custom parameters to avoid COOP issues
       provider.setCustomParameters({
-        prompt: "select_account",
+        prompt: 'select_account',
         // This helps with some cross-origin issues
-        auth_type: "rerequest",
+        auth_type: 'rerequest',
       });
 
       const result = await signInWithPopup(auth, provider);
       const idToken = await getIdToken(result.user);
 
       // 调用后端获取自定义 JWT
-      const resp = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const resp = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken }),
       });
 
-      if (!resp.ok) throw new Error("Login failed");
+      if (!resp.ok) throw new Error('Login failed');
       const { jwt } = await resp.json();
 
-      console.log("..signInWithGoogle..", jwt);
+      console.log('..signInWithGoogle..', jwt);
 
       // 用自定义 JWT 登录 Firebase
       const userCredential = await signInWithCustomToken(auth, jwt);
       const user = userCredential.user;
 
-      console.log(",.,.,.,.,.", jwt);
+      console.log(',.,.,.,.,.', jwt);
 
       // 更新用户状态
       setUser({
@@ -162,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         idToken: jwt,
       });
     } catch (error) {
-      console.error("Error signing in with Google", error);
+      console.error('Error signing in with Google', error);
     }
   };
 
@@ -171,7 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await firebaseSignOut(auth);
       setUser(null);
     } catch (error) {
-      console.error("Error signing out", error);
+      console.error('Error signing out', error);
     }
   };
 
@@ -183,7 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser((prev) => (prev ? { ...prev, apiKey: newApiKey } : null));
       return newApiKey;
     } catch (error) {
-      console.error("Error rotating API key:", error);
+      console.error('Error rotating API key:', error);
       return null;
     }
   };
@@ -196,7 +186,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser((prev) => (prev ? { ...prev, apiKeyEnabled: enabled } : null));
       return enabled;
     } catch (error) {
-      console.error("Error toggling API key:", error);
+      console.error('Error toggling API key:', error);
       return false;
     }
   };
@@ -216,7 +206,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         idToken: token,
       });
     } catch (error) {
-      console.error("Error refreshing user data:", error);
+      console.error('Error refreshing user data:', error);
     }
   };
 
@@ -241,7 +231,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 }

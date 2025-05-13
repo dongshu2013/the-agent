@@ -1,13 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  ResponsiveContainer, 
-  Tooltip
-} from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { Expand } from 'lucide-react';
 import { getCreditHistory } from '@/lib/api_service';
 import { CreditLog } from '@/types';
@@ -40,7 +33,7 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
 
     setIsLoading(true);
     try {
-      const {history} = await getCreditHistory(user.idToken);
+      const { history } = await getCreditHistory(user.idToken);
       if (history) {
         processCreditsData(history);
       } else {
@@ -55,24 +48,24 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
 
   const processCreditsData = (credits: CreditLog[]) => {
     // Sort by date
-    const sortedCredits = [...credits].sort((a, b) => 
-      new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    const sortedCredits = [...credits].sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
     );
 
     // Group by day for the chart
     const dailySpend: Record<string, number> = {};
-    
+
     const now = new Date();
     const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    
+
     let daySpendTotal = 0;
     let weekSpendTotal = 0;
 
-    sortedCredits.forEach(transaction => {
+    sortedCredits.forEach((transaction) => {
       const date = new Date(transaction.created_at);
       const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
-      
+
       // Only process completion transactions for spend data
       if (transaction.tx_reason === 'completion' && transaction.tx_credits < 0) {
         // Add to daily spend
@@ -81,7 +74,7 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
         }
         const absCredits = Math.abs(transaction.tx_credits);
         dailySpend[dateKey] += absCredits;
-        
+
         // Calculate totals for last day and week
         if (date >= oneDayAgo) {
           daySpendTotal += absCredits;
@@ -96,12 +89,12 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
     const spendChartData = Object.entries(dailySpend).map(([date, value]) => ({
       name: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       value: parseFloat(value.toFixed(4)),
-      date
+      date,
     }));
 
     // Take last 30 days of data
     const last30DaysSpend = spendChartData.slice(-30);
-    
+
     setSpendData(last30DaysSpend);
     setLastDaySpend(parseFloat(daySpendTotal.toFixed(4)));
     setLastWeekSpend(parseFloat(weekSpendTotal.toFixed(4)));
@@ -113,7 +106,8 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
         <div className="bg-white dark:bg-gray-800 p-2 border border-gray-200 dark:border-gray-700 shadow-sm rounded-md">
           <p className="text-sm font-medium">{label}</p>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            {payload[0].name === 'value' ? '$' : ''}{payload[0].value}
+            {payload[0].name === 'value' ? '$' : ''}
+            {payload[0].value}
             {payload[0].name !== 'value' ? ' tokens' : ''}
           </p>
         </div>
@@ -125,14 +119,16 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
   return (
     <div className={className}>
       {/* Spend Chart */}
-      <div className={
-        "bg-white p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:text-gray-900 shadow-sm hover:shadow-lg cursor-pointer transition-colors"
-      }>
+      <div
+        className={
+          'bg-white p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:text-gray-900 shadow-sm hover:shadow-lg cursor-pointer transition-colors'
+        }
+      >
         <div className="flex justify-between items-center mb-2">
           <h3 className="text-lg font-medium">Spend</h3>
           <Expand className="w-4 h-4" />
         </div>
-        
+
         <div className="h-64">
           {isLoading ? (
             <div className="flex justify-center items-center h-full">
@@ -153,7 +149,7 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
             </div>
           )}
         </div>
-        
+
         <div className="flex justify-between mt-4">
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400">Last day</p>
