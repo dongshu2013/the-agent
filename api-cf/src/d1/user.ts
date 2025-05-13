@@ -1,3 +1,4 @@
+import { GatewayServiceError } from '../types/service';
 import { CreditLog, UserInfo } from './types';
 
 export async function createUser(
@@ -13,7 +14,7 @@ export async function createUser(
     .bind(userId, email, crypto.randomUUID(), 1)
     .run();
   if (!result.success) {
-    throw new Error('Failed to create user');
+    throw new GatewayServiceError(500, 'Failed to create user');
   }
   return {
     id: userId,
@@ -36,7 +37,7 @@ export async function getUserInfo(
     .bind(userId)
     .all();
   if (!result.success || result.results.length === 0) {
-    throw new Error('User not found');
+    throw new GatewayServiceError(404, 'User not found');
   }
   return {
     id: result.results[0].id as string,
@@ -50,7 +51,7 @@ export async function getUserInfo(
 export async function getUserFromApiKey(
   env: Env,
   apiKey: string
-): Promise<{ id: string; email: string } | null> {
+): Promise<{ id: string; email: string }> {
   const db = env.UDB;
   const result = await db
     .prepare(
@@ -60,7 +61,7 @@ export async function getUserFromApiKey(
     .bind(apiKey)
     .all();
   if (!result.success || result.results.length === 0) {
-    throw new Error('User not found');
+    throw new GatewayServiceError(401, 'Invalid API Key');
   }
   return {
     id: result.results[0].id as string,
@@ -98,25 +99,29 @@ export async function toggleApiKeyEnabled(
 
 export async function getCreditLogs(
   env: Env,
-  userId: string
+  userId: string,
+  limit = 10
 ): Promise<CreditLog[]> {
   const db = env.UDB;
+  console.log('userId: ', userId);
   const result = await db
     .prepare(
-      'SELECT id, tx_credits, tx_type, model, created_at' +
+      'SELECT id, tx_credits, tx_type, tx_reason, model, created_at' +
         ' FROM credit_history' +
         ' WHERE user_id = ?' +
-        ' ORDER BY created_at DESC'
+        ' ORDER BY created_at DESC' +
+        ' LIMIT ?'
     )
-    .bind(userId)
+    .bind(userId, limit)
     .all();
-  if (!result.success || result.results.length === 0) {
-    throw new Error('No credit logs found');
+  if (!result.success) {
+    throw new GatewayServiceError(500, 'Failed to query db');
   }
   return result.results.map((r) => ({
     id: r.id as number,
     tx_credits: r.tx_credits as number,
     tx_type: r.tx_type as string,
+    tx_reason: r.tx_reason as string,
     model: r.model as string,
     created_at: r.created_at as string,
   }));
@@ -128,12 +133,13 @@ export async function getUserBalance(
 ): Promise<number> {
   try {
     const db = env.UDB;
+    console.log('userId: ', userId);
     const result = await db
       .prepare('SELECT balance FROM users WHERE id = ?')
       .bind(userId)
       .all();
     if (!result.success || result.results.length === 0) {
-      throw new Error('User not found');
+      throw new GatewayServiceError(400, 'invalid user');
     }
     return (result.results[0].balance as number) || 0;
   } catch (error) {

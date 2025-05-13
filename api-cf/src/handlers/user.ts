@@ -33,57 +33,39 @@ export class GetUser extends OpenAPIRoute {
   };
 
   async handle(c: Context) {
-    try {
-      const userId = c.get('userId');
-      const userInfo = await getUserInfo(c.env, userId);
-      if (!userInfo) {
-        // initiate user
-        const email = c.get('userEmail');
-        if (!email) {
-          throw new Error('User email not found');
-        }
-        const user = await createUser(c.env, userId, email);
-        return c.json(
-          {
-            success: true,
-            user: {
-              api_key: user.api_key,
-              api_key_enabled: user.api_key_enabled,
-              balance: user.balance,
-              email: user.email,
-            },
-          },
-          200
-        );
-      } else {
-        return c.json(
-          {
-            success: true,
-            user: {
-              api_key: userInfo.api_key,
-              api_key_enabled: userInfo.api_key_enabled,
-              balance: userInfo.balance,
-              email: userInfo.email,
-            },
-          },
-          200
-        );
+    const userId = c.get('userId');
+    const userInfo = await getUserInfo(c.env, userId);
+    if (!userInfo) {
+      // initiate user
+      const email = c.get('userEmail');
+      if (!email) {
+        throw new Error('User email not found');
       }
-    } catch (error) {
-      console.error('Error getting user info:', error);
-
+      const user = await createUser(c.env, userId, email);
       return c.json(
         {
-          success: false,
-          error: {
-            message:
-              error instanceof Error
-                ? error.message
-                : 'An unknown error occurred',
-            code: 'server_error',
+          success: true,
+          user: {
+            api_key: user.api_key,
+            api_key_enabled: user.api_key_enabled,
+            balance: user.balance,
+            email: user.email,
           },
         },
-        500
+        200
+      );
+    } else {
+      return c.json(
+        {
+          success: true,
+          user: {
+            api_key: userInfo.api_key,
+            api_key_enabled: userInfo.api_key_enabled,
+            balance: userInfo.balance,
+            email: userInfo.email,
+          },
+        },
+        200
       );
     }
   }
@@ -109,45 +91,15 @@ export class GetUserBalance extends OpenAPIRoute {
   };
 
   async handle(c: Context) {
-    try {
-      const userId = c.get('userId');
-      const balance = await getUserBalance(c.env, userId);
-      if (!balance) {
-        return c.json(
-          {
-            success: false,
-            error: {
-              message: 'User not found',
-              code: 'not_found',
-            },
-          },
-          404
-        );
-      }
-      return c.json(
-        {
-          success: true,
-          results: { balance },
-        },
-        200
-      );
-    } catch (error) {
-      console.error('Error getting user info:', error);
-
-      return c.json(
-        {
-          success: false,
-          error: {
-            message:
-              error instanceof Error
-                ? error.message
-                : 'An unknown error occurred',
-            code: 'server_error',
-          },
-        },
-        500
-      );
-    }
+    const userId = c.get('userId');
+    const balance = await getUserBalance(c.env, userId);
+    return c.json(
+      {
+        success: true,
+        results: { balance },
+      },
+      200
+    );
   }
 }
 
@@ -178,33 +130,15 @@ export class GetCreditLogs extends OpenAPIRoute {
   };
 
   async handle(c: Context) {
-    try {
-      const userId = c.get('userId');
-      const creditLogs = await getCreditLogs(c.env, userId);
-      return c.json(
-        {
-          success: true,
-          results: creditLogs,
-        },
-        200
-      );
-    } catch (error) {
-      console.error('Error getting credit logs:', error);
-
-      return c.json(
-        {
-          success: false,
-          error: {
-            message:
-              error instanceof Error
-                ? error.message
-                : 'An unknown error occurred',
-            code: 'server_error',
-          },
-        },
-        500
-      );
-    }
+    const userId = c.get('userId');
+    const creditLogs = await getCreditLogs(c.env, userId);
+    return c.json(
+      {
+        success: true,
+        results: creditLogs,
+      },
+      200
+    );
   }
 }
 
@@ -228,33 +162,15 @@ export class RotateApiKey extends OpenAPIRoute {
   };
 
   async handle(c: Context) {
-    try {
-      const userId = c.get('userId');
-      const apiKey = await rotateApiKey(c.env, userId);
-      return c.json(
-        {
-          success: true,
-          results: { apiKey },
-        },
-        200
-      );
-    } catch (error) {
-      console.error('Error getting credit logs:', error);
-
-      return c.json(
-        {
-          success: false,
-          error: {
-            message:
-              error instanceof Error
-                ? error.message
-                : 'An unknown error occurred',
-            code: 'server_error',
-          },
-        },
-        500
-      );
-    }
+    const userId = c.get('userId');
+    const newApiKey = await rotateApiKey(c.env, userId);
+    return c.json(
+      {
+        success: true,
+        results: { newApiKey },
+      },
+      200
+    );
   }
 }
 
@@ -286,32 +202,9 @@ export class ToggleApiKeyEnabled extends OpenAPIRoute {
   };
 
   async handle(c: Context) {
-    try {
-      const userId = c.get('userId');
-      const body = await c.req.json();
-      await toggleApiKeyEnabled(c.env, userId, body.enabled);
-      return c.json(
-        {
-          success: true,
-        },
-        200
-      );
-    } catch (error) {
-      console.error('Error getting credit logs:', error);
-
-      return c.json(
-        {
-          success: false,
-          error: {
-            message:
-              error instanceof Error
-                ? error.message
-                : 'An unknown error occurred',
-            code: 'server_error',
-          },
-        },
-        500
-      );
-    }
+    const userId = c.get('userId');
+    const body = await c.req.json();
+    await toggleApiKeyEnabled(c.env, userId, body.enabled);
+    return c.json({ success: true }, 200);
   }
 }

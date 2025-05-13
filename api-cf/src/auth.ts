@@ -1,7 +1,7 @@
 import { Next } from 'hono';
 import * as jose from 'jose';
 
-import { GatewayServiceContext } from './types/service';
+import { GatewayServiceContext, GatewayServiceError } from './types/service';
 import { getUserFromApiKey } from './d1/user';
 
 // Authentication middleware for JWT or API_KEY
@@ -9,33 +9,22 @@ export async function jwtOrApiKeyAuthMiddleware(
   c: GatewayServiceContext,
   next: Next
 ) {
-  try {
-    // Check for API Key in x-api-key header
-    const apiKey = c.req.header('x-api-key');
-    if (apiKey) {
-      const user = await getUserFromApiKey(c.env, apiKey);
-      if (!user) {
-        return c.text('Invalid API Key', 401);
-      }
-      c.set('userId', user.id);
-      c.set('userEmail', user.email);
-      await next();
-      return;
-    }
-
-    // Check for JWT in Authorization: Bearer header
-    const token = getBearer(c);
-    if (!token) {
-      return c.text('No authentication provided', 401);
-    }
-
-    const { userId, userEmail } = await verifyJWT(token);
-    c.set('userId', userId);
-    c.set('userEmail', userEmail);
+  // Check for API Key in x-api-key header
+  const apiKey = c.req.header('x-api-key');
+  if (apiKey) {
+    const user = await getUserFromApiKey(c.env, apiKey);
+    c.set('userId', user.id);
+    c.set('userEmail', user.email);
     await next();
-  } catch (error) {
-    return c.text('Unauthorized', 401);
+    return;
   }
+
+  // Check for JWT in Authorization: Bearer header
+  const token = getBearer(c);
+  const { userId, userEmail } = await verifyJWT(token);
+  c.set('userId', userId);
+  c.set('userEmail', userEmail);
+  await next();
 }
 
 const CACHE_KEY = 'firebase-public-keys';
@@ -87,19 +76,19 @@ async function verifyJWT(
   try {
     const decoded = jose.decodeJwt(token);
     if (!decoded.sub || !decoded.email) {
-      throw new Error('Invalid token payload');
+      throw new GatewayServiceError(401, 'Invalid token payload');
     }
 
     // Get the key ID from the token header
     const { kid } = jose.decodeProtectedHeader(token);
     if (!kid) {
-      throw new Error('No key ID in token header');
+      throw new GatewayServiceError(401, 'No key ID in token header');
     }
 
     // Get Firebase public keys from cache or fetch new ones
     const publicKey = await getFirebasePublicKeys(kid);
     if (!publicKey) {
-      throw new Error('Public key not found');
+      throw new GatewayServiceError(401, 'Public key not found');
     }
 
     // Import the public key and verify the token
@@ -115,14 +104,18 @@ async function verifyJWT(
     };
   } catch (error) {
     console.error('JWT verification error:', error);
-    throw new Error('Invalid token');
+    throw new GatewayServiceError(401, 'Invalid token');
   }
 }
 
 function getBearer(c: GatewayServiceContext): string {
   const authHeader = c.req.header('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw new Error('Invalid token');
+    throw new GatewayServiceError(401, 'Invalid token');
   }
-  return authHeader.split(' ')[1];
+  const token = authHeader.split(' ')[1];
+  if (!token) {
+    throw new GatewayServiceError(401, 'Invalid token');
+  }
+  return token;
 }

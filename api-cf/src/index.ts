@@ -124,7 +124,7 @@ openapi.post('/v1/user/rotate_api_key', RotateApiKey);
 openapi.post('/v1/user/toggle_api_key_enabled', ToggleApiKeyEnabled);
 
 openapi.get('/v1/user/balance', GetUserBalance);
-openapi.get('/v1/user/credit_logs', GetCreditLogs);
+openapi.get('/v1/user/credit_history', GetCreditLogs);
 openapi.get('/v1/user', GetUser);
 
 // OpenAPI documentation endpoints

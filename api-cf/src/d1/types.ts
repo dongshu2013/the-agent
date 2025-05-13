@@ -10,6 +10,7 @@ export interface CreditLog {
   id: number;
   tx_credits: number;
   tx_type: string;
+  tx_reason?: string;
   model?: string | null;
   created_at: string;
 }
