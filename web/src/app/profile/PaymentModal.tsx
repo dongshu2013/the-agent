@@ -4,7 +4,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -16,46 +16,18 @@ import { toast } from 'sonner';
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
 }
 
 export const PaymentModal = ({
   isOpen,
   onClose,
-  onSuccess
 }: PaymentModalProps) => {
   const [amount, setAmount] = useState<number | undefined>();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCancelling, setIsCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copiedAddress, setCopiedAddress] = useState(false);
-  const [copiedAmount, setCopiedAmount] = useState(false);
 
   const { user } = useAuth();
   const isAmountValid = amount !== undefined && amount >= 5;
-
-  // Reset copy states when modal closes
-  useEffect(() => {
-    if (!isOpen) {
-      setCopiedAddress(false);
-      setCopiedAmount(false);
-    }
-  }, [isOpen]);
-
-  const copyToClipboard = async (text: string, type: 'address' | 'amount') => {
-    try {
-      await navigator.clipboard.writeText(text);
-      if (type === 'address') {
-        setCopiedAddress(true);
-        setTimeout(() => setCopiedAddress(false), 2000);
-      } else {
-        setCopiedAmount(true);
-        setTimeout(() => setCopiedAmount(false), 2000);
-      }
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
-  };
 
   const handleCheckout = async () => {
     if (!isAmountValid) {
@@ -169,7 +141,7 @@ export const PaymentModal = ({
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none bg-gradient-to-r from-primary/80 to-primary rounded-r-md">
                   <span className="text-sm font-medium text-primary-foreground">
-                    USDT
+                    USD
                   </span>
                 </div>
               </div>

@@ -40,7 +40,7 @@ export default function ProfilePage() {
               'Authorization': `Bearer ${user.apiKey}`,
             },
           });
-          
+
           if (response.ok) {
             const data = await response.json();
             setTelegramStats(data);
