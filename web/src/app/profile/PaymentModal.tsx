@@ -1,14 +1,5 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle
-} from '@/components/ui/dialog';
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Label } from '@/components/ui/label';
+
 import { useAuth } from '@/contexts/AuthContext';
 import { loadStripe } from '@stripe/stripe-js';
 import { toast } from 'sonner';
@@ -52,13 +43,11 @@ export const PaymentModal = ({
       });
 
       const data = await response.json();
-      
       if (!response.ok) {
         throw new Error(data.error || 'Failed to create checkout session');
       }
 
       const { public_key, session_id } = data;
-      
       const stripe = await loadStripe(public_key);
       if (!stripe) {
         toast.error("checkout failed");

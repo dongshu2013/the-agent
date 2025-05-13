@@ -18,13 +18,10 @@ export class GetUser extends OpenAPIRoute {
         content: {
           'application/json': {
             schema: z.object({
-              success: z.boolean(),
-              user: z.object({
-                api_key: z.string(),
-                api_key_enabled: z.boolean(),
-                balance: z.number(),
-                email: z.string(),
-              }),
+              api_key: z.string(),
+              api_key_enabled: z.boolean(),
+              balance: z.number(),
+              email: z.string(),
             }),
           },
         },
@@ -79,10 +76,7 @@ export class GetUserBalance extends OpenAPIRoute {
         content: {
           'application/json': {
             schema: z.object({
-              success: z.boolean(),
-              results: z.object({
-                balance: z.number(),
-              }),
+              balance: z.number(),
             }),
           },
         },
@@ -95,8 +89,7 @@ export class GetUserBalance extends OpenAPIRoute {
     const balance = await getUserBalance(c.env, userId);
     return c.json(
       {
-        success: true,
-        results: { balance },
+        balance,
       },
       200
     );
@@ -111,13 +104,12 @@ export class GetCreditLogs extends OpenAPIRoute {
         content: {
           'application/json': {
             schema: z.object({
-              success: z.boolean(),
-              results: z.array(
+              history: z.array(
                 z.object({
                   id: z.number(),
-                  user_id: z.string(),
                   tx_credits: z.number(),
                   tx_type: z.string(),
+                  tx_reason: z.string().optional(),
                   model: z.string().optional(),
                   created_at: z.string(),
                 })
@@ -132,13 +124,7 @@ export class GetCreditLogs extends OpenAPIRoute {
   async handle(c: Context) {
     const userId = c.get('userId');
     const creditLogs = await getCreditLogs(c.env, userId);
-    return c.json(
-      {
-        success: true,
-        results: creditLogs,
-      },
-      200
-    );
+    return c.json({ history: creditLogs }, 200);
   }
 }
 
@@ -150,10 +136,7 @@ export class RotateApiKey extends OpenAPIRoute {
         content: {
           'application/json': {
             schema: z.object({
-              success: z.boolean(),
-              results: z.object({
-                apiKey: z.string(),
-              }),
+              newApiKey: z.string(),
             }),
           },
         },
@@ -164,13 +147,7 @@ export class RotateApiKey extends OpenAPIRoute {
   async handle(c: Context) {
     const userId = c.get('userId');
     const newApiKey = await rotateApiKey(c.env, userId);
-    return c.json(
-      {
-        success: true,
-        results: { newApiKey },
-      },
-      200
-    );
+    return c.json({ newApiKey }, 200);
   }
 }
 

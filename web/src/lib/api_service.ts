@@ -1,4 +1,4 @@
-async function postApiService(endpoint: string, token: string, body: any) {
+async function postApiService(endpoint: string, token: string, body?: object) {
     if (!process.env.API_URL) {
         throw new Error("API_URL is not defined");
     }
@@ -7,9 +7,9 @@ async function postApiService(endpoint: string, token: string, body: any) {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
+            "Authorization": `Bearer ${token}`, 
         },
-        body: JSON.stringify(body),
+        body: body ? JSON.stringify(body) : undefined,
     });
     if (!response.ok) {
         throw new Error("Failed to fetch data");
@@ -21,11 +21,19 @@ export async function postCheckout(token: string, amount: number): Promise<any> 
     return await postApiService("/v1/stripe/checkout", token, { amount });
 }
 
+export async function postToggleApiKey(token: string, enabled: boolean): Promise<any> {
+    return await postApiService("/v1/user/toggle_api_key_enabled", token, { enabled });
+}
+
+export async function postRotateApiKey(token: string): Promise<{newApiKey: string}> {
+    return await postApiService("/v1/user/rotate_api_key", token);
+}
+
 async function getApiService(endpoint: string, token: string): Promise<any> {
     if (!process.env.API_URL) {
         throw new Error("API_URL is not defined");
     }
-``
+
     const response = await fetch(`${process.env.API_URL}/${endpoint}`, {
         method: "GET",
         headers: {
@@ -53,6 +61,19 @@ export async function getUserInfo(token: string): Promise<GetUserResponse> {
     return await getApiService("/v1/user", token);
 }
 
-export async function getCreditHistory(token: string): Promise<any> {
+export interface CreditLog {
+    id: number;
+    tx_credits: number;
+    tx_type: string;
+    tx_reason?: string;
+    model?: string;
+    created_at: string;
+}
+
+export interface GetCreditHistoryResponse {
+    history: CreditLog[];
+}
+
+export async function getCreditHistory(token: string): Promise<GetCreditHistoryResponse> {
     return await getApiService("/v1/user/credit_history", token);
 }

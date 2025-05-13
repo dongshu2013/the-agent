@@ -2,18 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { TransactionType } from '@/lib/constants';
 import { format } from 'date-fns';
-
-interface CreditTransaction {
-  id: string;
-  amount: number | null;
-  trans_credits: number;
-  trans_type: TransactionType;
-  created_at: string;
-  model?: string | null;
-  conversation_id?: string | null;
-}
 
 interface FilterOptions {
   models: string[];

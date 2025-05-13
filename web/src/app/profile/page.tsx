@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { RefreshCw } from "lucide-react";
 import { PaymentModal } from "./PaymentModal";
-import { OrdersModal } from "./OrdersModal";
 import { CreditsCharts } from "./CreditsCharts";
 import { CreditsTable } from "./CreditsTable";
 
@@ -411,11 +410,6 @@ export default function ProfilePage() {
       <PaymentModal 
         isOpen={buyCreditsOpen} 
         onClose={() => setBuyCreditsOpen(false)} 
-        onSuccess={() => setBuyCreditsOpen(false)} 
-      />
-      <OrdersModal 
-        isOpen={ordersModalOpen} 
-        onClose={() => setOrdersModalOpen(false)} 
       />
     </div>
   );
