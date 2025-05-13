@@ -4,7 +4,6 @@ import "../style.css";
 import Header from "./components/Header";
 import Message from "./components/Message";
 import InputArea from "./components/InputArea";
-import Settings from "./components/Settings";
 import ConversationList from "./components/ConversationList";
 import {
   createNewConversation,
@@ -12,19 +11,18 @@ import {
   deleteConversation as deleteConv,
   getConversations,
 } from "../services/conversation";
-import { Storage } from "@plasmohq/storage";
 import { getApiKey } from "~/services/utils";
 import { db } from "~/utils/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ChatHandler } from "../services/chat-handler";
+import { env } from "~/utils/env";
+import { PROVIDER_MODELS } from "~/utils/openaiModels";
 
 const Sidepanel = () => {
+  // 状态管理
   const [apiKey, setApiKey] = useStorage("apiKey");
   const [isLoading, setIsLoading] = useState(false);
   const [prompt, setPrompt] = useState("");
-  const [showSettings, setShowSettings] = useState(true);
-  const [apiKeyValidationError, setApiKeyValidationError] =
-    useState<string>("");
   const [currentConversationId, setCurrentConversationId] = useStorage<
     string | null
   >("currentConversationId", null);
@@ -33,8 +31,9 @@ const Sidepanel = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [chatHandler, setChatHandler] = useState<ChatHandler | null>(null);
+  const didRedirect = useRef(false);
 
-  // 使用 useLiveQuery 获取消息和会话列表
+  // 数据查询
   const messages =
     useLiveQuery(
       () =>
@@ -46,138 +45,173 @@ const Sidepanel = () => {
 
   const conversations = useLiveQuery(() => db.getAllConversations(), []) ?? [];
 
-  // Auto-scroll to the bottom
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  const user = useLiveQuery(() => db.getCurrentUser(), []);
 
-  // 处理API错误
-  const handleApiError = (error: any) => {
-    if (
-      typeof error === "string" &&
-      (error.includes("Authentication failed") ||
-        error.includes("API key") ||
-        error.includes("403") ||
-        error.includes("401"))
-    ) {
-      setShowSettings(true);
+  // 工具函数
+  const redirectToLogin = useCallback(() => {
+    if (!didRedirect.current) {
+      window.open(`${env.WEB_URL}`, "_blank");
+      didRedirect.current = true;
     }
+  }, []);
 
-    // 显示错误消息
-    db.saveMessage({
-      message_id: crypto.randomUUID(),
-      status: "error",
-      content:
-        typeof error === "string"
-          ? error
-          : "An error occurred. Please try again.",
-      created_at: new Date().toISOString(),
-      conversation_id: currentConversationId || "",
-      role: "system",
+  const handleApiError = useCallback(
+    (error: any) => {
+      db.saveMessage({
+        message_id: crypto.randomUUID(),
+        status: "error",
+        content:
+          typeof error === "string"
+            ? error
+            : "An error occurred. Please try again.",
+        created_at: new Date().toISOString(),
+        conversation_id: currentConversationId || "",
+        role: "system",
+      });
+    },
+    [currentConversationId]
+  );
+
+  const getApiKeyFromStorage = async () => {
+    return new Promise<string | null>((resolve) => {
+      chrome.storage.local.get(["apiKey"], (result) => {
+        resolve(result.apiKey ?? null);
+      });
     });
   };
 
-  // 初始化检查API Key和会话
+  // 初始化应用
   useEffect(() => {
     const initializeApp = async () => {
       if (isInitialized) return;
 
       try {
-        const storedApiKey = await getApiKey();
-        console.log("[DEBUG] initializeApp storedApiKey:", storedApiKey);
-
-        if (!storedApiKey) {
-          setShowSettings(true);
-          setIsInitialized(true);
-          return;
-        }
-
-        setApiKey(storedApiKey);
         setIsLoading(true);
 
-        const dbConversations = await db.getAllConversations();
+        // 1. 获取并验证 API Key
+        let storedApiKey = await getApiKey();
 
-        if (
-          !currentConversationId ||
-          !(await db.getConversation(currentConversationId))
-        ) {
-          if (dbConversations && dbConversations.length > 0) {
-            setCurrentConversationId(dbConversations[0].id);
-          } else {
-            const newConv = await createNewConversation();
-            setCurrentConversationId(newConv.id);
+        if (!storedApiKey) {
+          const apiKeyFromStorage = await getApiKeyFromStorage();
+          console.log("apiKeyFromStorage🍷", apiKeyFromStorage);
+
+          if (apiKeyFromStorage) {
+            setApiKey(apiKeyFromStorage);
+            storedApiKey = apiKeyFromStorage;
           }
         }
 
-        setIsInitialized(true);
-      } catch (error) {
-        console.error("Failed to initialize app:", error);
-        setApiKeyValidationError(
-          "Failed to initialize chat. Please try again."
+        if (!storedApiKey) {
+          redirectToLogin();
+          return;
+        }
+
+        // 2. 验证 API Key
+        const verifyResponse = await fetch(
+          `${env.BACKEND_URL}/v1/auth/verify`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${storedApiKey}`,
+              "Content-Type": "application/json",
+            },
+          }
         );
-        setShowSettings(true);
+
+        if (!verifyResponse.ok) {
+          if (verifyResponse.status === 401 || verifyResponse.status === 403) {
+            redirectToLogin();
+          }
+          return;
+        }
+
+        const verifyData = await verifyResponse.json();
+        if (verifyData.success && verifyData.user) {
+          setApiKey(storedApiKey);
+
+          // 构造 UserInfo 对象
+          const now = new Date().toISOString();
+          const userInfo = {
+            id: verifyData.user.id,
+            username:
+              verifyData.user.displayName || verifyData.user.email || "unknown",
+            email: verifyData.user.email,
+            api_key_enabled: true, // 你可以根据 verifyData.user 里的字段调整
+            api_key: storedApiKey,
+            credits: verifyData.user.credits || "0",
+            created_at: now, // 如果已有 created_at 可复用
+            updated_at: now,
+            selectedModelId: "system", // 或你实际选中的模型 id
+            api_url: "", // 如果有自定义 api_url 可填
+          };
+
+          // 保存到 indexdb
+          await db.saveOrUpdateUser(userInfo);
+
+          // 3. 初始化模型数据
+          const userId = verifyData.user.id;
+          const allModels = PROVIDER_MODELS.flatMap((provider) =>
+            provider.models.map((model) => ({
+              ...model,
+              userId,
+              apiKey: model.id === "system" ? env.LLM_API_KEY || "" : "",
+              apiUrl:
+                model.id === "system" ? env.LLM_API_URL || "" : model.apiUrl,
+              name: model.id === "system" ? env.OPENAI_MODEL || "" : model.name,
+              type: model.id === "system" ? "SYSTEM" : provider.type,
+            }))
+          );
+          await db.models.bulkPut(allModels);
+
+          // 4. 初始化会话
+          const dbConversations = await db.getAllConversations();
+          if (
+            !currentConversationId ||
+            !(await db.getConversation(currentConversationId))
+          ) {
+            if (dbConversations?.length > 0) {
+              setCurrentConversationId(dbConversations[0].id);
+            } else {
+              const newConv = await createNewConversation();
+              setCurrentConversationId(newConv.id);
+            }
+          }
+
+          const user = await db.getUser(userId);
+        }
+      } catch (error) {
+        console.error("Initialization error:", error);
+        redirectToLogin();
         handleApiError(error);
       } finally {
         setIsLoading(false);
+        setIsInitialized(true);
       }
     };
 
-    if (!isInitialized) {
-      initializeApp();
-    }
-  }, []);
+    initializeApp();
+  }, [isInitialized, currentConversationId, redirectToLogin, handleApiError]);
 
-  // 监听API Key变化
-  useEffect(() => {
-    if (!isInitialized) return;
-    console.log("[DEBUG] apiKey in useEffect:", apiKey);
-
-    const validateAndInitialize = async () => {
-      if (!apiKey) {
-        setShowSettings(true);
-        setShowConversationList(false);
-        return;
-      }
-
-      try {
-        await getConversations();
-        setApiKeyValidationError("");
-      } catch (error) {
-        setApiKeyValidationError("Invalid or disabled API key");
-        setShowSettings(true);
-      }
-    };
-
-    validateAndInitialize();
-  }, [apiKey, isInitialized]);
-
+  // 消息处理
   useEffect(() => {
     const handleMessages = (request: any) => {
-      // Handle selected text from context menu
       if (request.name === "selected-text" && request.text) {
         setPrompt(request.text);
       }
-
-      // Handle focus input request
       if (request.name === "focus-input") {
         const inputElement = document.querySelector("textarea");
-        if (inputElement) {
-          inputElement.focus();
-        }
+        inputElement?.focus();
       }
-
-      // 处理API Key缺失消息 - 显示设置页面而不是Alert
       if (request.name === "api-key-missing") {
-        setShowSettings(true);
+        redirectToLogin();
       }
     };
 
     chrome.runtime.onMessage.addListener(handleMessages);
-    return () => {
-      chrome.runtime.onMessage.removeListener(handleMessages);
-    };
-  }, []);
+    return () => chrome.runtime.onMessage.removeListener(handleMessages);
+  }, [redirectToLogin]);
 
+  // 聊天处理器初始化
   useEffect(() => {
     if (apiKey && currentConversationId) {
       setChatHandler(
@@ -192,7 +226,7 @@ const Sidepanel = () => {
                 error.includes("403") ||
                 error.includes("401"))
             ) {
-              setShowSettings(true);
+              redirectToLogin();
             }
           },
           onStreamStart: () => {
@@ -209,34 +243,26 @@ const Sidepanel = () => {
         })
       );
     }
-  }, [apiKey, currentConversationId]);
+  }, [apiKey, currentConversationId, redirectToLogin]);
 
+  // 自动滚动到底部
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // 事件处理函数
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim() || !chatHandler) return;
 
     const currentPrompt = prompt.trim();
-    setPrompt(""); // 立即清空输入框
-
+    setPrompt("");
     await chatHandler.handleSubmit(currentPrompt);
   };
 
   const handlePauseStream = useCallback(() => {
-    if (chatHandler) {
-      chatHandler.stopStreaming();
-    }
+    chatHandler?.stopStreaming();
   }, [chatHandler]);
-
-  // UI toggle handlers
-  const toggleSettings = (value: boolean) => {
-    if (!value && !apiKey) {
-      return;
-    }
-    setShowSettings(value);
-    if (value) {
-      setShowConversationList(false);
-    }
-  };
 
   const toggleConversationList = async (value?: boolean) => {
     const willShow = value !== undefined ? value : !showConversationList;
@@ -244,10 +270,7 @@ const Sidepanel = () => {
     if (willShow) {
       try {
         setIsLoading(true);
-        // 使用 useLiveQuery 的数据，不需要额外的状态管理
         if (!conversations || conversations.length === 0) {
-          // 如果还没有数据，从接口获取初始数据
-          console.log("No conversations data, fetching from API");
           await getConversations();
         }
       } catch (error) {
@@ -258,12 +281,8 @@ const Sidepanel = () => {
     }
 
     setShowConversationList(willShow);
-    if (willShow) {
-      setShowSettings(false);
-    }
   };
 
-  // Select conversation
   const handleSelectConversation = async (id: string) => {
     if (isLoading) return;
 
@@ -273,7 +292,6 @@ const Sidepanel = () => {
     }
 
     setIsLoading(true);
-
     try {
       const conversation = await selectConv(id);
       if (conversation) {
@@ -286,22 +304,16 @@ const Sidepanel = () => {
     }
   };
 
-  // Delete conversation
   const handleDeleteConversation = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-
-    console.log("Deleting conversation:", id);
-
-    // 防止重复操作
     if (isLoading) return;
-    setIsLoading(true);
 
+    setIsLoading(true);
     try {
       await deleteConv(id);
-      // If delete current conversation, select another conversation
       if (id === currentConversationId) {
         const remaining = conversations?.filter((c) => c.id !== id);
-        if (remaining && remaining.length > 0) {
+        if (remaining?.length > 0) {
           const conversation = await selectConv(remaining[0].id);
           if (conversation) {
             setCurrentConversationId(remaining[0].id);
@@ -312,64 +324,34 @@ const Sidepanel = () => {
         }
       }
     } catch (error) {
-      console.error("Failed to delete conversation:", error);
       handleApiError(error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Create new conversation
   const handleCreateNewConversation = async () => {
     if (isLoading) return;
     if (!apiKey) {
-      setShowSettings(true);
+      redirectToLogin();
       return;
     }
 
     setIsLoading(true);
-
     try {
       const newConv = await createNewConversation();
       setCurrentConversationId(newConv.id);
     } catch (error) {
-      console.error("Failed to create new conversation:", error);
       handleApiError(error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSetApiKey = async (key: string) => {
-    try {
-      const storage = new Storage({
-        area: "local",
-      });
-      await storage.set("apiKey", key);
-      setApiKey(key);
-
-      // 设置新的API key后，同步服务器数据
-      setIsLoading(true);
-      try {
-        // 获取服务器会话列表，这会自动清理并同步本地数据
-        const serverConversations = await getConversations();
-
-        if (serverConversations.length > 0) {
-          // 使用服务器的第一个会话
-          setCurrentConversationId(serverConversations[0].id);
-        } else {
-          // 如果服务器没有会话，创建新会话
-          const newConv = await createNewConversation();
-          setCurrentConversationId(newConv.id);
-        }
-      } finally {
-        setIsLoading(false);
-      }
-
-      setShowSettings(false);
-    } catch (e) {
-      handleApiError(e);
-    }
+  const handleLogout = () => {
+    chrome.storage.local.remove("apiKey");
+    setApiKey(null);
+    redirectToLogin();
   };
 
   return (
@@ -381,7 +363,7 @@ const Sidepanel = () => {
         overflow: "hidden",
       }}
     >
-      {/* 固定的头部组件 */}
+      {/* Header */}
       <div
         style={{
           position: "absolute",
@@ -394,14 +376,13 @@ const Sidepanel = () => {
         }}
       >
         <Header
-          setShowSettings={toggleSettings}
           createNewConversation={handleCreateNewConversation}
-          setShowConversationList={toggleConversationList}
-          showSettings={showSettings}
+          setShowConversationList={() => toggleConversationList()}
+          onLogout={handleLogout}
         />
       </div>
 
-      {/* 可滚动的消息区域 */}
+      {/* Messages Area */}
       <div
         style={{
           position: "absolute",
@@ -460,9 +441,8 @@ const Sidepanel = () => {
                     lineHeight: "1.5",
                   }}
                 >
-                  You haven't set up your API key yet. Click the settings icon
-                  in the top right corner to add your key for full
-                  functionality.
+                  You haven't set up your API key yet. Please login to your web
+                  account to get started.
                 </p>
               )}
             </div>
@@ -484,7 +464,7 @@ const Sidepanel = () => {
         </div>
       </div>
 
-      {/* 固定的底部输入区域 */}
+      {/* Input Area */}
       <div
         style={{
           position: "absolute",
@@ -505,7 +485,7 @@ const Sidepanel = () => {
         />
       </div>
 
-      {/* 浮动面板 */}
+      {/* Conversation List */}
       {showConversationList && (
         <ConversationList
           conversations={conversations}
@@ -515,16 +495,6 @@ const Sidepanel = () => {
           setShowConversationList={(show: boolean) =>
             toggleConversationList(show)
           }
-        />
-      )}
-
-      {showSettings && (
-        <Settings
-          setApiKey={handleSetApiKey}
-          onClose={() => toggleSettings(false)}
-          initialValidationError={apiKeyValidationError}
-          autoCloseOnSuccess={true}
-          onSuccess={() => setShowSettings(false)}
         />
       )}
     </div>

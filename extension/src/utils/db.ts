@@ -15,6 +15,7 @@ interface UserInfo {
   updated_at: string;
   selectedModelId: string;
   api_url: string;
+  photoURL?: string;
 }
 
 class MizuDB extends Dexie {

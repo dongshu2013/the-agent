@@ -18,6 +18,7 @@ Always format tool calls as a JSON array, like this:
   LLM_API_URL: "",
   LLM_API_KEY: "",
   OPENAI_API_KEY: "",
+  WEB_URL: "http://localhost:3000",
 };
 
 export const env: Env = {
@@ -31,4 +32,5 @@ export const env: Env = {
   LLM_API_KEY: process.env.PLASMO_PUBLIC_LLM_API_KEY || defaultEnv.LLM_API_KEY,
   OPENAI_API_KEY:
     process.env.PLASMO_PUBLIC_OPENAI_API_KEY || defaultEnv.OPENAI_API_KEY,
+  WEB_URL: process.env.PLASMO_PUBLIC_WEB_URL || defaultEnv.WEB_URL,
 };

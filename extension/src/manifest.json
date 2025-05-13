@@ -46,7 +46,7 @@
         "<all_urls>"
       ],
       "js": [
-        "content/index.ts"
+        "content.ts"
       ]
     }
   ],

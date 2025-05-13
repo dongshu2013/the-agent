@@ -1,27 +1,21 @@
-import {
-  MessageCircleMore,
-  SquarePen,
-  Settings as SettingsIcon,
-} from "lucide-react";
+import { MessageCircleMore, SquarePen, User as UserIcon } from "lucide-react";
 import { db } from "~/utils/db";
-import React, { useState, useEffect } from "react";
-import { Modal } from "antd";
+import { useState, useEffect } from "react";
+import { Modal, Dropdown, Menu } from "antd";
 import ModelCascader, { ProviderGroup } from "./ModelCascader";
-import { PROVIDER_MODELS } from "~/utils/openaiModels";
+import { useLiveQuery } from "dexie-react-hooks";
 
 interface HeaderProps {
-  setShowSettings: (value: boolean) => void;
   createNewConversation: () => void;
-  setShowConversationList: () => void;
-  showSettings: boolean;
+  setShowConversationList: (value?: boolean) => void;
+  onLogout: () => void;
   onModelChange?: (model: string) => void;
 }
 
 const Header = ({
-  setShowSettings,
   createNewConversation,
   setShowConversationList,
-  showSettings,
+  onLogout,
   onModelChange,
 }: HeaderProps) => {
   const [providerGroups, setProviderGroups] = useState<ProviderGroup[]>([]);
@@ -29,17 +23,50 @@ const Header = ({
   const [selectedModelId, setSelectedModelId] = useState<string>("");
   const [apiKeyInput, setApiKeyInput] = useState("");
   const [editingProvider, setEditingProvider] = useState<string | null>(null);
-  const [isSavingApiKey, setIsSavingApiKey] = useState(false);
   const [apiModalOpen, setApiModalOpen] = useState(false);
 
+  const user = useLiveQuery(() => db.getCurrentUser(), []);
+  const models = useLiveQuery(
+    () => (user?.id ? db.getUserModels(user.id) : []),
+    [user?.id]
+  );
+
   useEffect(() => {
-    setProviderGroups(PROVIDER_MODELS);
-    if (PROVIDER_MODELS.length > 0) {
-      setSelectedProvider((prev) => prev || PROVIDER_MODELS[0].type);
-      const firstModel = PROVIDER_MODELS[0].models[0];
-      setSelectedModelId((prev) => prev || (firstModel ? firstModel.id : ""));
-    }
-  }, []);
+    const init = async () => {
+      console.log("user", user);
+      if (user) {
+        // 构建 fullProviderGroups（含完整模型信息）
+        const fullGroups: Record<string, any> = {};
+        (models ?? []).forEach((model) => {
+          if (!fullGroups[model.type]) {
+            fullGroups[model.type] = {
+              type: model.type,
+              models: [],
+            };
+          }
+          fullGroups[model.type].models.push(model); // 保留完整对象
+        });
+        const fullProviderGroups = Object.values(fullGroups);
+
+        // 构建 providerGroups（只含 id, name）
+        const providerGroups = fullProviderGroups.map((g: any) => ({
+          type: g.type,
+          models: g.models.map((m: any) => ({ id: m.id, name: m.name })),
+        }));
+        console.log("groupArr", providerGroups);
+        setProviderGroups(providerGroups);
+        // Set default provider/model
+        if (providerGroups.length > 0) {
+          setSelectedProvider((prev) => prev || providerGroups[0].type);
+          const firstModel = providerGroups[0].models[0];
+          setSelectedModelId(
+            (prev) => prev || (firstModel ? firstModel.id : "")
+          );
+        }
+      }
+    };
+    init();
+  }, [user, models]);
 
   // When provider changes, update model selection
   useEffect(() => {
@@ -54,6 +81,7 @@ const Header = ({
 
   // Handler for cascader change
   const handleCascaderChange = (value: string[]) => {
+    // value: [providerType, modelId]
     if (value.length === 2) {
       setSelectedProvider(value[0]);
       setSelectedModelId(value[1]);
@@ -83,36 +111,51 @@ const Header = ({
   };
 
   const handleApiKeySave = async () => {
-    setIsSavingApiKey(true);
     try {
+      // Update all models for this provider with the new API key
       const user = await db.getCurrentUser();
-      if (!user) {
-        console.error("No user found");
-        return;
+      if (user) {
+        const userModels = await db.getUserModels(user.id);
+        const modelsToUpdate = userModels.filter(
+          (m: any) => m.type === editingProvider
+        );
+        for (const model of modelsToUpdate) {
+          await db.addOrUpdateModel({
+            ...model,
+            apiKey: apiKeyInput,
+            type: editingProvider || "",
+          });
+        }
+        // Refresh provider groups
+        const groups: Record<string, ProviderGroup> = {};
+        userModels.forEach((model: any) => {
+          if (!groups[model.type]) {
+            groups[model.type] = {
+              type: model.type,
+              models: [],
+            };
+          }
+          groups[model.type].models.push({ id: model.id, name: model.name });
+        });
+        setProviderGroups(Object.values(groups));
       }
-      const userModels = await db.getUserModels(user.id);
-      const modelsToUpdate = userModels.filter(
-        (m: any) => m.type === editingProvider
-      );
-      if (modelsToUpdate.length === 0) {
-        console.error("No models found for provider:", editingProvider);
-        return;
-      }
-
-      await db.updateModels(
-        modelsToUpdate.map((model) => ({
-          ...model,
-          apiKey: apiKeyInput,
-        }))
-      );
       setApiModalOpen(false);
-      setApiKeyInput("");
     } catch (error) {
-      console.error("Error saving API key:", error);
-    } finally {
-      setIsSavingApiKey(false);
+      console.error("Failed to save API key:", error);
     }
   };
+
+  const menu = (
+    <Menu>
+      <Menu.Item key="profile" disabled>
+        {user?.email || user?.username || "User"}
+      </Menu.Item>
+      <Menu.Divider />
+      <Menu.Item key="logout" onClick={onLogout}>
+        Logout
+      </Menu.Item>
+    </Menu>
+  );
 
   return (
     <div
@@ -135,7 +178,7 @@ const Header = ({
         }}
       >
         <button
-          onClick={setShowConversationList}
+          onClick={() => setShowConversationList(true)}
           style={{
             display: "flex",
             alignItems: "center",
@@ -172,14 +215,12 @@ const Header = ({
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-        <div style={{ width: "200px" }}>
-          <ModelCascader
-            providerGroups={providerGroups as ProviderGroup[]}
-            value={cascaderValue as [string, string]}
-            onChange={handleCascaderChange}
-            onProviderSetting={handleProviderSetting}
-          />
-        </div>
+        <ModelCascader
+          providerGroups={providerGroups as ProviderGroup[]}
+          value={cascaderValue as [string, string]}
+          onChange={handleCascaderChange}
+          onProviderSetting={handleProviderSetting}
+        />
         <button
           onClick={createNewConversation}
           style={{
@@ -207,37 +248,32 @@ const Header = ({
         >
           <SquarePen size={20} />
         </button>
-        <button
-          onClick={() => setShowSettings(!showSettings)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "44px",
-            height: "44px",
-            color: showSettings ? "#111827" : "#6b7280",
-            background: "none",
-            border: "none",
-            padding: 0,
-            cursor: "pointer",
-            transition: "all 0.2s",
-            borderRadius: "8px",
-          }}
-          onMouseOver={(e) => {
-            if (!showSettings) {
-              e.currentTarget.style.color = "#374151";
-              e.currentTarget.style.backgroundColor = "#F3F4F6";
-            }
-          }}
-          onMouseOut={(e) => {
-            if (!showSettings) {
-              e.currentTarget.style.color = "#6b7280";
-              e.currentTarget.style.backgroundColor = "transparent";
-            }
-          }}
-        >
-          <SettingsIcon size={20} />
-        </button>
+        <Dropdown overlay={menu} trigger={["click"]} placement="bottomRight">
+          <button
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 36,
+              height: 36,
+              borderRadius: "50%",
+              border: "none",
+              background: "#f3f4f6",
+              cursor: "pointer",
+              overflow: "hidden",
+            }}
+          >
+            {user?.photoURL ? (
+              <img
+                src={user.photoURL}
+                alt={user.username || "User"}
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
+            ) : (
+              <UserIcon size={20} color="#6b7280" />
+            )}
+          </button>
+        </Dropdown>
       </div>
 
       {/* API Key Modal */}
@@ -251,42 +287,25 @@ const Header = ({
           background: "#fff",
           borderRadius: 10,
           color: "#111",
-          padding: 16,
         }}
       >
         <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>
-          设置 API 密钥：
+          Set API Key:
           {editingProvider
             ? editingProvider.charAt(0).toUpperCase() + editingProvider.slice(1)
             : ""}
         </div>
-        {/* <div style={{ color: "#f87171", fontSize: 12, marginBottom: 8 }}>
-          您的密钥将永远有效
-        </div>
-        <div style={{ marginBottom: 8 }}>
-          <select
-            style={{
-              width: 120,
-              height: 28,
-              borderRadius: 6,
-              fontSize: 13,
-              border: "1px solid #d1d5db",
-              fontWeight: 500,
-              paddingLeft: 8,
-            }}
-            defaultValue="Expires never"
-          >
-            <option>Expires never</option>
-          </select>
-        </div> */}
-        <div style={{ fontWeight: 600, marginBottom: 4, fontSize: 13 }}>
-          {editingProvider
-            ? `${editingProvider.charAt(0).toUpperCase() + editingProvider.slice(1)} API Key`
-            : "API Key"}
-        </div>
-        <div style={{ width: "100%" }}>
+
+        <div
+          style={{
+            width: "100%",
+            gap: 12,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
           <input
-            placeholder={`输入值：${editingProvider ? editingProvider.charAt(0).toUpperCase() + editingProvider.slice(1) + " API Key" : "API Key"}`}
+            placeholder={`Enter ${editingProvider ? editingProvider.charAt(0).toUpperCase() + editingProvider.slice(1) + " API Key" : "API Key"}`}
             value={apiKeyInput}
             onChange={(e) => setApiKeyInput(e.target.value)}
             style={{
@@ -326,7 +345,7 @@ const Header = ({
               }}
               onClick={handleApiKeySave}
             >
-              提交
+              Save
             </button>
             <button
               style={{
@@ -343,7 +362,7 @@ const Header = ({
               }}
               onClick={() => setApiModalOpen(false)}
             >
-              取消
+              Cancel
             </button>
           </div>
         </div>
