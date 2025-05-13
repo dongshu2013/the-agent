@@ -3,6 +3,7 @@ import * as jose from 'jose';
 
 import { GatewayServiceContext, GatewayServiceError } from './types/service';
 import { getUserFromApiKey } from './d1/user';
+import { FIREBASE_PROJECT_ID } from './utils/common';
 
 // Authentication middleware for JWT or API_KEY
 export async function jwtOrApiKeyAuthMiddleware(
@@ -92,8 +93,8 @@ async function verifyJWT(
     // Import the public key and verify the token
     const publicKeyObj = await jose.importX509(publicKey, 'RS256');
     await jose.jwtVerify(token, publicKeyObj, {
-      issuer: 'https://securetoken.google.com/ashcoin-51786',
-      audience: 'ashcoin-51786',
+      issuer: `https://securetoken.google.com/${FIREBASE_PROJECT_ID}`,
+      audience: FIREBASE_PROJECT_ID,
     });
 
     return {

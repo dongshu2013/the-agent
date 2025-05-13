@@ -5,3 +5,5 @@ export const corsHeaders = {
 };
 
 export const DEFAULT_MODEL = 'deepseek-chat';
+
+export const FIREBASE_PROJECT_ID = 'ashcoin-51786';
