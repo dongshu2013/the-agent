@@ -1,7 +1,10 @@
+import { GatewayServiceError } from '../types/service';
 import { OrderStatus } from './types';
 
+const BASE = 100000;
+
 async function getCreditFromAmount(amount: number) {
-  return amount;
+  return amount * BASE;
 }
 
 export async function createOrder(
@@ -15,60 +18,51 @@ export async function createOrder(
     .bind(userId, amount)
     .run();
   if (!result.success) {
-    throw new Error('Failed to create order');
+    throw new GatewayServiceError(500, 'Failed to create order');
   }
   return String(result.meta.last_row_id);
-}
-
-export async function updateOrderSessionId(
-  env: Env,
-  orderId: string,
-  sessionId: string
-) {
-  const db = env.UDB;
-  const result = await db
-    .prepare('UPDATE orders SET stripe_session_id = ? WHERE id = ?')
-    .bind(sessionId, orderId)
-    .run();
-  if (!result.success) {
-    throw new Error('Failed to update order');
-  }
 }
 
 export async function updateOrderStatus(
   env: Env,
   orderId: string,
+  sessionId: string,
   status: OrderStatus
 ) {
   const db = env.UDB;
   const result = await db
-    .prepare('UPDATE orders SET status = ? WHERE id = ?')
-    .bind(status, orderId)
+    .prepare('UPDATE orders SET status = ?, stripe_session_id = ? WHERE id = ?')
+    .bind(status, sessionId, orderId)
     .run();
   if (!result.success) {
-    throw new Error('Failed to update order');
+    throw new GatewayServiceError(500, 'Failed to update order');
   }
 }
 
-export async function finalizeOrder(env: Env, orderId: string) {
+export async function finalizeOrder(
+  env: Env,
+  orderId: string,
+  sessionId: string,
+  amount: number
+) {
   const db = env.UDB;
   const orders = await db
-    .prepare('SELECT user_id, amount FROM orders WHERE id = ?')
+    .prepare('SELECT user_id FROM orders WHERE id = ?')
     .bind(orderId)
     .all();
   if (!orders.success || orders.results.length === 0) {
-    throw new Error('Order not found');
+    throw new GatewayServiceError(404, 'Order not found');
   }
   const order = orders.results[0];
-  const credits = getCreditFromAmount(order.amount as number);
+  const credits = getCreditFromAmount(amount);
 
   const stmt1 = db.prepare(
     "UPDATE orders SET status = 'finalized' WHERE id = ?"
   );
   const stmt2 = db.prepare(
     'INSERT INTO credit_history' +
-      '(user_id, tx_credits, tx_type, tx_reason, order_id)' +
-      'VALUES (?, ?, ?, ?, ?)'
+      '(user_id, tx_credits, tx_type, tx_reason, order_id, stripe_session_id)' +
+      'VALUES (?, ?, ?, ?, ?, ?)'
   );
   const stmt3 = db.prepare(
     'UPDATE users SET balance = balance + ? WHERE id = ?'
@@ -76,11 +70,11 @@ export async function finalizeOrder(env: Env, orderId: string) {
 
   const [result1, result2, result3] = await db.batch([
     stmt1.bind(orderId),
-    stmt2.bind(order.user_id, credits, 'credit', 'order', orderId),
+    stmt2.bind(order.user_id, credits, 'credit', 'order', orderId, sessionId),
     stmt3.bind(credits, order.user_id),
   ]);
 
   if (!result1.success || !result2.success || !result3.success) {
-    throw new Error('Failed to finalize order');
+    throw new GatewayServiceError(500, 'Failed to finalize order');
   }
 }

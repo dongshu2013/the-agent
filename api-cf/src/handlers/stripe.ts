@@ -3,12 +3,7 @@ import { Context } from 'hono';
 import { z } from 'zod';
 
 import Stripe from 'stripe';
-import {
-  createOrder,
-  finalizeOrder,
-  updateOrderSessionId,
-  updateOrderStatus,
-} from '../d1/payment';
+import { createOrder, finalizeOrder, updateOrderStatus } from '../d1/payment';
 
 export function getStripe(env: Env) {
   if (!env.STRIPE_PRIVATE_KEY) {
@@ -91,12 +86,7 @@ export class StripeCheckout extends OpenAPIRoute {
         userEmail: c.get('userEmail'),
       },
     };
-    try {
-      const session = await stripe.checkout.sessions.create(options);
-      await updateOrderSessionId(env, orderId, session.id);
-    } catch {
-      await updateOrderStatus(env, orderId, 'failed');
-    }
+    await stripe.checkout.sessions.create(options);
     return c.json({
       success: true,
       orderId: orderId,
@@ -137,16 +127,17 @@ export class StripeWebhook extends OpenAPIRoute {
 
     switch (event.type) {
       case 'checkout.session.completed':
+      case 'checkout.session.async_payment_succeeded':
         const completed = event.data.object as Stripe.Checkout.Session;
-        if (!completed.metadata?.orderId) {
-          console.log('invalid order id');
+        if (!completed.metadata?.orderId || !completed.amount_subtotal) {
+          console.log('invalid order id or payment amount');
           return;
         }
-
-        await updateOrderStatus(
+        await finalizeOrder(
           c.env,
-          completed.metadata?.orderId,
-          'completed'
+          completed.metadata.orderId,
+          completed.id,
+          completed.amount_subtotal
         );
         break;
       case 'checkout.session.expired':
@@ -155,36 +146,29 @@ export class StripeWebhook extends OpenAPIRoute {
           console.log('invalid order id');
           return;
         }
-        await updateOrderStatus(c.env, expired.metadata?.orderId, 'cancelled');
+        await updateOrderStatus(
+          c.env,
+          expired.metadata?.orderId,
+          expired.id,
+          'cancelled'
+        );
         break;
-      case 'payment_intent.canceled':
-        const canceled = event.data.object as Stripe.PaymentIntent;
-        if (!canceled.metadata?.orderId) {
-          console.log('invalid order id');
-          return;
-        }
-        await updateOrderStatus(c.env, canceled.metadata?.orderId, 'cancelled');
-        break;
-      case 'payment_intent.succeeded':
-        const succeeded = event.data.object as Stripe.PaymentIntent;
-        if (!succeeded.metadata?.orderId) {
-          console.log('invalid order id');
-          return;
-        }
-        await finalizeOrder(c.env, succeeded.metadata?.orderId);
-        break;
-      case 'payment_intent.payment_failed':
-        const failed = event.data.object as Stripe.PaymentIntent;
+      case 'checkout.session.async_payment_failed':
+        const failed = event.data.object as Stripe.Checkout.Session;
         if (!failed.metadata?.orderId) {
           console.log('invalid order id');
           return;
         }
-        await updateOrderStatus(c.env, failed.metadata?.orderId, 'failed');
+        await updateOrderStatus(
+          c.env,
+          failed.metadata?.orderId,
+          failed.id,
+          'failed'
+        );
         break;
       default:
         console.log(`Unhandled event type ${event.type}`);
     }
-
     return c.json({
       received: true,
     });
