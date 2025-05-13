@@ -1,3 +1,5 @@
+import { CreditLog } from "@/types";
+
 async function postApiService(endpoint: string, token: string, body?: object) {
     if (!process.env.API_URL) {
         throw new Error("API_URL is not defined");
@@ -17,17 +19,6 @@ async function postApiService(endpoint: string, token: string, body?: object) {
     return response.json();
 }
 
-export async function postCheckout(token: string, amount: number): Promise<any> {
-    return await postApiService("/v1/stripe/checkout", token, { amount });
-}
-
-export async function postToggleApiKey(token: string, enabled: boolean): Promise<any> {
-    return await postApiService("/v1/user/toggle_api_key_enabled", token, { enabled });
-}
-
-export async function postRotateApiKey(token: string): Promise<{newApiKey: string}> {
-    return await postApiService("/v1/user/rotate_api_key", token);
-}
 
 async function getApiService(endpoint: string, token: string): Promise<any> {
     if (!process.env.API_URL) {
@@ -47,27 +38,22 @@ async function getApiService(endpoint: string, token: string): Promise<any> {
     return response.json();
 }
 
-export interface GetUserResponse {
-    success: boolean;
-    user: {
-        api_key: string;
-        api_key_enabled: boolean;
-        balance: number;
-        email: string;
-    };
+
+export async function postCheckout(token: string, amount: number): Promise<any> {
+    return await postApiService("/v1/stripe/checkout", token, { amount });
+}
+
+export async function postToggleApiKey(token: string, enabled: boolean): Promise<void> {
+    await postApiService("/v1/user/toggle_api_key_enabled", token, { enabled });
+}
+
+export async function postRotateApiKey(token: string): Promise<{newApiKey: string}> {
+    const response = await postApiService("/v1/user/rotate_api_key", token);
+    return response as {newApiKey: string};
 }
 
 export async function getUserInfo(token: string): Promise<GetUserResponse> {
     return await getApiService("/v1/user", token);
-}
-
-export interface CreditLog {
-    id: number;
-    tx_credits: number;
-    tx_type: string;
-    tx_reason?: string;
-    model?: string;
-    created_at: string;
 }
 
 export interface GetCreditHistoryResponse {

@@ -4,13 +4,15 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 
+type TransactionType = 'new_user' | 'order_pay' | 'system_add' | 'completion';
+
 interface FilterOptions {
   models: string[];
-  transTypes: TransactionType[];
+  txTypes: TransactionType[];
 }
 
 export const CreditsTable = () => {
-  const [credits, setCredits] = useState<CreditTransaction[]>([]);
+  const [credits, setCredits] = useState<CreditLog[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     models: [],
@@ -76,6 +78,11 @@ export const CreditsTable = () => {
     }
   };
 
+  /**
+   * Converts a TransactionType enum value to a human-readable string.
+   * @param type The TransactionType enum value to convert.
+   * @returns A human-readable string representation of the given TransactionType.
+   */
   const formatTransType = (type: TransactionType) => {
     switch (type) {
       case 'new_user':

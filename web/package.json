@@ -9,26 +9,13 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --no-lint",
-    "build:railway": "prisma generate && (next build --no-lint || next build)",
+    "build:railway": "next build --no-lint || next build",
     "start": "next start",
-    "lint": "next lint",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio",
-    "prisma:push": "prisma db push"
+    "lint": "next lint"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.796.0",
-    "@aws-sdk/s3-request-presigner": "^3.796.0",
-    "@internationalized/date": "^3.8.0",
-    "@prisma/client": "^6.6.0",
-    "@tanstack/react-query": "^5.75.2",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "firebase": "^11.6.0",
-    "firebase-admin": "^13.2.0",
     "lucide-react": "^0.507.0",
     "next": "15.3.0",
     "react": "^19.0.0",
@@ -36,18 +23,15 @@
     "react-dom": "^19.0.0",
     "react-firebase-hooks": "^5.1.1",
     "recharts": "^2.15.3",
-    "sonner": "^2.0.3",
-    "tailwind-merge": "^3.2.0"
+    "sonner": "^2.0.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "^4",
     "@types/node": "^20.17.30",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.3.0",
-    "tailwindcss": "^4",
     "typescript": "^5"
   }
 }
