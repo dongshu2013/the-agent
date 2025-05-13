@@ -11,7 +11,7 @@ export class CreateConversation extends OpenAPIRoute {
         content: {
           'application/json': {
             schema: z.object({
-              id: z.number(),
+              id: z.number().optional(),
             }),
           },
         },
@@ -24,7 +24,7 @@ export class CreateConversation extends OpenAPIRoute {
           'application/json': {
             schema: z.object({
               success: z.boolean(),
-              conversation: z.number(),
+              id: z.number(),
             }),
           },
         },
@@ -34,15 +34,17 @@ export class CreateConversation extends OpenAPIRoute {
 
   async handle(c: Context) {
     const userId = c.get('userId');
-    const { id } = await c.req.json();
     const doId = c.env.AgentContext.idFromName(userId);
     const stub = c.env.AgentContext.get(doId);
-    const conversationId = await stub.createConversation(id);
+
+    const { id } = await c.req.json();
+    const convId = id || Date.now();
+    await stub.createConversation(convId);
 
     return c.json(
       {
         success: true,
-        conversation: conversationId,
+        id: convId,
       },
       200
     );
