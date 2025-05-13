@@ -251,34 +251,14 @@ const Header = ({
           background: "#fff",
           borderRadius: 10,
           color: "#111",
-          padding: 16,
         }}
       >
         <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>
-          设置 API 密钥：
+          Set API Key for:
           {editingProvider
             ? editingProvider.charAt(0).toUpperCase() + editingProvider.slice(1)
             : ""}
         </div>
-        {/* <div style={{ color: "#f87171", fontSize: 12, marginBottom: 8 }}>
-          您的密钥将永远有效
-        </div>
-        <div style={{ marginBottom: 8 }}>
-          <select
-            style={{
-              width: 120,
-              height: 28,
-              borderRadius: 6,
-              fontSize: 13,
-              border: "1px solid #d1d5db",
-              fontWeight: 500,
-              paddingLeft: 8,
-            }}
-            defaultValue="Expires never"
-          >
-            <option>Expires never</option>
-          </select>
-        </div> */}
         <div style={{ fontWeight: 600, marginBottom: 4, fontSize: 13 }}>
           {editingProvider
             ? `${editingProvider.charAt(0).toUpperCase() + editingProvider.slice(1)} API Key`
@@ -286,7 +266,7 @@ const Header = ({
         </div>
         <div style={{ width: "100%" }}>
           <input
-            placeholder={`输入值：${editingProvider ? editingProvider.charAt(0).toUpperCase() + editingProvider.slice(1) + " API Key" : "API Key"}`}
+            placeholder={`${editingProvider ? editingProvider.charAt(0).toUpperCase() + editingProvider.slice(1) + " API Key" : "API Key"}`}
             value={apiKeyInput}
             onChange={(e) => setApiKeyInput(e.target.value)}
             style={{
@@ -326,7 +306,7 @@ const Header = ({
               }}
               onClick={handleApiKeySave}
             >
-              提交
+              Save
             </button>
             <button
               style={{
@@ -343,7 +323,7 @@ const Header = ({
               }}
               onClick={() => setApiModalOpen(false)}
             >
-              取消
+              Cancel
             </button>
           </div>
         </div>
