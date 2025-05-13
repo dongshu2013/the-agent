@@ -36,8 +36,12 @@ export class GetUser extends OpenAPIRoute {
       const userId = c.get('userId');
       const userInfo = await getUserInfo(c.env, userId);
       if (!userInfo) {
-        // create user
-        const user = await createUser(c.env, userId, c.get('userEmail'));
+        // initiate user
+        const email = c.get('userEmail');
+        if (!email) {
+          throw new Error('User email not found');
+        }
+        const user = await createUser(c.env, userId, email);
         return c.json(
           {
             success: true,
