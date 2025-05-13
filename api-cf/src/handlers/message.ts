@@ -48,8 +48,8 @@ export class SaveMessage extends OpenAPIRoute {
     const body = await c.req.json();
 
     // Save the message
-    const id = c.env.AgentContext.idFromName(userId);
-    const stub = c.env.AgentContext.get(id);
+    const doId = c.env.AgentContext.idFromName(userId);
+    const stub = c.env.AgentContext.get(doId);
     const { success, topKMessageIds } = await stub.saveMessage(
       body.conversation_id,
       body.message,

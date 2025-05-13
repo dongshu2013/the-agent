@@ -6,6 +6,17 @@ import { Context } from 'hono';
 
 export class CreateConversation extends OpenAPIRoute {
   schema = {
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: z.object({
+              id: z.number(),
+            }),
+          },
+        },
+      },
+    },
     responses: {
       '200': {
         description: 'Conversation created successfully',
@@ -23,9 +34,10 @@ export class CreateConversation extends OpenAPIRoute {
 
   async handle(c: Context) {
     const userId = c.get('userId');
-    const id = c.env.AgentContext.idFromName(userId);
-    const stub = c.env.AgentContext.get(id);
-    const conversationId = await stub.createConversation();
+    const { id } = await c.req.json();
+    const doId = c.env.AgentContext.idFromName(userId);
+    const stub = c.env.AgentContext.get(doId);
+    const conversationId = await stub.createConversation(id);
 
     return c.json(
       {
@@ -42,9 +54,15 @@ export class CreateConversation extends OpenAPIRoute {
 export class DeleteConversation extends OpenAPIRoute {
   schema = {
     request: {
-      query: z.object({
-        conversationId: z.number(),
-      }),
+      body: {
+        content: {
+          'application/json': {
+            schema: z.object({
+              id: z.number(),
+            }),
+          },
+        },
+      },
     },
     responses: {
       '200': {
@@ -62,11 +80,11 @@ export class DeleteConversation extends OpenAPIRoute {
 
   async handle(c: Context) {
     const userId = c.get('userId');
-    const { conversationId } = c.req.query();
+    const { id } = await c.req.json();
 
-    const id = c.env.AgentContext.idFromName(userId);
-    const stub = c.env.AgentContext.get(id);
-    await stub.deleteConversation(conversationId);
+    const doId = c.env.AgentContext.idFromName(userId);
+    const stub = c.env.AgentContext.get(doId);
+    await stub.deleteConversation(id);
     return c.json(
       {
         success: true,
@@ -111,8 +129,8 @@ export class ListConversations extends OpenAPIRoute {
     const userId = c.get('userId');
     const env = c.env;
 
-    const id = env.AgentContext.idFromName(userId);
-    const stub = env.AgentContext.get(id);
+    const doId = env.AgentContext.idFromName(userId);
+    const stub = env.AgentContext.get(doId);
     const conversations = await stub.listConversations();
     return c.json(
       {
