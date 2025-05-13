@@ -44,42 +44,25 @@ export class SaveMessage extends OpenAPIRoute {
   };
 
   async handle(c: Context) {
-    try {
-      const userId = c.get('userId');
-      const body = await c.req.json();
+    const userId = c.get('userId');
+    const body = await c.req.json();
 
-      // Save the message
-      const id = c.env.AgentContext.idFromName(userId);
-      const stub = c.env.AgentContext.get(id);
-      const { success, topKMessageIds } = await stub.saveMessage(
-        body.conversation_id,
-        body.message,
-        body.top_k_related || 0
-      );
+    // Save the message
+    const id = c.env.AgentContext.idFromName(userId);
+    const stub = c.env.AgentContext.get(id);
+    const { success, topKMessageIds } = await stub.saveMessage(
+      body.conversation_id,
+      body.message,
+      body.top_k_related || 0
+    );
 
-      // Return success response with CORS headers
-      return c.json(
-        {
-          success,
-          top_k_message_ids: topKMessageIds,
-        },
-        200
-      );
-    } catch (error) {
-      console.error('Error saving message:', error);
-      return c.json(
-        {
-          success: false,
-          error: {
-            message:
-              error instanceof Error
-                ? error.message
-                : 'An unknown error occurred',
-            code: 'server_error',
-          },
-        },
-        500
-      );
-    }
+    // Return success response with CORS headers
+    return c.json(
+      {
+        success,
+        top_k_message_ids: topKMessageIds,
+      },
+      200
+    );
   }
 }

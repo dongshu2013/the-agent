@@ -103,7 +103,6 @@ export async function getCreditLogs(
   limit = 10
 ): Promise<CreditLog[]> {
   const db = env.UDB;
-  console.log('userId: ', userId);
   const result = await db
     .prepare(
       'SELECT id, tx_credits, tx_type, tx_reason, model, created_at' +
