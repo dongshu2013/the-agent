@@ -27,8 +27,7 @@ export async function verifyIdToken(token: string) {
       email: decodedToken.email,
       isValid: true,
     };
-  } catch (error) {
-    console.error("Error verifying ID token:", error);
+  } catch {
     return { isValid: false, uid: null, email: null };
   }
 }
