@@ -19,7 +19,7 @@ async function postApiService(endpoint: string, token: string, body?: object) {
   return response.json();
 }
 
-async function getApiService(endpoint: string, token: string): Promise<any> {
+async function getApiService(endpoint: string, token: string) {
   if (!process.env.NEXT_PUBLIC_API_URL) {
     throw new Error('NEXT_PUBLIC_API_URL is not defined');
   }
@@ -37,7 +37,13 @@ async function getApiService(endpoint: string, token: string): Promise<any> {
   return response.json();
 }
 
-export async function postCheckout(token: string, amount: number): Promise<any> {
+export async function postCheckout(
+  token: string,
+  amount: number,
+): Promise<{
+  orderId: string;
+  sessionId: string;
+}> {
   return await postApiService('v1/stripe/checkout', token, { amount });
 }
 

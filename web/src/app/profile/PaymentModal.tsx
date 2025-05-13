@@ -26,20 +26,14 @@ export const PaymentModal = ({ isOpen, onClose }: PaymentModalProps) => {
 
     setIsSubmitting(true);
     try {
-      const data = await postCheckout(user.idToken, amount);
-      // console.log("---checkout data:", data);
-
-      const { public_key, session_id } = data.data;
-      const stripe = await loadStripe(public_key);
+      const { sessionId } = await postCheckout(user.idToken, amount);
+      const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY);
       if (!stripe) {
         toast.error('checkout failed');
         return;
       }
 
-      const result = await stripe.redirectToCheckout({
-        sessionId: session_id,
-      });
-
+      const result = await stripe.redirectToCheckout({ sessionId });
       if (result.error) {
         toast.error(result.error.message);
       }

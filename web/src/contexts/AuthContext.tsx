@@ -76,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const result = await getRedirectResult(auth);
         if (result) {
           const user = result.user;
-          const idToken = await getToken(user);
+          const idToken = await getIdToken(user);
           setUser({
             id: user.uid,
             email: user.email,
@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!auth.currentUser) return null;
 
     try {
-      const newToken = await getToken(auth.currentUser);
+      const newToken = await getIdToken(auth.currentUser);
       setUser((prev) => (prev ? { ...prev, idToken: newToken } : null));
       return newToken;
     } catch (error) {
@@ -131,14 +131,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (!resp.ok) throw new Error('Login failed');
       const { jwt } = await resp.json();
-
-      console.log('..signInWithGoogle..', jwt);
-
       // 用自定义 JWT 登录 Firebase
       const userCredential = await signInWithCustomToken(auth, jwt);
       const user = userCredential.user;
-
-      console.log(',.,.,.,.,.', jwt);
 
       // 更新用户状态
       setUser({

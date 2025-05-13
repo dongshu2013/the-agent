@@ -11,6 +11,9 @@ importers:
       '@stripe/stripe-js':
         specifier: ^7.3.0
         version: 7.3.0
+      date-fns:
+        specifier: ^4.1.0
+        version: 4.1.0
       firebase:
         specifier: ^11.6.0
         version: 11.6.0
@@ -45,6 +48,9 @@ importers:
         specifier: ^4.1.6
         version: 4.1.6
     devDependencies:
+      '@next/eslint-plugin-next':
+        specifier: ^15.3.2
+        version: 15.3.2
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.1.6
@@ -75,9 +81,6 @@ importers:
       eslint-plugin-prettier:
         specifier: ^4.2.1
         version: 4.2.1(eslint-config-prettier@8.10.0(eslint@8.57.1))(eslint@8.57.1)(prettier@2.8.8)
-      husky:
-        specifier: ^9.1.7
-        version: 9.1.7
       lint-staged:
         specifier: ^13.3.0
         version: 13.3.0
@@ -537,6 +540,9 @@ packages:
 
   '@next/eslint-plugin-next@15.3.0':
     resolution: {integrity: sha512-511UUcpWw5GWTyKfzW58U2F/bYJyjLE9e3SlnGK/zSXq7RqLlqFO8B9bitJjumLpj317fycC96KZ2RZsjGNfBw==}
+
+  '@next/eslint-plugin-next@15.3.2':
+    resolution: {integrity: sha512-ijVRTXBgnHT33aWnDtmlG+LJD+5vhc9AKTJPquGG5NKXjpKNjc62woIhFtrAcWdBobt8kqjCoaJ0q6sDQoX7aQ==}
 
   '@next/swc-darwin-arm64@15.3.0':
     resolution: {integrity: sha512-PDQcByT0ZfF2q7QR9d+PNj3wlNN4K6Q8JoHMwFyk252gWo4gKt7BF8Y2+KBgDjTFBETXZ/TkBEUY7NIIY7A/Kw==}
@@ -1785,11 +1791,6 @@ packages:
   human-signals@4.3.1:
     resolution: {integrity: sha512-nZXjEF2nbo7lIw3mgYjItAfgQXog3OjJogSbKa2CQIIvSGWcKgeJnQlNXip6NglNzYH45nSRiEVimMvYL8DDqQ==}
     engines: {node: '>=14.18.0'}
-
-  husky@9.1.7:
-    resolution: {integrity: sha512-5gs5ytaNjBrh5Ow3zrvdUUY+0VxIuWVL4i9irt6friV+BqdCfmV11CQTWMiBYWHbXhco+J1kHfTOUkePhCDvMA==}
-    engines: {node: '>=18'}
-    hasBin: true
 
   idb@7.1.1:
     resolution: {integrity: sha512-gchesWBzyvGHRO9W8tzUWFDycow5gwjvFKfyV9FF32Y7F50yZMp7mP+T2mJIWFx49zicqyC4uefHM17o6xKIVQ==}
@@ -3492,6 +3493,10 @@ snapshots:
     dependencies:
       fast-glob: 3.3.1
 
+  '@next/eslint-plugin-next@15.3.2':
+    dependencies:
+      fast-glob: 3.3.1
+
   '@next/swc-darwin-arm64@15.3.0':
     optional: true
 
@@ -4960,8 +4965,6 @@ snapshots:
       - supports-color
 
   human-signals@4.3.1: {}
-
-  husky@9.1.7: {}
 
   idb@7.1.1: {}
 

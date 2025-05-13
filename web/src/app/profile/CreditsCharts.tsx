@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { Expand } from 'lucide-react';
 import { getCreditHistory } from '@/lib/api_service';
 import { CreditLog } from '@/types';
@@ -100,22 +100,6 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
     setLastWeekSpend(parseFloat(weekSpendTotal.toFixed(4)));
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white dark:bg-gray-800 p-2 border border-gray-200 dark:border-gray-700 shadow-sm rounded-md">
-          <p className="text-sm font-medium">{label}</p>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            {payload[0].name === 'value' ? '$' : ''}
-            {payload[0].value}
-            {payload[0].name !== 'value' ? ' tokens' : ''}
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
-
   return (
     <div className={className}>
       {/* Spend Chart */}
@@ -139,7 +123,6 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
               <BarChart data={spendData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
                 <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                 <YAxis hide />
-                <Tooltip content={<CustomTooltip />} />
                 <Bar dataKey="value" fill="#4F46E5" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>

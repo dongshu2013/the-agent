@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import Stripe from 'stripe';
 import { createOrder, finalizeOrder, updateOrderStatus } from '../d1/payment';
+import { GatewayServiceError } from '../types/service';
 
 export function getStripe(env: Env) {
   if (!env.STRIPE_PRIVATE_KEY) {
@@ -34,12 +35,8 @@ export class StripeCheckout extends OpenAPIRoute {
         content: {
           'application/json': {
             schema: z.object({
-              success: z.boolean(),
-              data: z.object({
-                orderId: z.string(),
-                public_key: z.string(),
-                session_id: z.string(),
-              }),
+              orderId: z.string(),
+              session_id: z.string(),
             }),
           },
         },
@@ -54,13 +51,7 @@ export class StripeCheckout extends OpenAPIRoute {
     const stripe = getStripe(env);
 
     if (params.amount < 5) {
-      return c.json(
-        {
-          success: false,
-          error: 'Invalid amount',
-        },
-        400
-      );
+      throw new GatewayServiceError(400, 'invalid amount');
     }
     const orderId = await createOrder(env, userId, params.amount);
     const options: Stripe.Checkout.SessionCreateParams = {
@@ -90,12 +81,8 @@ export class StripeCheckout extends OpenAPIRoute {
     };
     const session = await stripe.checkout.sessions.create(options);
     return c.json({
-      success: true,
-      data: {
-        orderId: orderId,
-        public_key: env.STRIPE_PUBLIC_KEY,
-        session_id: session.id,
-      },
+      orderId: orderId,
+      session_id: session.id,
     });
   }
 }
@@ -108,12 +95,7 @@ export class StripeWebhook extends OpenAPIRoute {
         content: {
           'application/json': {
             schema: z.object({
-              success: z.boolean(),
-              user: z.object({
-                api_key: z.string(),
-                api_key_enabled: z.boolean(),
-                balance: z.number(),
-              }),
+              received: z.boolean(),
             }),
           },
         },
