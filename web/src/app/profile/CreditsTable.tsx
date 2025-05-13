@@ -3,12 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
+import { CreditLog, TransactionReason } from '@/types';
 
-type TransactionType = 'new_user' | 'order_pay' | 'system_add' | 'completion';
 
 interface FilterOptions {
   models: string[];
-  txTypes: TransactionType[];
+  txTypes: TransactionReason[];
 }
 
 export const CreditsTable = () => {
@@ -16,14 +16,14 @@ export const CreditsTable = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     models: [],
-    transTypes: [] as TransactionType[]
+    txTypes: [] as TransactionReason[]
   });
   
   // Filter states
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<string>('');
-  const [selectedTransType, setSelectedTransType] = useState<TransactionType | ''>('');
+  const [selectedTransType, setSelectedTransType] = useState<TransactionReason | ''>('');
   
   const { user } = useAuth();
 
@@ -78,12 +78,7 @@ export const CreditsTable = () => {
     }
   };
 
-  /**
-   * Converts a TransactionType enum value to a human-readable string.
-   * @param type The TransactionType enum value to convert.
-   * @returns A human-readable string representation of the given TransactionType.
-   */
-  const formatTransType = (type: TransactionType) => {
+  const formatTransType = (type: TransactionReason) => {
     switch (type) {
       case 'new_user':
         return 'New User';
@@ -160,11 +155,11 @@ export const CreditsTable = () => {
             <select
               id="transType"
               value={selectedTransType}
-              onChange={(e) => setSelectedTransType(e.target.value as TransactionType | '')}
+              onChange={(e) => setSelectedTransType(e.target.value as TransactionReason | '')}
               className="w-full h-9 rounded-md border border-gray-300 dark:border-gray-600 px-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               <option value="">All Types</option>
-              {filterOptions.transTypes.map((type) => (
+              {filterOptions.txTypes.map((type) => (
                 <option key={type} value={type}>{formatTransType(type)}</option>
               ))}
             </select>
@@ -222,13 +217,13 @@ export const CreditsTable = () => {
                     {formatDate(credit.created_at)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                    {formatTransType(credit.trans_type)}
+                    {formatTransType(credit.tx_reason)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                     {credit.model || '-'}
                   </td>
-                  <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${Number(credit.trans_credits) >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                    {Number(credit.trans_credits) >= 0 ? '+' : ''}{Number(credit.trans_credits).toFixed(6)}
+                  <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${credit.tx_type === 'credit' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                    {credit.tx_type === 'credit' ? '+' : '-'}{Number(credit.tx_credits).toFixed(6)}
                   </td>
                 </tr>
               ))

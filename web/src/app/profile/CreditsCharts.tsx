@@ -10,7 +10,8 @@ import {
 } from 'recharts';
 import { cn } from '@/lib/utils';
 import { Expand } from 'lucide-react';
-import { CreditLog, getCreditHistory } from '@/lib/api_service';
+import { getCreditHistory } from '@/lib/api_service';
+import { CreditLog } from '@/types';
 
 interface ChartData {
   name: string;
@@ -74,7 +75,7 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
       const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
       
       // Only process completion transactions for spend data
-      if (transaction.tx_type === 'completion' && transaction.tx_credits < 0) {
+      if (transaction.tx_reason === 'completion' && transaction.tx_credits < 0) {
         // Add to daily spend
         if (!dailySpend[dateKey]) {
           dailySpend[dateKey] = 0;

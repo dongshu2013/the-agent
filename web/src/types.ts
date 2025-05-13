@@ -1,9 +1,10 @@
+export type TransactionReason = 'new_user' | 'order_pay' | 'system_add' | 'completion';
 
 export interface CreditLog {
     id: number;
     tx_credits: number;
-    tx_type: string;
-    tx_reason?: string;
+    tx_type: "debit" | "credit";
+    tx_reason?: TransactionReason;
     model?: string;
     created_at: string;
 }
