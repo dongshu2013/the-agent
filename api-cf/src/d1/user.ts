@@ -77,7 +77,7 @@ export async function rotateApiKey(env: Env, userId: string): Promise<string> {
     .bind(newApiKey, userId)
     .run();
   if (!result.success) {
-    throw new Error('Failed to rotate API key');
+    throw new GatewayServiceError(500, 'Failed to rotate API key');
   }
   return newApiKey;
 }
@@ -93,7 +93,7 @@ export async function toggleApiKeyEnabled(
     .bind(enabled ? 1 : 0, userId)
     .run();
   if (!result.success) {
-    throw new Error('Failed to toggle API key enabled');
+    throw new GatewayServiceError(500, 'Failed to update database');
   }
 }
 
@@ -131,20 +131,15 @@ export async function getUserBalance(
   env: Env,
   userId: string
 ): Promise<number> {
-  try {
-    const db = env.UDB;
-    console.log('userId: ', userId);
-    const result = await db
-      .prepare('SELECT balance FROM users WHERE id = ?')
-      .bind(userId)
-      .all();
-    if (!result.success || result.results.length === 0) {
-      throw new GatewayServiceError(400, 'invalid user');
-    }
-    return (result.results[0].balance as number) || 0;
-  } catch (error) {
-    throw error;
+  const db = env.UDB;
+  const result = await db
+    .prepare('SELECT balance FROM users WHERE id = ?')
+    .bind(userId)
+    .all();
+  if (!result.success || result.results.length === 0) {
+    throw new GatewayServiceError(400, 'invalid user');
   }
+  return (result.results[0].balance as number) || 0;
 }
 
 // Deduct credits from user
@@ -154,34 +149,30 @@ export async function deductUserCredits(
   amount: number,
   model?: string
 ): Promise<{ success: boolean; remainingCredits: number }> {
-  try {
-    const db = env.UDB;
+  const db = env.UDB;
 
-    // Get current credits
-    const currentCredits = await getUserBalance(env, userId);
-    if (currentCredits < amount) {
-      throw new Error('Insufficient credits');
-    }
-
-    // Record the transaction
-    const insertTxStmt = db.prepare(
-      'INSERT INTO credit_history' +
-        '(user_id, tx_credits, tx_type, tx_reason, model)' +
-        'VALUES (?, ?, ?, ?, ?)'
-    );
-    const updateBalanceStmt = db.prepare(
-      'UPDATE users SET balance = balance - ? WHERE id = ?'
-    );
-
-    const [result1, result2] = await db.batch([
-      insertTxStmt.bind(userId, -amount, 'debit', 'chat', model),
-      updateBalanceStmt.bind(amount, userId),
-    ]);
-    if (!result1.success || !result2.success) {
-      throw new Error('Error deducting credits');
-    }
-    return { success: true, remainingCredits: currentCredits - amount };
-  } catch (error) {
-    throw error;
+  // Get current credits
+  const currentCredits = await getUserBalance(env, userId);
+  if (currentCredits < amount) {
+    throw new GatewayServiceError(400, 'Insufficient credits');
   }
+
+  // Record the transaction
+  const insertTxStmt = db.prepare(
+    'INSERT INTO credit_history' +
+      '(user_id, tx_credits, tx_type, tx_reason, model)' +
+      'VALUES (?, ?, ?, ?, ?)'
+  );
+  const updateBalanceStmt = db.prepare(
+    'UPDATE users SET balance = balance - ? WHERE id = ?'
+  );
+
+  const [result1, result2] = await db.batch([
+    insertTxStmt.bind(userId, -amount, 'debit', 'chat', model),
+    updateBalanceStmt.bind(amount, userId),
+  ]);
+  if (!result1.success || !result2.success) {
+    throw new GatewayServiceError(500, 'Failed to deduct credits');
+  }
+  return { success: true, remainingCredits: currentCredits - amount };
 }
