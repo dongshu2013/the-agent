@@ -15,8 +15,8 @@
   },
   "dependencies": {
     "@stripe/stripe-js": "^7.3.0",
-    "date-fns": "^4.1.0",
     "firebase": "^11.6.0",
+    "firebase-admin": "^13.2.0",
     "lucide-react": "^0.507.0",
     "next": "15.3.0",
     "react": "^19.0.0",
@@ -28,6 +28,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20.17.30",
     "@types/react": "^19",
     "@types/react-dom": "^19",

@@ -1,6 +1,6 @@
 "use client";
 
-import {
+import React, {
   createContext,
   useContext,
   useEffect,
@@ -8,13 +8,13 @@ import {
   ReactNode,
 } from "react";
 import {
-  User as FirebaseUser,
   GoogleAuthProvider,
   signInWithPopup,
   getRedirectResult,
   signOut as firebaseSignOut,
   onAuthStateChanged,
   getIdToken,
+  signInWithCustomToken,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { getUserInfo, postRotateApiKey, postToggleApiKey } from "@/lib/api_service";
@@ -39,6 +39,7 @@ interface AuthContextType {
   toggleApiKey: (enabled: boolean) => Promise<boolean>;
   refreshToken: () => Promise<string | null>;
   refreshUserData: () => Promise<void>;
+  signInWithCustomTokenFromBackend: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,18 +48,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Get the ID token for the current user
-  const getToken = async (firebaseUser: FirebaseUser): Promise<string> => {
-    return await getIdToken(firebaseUser, true); // Force refresh
-  };
-
-  // Handle user data when Firebase auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log("firebaseUser🍷", firebaseUser);
       if (firebaseUser) {
         try {
-          const idToken = await getToken(firebaseUser);
+          const idToken = await getIdToken(firebaseUser);
           const user = await getUserInfo(idToken);
           setUser({
               id: firebaseUser.uid,
@@ -78,7 +72,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setLoading(false);
     });
-
     return () => unsubscribe();
   }, []);
 
@@ -88,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const result = await getRedirectResult(auth);
         if (result) {
           const user = result.user;
-          const idToken = await getToken(user);
+          const idToken = await getIdToken(user);
           setUser({
             id: user.uid,
             email: user.email,
@@ -107,12 +100,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     handleRedirect();
   }, []);
 
-  // Refresh the ID token
   const refreshToken = async (): Promise<string | null> => {
     if (!auth.currentUser) return null;
 
     try {
-      const newToken = await getToken(auth.currentUser);
+      const newToken = await getIdToken(auth.currentUser);
       setUser((prev) => (prev ? { ...prev, idToken: newToken } : null));
       return newToken;
     } catch (error) {
@@ -124,14 +116,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      // Configure auth provider with custom parameters to avoid COOP issues
       provider.setCustomParameters({
         prompt: "select_account",
-        // This helps with some cross-origin issues
         auth_type: "rerequest",
       });
 
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const idToken = await getIdToken(result.user);
+
+      // 调用后端获取自定义 JWT
+      const resp = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
+
+      if (!resp.ok) throw new Error("Login failed");
+      const { jwt } = await resp.json();
+
+      console.log("..signInWithGoogle..", jwt);
+
+      // 用自定义 JWT 登录 Firebase
+      const userCredential = await signInWithCustomToken(auth, jwt);
+      const user = userCredential.user;
+
+      console.log(",.,.,.,.,.", jwt);
+
+      // 更新用户状态
+      setUser({
+        id: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        apiKey: null,
+        apiKeyEnabled: false,
+        credits: "0",
+        idToken: jwt,
+      });
     } catch (error) {
       console.error("Error signing in with Google", error);
     }
@@ -174,12 +195,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Function to refresh user data including credits
   const refreshUserData = async (): Promise<void> => {
     if (!user) return;
 
     try {
-      const token = await getToken(auth.currentUser);
+      const token = await getIdToken(auth.currentUser);
       const userData = await getUserInfo(token);
       setUser({
         ...user,
@@ -189,8 +209,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         idToken: token,
       });
     } catch (error) {
-      console.error('Error refreshing user data:', error);
+      console.error("Error refreshing user data:", error);
     }
+  };
+
+  const signInWithCustomTokenFromBackend = async () => {
+    console.log(".,.,.,.,.,", user);
+    const resp = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken: user?.idToken }),
+    });
+    if (!resp.ok) throw new Error("Login failed");
+    const { jwt } = await resp.json();
+
+    console.log("jwt🍷�� ", jwt);
+    await signInWithCustomToken(auth, jwt);
   };
 
   return (
@@ -198,6 +232,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         loading,
+        signInWithCustomTokenFromBackend,
         signInWithGoogle,
         signOut,
         rotateApiKey,
