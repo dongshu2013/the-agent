@@ -27,11 +27,12 @@ export async function jwtOrApiKeyAuthMiddleware(
   await next();
 }
 
-const CACHE_KEY = 'firebase-public-keys';
+const CACHE_URL =
+  'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com';
 
 async function getFirebasePublicKeys(kid: string): Promise<string> {
   const cache = caches.default;
-  const cachedResponse = await cache.match(CACHE_KEY);
+  const cachedResponse = await cache.match(CACHE_URL);
 
   if (cachedResponse) {
     const cacheAge =
@@ -45,10 +46,7 @@ async function getFirebasePublicKeys(kid: string): Promise<string> {
   }
 
   // Fetch new keys if cache is old or key not found
-  const response = await fetch(
-    'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com'
-  );
-
+  const response = await fetch(CACHE_URL);
   const keys = (await response.json()) as Record<string, string>;
 
   // Get cache expiration from Cache-Control header
@@ -65,7 +63,7 @@ async function getFirebasePublicKeys(kid: string): Promise<string> {
     },
   });
 
-  await cache.put(CACHE_KEY, cacheResponse);
+  await cache.put(CACHE_URL, cacheResponse);
   return keys[kid];
 }
 

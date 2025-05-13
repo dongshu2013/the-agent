@@ -7,11 +7,12 @@ export async function createUser(
   email: string
 ): Promise<UserInfo> {
   const db = env.UDB;
+  const apiKey = crypto.randomUUID();
   const result = await db
     .prepare(
-      'INSERT INTO users (userId, user_email, api_key, api_key_enabled) VALUES (?, ?, ?, ?)'
+      'INSERT INTO users (id, user_email, api_key, api_key_enabled) VALUES (?, ?, ?, ?)'
     )
-    .bind(userId, email, crypto.randomUUID(), 1)
+    .bind(userId, email, apiKey, 1)
     .run();
   if (!result.success) {
     throw new GatewayServiceError(500, 'Failed to create user');
@@ -19,8 +20,8 @@ export async function createUser(
   return {
     id: userId,
     email: email,
-    api_key: result.results[0].api_key as string,
-    api_key_enabled: (result.results[0].api_key_enabled as number) === 1,
+    api_key: apiKey,
+    api_key_enabled: true,
     balance: 0,
   };
 }
@@ -37,7 +38,7 @@ export async function getUserInfo(
     .bind(userId)
     .all();
   if (!result.success || result.results.length === 0) {
-    throw new GatewayServiceError(404, 'User not found');
+    return null;
   }
   return {
     id: result.results[0].id as string,
