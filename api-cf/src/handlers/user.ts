@@ -10,78 +10,6 @@ import {
   toggleApiKeyEnabled,
 } from '../d1/user';
 
-export class CreateUser extends OpenAPIRoute {
-  schema = {
-    request: {
-      query: z.object({
-        userId: z.string(),
-        email: z.string(),
-      }),
-    },
-    responses: {
-      '200': {
-        description: 'User info',
-        content: {
-          'application/json': {
-            schema: z.object({
-              success: z.boolean(),
-              user: z.object({
-                api_key: z.string(),
-                api_key_enabled: z.boolean(),
-                balance: z.number(),
-              }),
-            }),
-          },
-        },
-      },
-    },
-  };
-
-  async handle(c: Context) {
-    try {
-      const { userId, email } = c.req.query();
-      const userInfo = await createUser(c.env, userId, email);
-      if (!userInfo) {
-        return c.json(
-          {
-            success: false,
-            error: {
-              message: 'User not found',
-              code: 'not_found',
-            },
-          },
-          404
-        );
-      }
-      return c.json(
-        {
-          success: true,
-          user: {
-            api_key: userInfo.api_key,
-            api_key_enabled: userInfo.api_key_enabled,
-            balance: userInfo.balance,
-          },
-        },
-        200
-      );
-    } catch (error) {
-      return c.json(
-        {
-          success: false,
-          error: {
-            message:
-              error instanceof Error
-                ? error.message
-                : 'An unknown error occurred',
-            code: 'server_error',
-          },
-        },
-        500
-      );
-    }
-  }
-}
-
 export class GetUser extends OpenAPIRoute {
   schema = {
     responses: {
@@ -108,28 +36,32 @@ export class GetUser extends OpenAPIRoute {
       const userId = c.get('userId');
       const userInfo = await getUserInfo(c.env, userId);
       if (!userInfo) {
+        // create user
+        const user = await createUser(c.env, userId, c.get('userEmail'));
         return c.json(
           {
-            success: false,
-            error: {
-              message: 'User not found',
-              code: 'not_found',
+            success: true,
+            user: {
+              api_key: user.api_key,
+              api_key_enabled: user.api_key_enabled,
+              balance: user.balance,
             },
           },
-          404
+          200
+        );
+      } else {
+        return c.json(
+          {
+            success: true,
+            user: {
+              api_key: userInfo.api_key,
+              api_key_enabled: userInfo.api_key_enabled,
+              balance: userInfo.balance,
+            },
+          },
+          200
         );
       }
-      return c.json(
-        {
-          success: true,
-          user: {
-            api_key: userInfo.api_key,
-            api_key_enabled: userInfo.api_key_enabled,
-            balance: userInfo.balance,
-          },
-        },
-        200
-      );
     } catch (error) {
       console.error('Error getting user info:', error);
 

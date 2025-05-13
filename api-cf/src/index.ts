@@ -24,7 +24,6 @@ import { TgContext } from './do/TgContext';
 import { corsHeaders } from './utils/common';
 import { StripeCheckout, StripeWebhook } from './handlers/stripe';
 import {
-  CreateUser,
   GetCreditLogs,
   GetUser,
   GetUserBalance,
@@ -129,8 +128,6 @@ openapi.post('/v1/user/toggle_api_key_enabled', ToggleApiKeyEnabled);
 openapi.get('/v1/user/balance', GetUserBalance);
 openapi.get('/v1/user/credit_logs', GetCreditLogs);
 openapi.get('/v1/user', GetUser);
-
-openapi.post('/v1/user/create', CreateUser);
 
 // OpenAPI documentation endpoints
 app.get('/docs/openapi.json', (c) => {
