@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Checking api-cf code..."
+
+cd api-cf
+
+# Format all code
+echo "💅 Formatting code..."
+pnpm format
+
+# Run ESLint
+echo "🔍 Running ESLint..."
+pnpm lint:fix
+
+# Type check with Cloudflare Workers types
+echo "📝 Type checking..."
+pnpm exec tsc --noEmit
+
+# Run lint-staged for final verification
+echo "✨ Running lint-staged..."
+pnpm lint-staged

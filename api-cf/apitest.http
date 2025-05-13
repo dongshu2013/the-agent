@@ -1,0 +1,137 @@
+### Variables
+@baseUrl = http://localhost:8787
+@apiKey = 06c375fa-d9a1-4b13-84e2-d7d58d091994
+@token = 
+
+### Health Check
+GET {{baseUrl}}/health
+Content-Type: application/json
+
+### Get User Balance
+GET {{baseUrl}}/v1/user/balance
+Content-Type: application/json
+x-api-key: {{apiKey}}
+# Authorization: Bearer {{token}}
+
+### Get Credit History
+GET {{baseUrl}}/v1/user/credit_history
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+### Get User Info
+GET {{baseUrl}}/v1/user
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+### Rotate API Key
+POST {{baseUrl}}/v1/user/rotate_api_key
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+### Toggle API Key Enabled
+POST {{baseUrl}}/v1/user/toggle_api_key_enabled
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+{
+  "enabled": true
+}
+
+### Create Conversation
+POST {{baseUrl}}/v2/conversation/create
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+### List Conversations
+GET {{baseUrl}}/v2/conversation/list
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+### Delete Conversation
+# Replace {conversationId} with an actual conversation ID
+@conversationId = 1747056387705
+POST {{baseUrl}}/v2/conversation/delete?conversationId={{conversationId}}
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+### Save Message
+POST {{baseUrl}}/v2/message/save
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+{
+  "conversation_id": 1747067974956,
+  "message": {
+    "message_id": 1747067974956,
+    "created_at": "2025-05-12T11:46:06+08:00",
+    "role": "user",
+    "content": "Hello, this is a test message"
+  },
+  "top_k_related": 0
+}
+
+### Chat Completion
+POST {{baseUrl}}/v2/chat/completions
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+{
+  "messages": [
+    {"role": "system", "content": "你是一个有用的AI助手。"},
+    {"role": "user", "content": "你好，请介绍一下自己。"}
+  ],
+  "model": "gpt-3.5-turbo",
+  "temperature": 0.7,
+  "max_tokens": 500
+}
+
+### Chat Completion with Streaming
+POST {{baseUrl}}/v2/chat/completions
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+{
+  "messages": [
+    {"role": "system", "content": "你是一个有用的AI助手。"},
+    {"role": "user", "content": "你好，请介绍一下自己。"}
+  ],
+  "model": "gpt-3.5-turbo",
+  "temperature": 0.7,
+  "max_tokens": 500,
+  "stream": true
+}
+
+### Stripe Checkout
+POST {{baseUrl}}/v1/stripe/checkout
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+{
+  "amount": 10
+}
+
+### Stripe Webhook (模拟Stripe事件)
+POST {{baseUrl}}/v1/stripe/webhook
+Content-Type: application/json
+stripe-signature: test_signature
+
+{
+  "id": "evt_test123456",
+  "object": "event",
+  "api_version": "2023-10-16",
+  "created": 1677868469,
+  "type": "checkout.session.completed",
+  "data": {
+    "object": {
+      "id": "cs_test_123456",
+      "object": "checkout.session",
+      "amount_subtotal": 1000,
+      "customer_email": "test@example.com",
+      "metadata": {
+        "orderId": "order_123456",
+        "userId": "user_123456",
+        "userEmail": "test@example.com"
+      }
+    }
+  }
+}

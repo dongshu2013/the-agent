@@ -8,17 +8,9 @@ import {
   ResponsiveContainer, 
   Tooltip
 } from 'recharts';
-import { cn } from '@/lib/utils';
 import { Expand } from 'lucide-react';
-
-interface CreditTransaction {
-  id: string;
-  amount: number | null;
-  trans_credits: number;
-  trans_type: string;
-  created_at: string;
-  model?: string | null;
-}
+import { getCreditHistory } from '@/lib/api_service';
+import { CreditLog } from '@/types';
 
 interface ChartData {
   name: string;
@@ -45,18 +37,12 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
 
   const fetchCreditsData = async () => {
     if (!user || !user.idToken) return;
-    
+
     setIsLoading(true);
     try {
-      const response = await fetch('/api/credits', {
-        headers: {
-          'Authorization': `Bearer ${user.idToken}`,
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        processCreditsData(data.credits || []);
+      const {history} = await getCreditHistory(user.idToken);
+      if (history) {
+        processCreditsData(history);
       } else {
         console.error('Failed to fetch credits data');
       }
@@ -67,7 +53,7 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
     }
   };
 
-  const processCreditsData = (credits: CreditTransaction[]) => {
+  const processCreditsData = (credits: CreditLog[]) => {
     // Sort by date
     const sortedCredits = [...credits].sort((a, b) => 
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
@@ -88,12 +74,12 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
       const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
       
       // Only process completion transactions for spend data
-      if (transaction.trans_type === 'completion' && transaction.trans_credits < 0) {
+      if (transaction.tx_reason === 'completion' && transaction.tx_credits < 0) {
         // Add to daily spend
         if (!dailySpend[dateKey]) {
           dailySpend[dateKey] = 0;
         }
-        const absCredits = Math.abs(transaction.trans_credits);
+        const absCredits = Math.abs(transaction.tx_credits);
         dailySpend[dateKey] += absCredits;
         
         // Calculate totals for last day and week
@@ -139,10 +125,9 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
   return (
     <div className={className}>
       {/* Spend Chart */}
-      <div className={cn(
-        "bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700",
-        "hover:border-gray-300 hover:text-gray-900 dark:hover:border-gray-600 dark:hover:text-gray-50 shadow-sm hover:shadow-lg cursor-pointer transition-colors"
-      )}>
+      <div className={
+        "bg-white p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:text-gray-900 shadow-sm hover:shadow-lg cursor-pointer transition-colors"
+      }>
         <div className="flex justify-between items-center mb-2">
           <h3 className="text-lg font-medium">Spend</h3>
           <Expand className="w-4 h-4" />

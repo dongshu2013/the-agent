@@ -8,15 +8,20 @@ import {
   ReactNode,
 } from "react";
 import {
-  User as FirebaseUser,
   GoogleAuthProvider,
   signInWithPopup,
   getRedirectResult,
   signOut as firebaseSignOut,
   onAuthStateChanged,
   getIdToken,
+  signInWithCustomToken,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import {
+  getUserInfo,
+  postRotateApiKey,
+  postToggleApiKey,
+} from "@/lib/api_service";
 
 interface User {
   id: string;
@@ -25,7 +30,7 @@ interface User {
   photoURL: string | null;
   apiKey: string | null;
   apiKeyEnabled: boolean;
-  credits: string;
+  credits: number;
   idToken: string | null;
 }
 
@@ -46,115 +51,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Get the ID token for the current user
-  const getToken = async (firebaseUser: FirebaseUser): Promise<string> => {
-    return await getIdToken(firebaseUser, true); // Force refresh
-  };
-
   // Handle user data when Firebase auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log("firebaseUser🍷", firebaseUser);
       if (firebaseUser) {
         try {
-          // Get the ID token
-          const idToken = await getToken(firebaseUser);
-
-          // First, check if the user exists in our database
-          try {
-            const response = await fetch(
-              `/api/auth/user?userId=${firebaseUser.uid}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${idToken}`,
-                },
-              }
-            );
-
-            if (response.ok) {
-              // User exists, get their data
-              const userData = await response.json();
-              setUser({
-                id: firebaseUser.uid,
-                email: firebaseUser.email,
-                displayName: firebaseUser.displayName,
-                photoURL: firebaseUser.photoURL,
-                apiKey: userData.apiKey,
-                apiKeyEnabled: userData.apiKeyEnabled,
-                credits: userData.credits,
-                idToken,
-              });
-              localStorage.setItem("apiKey", userData.apiKey);
-              if (typeof window !== "undefined" && userData.apiKey) {
-                window.postMessage(
-                  {
-                    type: "FROM_WEB_TO_EXTENSION",
-                    apiKey: userData.apiKey,
-                  },
-                  "*"
-                );
-              }
-            } else if (response.status === 404) {
-              // User doesn't exist, create a new user - this is expected for first-time login
-              console.log("New user detected, creating user record...");
-              const username =
-                firebaseUser.displayName ||
-                firebaseUser.email?.split("@")[0] ||
-                `user_${Math.random().toString(36).substring(2, 10)}`;
-
-              const createResponse = await fetch("/api/auth/user", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${idToken}`,
-                },
-                body: JSON.stringify({
-                  id: firebaseUser.uid,
-                  username,
-                  email: firebaseUser.email,
-                }),
-              });
-
-              if (createResponse.ok) {
-                const newUserData = await createResponse.json();
-                console.log("User created successfully");
-                setUser({
-                  id: firebaseUser.uid,
-                  email: firebaseUser.email,
-                  displayName: firebaseUser.displayName,
-                  photoURL: firebaseUser.photoURL,
-                  apiKey: newUserData.apiKey,
-                  apiKeyEnabled: newUserData.apiKeyEnabled,
-                  credits: newUserData.credits,
-                  idToken,
-                });
-                localStorage.setItem("apiKey", newUserData.apiKey);
-                if (typeof window !== "undefined" && newUserData.apiKey) {
-                  window.postMessage(
-                    {
-                      type: "FROM_WEB_TO_EXTENSION",
-                      apiKey: newUserData.apiKey,
-                    },
-                    "*"
-                  );
-                }
-              } else {
-                console.error(
-                  "Failed to create user:",
-                  await createResponse.text()
-                );
-              }
-            } else {
-              console.error(
-                "Error fetching user data:",
-                response.status,
-                await response.text()
-              );
-            }
-          } catch (fetchError) {
-            // Handle fetch errors separately to avoid crashing the auth flow
-            console.error("Error during user data fetch:", fetchError);
-          }
+          const idToken = await getIdToken(firebaseUser);
+          const userData = await getUserInfo(idToken);
+          setUser({
+            id: firebaseUser.uid,
+            email: firebaseUser.email,
+            displayName: firebaseUser.displayName,
+            photoURL: firebaseUser.photoURL,
+            apiKey: userData.user.api_key,
+            apiKeyEnabled: userData.user.api_key_enabled,
+            credits: userData.user.balance,
+            idToken,
+          });
         } catch (error) {
           console.error("Error setting up user:", error);
         }
@@ -181,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             photoURL: user.photoURL,
             apiKey: null,
             apiKeyEnabled: false,
-            credits: "0",
+            credits: 0,
             idToken,
           });
         }
@@ -216,7 +129,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         auth_type: "rerequest",
       });
 
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const idToken = await getIdToken(result.user);
+
+      // 调用后端获取自定义 JWT
+      const resp = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+      });
+
+      if (!resp.ok) throw new Error("Login failed");
+      const { jwt } = await resp.json();
+
+      console.log("..signInWithGoogle..", jwt);
+
+      // 用自定义 JWT 登录 Firebase
+      const userCredential = await signInWithCustomToken(auth, jwt);
+      const user = userCredential.user;
+
+      console.log(",.,.,.,.,.", jwt);
+
+      // 更新用户状态
+      setUser({
+        id: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        apiKey: null,
+        apiKeyEnabled: false,
+        credits: 0,
+        idToken: jwt,
+      });
     } catch (error) {
       console.error("Error signing in with Google", error);
     }
@@ -232,33 +176,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const rotateApiKey = async (): Promise<string | null> => {
-    if (!user || !user.idToken) return null;
+    if (!user) return null;
 
     try {
-      // Refresh token before making the request
-      const token = (await refreshToken()) || user.idToken;
-
-      const response = await fetch("/api/auth/apikey", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          operation: "rotate",
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        // Update the user state with the new API key
-        setUser((prev) => (prev ? { ...prev, apiKey: data.apiKey } : null));
-        localStorage.setItem("apiKey", data.apiKey);
-        return data.apiKey;
-      }
-
-      return null;
+      const { newApiKey } = await postRotateApiKey(user.idToken);
+      setUser((prev) => (prev ? { ...prev, apiKey: newApiKey } : null));
+      return newApiKey;
     } catch (error) {
       console.error("Error rotating API key:", error);
       return null;
@@ -266,36 +189,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleApiKey = async (enabled: boolean): Promise<boolean> => {
-    if (!user || !user.idToken) return false;
+    if (!user) return false;
 
     try {
-      // Refresh token before making the request
-      const token = (await refreshToken()) || user.idToken;
-
-      const response = await fetch("/api/auth/apikey", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          operation: "toggle",
-          enabled,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        // Update the user state with the new API key enabled status
-        setUser((prev) =>
-          prev ? { ...prev, apiKeyEnabled: data.apiKeyEnabled } : null
-        );
-        localStorage.setItem("apiKey", data.apiKey);
-        return data.apiKeyEnabled;
-      }
-
-      return false;
+      await postToggleApiKey(user.idToken, enabled);
+      setUser((prev) => (prev ? { ...prev, apiKeyEnabled: enabled } : null));
+      return enabled;
     } catch (error) {
       console.error("Error toggling API key:", error);
       return false;
@@ -304,43 +203,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Function to refresh user data including credits
   const refreshUserData = async (): Promise<void> => {
-    if (!auth.currentUser || !user) return;
+    if (!user) return;
 
     try {
-      // Get a fresh token
-      const token = await getToken(auth.currentUser);
-
-      // Fetch the latest user data
-      const response = await fetch(`/api/auth/user?userId=${user.id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const token = await getIdToken(auth.currentUser);
+      const userData = await getUserInfo(token);
+      setUser({
+        ...user,
+        apiKey: userData.user.api_key,
+        apiKeyEnabled: userData.user.api_key_enabled,
+        credits: userData.user.balance,
+        idToken: token,
       });
-
-      if (response.ok) {
-        const userData = await response.json();
-
-        // Update the user state with the fresh data
-        setUser({
-          ...user,
-          apiKey: userData.apiKey,
-          apiKeyEnabled: userData.apiKeyEnabled,
-          credits: userData.credits,
-          idToken: token,
-        });
-        localStorage.setItem("apiKey", userData.apiKey);
-        if (typeof window !== "undefined" && userData.apiKey) {
-          window.postMessage(
-            {
-              type: "FROM_WEB_TO_EXTENSION",
-              apiKey: userData.apiKey,
-            },
-            "*"
-          );
-        }
-      } else {
-        console.error("Failed to refresh user data");
-      }
     } catch (error) {
       console.error("Error refreshing user data:", error);
     }

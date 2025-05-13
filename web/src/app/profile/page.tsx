@@ -6,20 +6,29 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { RefreshCw } from "lucide-react";
 import { PaymentModal } from "./PaymentModal";
-import { OrdersModal } from "./OrdersModal";
 import { CreditsCharts } from "./CreditsCharts";
 import { CreditsTable } from "./CreditsTable";
+import { getTelegramStats } from "@/lib/api_service";
 
 export default function ProfilePage() {
-  const { user, loading, signOut, rotateApiKey, toggleApiKey, refreshUserData } = useAuth();
+  const {
+    user,
+    loading,
+    signOut,
+    rotateApiKey,
+    toggleApiKey,
+    refreshUserData,
+  } = useAuth();
   const [isCopied, setIsCopied] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
-  const [telegramStats, setTelegramStats] = useState<{ channels_count: number; messages_count: number } | null>(null);
+  const [telegramStats, setTelegramStats] = useState<{
+    channels_count: number;
+    messages_count: number;
+  } | null>(null);
   const [isLoadingTelegramStats, setIsLoadingTelegramStats] = useState(false);
   const router = useRouter();
   const [buyCreditsOpen, setBuyCreditsOpen] = useState(false);
-  const [ordersModalOpen, setOrdersModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Redirect to login if not authenticated
@@ -31,34 +40,23 @@ export default function ProfilePage() {
 
   // Fetch Telegram stats when user is loaded
   useEffect(() => {
-    const fetchTelegramStats = async () => {
-      if (user?.apiKey && user?.apiKeyEnabled) {
-        setIsLoadingTelegramStats(true);
-        try {
-          const response = await fetch('/api/tg/stats', {
-            headers: {
-              'Authorization': `Bearer ${user.apiKey}`,
-            },
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            setTelegramStats(data);
-          } else {
-            console.error('Failed to fetch Telegram stats');
-          }
-        } catch (error) {
-          console.error('Error fetching Telegram stats:', error);
-        } finally {
-          setIsLoadingTelegramStats(false);
-        }
-      }
-    };
-
     if (user) {
       fetchTelegramStats();
     }
   }, [user]);
+
+  const fetchTelegramStats = async () => {
+    if (!user || !user.idToken) return;
+    setIsLoadingTelegramStats(true);
+    try {
+      const response = await getTelegramStats(user.idToken);
+      setTelegramStats(response);
+    } catch (error) {
+      console.error("Error fetching Telegram stats:", error);
+    } finally {
+      setIsLoadingTelegramStats(false);
+    }
+  };
 
   const handleCopyApiKey = async () => {
     if (user?.apiKey) {
@@ -276,22 +274,25 @@ export default function ProfilePage() {
                   Telegram
                 </h4>
                 <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
-                  {isLoadingTelegramStats ? (
-                    "Loading Telegram data..."
-                  ) : telegramStats && telegramStats.channels_count > 0 ? (
-                    `${telegramStats.channels_count} chats imported, ${telegramStats.messages_count} messages imported`
-                  ) : (
-                    "No data has been imported yet..."
-                  )}
+                  {isLoadingTelegramStats
+                    ? "Loading Telegram data..."
+                    : telegramStats && telegramStats.channels_count > 0
+                    ? `${telegramStats.channels_count} chats imported, ${telegramStats.messages_count} messages imported`
+                    : "No data has been imported yet..."}
                 </p>
                 <button
                   className="px-4 py-2 text-sm font-medium text-white bg-black rounded-md hover:opacity-70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black transition-opacity"
-                  onClick={() => window.open(process.env.NEXT_PUBLIC_TG_WEBAPP_URL || '#', '_blank')}
+                  onClick={() =>
+                    window.open(
+                      process.env.NEXT_PUBLIC_TG_WEBAPP_URL || "#",
+                      "_blank"
+                    )
+                  }
                 >
                   Import Telegram Data
                 </button>
               </div>
-              
+
               {/* Twitter Data Source */}
               <div className="flex flex-col items-center">
                 <div className="w-16 h-16 mb-4 overflow-hidden rounded-full flex items-center justify-center">
@@ -316,7 +317,7 @@ export default function ProfilePage() {
                   Coming Soon
                 </button>
               </div>
-              
+
               {/* Instagram Data Source */}
               <div className="flex flex-col items-center">
                 <div className="w-16 h-16 mb-4 overflow-hidden rounded-full flex items-center justify-center">
@@ -350,15 +351,17 @@ export default function ProfilePage() {
           {/* Credits Header */}
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
             <div className="flex items-center space-x-2">
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white">Credits</h2>
-              <button 
+              <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+                Credits
+              </h2>
+              <button
                 onClick={async () => {
                   setIsRefreshing(true);
                   try {
                     // Refresh user data including credits
                     await refreshUserData();
                   } catch (error) {
-                    console.error('Error refreshing credits:', error);
+                    console.error("Error refreshing credits:", error);
                   } finally {
                     setIsRefreshing(false);
                   }
@@ -366,13 +369,16 @@ export default function ProfilePage() {
                 className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
                 disabled={isRefreshing}
               >
-                <RefreshCw size={18} className={`${isRefreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw
+                  size={18}
+                  className={`${isRefreshing ? "animate-spin" : ""}`}
+                />
               </button>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <div className="text-lg font-bold text-gray-900 dark:text-white">
-                $ {user.credits ? parseFloat(user.credits.toString()).toFixed(3) : '0.000'}
+                ${user.credits ? (user.credits / 1000000).toFixed(2) : "0.00"}
               </div>
               <div className="flex space-x-2">
                 <button
@@ -381,16 +387,10 @@ export default function ProfilePage() {
                 >
                   Add Credits
                 </button>
-                <button
-                  onClick={() => setOrdersModalOpen(true)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 rounded-md transition-opacity"
-                >
-                  View Orders
-                </button>
               </div>
             </div>
           </div>
-          
+
           {/* Credits Charts */}
           <div className="p-6">
             <CreditsCharts />
@@ -406,16 +406,11 @@ export default function ProfilePage() {
       <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
         {new Date().getFullYear()} Mysta Agent. All rights reserved.
       </footer>
-      
+
       {/* Modals */}
-      <PaymentModal 
-        isOpen={buyCreditsOpen} 
-        onClose={() => setBuyCreditsOpen(false)} 
-        onSuccess={() => setBuyCreditsOpen(false)} 
-      />
-      <OrdersModal 
-        isOpen={ordersModalOpen} 
-        onClose={() => setOrdersModalOpen(false)} 
+      <PaymentModal
+        isOpen={buyCreditsOpen}
+        onClose={() => setBuyCreditsOpen(false)}
       />
     </div>
   );
