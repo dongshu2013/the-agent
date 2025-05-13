@@ -30,8 +30,9 @@ export const PaymentModal = ({
     setIsSubmitting(true);
     try {
       const data = await postCheckout(user.idToken, amount);
+      // console.log("---checkout data:", data);
       
-      const { public_key, session_id } = data;
+      const { public_key, session_id } = data.data;
       const stripe = await loadStripe(public_key);
       if (!stripe) {
         toast.error("checkout failed");

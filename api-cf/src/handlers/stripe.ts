@@ -35,8 +35,10 @@ export class StripeCheckout extends OpenAPIRoute {
           'application/json': {
             schema: z.object({
               success: z.boolean(),
-              results: z.object({
+              data: z.object({
                 orderId: z.string(),
+                public_key: z.string(),
+                session_id: z.string(),
               }),
             }),
           },
@@ -86,10 +88,14 @@ export class StripeCheckout extends OpenAPIRoute {
         userEmail: c.get('userEmail'),
       },
     };
-    await stripe.checkout.sessions.create(options);
+    const session = await stripe.checkout.sessions.create(options);
     return c.json({
       success: true,
-      orderId: orderId,
+      data: {
+        orderId: orderId,
+        public_key: env.STRIPE_PUBLIC_KEY,
+        session_id: session.id,
+      },
     });
   }
 }
