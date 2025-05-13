@@ -4,15 +4,20 @@ async function getCreditFromAmount(amount: number) {
   return amount;
 }
 
-export async function createOrder(env: Env, userId: string, amount: number) {
+export async function createOrder(
+  env: Env,
+  userId: string,
+  amount: number
+): Promise<string> {
   const db = env.UDB;
   const result = await db
-    .prepare('INSERT INTO orders (user_id, amount, credits) VALUES (?, ?, ?)')
-    .bind(userId, amount, getCreditFromAmount(amount))
+    .prepare('INSERT INTO orders (user_id, amount) VALUES (?, ?)')
+    .bind(userId, amount)
     .run();
   if (!result.success) {
     throw new Error('Failed to create order');
   }
+  return String(result.meta.last_row_id);
 }
 
 export async function updateOrderSessionId(
@@ -48,13 +53,14 @@ export async function updateOrderStatus(
 export async function finalizeOrder(env: Env, orderId: string) {
   const db = env.UDB;
   const orders = await db
-    .prepare('SELECT user_id, credits FROM orders WHERE id = ?')
+    .prepare('SELECT user_id, amount FROM orders WHERE id = ?')
     .bind(orderId)
     .all();
   if (!orders.success || orders.results.length === 0) {
     throw new Error('Order not found');
   }
   const order = orders.results[0];
+  const credits = getCreditFromAmount(order.amount as number);
 
   const stmt1 = db.prepare(
     "UPDATE orders SET status = 'finalized' WHERE id = ?"
@@ -70,8 +76,8 @@ export async function finalizeOrder(env: Env, orderId: string) {
 
   const [result1, result2, result3] = await db.batch([
     stmt1.bind(orderId),
-    stmt2.bind(order.user_id, order.credits, 'credit', 'order', orderId),
-    stmt3.bind(order.credits, order.user_id),
+    stmt2.bind(order.user_id, credits, 'credit', 'order', orderId),
+    stmt3.bind(credits, order.user_id),
   ]);
 
   if (!result1.success || !result2.success || !result3.success) {

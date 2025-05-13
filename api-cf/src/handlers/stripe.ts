@@ -40,10 +40,8 @@ export class StripeCheckout extends OpenAPIRoute {
           'application/json': {
             schema: z.object({
               success: z.boolean(),
-              user: z.object({
-                api_key: z.string(),
-                api_key_enabled: z.boolean(),
-                balance: z.number(),
+              results: z.object({
+                orderId: z.string(),
               }),
             }),
           },
@@ -67,8 +65,7 @@ export class StripeCheckout extends OpenAPIRoute {
         400
       );
     }
-    await createOrder(env, userId, params.amount);
-
+    const orderId = await createOrder(env, userId, params.amount);
     const options: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ['card'],
       line_items: [
@@ -85,21 +82,24 @@ export class StripeCheckout extends OpenAPIRoute {
         },
       ],
       mode: 'payment',
+      customer_email: c.get('userEmail'),
       success_url: `${env.MYSTA_PUBLIC_DOMAIN}/profile`,
       cancel_url: `${env.MYSTA_PUBLIC_DOMAIN}/profile`,
       metadata: {
-        orderId: params.orderId,
+        orderId: orderId,
         userId: userId,
         userEmail: c.get('userEmail'),
       },
     };
-    options.customer_email = c.get('userEmail');
-    const session = await stripe.checkout.sessions.create(options);
-    await updateOrderSessionId(env, params.orderId, session.id);
-
+    try {
+      const session = await stripe.checkout.sessions.create(options);
+      await updateOrderSessionId(env, orderId, session.id);
+    } catch {
+      await updateOrderStatus(env, orderId, 'failed');
+    }
     return c.json({
       success: true,
-      session_id: session.id,
+      orderId: orderId,
     });
   }
 }
@@ -142,6 +142,7 @@ export class StripeWebhook extends OpenAPIRoute {
           console.log('invalid order id');
           return;
         }
+
         await updateOrderStatus(
           c.env,
           completed.metadata?.orderId,
