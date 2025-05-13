@@ -23,6 +23,7 @@ export class GetUser extends OpenAPIRoute {
                 api_key: z.string(),
                 api_key_enabled: z.boolean(),
                 balance: z.number(),
+                email: z.string(),
               }),
             }),
           },
@@ -49,6 +50,7 @@ export class GetUser extends OpenAPIRoute {
               api_key: user.api_key,
               api_key_enabled: user.api_key_enabled,
               balance: user.balance,
+              email: user.email,
             },
           },
           200
@@ -61,6 +63,7 @@ export class GetUser extends OpenAPIRoute {
               api_key: userInfo.api_key,
               api_key_enabled: userInfo.api_key_enabled,
               balance: userInfo.balance,
+              email: userInfo.email,
             },
           },
           200

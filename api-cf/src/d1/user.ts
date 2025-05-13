@@ -8,7 +8,7 @@ export async function createUser(
   const db = env.UDB;
   const result = await db
     .prepare(
-      'INSERT INTO users (userId, email, api_key, api_key_enabled) VALUES (?, ?, ?, ?)'
+      'INSERT INTO users (userId, user_email, api_key, api_key_enabled) VALUES (?, ?, ?, ?)'
     )
     .bind(userId, email, crypto.randomUUID(), 1)
     .run();
@@ -31,7 +31,7 @@ export async function getUserInfo(
   const db = env.UDB;
   const result = await db
     .prepare(
-      'SELECT id, email, api_key, api_key_enabled, balance FROM users WHERE id = ?'
+      'SELECT id, user_email, api_key, api_key_enabled, balance FROM users WHERE id = ?'
     )
     .bind(userId)
     .all();
@@ -40,7 +40,7 @@ export async function getUserInfo(
   }
   return {
     id: result.results[0].id as string,
-    email: result.results[0].email as string,
+    email: result.results[0].user_email as string,
     api_key: result.results[0].api_key as string,
     api_key_enabled: (result.results[0].api_key_enabled as number) === 1,
     balance: result.results[0].balance as number,
@@ -54,7 +54,7 @@ export async function getUserFromApiKey(
   const db = env.UDB;
   const result = await db
     .prepare(
-      'SELECT id, email FROM users ' +
+      'SELECT id, user_email FROM users ' +
         ' WHERE api_key = ? and api_key_enabled = 1'
     )
     .bind(apiKey)
@@ -64,7 +64,7 @@ export async function getUserFromApiKey(
   }
   return {
     id: result.results[0].id as string,
-    email: result.results[0].email as string,
+    email: result.results[0].user_email as string,
   };
 }
 

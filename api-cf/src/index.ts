@@ -73,8 +73,6 @@ app.use('/v1/user', jwtOrApiKeyAuthMiddleware);
 app.use('/v1/user/rotate_api_key', jwtOrApiKeyAuthMiddleware);
 app.use('/v1/user/toggle_api_key_enabled', jwtOrApiKeyAuthMiddleware);
 
-app.use('/v1/user/create', jwtOrApiKeyAuthMiddleware);
-
 app.onError(async (err, c) => {
   if (err instanceof GatewayServiceError) {
     return c.text(err.message, err.code);
