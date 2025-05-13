@@ -10,21 +10,29 @@ export async function jwtOrApiKeyAuthMiddleware(
   next: Next
 ) {
   try {
-    const token = getBearer(c);
-    if (token.startsWith('mizu-')) {
-      const user = await getUserFromApiKey(c.env, token);
+    // Check for API Key in x-api-key header
+    const apiKey = c.req.header('x-api-key');
+    if (apiKey) {
+      const user = await getUserFromApiKey(c.env, apiKey);
       if (!user) {
-        return c.text('Unauthorized', 401);
+        return c.text('Invalid API Key', 401);
       }
       c.set('userId', user.id);
       c.set('userEmail', user.email);
       await next();
-    } else {
-      const { userId, userEmail } = await verifyJWT(token);
-      c.set('userId', userId);
-      c.set('userEmail', userEmail);
-      await next();
+      return;
     }
+
+    // Check for JWT in Authorization: Bearer header
+    const token = getBearer(c);
+    if (!token) {
+      return c.text('No authentication provided', 401);
+    }
+
+    const { userId, userEmail } = await verifyJWT(token);
+    c.set('userId', userId);
+    c.set('userEmail', userEmail);
+    await next();
   } catch (error) {
     return c.text('Unauthorized', 401);
   }
