@@ -135,6 +135,8 @@ export class StripeWebhook extends OpenAPIRoute {
       case 'checkout.session.completed':
       case 'checkout.session.async_payment_succeeded':
         const completed = event.data.object as Stripe.Checkout.Session;
+        console.log('---completed:', completed);
+
         if (!completed.metadata?.orderId || !completed.amount_subtotal) {
           console.log('invalid order id or payment amount');
           return;

@@ -1,9 +1,9 @@
 import { GatewayServiceError } from '../types/service';
 import { OrderStatus } from './types';
 
-const BASE = 100000;
+const BASE = 10000; // 10000 * 100 = 10^6 = 1USDT
 
-async function getCreditFromAmount(amount: number) {
+function getCreditFromAmount(amount: number) {
   return amount * BASE;
 }
 
@@ -54,15 +54,17 @@ export async function finalizeOrder(
     throw new GatewayServiceError(404, 'Order not found');
   }
   const order = orders.results[0];
-  const credits = getCreditFromAmount(amount);
+  console.log('---amount:', amount);
+  const credits = await getCreditFromAmount(amount);
+  console.log('---credits:', credits);
 
   const stmt1 = db.prepare(
     "UPDATE orders SET status = 'finalized' WHERE id = ?"
   );
   const stmt2 = db.prepare(
     'INSERT INTO credit_history' +
-      '(user_id, tx_credits, tx_type, tx_reason, order_id, stripe_session_id)' +
-      'VALUES (?, ?, ?, ?, ?, ?)'
+      '(user_id, tx_credits, tx_type, tx_reason, order_id)' +
+      'VALUES (?, ?, ?, ?, ?)'
   );
   const stmt3 = db.prepare(
     'UPDATE users SET balance = balance + ? WHERE id = ?'
@@ -70,7 +72,7 @@ export async function finalizeOrder(
 
   const [result1, result2, result3] = await db.batch([
     stmt1.bind(orderId),
-    stmt2.bind(order.user_id, credits, 'credit', 'order', orderId, sessionId),
+    stmt2.bind(order.user_id, credits, 'credit', 'order', orderId),
     stmt3.bind(credits, order.user_id),
   ]);
 
