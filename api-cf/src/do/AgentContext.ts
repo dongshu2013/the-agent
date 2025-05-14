@@ -22,15 +22,16 @@ export class AgentContext extends DurableObject<Env> {
   }
 
   createConversation(conversationId: number): number {
-    this.sql.exec(`INSERT INTO agent_conversations (id) VALUES ($1)`, [
-      conversationId,
-    ]);
+    this.sql.exec(
+      `INSERT INTO agent_conversations (id) VALUES (?)`,
+      conversationId
+    );
     return conversationId;
   }
 
   deleteConversation(conversationId: number): void {
     this.sql.exec(
-      `UPDATE agent_conversations SET status = 'deleted' WHERE id = $1`,
+      `UPDATE agent_conversations SET status = 'deleted' WHERE id = ?`,
       conversationId
     );
   }
@@ -46,7 +47,7 @@ export class AgentContext extends DurableObject<Env> {
     );
     for (const row of conversations) {
       const messages = this.sql.exec(
-        `SELECT * FROM agent_messages WHERE conversation_id = $1`,
+        `SELECT * FROM agent_messages WHERE conversation_id = ?`,
         row.id
       );
       const msgs: Message[] = [];
