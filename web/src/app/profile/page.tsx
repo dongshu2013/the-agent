@@ -354,7 +354,7 @@ export default function ProfilePage() {
 
             <div className="flex items-center space-x-4">
               <div className="text-lg font-bold text-gray-900 dark:text-white">
-                ${formatCredits(user.credits)}
+                ${formatCredits(user.credits, 2)}
               </div>
               <div className="flex space-x-2">
                 <button

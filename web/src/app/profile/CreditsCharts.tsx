@@ -125,7 +125,7 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
               <BarChart data={spendData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
                 <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                 <YAxis hide />
-                <Bar dataKey="value" fill="#4F46E5" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="value" fill="#F6465D" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -138,11 +138,11 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
         <div className="flex justify-between mt-4">
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400">Last day</p>
-            <p className="text-lg font-medium">${formatCredits(lastDaySpend)}</p>
+            <p className="text-lg font-medium">${formatCredits(lastDaySpend, 2)}</p>
           </div>
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400">Last week</p>
-            <p className="text-lg font-medium">${formatCredits(lastWeekSpend)}</p>
+            <p className="text-lg font-medium">${formatCredits(lastWeekSpend, 2)}</p>
           </div>
         </div>
       </div>
