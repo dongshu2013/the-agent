@@ -1,9 +1,10 @@
 import { MessageCircleMore, SquarePen, User as UserIcon } from "lucide-react";
-import { db } from "~/utils/db";
+import { db, systemModelId } from "~/utils/db";
 import { useState, useEffect } from "react";
 import { Modal, Dropdown, Menu } from "antd";
 import ModelCascader, { ProviderGroup } from "./ModelCascader";
 import { useLiveQuery } from "dexie-react-hooks";
+import { Model } from "~/types";
 
 interface HeaderProps {
   createNewConversation: () => void;
@@ -57,11 +58,37 @@ const Header = ({
         setProviderGroups(providerGroups);
         // Set default provider/model
         if (providerGroups.length > 0) {
-          setSelectedProvider((prev) => prev || providerGroups[0].type);
-          const firstModel = providerGroups[0].models[0];
-          setSelectedModelId(
-            (prev) => prev || (firstModel ? firstModel.id : "")
-          );
+          if (user?.selectedModelId) {
+            let found = false;
+            let defaultProvider = providerGroups[0].type;
+            let defaultModelId = systemModelId;
+
+            providerGroups.forEach((group) => {
+              const match = group.models.find(
+                (m: Model) => m.id === user.selectedModelId
+              );
+              if (match) {
+                defaultProvider = group.type;
+                defaultModelId = match.id;
+                found = true;
+              }
+            });
+
+            if (!found) {
+              providerGroups.forEach((group) => {
+                const match = group.models.find(
+                  (m: Model) => m.id === systemModelId
+                );
+                if (match) {
+                  defaultProvider = group.type;
+                  defaultModelId = systemModelId;
+                }
+              });
+            }
+
+            setSelectedProvider(defaultProvider);
+            setSelectedModelId(defaultModelId);
+          }
         }
       }
     };

@@ -4,6 +4,8 @@ import Dexie, { Table } from "dexie";
 import { env } from "./env";
 import { Model, ModelType } from "~/types";
 
+export const systemModelId = "system";
+
 interface UserInfo {
   id: string;
   username: string;
@@ -343,7 +345,6 @@ class MizuDB extends Dexie {
     try {
       const now = new Date().toISOString();
       const existing = await this.users.get(user.id);
-      const systemModelId = "system";
 
       console.log(".....", env.LLM_API_KEY, env.LLM_API_URL);
       const systemModel = {
