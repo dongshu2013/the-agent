@@ -35,8 +35,9 @@ export class StripeCheckout extends OpenAPIRoute {
         content: {
           'application/json': {
             schema: z.object({
-              orderId: z.string(),
+              order_id: z.string(),
               session_id: z.string(),
+              public_key: z.string(),
             }),
           },
         },
@@ -81,8 +82,9 @@ export class StripeCheckout extends OpenAPIRoute {
     };
     const session = await stripe.checkout.sessions.create(options);
     return c.json({
-      orderId: orderId,
+      order_id: orderId,
       session_id: session.id,
+      public_key: env.STRIPE_PUBLIC_KEY,
     });
   }
 }
@@ -117,7 +119,7 @@ export class StripeWebhook extends OpenAPIRoute {
       case 'checkout.session.completed':
       case 'checkout.session.async_payment_succeeded':
         const completed = event.data.object as Stripe.Checkout.Session;
-        console.log('---completed:', completed);
+        // console.log('---completed:', completed);
 
         if (!completed.metadata?.orderId || !completed.amount_subtotal) {
           console.log('invalid order id or payment amount');

@@ -3,6 +3,7 @@ interface Env {
   LLM_API_KEY: string;
   LLM_API_URL: string;
   EMBEDDING_API_KEY: string;
+  STRIPE_PUBLIC_KEY: string;
   STRIPE_PRIVATE_KEY: string;
   STRIPE_WEBHOOK_SECRET: string;
   MYSTA_PUBLIC_DOMAIN: string;
