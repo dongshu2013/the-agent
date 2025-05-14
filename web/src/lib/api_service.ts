@@ -41,8 +41,9 @@ export async function postCheckout(
   token: string,
   amount: number,
 ): Promise<{
-  orderId: string;
-  sessionId: string;
+  order_id: string;
+  session_id: string;
+  public_key: string;
 }> {
   return await postApiService('v1/stripe/checkout', token, { amount });
 }
