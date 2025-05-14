@@ -123,7 +123,21 @@ export class GetCreditLogs extends OpenAPIRoute {
 
   async handle(c: Context) {
     const userId = c.get('userId');
-    const creditLogs = await getCreditLogs(c.env, userId);
+    const query = c.req.query();
+
+    // Extract query parameters
+    const options = {
+      startDate: query.startDate,
+      endDate: query.endDate,
+      model: query.model,
+      transType: query.transType,
+      transReason: query.transReason,
+      limit: query.limit ? parseInt(query.limit, 10) : undefined,
+    };
+
+    // console.log('Credit history query options:', options);
+
+    const creditLogs = await getCreditLogs(c.env, userId, options);
     return c.json({ history: creditLogs }, 200);
   }
 }

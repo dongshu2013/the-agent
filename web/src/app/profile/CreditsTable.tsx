@@ -3,11 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { CreditLog, TransactionReason } from '@/types';
+import { CreditLog, TransactionReason, TransactionType } from '@/types';
+import { getCreditHistory } from '@/lib/api_service';
+import { formatCredits } from '@/lib/utils';
 
 interface FilterOptions {
   models: string[];
-  txTypes: TransactionReason[];
+  txTypes: TransactionType[];
+  txReasons: TransactionReason[];
 }
 
 export const CreditsTable = () => {
@@ -15,14 +18,16 @@ export const CreditsTable = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     models: [],
-    txTypes: [] as TransactionReason[],
+    txTypes: [] as TransactionType[],
+    txReasons: [] as TransactionReason[],
   });
 
   // Filter states
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
   const [selectedModel, setSelectedModel] = useState<string>('');
-  const [selectedTransType, setSelectedTransType] = useState<TransactionReason | ''>('');
+  const [selectedTxType, setSelectedTxType] = useState<TransactionType | ''>('');
+  const [selectedTxReason, setSelectedTxReason] = useState<TransactionReason | ''>('');
 
   const { user } = useAuth();
 
@@ -30,37 +35,38 @@ export const CreditsTable = () => {
     if (user) {
       fetchCreditsData();
     }
-  }, [user, startDate, endDate, selectedModel, selectedTransType]);
+  }, [user, startDate, endDate, selectedModel, selectedTxType, selectedTxReason]);
 
   const fetchCreditsData = async () => {
     if (!user || !user.idToken) return;
 
     setIsLoading(true);
     try {
-      // Build query parameters
-      const params = new URLSearchParams();
-      if (startDate) params.append('startDate', startDate);
-      if (endDate) params.append('endDate', endDate);
-      if (selectedModel) params.append('model', selectedModel);
-      if (selectedTransType) params.append('transType', selectedTransType);
-
-      const queryString = params.toString();
-      const url = `/api/credits${queryString ? `?${queryString}` : ''}`;
-
-      const response = await fetch(url, {
-        headers: {
-          Authorization: `Bearer ${user.idToken}`,
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-        },
+      const { history } = await getCreditHistory(user.idToken, {
+        startDate,
+        endDate,
+        model: selectedModel,
+        transType: selectedTxType as TransactionType,
+        transReason: selectedTxReason as TransactionReason,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setCredits(data.credits || []);
-        setFilterOptions(data.filters || { models: [], transTypes: [] });
-      } else {
-        console.error('Failed to fetch credits data');
+      setCredits(history || []);
+
+      // Extract unique values for filter options from the history data
+      if (history && history.length > 0) {
+        const models = Array.from(new Set(history.map((entry) => entry.model).filter(Boolean)));
+        const txTypes = Array.from(
+          new Set(history.map((entry) => entry.tx_type)),
+        ) as TransactionType[];
+        const txReasons = Array.from(
+          new Set(history.map((entry) => entry.tx_reason)),
+        ) as TransactionReason[];
+
+        setFilterOptions({
+          models,
+          txTypes,
+          txReasons,
+        });
       }
     } catch (error) {
       console.error('Error fetching credits data:', error);
@@ -77,8 +83,19 @@ export const CreditsTable = () => {
     }
   };
 
-  const formatTransType = (type: TransactionReason) => {
+  const formatTxType = (type: TransactionType) => {
     switch (type) {
+      case 'credit':
+        return 'Credit';
+      case 'debit':
+        return 'Debit';
+      default:
+        return type;
+    }
+  };
+
+  const formatTxReason = (reason: TransactionReason) => {
+    switch (reason) {
       case 'new_user':
         return 'New User';
       case 'order_pay':
@@ -88,7 +105,7 @@ export const CreditsTable = () => {
       case 'completion':
         return 'Completion';
       default:
-        return type;
+        return reason;
     }
   };
 
@@ -96,7 +113,8 @@ export const CreditsTable = () => {
     setStartDate('');
     setEndDate('');
     setSelectedModel('');
-    setSelectedTransType('');
+    setSelectedTxType('');
+    setSelectedTxReason('');
   };
 
   return (
@@ -167,14 +185,36 @@ export const CreditsTable = () => {
             </label>
             <select
               id="transType"
-              value={selectedTransType}
-              onChange={(e) => setSelectedTransType(e.target.value as TransactionReason | '')}
+              value={selectedTxType}
+              onChange={(e) => setSelectedTxType(e.target.value as TransactionType | '')}
               className="w-full h-9 rounded-md border border-gray-300 dark:border-gray-600 px-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               <option value="">All Types</option>
               {filterOptions.txTypes.map((type) => (
                 <option key={type} value={type}>
-                  {formatTransType(type)}
+                  {formatTxType(type)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex-1">
+            <label
+              htmlFor="transType"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
+              Transaction Reason
+            </label>
+            <select
+              id="transReason"
+              value={selectedTxReason}
+              onChange={(e) => setSelectedTxReason(e.target.value as TransactionReason | '')}
+              className="w-full h-9 rounded-md border border-gray-300 dark:border-gray-600 px-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+            >
+              <option value="">All Types</option>
+              {filterOptions.txReasons.map((reason) => (
+                <option key={reason} value={reason}>
+                  {formatTxReason(reason)}
                 </option>
               ))}
             </select>
@@ -207,6 +247,12 @@ export const CreditsTable = () => {
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
               >
                 Type
+              </th>
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Reason
               </th>
               <th
                 scope="col"
@@ -247,20 +293,22 @@ export const CreditsTable = () => {
                     {formatDate(credit.created_at)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                    {formatTransType(credit.tx_reason)}
+                    {formatTxType(credit.tx_type)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                    {formatTxReason(credit.tx_reason)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                     {credit.model || '-'}
                   </td>
                   <td
                     className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                      credit.tx_type === 'credit'
+                      credit.tx_type === TransactionType.CREDIT
                         ? 'text-green-600 dark:text-green-400'
                         : 'text-red-600 dark:text-red-400'
                     }`}
                   >
-                    {credit.tx_type === 'credit' ? '+' : '-'}
-                    {Number(credit.tx_credits).toFixed(6)}
+                    {formatCredits(credit.tx_credits)}
                   </td>
                 </tr>
               ))
