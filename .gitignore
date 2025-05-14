@@ -66,6 +66,4 @@ web/node_modules
 
 # wrangler
 .wrangler
-!wrangler.toml.example
-wrangler*.toml
 .dev.vars

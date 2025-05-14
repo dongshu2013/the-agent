@@ -124,6 +124,7 @@ export class AgentContext extends DurableObject<Env> {
         id: message.id.toString(),
         values: embedding,
         metadata: {
+          userId: this.ctx.id.toString(),
           conversation_id: message.conversation_id,
         },
         namespace: DEFAULT_VECTOR_NAMESPACE,
@@ -135,6 +136,7 @@ export class AgentContext extends DurableObject<Env> {
           topK,
           namespace: DEFAULT_VECTOR_NAMESPACE,
           filter: {
+            userId: { $eq: this.ctx.id.toString() },
             conversation_id: { $eq: message.conversation_id },
           },
           returnValues: false,

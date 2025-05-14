@@ -1,0 +1,32 @@
+name = "mysta-api-server-staging"
+main = "src/index.ts"
+compatibility_date = "2025-05-12"
+
+[observability.logs]
+enabled = true
+
+[[vectorize]]
+binding = "MYTSTA_E5_INDEX"
+index_name = "mysta-e5-large"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "mysta-staging"
+database_id = "c583d5fd-dbb2-4524-aa12-ce1ade951173"
+preview_database_id = "6366d1e8-4dfe-4390-8d6f-1aab2d80df05"
+
+[[durable_objects.bindings]]
+name = "AgentContext"
+class_name = "AgentContext"
+
+[[durable_objects.bindings]]
+name = "TgContext"
+class_name = "TgContext"
+
+[vars]
+LLM_API_URL = "https://openrouter.ai/api/v1"
+MYSTA_PUBLIC_DOMAIN = "https://staging.mysta.ai"
+
+[[migrations]]
+tag = "<v1>"
+new_sqlite_classes = ["AgentContext", "TgContext"]
