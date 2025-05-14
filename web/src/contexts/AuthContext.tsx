@@ -155,6 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { newApiKey } = await postRotateApiKey(user.idToken);
       setUser((prev) => (prev ? { ...prev, apiKey: newApiKey } : null));
+      localStorage.setItem('apiKey', newApiKey);
       return newApiKey;
     } catch (error) {
       console.error('Error rotating API key:', error);
