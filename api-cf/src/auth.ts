@@ -13,7 +13,6 @@ export async function jwtOrApiKeyAuthMiddleware(
   // Check for API Key in x-api-key header
   const apiKey = c.req.header('x-api-key');
 
-  console.log('apiKey🍷', apiKey);
   if (apiKey) {
     const user = await getUserFromApiKey(c.env, apiKey);
     c.set('userId', user.id);

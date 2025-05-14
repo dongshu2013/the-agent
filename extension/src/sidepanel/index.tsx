@@ -89,6 +89,8 @@ const Sidepanel = () => {
         // 1. 获取并验证 API Key
         let storedApiKey = await getApiKey();
 
+        console.log("storedApiKey🍷", storedApiKey);
+
         if (!storedApiKey) {
           const apiKeyFromStorage = await getApiKeyFromStorage();
           console.log("apiKeyFromStorage🍷", apiKeyFromStorage);
@@ -108,6 +110,7 @@ const Sidepanel = () => {
         const verifyResponse = await fetch(`${env.BACKEND_URL}/v1/user`, {
           method: "GET",
           headers: {
+            "x-api-key": storedApiKey,
             Authorization: `Bearer ${storedApiKey}`,
             "Content-Type": "application/json",
           },
@@ -125,6 +128,8 @@ const Sidepanel = () => {
         const verifyData = await verifyResponse.json();
         if (verifyData.success && verifyData.user) {
           setApiKey(storedApiKey);
+
+          console.log("verifyData🍷", verifyData);
 
           // 构造 UserInfo 对象
           const now = new Date().toISOString();

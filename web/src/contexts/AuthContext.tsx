@@ -47,7 +47,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const idToken = await getIdToken(firebaseUser);
           const userData = await getUserInfo(idToken);
-          localStorage.setItem('apiKey', userData.user.api_key);
           setUser({
             id: firebaseUser.uid,
             email: firebaseUser.email,
