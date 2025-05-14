@@ -17,7 +17,7 @@ const DEFAULT_VECTOR_NAMESPACE = 'default';
 
 function formatSqlString(str: string | null | undefined): string | null {
   if (str === null || str === undefined) return null;
-  return `'${str}'`;
+  return `'${str.replace(/'/g, "''")}'`;
 }
 
 function formatSqlJsonb(

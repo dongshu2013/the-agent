@@ -6,17 +6,33 @@ const ToolCallFunctionSchema = z.object({
   arguments: z.string(),
 });
 
-const ToolCallSchema = z.object({
+export const ToolCallSchema = z.object({
   function: ToolCallFunctionSchema,
   id: z.string(),
   type: z.string().optional(),
   result: z.string().optional(),
 });
 
+export const ChatMessageContentSchema = z.union([
+  z.object({
+    type: z.literal('text'),
+    text: z.object({
+      value: z.string(),
+      annotations: z.array(z.string()).optional(),
+    }),
+  }),
+  z.object({
+    type: z.literal('image'),
+    image_url: z.object({
+      url: z.string(),
+    }),
+  }),
+]);
+
 // Chat message types
 export const ChatMessageSchema = z.object({
   role: z.string(),
-  content: z.string().optional(),
+  content: z.array(ChatMessageContentSchema).optional(),
   tool_call_id: z.string().optional(),
   tool_calls: z.array(ToolCallSchema).optional(),
   name: z.string().optional(),

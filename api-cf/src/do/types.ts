@@ -2,7 +2,7 @@ export interface TextMessage {
   type: 'text';
   text: {
     value: string;
-    annotations?: string[];
+    annotations?: string[] | null;
   };
 }
 
@@ -17,11 +17,12 @@ export type AgentMessage = TextMessage | ImageMessage;
 
 export interface ToolCall {
   id: string;
-  type: string;
   function: {
     name: string;
     arguments: string;
   };
+  type?: string;
+  result?: string;
 }
 
 export interface Message {
