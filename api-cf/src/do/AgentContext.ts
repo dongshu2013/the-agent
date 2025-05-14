@@ -9,19 +9,6 @@ import { createEmbeddingClient, generateEmbedding } from './embedding';
 
 const DEFAULT_VECTOR_NAMESPACE = 'default';
 
-function formatSqlString(
-  str: string | null | undefined | Record<string, any>
-): string | null {
-  if (str === null || str === undefined) return null;
-  if (typeof str === 'object') {
-    const jsonstr = JSON.stringify(str);
-    return `'${jsonstr.replace(/'/g, "''")}'`;
-  } else if (typeof str === 'string') {
-    return `'${str.replace(/'/g, "''")}'`;
-  }
-  throw new Error('Invalid type for SQL string');
-}
-
 export class AgentContext extends DurableObject<Env> {
   openai: OpenAI;
   sql: SqlStorage;
@@ -44,7 +31,7 @@ export class AgentContext extends DurableObject<Env> {
   deleteConversation(conversationId: number): void {
     this.sql.exec(
       `UPDATE agent_conversations SET status = 'deleted' WHERE id = $1`,
-      [conversationId]
+      conversationId
     );
   }
 
@@ -60,7 +47,7 @@ export class AgentContext extends DurableObject<Env> {
     for (const row of conversations) {
       const messages = this.sql.exec(
         `SELECT * FROM agent_messages WHERE conversation_id = $1`,
-        [row.id]
+        row.id
       );
       const msgs: Message[] = [];
       for (const message of messages) {
@@ -86,23 +73,24 @@ export class AgentContext extends DurableObject<Env> {
     topK = 3,
     threshold = 0.7
   ): Promise<{ success: boolean; topKMessageIds: string[] }> {
-    const params = Object.fromEntries(
-      Object.entries({
-        id: message.id,
-        conversation_id: message.conversation_id,
-        role: formatSqlString(message.role),
-        content: formatSqlString(message.content),
-        tool_calls: formatSqlString(message.tool_calls),
-        tool_call_id: formatSqlString(message.tool_call_id),
-        name: formatSqlString(message.name),
-      }).filter(([_, v]) => v !== null)
-    );
-    const insertQuery = `INSERT INTO agent_messages
-        (${Object.keys(params).join(', ')})
-        VALUES (${Object.values(params).join(', ')})`;
-    this.sql.exec(insertQuery);
+    const insertQuery =
+      'INSERT INTO agent_messages' +
+      '(id, conversation_id, role, content, tool_calls, tool_call_id, name)' +
+      'VALUES (?, ?, ?, ?, ?, ?, ?)';
     this.sql.exec(
-      `UPDATE agent_conversations SET last_message_at = ${message.id} WHERE id = ${message.conversation_id}`
+      insertQuery,
+      message.id,
+      message.conversation_id,
+      message.role,
+      message.content,
+      message.tool_calls ? JSON.stringify(message.tool_calls) : null,
+      message.tool_call_id,
+      message.name
+    );
+    this.sql.exec(
+      'UPDATE agent_conversations SET last_message_at = ? WHERE id = ?',
+      message.id,
+      message.conversation_id
     );
     const text = collectText(message);
     if (!text) {
