@@ -140,14 +140,14 @@ class MizuDB extends Dexie {
 
   // Message operations
   async saveMessage(message: Message): Promise<void> {
-    if (!message.message_id) {
+    if (!message.id) {
       console.warn("Message missing message_id, generating new one");
       throw new Error("Message missing message_id");
     }
 
     try {
       await this.messages.put(message);
-      console.log("Message saved successfully:", message.message_id);
+      console.log("Message saved successfully:", message.id);
     } catch (error) {
       console.error("Error in saveMessage:", error);
       throw error;
@@ -187,7 +187,7 @@ class MizuDB extends Dexie {
 
     for (const messageId of messageIds) {
       const targetIndex = allMessages.findIndex(
-        (m: Message) => m.message_id === messageId
+        (m: Message) => m.id === messageId
       );
       if (targetIndex === -1) continue;
 
@@ -243,7 +243,7 @@ class MizuDB extends Dexie {
             // Save messages if they exist
             if (conversation.messages && conversation.messages.length > 0) {
               const validMessages = conversation.messages.filter(
-                (msg) => msg && msg.message_id && msg.conversation_id
+                (msg) => msg && msg.id && msg.conversation_id
               );
 
               if (validMessages.length > 0) {

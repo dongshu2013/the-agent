@@ -39,7 +39,7 @@ export interface ChatMessage {
  * Message type for chat display and processing
  */
 export interface Message extends ChatMessage {
-  message_id: string;
+  id: string;
   created_at?: string;
   conversation_id: string;
   status?: "pending" | "completed" | "error";

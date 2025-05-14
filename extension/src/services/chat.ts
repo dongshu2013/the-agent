@@ -102,6 +102,7 @@ export const saveMessageApi = async ({
     };
 
     headers["Authorization"] = `Bearer ${apiKeyToUse}`;
+    headers["x-api-key"] = apiKeyToUse;
     const requestBody = {
       conversation_id: conversation_id,
       message: message,

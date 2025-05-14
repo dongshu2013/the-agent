@@ -56,7 +56,7 @@ const Sidepanel = () => {
   const handleApiError = useCallback(
     (error: any) => {
       db.saveMessage({
-        message_id: crypto.randomUUID(),
+        id: crypto.randomUUID(),
         status: "error",
         content:
           typeof error === "string"
@@ -134,7 +134,7 @@ const Sidepanel = () => {
           // 构造 UserInfo 对象
           const now = new Date().toISOString();
           const userInfo = {
-            id: verifyData.user.id,
+            id: verifyData.user.user_id,
             username:
               verifyData.user.displayName || verifyData.user.email || "unknown",
             email: verifyData.user.email,
@@ -151,7 +151,7 @@ const Sidepanel = () => {
           await db.saveOrUpdateUser(userInfo);
 
           // 3. 初始化模型数据
-          const userId = verifyData.user.id;
+          const userId = verifyData.user.user_id;
           const allModels = PROVIDER_MODELS.flatMap((provider) =>
             provider.models.map((model) => ({
               ...model,
@@ -450,7 +450,7 @@ const Sidepanel = () => {
             <div style={{ paddingBottom: "32px" }}>
               {messages.map((message, index) => (
                 <Message
-                  key={message.message_id || index}
+                  key={message.id || index}
                   message={message}
                   isLatestResponse={
                     index === messages.length - 1 &&

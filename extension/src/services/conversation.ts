@@ -6,6 +6,7 @@ import { env } from "../utils/env";
 import { getApiKey, handleAuthError } from "./utils";
 import { Conversation } from "../types/conversations";
 import { db } from "../utils/db";
+import { Message } from "~/types";
 
 /**
  * 创建新会话（调用后端接口）
@@ -22,6 +23,7 @@ export const createConversationApi = async (
 
     if (keyToUse) {
       headers["Authorization"] = `Bearer ${keyToUse}`;
+      headers["x-api-key"] = keyToUse;
     } else {
       return handleAuthError();
     }
@@ -54,7 +56,8 @@ export const createConversationApi = async (
         id: data.id || crypto.randomUUID(),
         title: data.title || "New Chat",
         user_id: data.user_id,
-        created_at: data.created_at,
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
         status: data.status,
       },
     };
@@ -74,7 +77,7 @@ export const deleteConversationApi = async (
   apiKey?: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
-    const API_ENDPOINT = `/v1/conversation/delete/${conversationId}`;
+    const API_ENDPOINT = `/v1/conversation/delete`;
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
@@ -82,6 +85,7 @@ export const deleteConversationApi = async (
 
     if (keyToUse) {
       headers["Authorization"] = `Bearer ${keyToUse}`;
+      headers["x-api-key"] = keyToUse;
     } else {
       return handleAuthError();
     }
@@ -89,7 +93,7 @@ export const deleteConversationApi = async (
     const response = await fetch(`${env.BACKEND_URL}${API_ENDPOINT}`, {
       method: "POST",
       headers,
-      body: JSON.stringify({}),
+      body: JSON.stringify({ id: conversationId }),
     });
 
     if (!response.ok) {
@@ -126,7 +130,11 @@ export const deleteConversationApi = async (
  */
 export const getConversationsApi = async (
   apiKey?: string
-): Promise<{ success: boolean; data?: any[]; error?: string }> => {
+): Promise<{
+  success: boolean;
+  data?: { conversations: { id: string; messages: Message[] }[] };
+  error?: string;
+}> => {
   try {
     const API_ENDPOINT = "/v1/conversation/list";
     const keyToUse = apiKey || (await getApiKey());
@@ -142,6 +150,7 @@ export const getConversationsApi = async (
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       Authorization: `Bearer ${formattedKey}`,
+      "x-api-key": formattedKey,
     };
 
     const url = `${env.BACKEND_URL}${API_ENDPOINT}`;
@@ -186,13 +195,12 @@ export const getConversations = async (): Promise<Conversation[]> => {
       throw new Error(response.error || "Failed to fetch conversations");
     }
 
-    const serverConversations: Conversation[] = response.data.map(
-      (conv: any) => ({
+    const serverConversations: Conversation[] =
+      response.data?.conversations?.map((conv: any) => ({
         id: conv.id,
         title:
           conv?.title || conv.messages[0]?.content.slice(0, 20) || "New Chat",
         user_id: conv.user_id,
-        created_at: conv.created_at,
         status: conv.status,
         messages: conv.messages.map((msg: any) => ({
           id: msg.id,
@@ -202,8 +210,7 @@ export const getConversations = async (): Promise<Conversation[]> => {
         })),
         createdAt: new Date(conv.created_at),
         updatedAt: new Date(conv.updated_at),
-      })
-    );
+      }));
 
     await db.saveConversationsAndMessages(
       serverConversations.map((conv) => ({ conversation: conv })),
@@ -244,7 +251,8 @@ export const createNewConversation = async (): Promise<Conversation> => {
       id: response.data.id,
       title: response?.data?.title || "New Chat",
       user_id: response.data.user_id,
-      created_at: response.data.created_at,
+      createdAt: response.data.createdAt,
+      updatedAt: response.data.updatedAt,
       status: response.data.status,
     };
 

@@ -12,9 +12,10 @@ export interface Conversation {
   id: string;
   title: string;
   user_id: string;
-  created_at: string;
   status: string;
   messages?: Message[];
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 /**

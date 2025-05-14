@@ -62,6 +62,7 @@ export class GetUser extends OpenAPIRoute {
             api_key_enabled: userInfo.api_key_enabled,
             balance: userInfo.balance,
             email: userInfo.email,
+            user_id: userInfo.id,
           },
         },
         200

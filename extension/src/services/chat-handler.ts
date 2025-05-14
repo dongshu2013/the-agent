@@ -4,7 +4,7 @@ import { saveMessageApi, sendChatCompletion } from "./chat";
 import { toolExecutor } from "./tool-executor";
 import { db } from "~/utils/db";
 import { calculateAIUsageCredits } from "~/utils/creditCalculator";
-import { deductCreditsApi, getUserCredits } from "./credit";
+import { deductCreditsApi } from "./credit";
 
 interface ChatHandlerOptions {
   apiKey: string;
@@ -65,7 +65,7 @@ export class ChatHandler {
     const baseTimestamp = new Date();
 
     const userMessage: Message = {
-      message_id: userMessageId,
+      id: userMessageId,
       role: "user",
       content: currentPrompt,
       created_at: baseTimestamp.toISOString(),
@@ -74,7 +74,7 @@ export class ChatHandler {
     };
 
     const loadingMessage: Message = {
-      message_id: assistantMessageId,
+      id: assistantMessageId,
       role: "assistant",
       content: "",
       created_at: new Date(baseTimestamp.getTime() + 1).toISOString(),
@@ -237,16 +237,18 @@ Keep responses concise and focused on the current task.
               const assistantMessage: Message = {
                 role: "assistant",
                 content: currentResponse,
-                created_at: new Date(
-                  baseTimestamp.getTime() + toolCallCount * 1000
-                ).toISOString(),
-                status: "completed",
-                message_id: crypto.randomUUID(),
+                id: crypto.randomUUID(),
                 conversation_id: this.options.currentConversationId,
                 tool_calls: toolCalls,
               };
 
-              await this.updateMessage(assistantMessage);
+              await this.updateMessage({
+                ...assistantMessage,
+                status: "completed",
+                created_at: new Date(
+                  baseTimestamp.getTime() + toolCallCount * 1000
+                ).toISOString(),
+              });
               await saveMessageApi({
                 conversation_id: this.options.currentConversationId,
                 message: assistantMessage,
@@ -268,7 +270,7 @@ Keep responses concise and focused on the current task.
                 // 创建工具调用消息
                 const toolMessageId = crypto.randomUUID();
                 const toolMessage: Message = {
-                  message_id: toolMessageId,
+                  id: toolMessageId,
                   role: "tool",
                   name: toolCall.function.name,
                   content:

@@ -1,28 +1,32 @@
 import { env } from "../utils/env";
 import { handleAuthError, getApiKey } from "./utils";
-import { db } from "../utils/db";
 
 /**
  * Get user's available credits by calling the backend API
  * Uses the API key for authentication
  */
-export const getUserCredits = async (): Promise<{ success: boolean; credits?: number; error?: string }> => {
+export const getUserCredits = async (): Promise<{
+  success: boolean;
+  credits?: number;
+  error?: string;
+}> => {
   try {
     const API_ENDPOINT = "/v1/credits/balance";
     const apiKey = await getApiKey();
-    
+
     if (!apiKey) {
       return handleAuthError();
     }
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`
+      Authorization: `Bearer ${apiKey}`,
+      "x-api-key": apiKey,
     };
 
     const response = await fetch(`${env.BACKEND_URL}${API_ENDPOINT}`, {
       method: "GET",
-      headers
+      headers,
     });
 
     if (!response.ok) {
@@ -34,31 +38,32 @@ export const getUserCredits = async (): Promise<{ success: boolean; credits?: nu
 
       return {
         success: false,
-        error: errorData.detail || 
-               errorData.error?.message || 
-               `API Error: ${response.status} - ${response.statusText}`
+        error:
+          errorData.detail ||
+          errorData.error?.message ||
+          `API Error: ${response.status} - ${response.statusText}`,
       };
     }
 
     const data = await response.json();
-    
+
     if (data.success) {
       return {
         success: true,
-        credits: data.credits
+        credits: data.credits,
       };
     } else {
       console.error("API returned success: false", data);
       return {
         success: false,
-        error: data.detail || "Unknown error occurred while getting credits"
+        error: data.detail || "Unknown error occurred while getting credits",
       };
     }
   } catch (error) {
     console.error("Failed to get user credits:", error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error occurred"
+      error: error instanceof Error ? error.message : "Unknown error occurred",
     };
   }
 };
@@ -67,30 +72,35 @@ export const getUserCredits = async (): Promise<{ success: boolean; credits?: nu
  * Deduct credits from user account by calling the backend API
  * Uses the API key for authentication without requiring a user ID
  */
-export const deductCreditsApi = async (creditsToDeduct: number, conversationId?: string, model?: string) => {
+export const deductCreditsApi = async (
+  creditsToDeduct: number,
+  conversationId?: string,
+  model?: string
+) => {
   try {
     const API_ENDPOINT = "/v1/credits/deduct";
     const apiKey = await getApiKey();
-    
+
     if (!apiKey) {
       return handleAuthError();
     }
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`
+      Authorization: `Bearer ${apiKey}`,
+      "x-api-key": apiKey,
     };
 
     const requestBody = {
       credits: creditsToDeduct,
       conversation_id: conversationId,
-      model: model
+      model: model,
     };
 
     const response = await fetch(`${env.BACKEND_URL}${API_ENDPOINT}`, {
       method: "POST",
       headers,
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -102,18 +112,20 @@ export const deductCreditsApi = async (creditsToDeduct: number, conversationId?:
 
       throw new Error(
         errorData.detail ||
-        errorData.error?.message ||
-        `API Error: ${response.status} - ${response.statusText}`
+          errorData.error?.message ||
+          `API Error: ${response.status} - ${response.statusText}`
       );
     }
 
     const data = await response.json();
-    
+
     if (!data.success) {
       console.error("API returned success: false", data);
-      throw new Error(data.detail || "Unknown error occurred during credit deduction");
+      throw new Error(
+        data.detail || "Unknown error occurred during credit deduction"
+      );
     }
-    
+
     return data;
   } catch (error) {
     console.error("Failed to deduct credits:", error);
