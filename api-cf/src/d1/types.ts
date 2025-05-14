@@ -27,9 +27,22 @@ export interface Order {
   updated_at: string;
 }
 
-export type OrderStatus =
-  | 'pending'
-  | 'completed'
-  | 'cancelled'
-  | 'failed'
-  | 'finalized';
+export enum OrderStatus {
+  PENDING = 'pending',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+  FAILED = 'failed',
+  FINALIZED = 'finalized',
+}
+
+export enum TransactionType {
+  CREDIT = 'credit',
+  DEBIT = 'debit',
+}
+
+export enum TransactionReason {
+  NEW_USER = 'new_user',
+  ORDER_PAY = 'order_pay',
+  SYSTEM_ADD = 'system_add',
+  COMPLETION = 'completion',
+}
