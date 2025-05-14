@@ -2,7 +2,7 @@ export interface TextMessage {
   type: 'text';
   text: {
     value: string;
-    annotations: string[];
+    annotations?: string[];
   };
 }
 
