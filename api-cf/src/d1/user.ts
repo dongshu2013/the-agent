@@ -1,5 +1,10 @@
 import { GatewayServiceError } from '../types/service';
-import { CreditLog, UserInfo } from './types';
+import {
+  CreditLog,
+  TransactionReason,
+  TransactionType,
+  UserInfo,
+} from './types';
 
 export async function createUser(
   env: Env,
@@ -215,7 +220,13 @@ export async function deductUserCredits(
   );
 
   const [result1, result2] = await db.batch([
-    insertTxStmt.bind(userId, -amount, 'debit', 'chat', model),
+    insertTxStmt.bind(
+      userId,
+      amount,
+      TransactionType.DEBIT,
+      TransactionReason.COMPLETION,
+      model
+    ),
     updateBalanceStmt.bind(amount, userId),
   ]);
   if (!result1.success || !result2.success) {
