@@ -73,3 +73,20 @@ curl -X POST -H "x-api-key: 06c375fa-d9a1-4b13-84e2-d7d58d091994" -H "Content-Ty
 // list conversation
 curl -X GET -H "x-api-key: 06c375fa-d9a1-4b13-84e2-d7d58d091994" -H "Content-Type: application/json" http://localhost:8787/v1/conversation/list
 ```
+
+# Appendex: Setup Vectorize DB
+
+```
+// create the vector db
+npx wrangler vectorize create mysta-e5-large --dimensions=1024 --metric=cosine
+```
+
+```bash
+// create index for conversation id
+npx wrangler vectorize create-metadata-index mysta-e5-large --property-name=conversation_id --type=string
+```
+
+```bash
+// create index for user id
+npx wrangler vectorize create-metadata-index mysta-e5-large --property-name=user_id --type=string
+```

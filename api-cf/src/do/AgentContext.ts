@@ -140,7 +140,7 @@ export class AgentContext extends DurableObject<Env> {
             conversation_id: { $eq: message.conversation_id },
           },
           returnValues: false,
-          returnMetadata: 'indexed',
+          returnMetadata: 'none',
         }),
         this.env.MYTSTA_E5_INDEX.insert(toInsert),
       ]);
