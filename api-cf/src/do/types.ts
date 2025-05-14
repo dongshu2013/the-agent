@@ -1,20 +1,3 @@
-export interface TextMessage {
-  type: 'text';
-  text: {
-    value: string;
-    annotations?: string[] | null;
-  };
-}
-
-export interface ImageMessage {
-  type: 'image';
-  image_url: {
-    url: string;
-  };
-}
-
-export type AgentMessage = TextMessage | ImageMessage;
-
 export interface ToolCall {
   id: string;
   function: {
@@ -29,7 +12,7 @@ export interface Message {
   id: number;
   conversation_id: number;
   role: string;
-  content?: AgentMessage[];
+  content?: string;
   tool_calls?: ToolCall[];
   tool_call_id?: string;
   name?: string;

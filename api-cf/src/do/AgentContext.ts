@@ -1,12 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
 import OpenAI from 'openai';
-import {
-  AgentMessage,
-  Conversation,
-  Message,
-  TextMessage,
-  ToolCall,
-} from './types';
+import { Conversation, Message, ToolCall } from './types';
 import {
   CREATE_CONVERSATION_TABLE_QUERY,
   CREATE_MESSAGE_TABLE_QUERY,
@@ -15,17 +9,17 @@ import { createEmbeddingClient, generateEmbedding } from './embedding';
 
 const DEFAULT_VECTOR_NAMESPACE = 'default';
 
-function formatSqlString(str: string | null | undefined): string | null {
-  if (str === null || str === undefined) return null;
-  return `'${str.replace(/'/g, "''")}'`;
-}
-
-function formatSqlJsonb(
-  obj: Record<string, any> | null | undefined
+function formatSqlString(
+  str: string | null | undefined | Record<string, any>
 ): string | null {
-  if (obj === null || obj === undefined) return null;
-  const jsonstr = JSON.stringify(obj);
-  return formatSqlString(jsonstr);
+  if (str === null || str === undefined) return null;
+  if (typeof str === 'object') {
+    const jsonstr = JSON.stringify(str);
+    return `'${jsonstr.replace(/'/g, "''")}'`;
+  } else if (typeof str === 'string') {
+    return `'${str.replace(/'/g, "''")}'`;
+  }
+  throw new Error('Invalid type for SQL string');
 }
 
 export class AgentContext extends DurableObject<Env> {
@@ -74,7 +68,7 @@ export class AgentContext extends DurableObject<Env> {
           id: message.id as number,
           conversation_id: message.conversation_id as number,
           role: message.role as string,
-          content: JSON.parse(message.content as string) as AgentMessage[],
+          content: message.content as string,
           tool_calls: JSON.parse(message.tool_calls as string) as ToolCall[],
           tool_call_id: message.tool_call_id as string,
         });
@@ -97,8 +91,8 @@ export class AgentContext extends DurableObject<Env> {
         id: message.id,
         conversation_id: message.conversation_id,
         role: formatSqlString(message.role),
-        content: formatSqlJsonb(message.content || []),
-        tool_calls: formatSqlJsonb(message.tool_calls),
+        content: formatSqlString(message.content),
+        tool_calls: formatSqlString(message.tool_calls),
         tool_call_id: formatSqlString(message.tool_call_id),
         name: formatSqlString(message.name),
       }).filter(([_, v]) => v !== null)
@@ -110,18 +104,14 @@ export class AgentContext extends DurableObject<Env> {
     this.sql.exec(
       `UPDATE agent_conversations SET last_message_at = ${message.id} WHERE id = ${message.conversation_id}`
     );
-    const texts =
-      (message.content || [])
-        .filter((m): m is TextMessage => m.type === 'text')
-        .map((m) => m.text?.value)
-        ?.filter((v): v is string => v?.trim().length > 0) || [];
-    if (texts.length === 0) {
+    const text = collectText(message);
+    if (!text) {
       return {
         success: true,
         topKMessageIds: [],
       };
     }
-    const embedding = await generateEmbedding(this.openai, texts);
+    const embedding = await generateEmbedding(this.openai, [text]);
     if (embedding === null) {
       return {
         success: true,
@@ -167,5 +157,42 @@ export class AgentContext extends DurableObject<Env> {
         topKMessageIds: [],
       };
     }
+  }
+}
+
+function collectText(message: Message): string {
+  if (!message.content) {
+    return '';
+  }
+
+  try {
+    const parsed = JSON.parse(message.content);
+    if (Array.isArray(parsed)) {
+      const texts: string[] = [];
+      for (const c of parsed) {
+        if (c.type === 'text') {
+          if (typeof c.text === 'string') {
+            if (c.text.trim().length > 0) {
+              texts.push(c.text);
+            }
+          } else if (c.text?.value) {
+            texts.push(c.text.value);
+          }
+        }
+      }
+      if (texts.length === 0) {
+        return '';
+      }
+      return texts.join('\n');
+    } else {
+      console.error('Invalid message content:', message.content);
+      return '';
+    }
+  } catch (error) {
+    if (typeof message.content === 'string') {
+      return message.content;
+    }
+    console.error('Error collecting text from message:', error);
+    return '';
   }
 }
