@@ -175,12 +175,24 @@ Content-Type: application/json
 x-api-key: {{apiKey}}
 
 {
-  "chat_id": "123456",
-  "chat_title": "Test Chat",
-  "chat_type": "group",
-  "is_public": true,
-  "is_free": true,
-  "subscription_fee": 0
+  "chats": [
+  {
+    "chat_id": "-202505150057",
+    "chat_title": "Test Chat",
+    "chat_type": "group",
+    "is_public": true,
+    "is_free": true,
+    "subscription_fee": 0
+  },
+  {
+    "chat_id": "-202505150058",
+    "chat_title": "Test Chat 2",
+    "chat_type": "group",
+    "is_public": true,
+    "is_free": true,
+    "subscription_fee": 0
+  }
+  ]
 }
 
 ### Sync Telegram Messages
@@ -189,7 +201,7 @@ Content-Type: application/json
 x-api-key: {{apiKey}}
 
 {
-  "chat_id": "123456",
+  "chat_id": "-202505150057",
   "messages": [
     {
       "message_id": "msg1",

@@ -520,12 +520,16 @@ export class SyncTelegramChat extends OpenAPIRoute {
         content: {
           'application/json': {
             schema: z.object({
-              chat_id: z.string(),
-              chat_title: z.string(),
-              chat_type: z.string(),
-              is_public: z.boolean().default(false),
-              is_free: z.boolean().default(true),
-              subscription_fee: z.number().default(0),
+              chats: z.array(
+                z.object({
+                  chat_id: z.string(),
+                  chat_title: z.string(),
+                  chat_type: z.string(),
+                  is_public: z.boolean().default(false),
+                  is_free: z.boolean().default(true),
+                  subscription_fee: z.number().default(0),
+                })
+              ),
             }),
           },
         },
@@ -533,12 +537,12 @@ export class SyncTelegramChat extends OpenAPIRoute {
     },
     responses: {
       '200': {
-        description: 'Chat synchronized successfully',
+        description: 'Number of chats synchronized successfully',
         content: {
           'application/json': {
             schema: z.object({
               success: z.boolean(),
-              chat_id: z.string(),
+              count: z.number(),
             }),
           },
         },
@@ -549,23 +553,36 @@ export class SyncTelegramChat extends OpenAPIRoute {
   async handle(c: Context) {
     try {
       const userId = c.get('userId');
-      const body = await c.req.json();
+      const { chats } = await c.req.json();
 
-      // Use Durable Object to sync Telegram chat
+      if (!Array.isArray(chats)) {
+        return c.json(
+          {
+            success: false,
+            error: {
+              code: 'INVALID_REQUEST',
+              message: 'Request must contain a chats array',
+            },
+          },
+          400
+        );
+      }
+
+      // Use Durable Object to sync Telegram chats
       const id = c.env.TgContext.idFromName(userId);
       const stub = c.env.TgContext.get(id);
-      const result = await stub.syncChat(body);
+      const result = await stub.syncChats(chats);
 
       // Return success response with CORS headers
       return c.json(
         {
           success: true,
-          chat_id: result,
+          count: result,
         },
         200
       );
     } catch (error) {
-      console.error('Error syncing Telegram chat:', error);
+      console.error('Error syncing Telegram chats:', error);
 
       return c.json(
         {

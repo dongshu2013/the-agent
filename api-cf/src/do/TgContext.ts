@@ -429,86 +429,94 @@ export class TgContext extends DurableObject<Env> {
     };
   }
 
-  // Sync a Telegram chat
-  async syncChat(chatData: TelegramChatData): Promise<string> {
-    const {
-      chat_id,
-      chat_title,
-      chat_type,
-      is_public,
-      is_free,
-      subscription_fee,
-    } = chatData;
+  // Sync multiple Telegram chats
+  async syncChats(chatsData: TelegramChatData[]): Promise<number> {
+    let successCount = 0;
 
-    // Check if chat already exists
-    const existingChatCursor = this.sql.exec(
-      `SELECT * FROM telegram_dialogs WHERE chat_id = ?`,
-      ...[chat_id]
-    );
-
-    const existingChats = [];
-    for (const chat of existingChatCursor) {
-      existingChats.push(chat);
-    }
-    const existingChat = existingChats.length > 0 ? existingChats[0] : null;
-
-    const now = new Date().toISOString();
-
-    if (existingChat) {
-      // Update existing chat
-      this.sql.exec(
-        `
-        UPDATE telegram_dialogs
-        SET 
-          chat_title = ?,
-          chat_type = ?,
-          is_public = ?,
-          is_free = ?,
-          subscription_fee = ?,
-          last_synced_at = ?,
-          updated_at = ?,
-          status = 'active'
-        WHERE chat_id = ?
-        `,
-        ...[
-          chat_title,
-          chat_type,
-          is_public ? 1 : 0,
-          is_free ? 1 : 0,
-          subscription_fee,
-          now,
-          now,
-          chat_id,
-        ]
-      );
-
-      return chat_id;
-    } else {
-      // Insert new chat
-      const id = crypto.randomUUID();
-
-      this.sql.exec(
-        `
-        INSERT INTO telegram_dialogs
-        (id, chat_id, chat_title, chat_type, is_public, is_free, subscription_fee, last_synced_at, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `,
-        ...[
-          id,
+    for (const chatData of chatsData) {
+      try {
+        const {
           chat_id,
           chat_title,
           chat_type,
-          is_public ? 1 : 0,
-          is_free ? 1 : 0,
+          is_public,
+          is_free,
           subscription_fee,
-          now,
-          now,
-          now,
-        ]
-      );
+        } = chatData;
 
-      return chat_id;
+        // Check if chat already exists
+        const existingChatCursor = this.sql.exec(
+          `SELECT * FROM telegram_dialogs WHERE chat_id = ?`,
+          ...[chat_id]
+        );
+
+        const existingChats = [];
+        for (const chat of existingChatCursor) {
+          existingChats.push(chat);
+        }
+        const existingChat = existingChats.length > 0 ? existingChats[0] : null;
+
+        const now = new Date().toISOString();
+
+        if (existingChat) {
+          // Update existing chat
+          this.sql.exec(
+            `
+            UPDATE telegram_dialogs
+            SET 
+              chat_title = ?,
+              chat_type = ?,
+              is_public = ?,
+              is_free = ?,
+              subscription_fee = ?,
+              last_synced_at = ?,
+              updated_at = ?,
+              status = 'active'
+            WHERE chat_id = ?
+            `,
+            ...[
+              chat_title,
+              chat_type,
+              is_public ? 1 : 0,
+              is_free ? 1 : 0,
+              subscription_fee,
+              now,
+              now,
+              chat_id,
+            ]
+          );
+        } else {
+          // Insert new chat
+          const id = crypto.randomUUID();
+
+          this.sql.exec(
+            `
+            INSERT INTO telegram_dialogs
+            (id, chat_id, chat_title, chat_type, is_public, is_free, subscription_fee, last_synced_at, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `,
+            ...[
+              id,
+              chat_id,
+              chat_title,
+              chat_type,
+              is_public ? 1 : 0,
+              is_free ? 1 : 0,
+              subscription_fee,
+              now,
+              now,
+              now,
+            ]
+          );
+        }
+        successCount++;
+      } catch (error) {
+        console.error(`Error syncing chat ${chatData.chat_id}:`, error);
+        // Continue with next chat even if one fails
+      }
     }
+
+    return successCount;
   }
 
   // Sync messages for a chat
