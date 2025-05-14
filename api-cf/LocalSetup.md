@@ -61,7 +61,13 @@ npx wrangler dev --experimental-vectorize-bind-to-prod
 1. Do not use _--remote_ flag, sqlite backed duraable object doesn't support remote mode
 2. _--experimental-vectorize-bind-to-prod_ flag will affect vectorize index in remote mode
 
-# Step3: Call the server
+## Step3.2: If you want to deploy:
+
+```bash
+npx wrangler deploy
+```
+
+## Step4: Call the server
 
 ```bash
 // create conversation
