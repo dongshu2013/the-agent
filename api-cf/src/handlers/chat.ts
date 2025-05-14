@@ -53,6 +53,7 @@ export class ChatCompletions extends OpenAPIRoute {
     const credits = await getUserBalance(env, userId);
 
     // Check if user has enough credits (assuming 0.01 credits per request for simplicity)
+    // TODO calculate cost credits based on model and tokens
     const requiredCredits = 0.01;
     if (credits < requiredCredits) {
       return c.json(

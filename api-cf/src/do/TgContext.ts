@@ -77,25 +77,24 @@ export class TgContext extends DurableObject<Env> {
     `;
 
     const params: any[] = [];
-    let paramIndex = 1;
 
     if (chatTitle) {
-      query += ` AND d.chat_title LIKE $${paramIndex++}`;
+      query += ` AND d.chat_title LIKE ?`;
       params.push(`%${chatTitle}%`);
     }
 
     if (isPublic !== undefined) {
-      query += ` AND d.is_public = $${paramIndex++}`;
+      query += ` AND d.is_public = ?`;
       params.push(isPublic ? 1 : 0);
     }
 
     if (isFree !== undefined) {
-      query += ` AND d.is_free = $${paramIndex++}`;
+      query += ` AND d.is_free = ?`;
       params.push(isFree ? 1 : 0);
     }
 
     if (status) {
-      query += ` AND d.status = $${paramIndex++}`;
+      query += ` AND d.status = ?`;
       params.push(status);
     } else {
       query += ` AND d.status = 'active'`;
@@ -107,7 +106,7 @@ export class TgContext extends DurableObject<Env> {
       FROM (${query})
     `;
 
-    const countResultCursor = this.sql.exec(countQuery, params);
+    const countResultCursor = this.sql.exec(countQuery, ...params);
     const countResults = [];
     for (const result of countResultCursor) {
       countResults.push(result);
@@ -118,12 +117,19 @@ export class TgContext extends DurableObject<Env> {
         : 0;
 
     // Add sorting and pagination
-    query += ` ORDER BY d.${sortBy} ${sortOrder === 'asc' ? 'ASC' : 'DESC'}`;
-    query += ` LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
+    const validSortColumns = ['updated_at', 'created_at', 'chat_title']; // 添加其他合法的排序列
+    const sanitizedSortBy = validSortColumns.includes(sortBy)
+      ? sortBy
+      : 'updated_at';
+    const sanitizedSortOrder =
+      sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+
+    query += ` ORDER BY d.${sanitizedSortBy} ${sanitizedSortOrder}`;
+    query += ` LIMIT ? OFFSET ?`;
     params.push(limit, offset);
 
     // Execute the final query
-    const dialogsCursor = this.sql.exec(query, params);
+    const dialogsCursor = this.sql.exec(query, ...params);
     const dialogs = [];
     for (const dialog of dialogsCursor) {
       dialogs.push(dialog);
@@ -152,8 +158,8 @@ export class TgContext extends DurableObject<Env> {
   ) {
     // Check if chat exists and user has access to it
     const chatCursor = this.sql.exec(
-      `SELECT * FROM telegram_dialogs WHERE chat_id = $1 AND status = 'active'`,
-      [chatId]
+      `SELECT * FROM telegram_dialogs WHERE chat_id = ? AND status = 'active'`,
+      ...[chatId]
     );
 
     const chats = [];
@@ -169,34 +175,33 @@ export class TgContext extends DurableObject<Env> {
 
     // Build the query with filters
     let query = `
-      SELECT * FROM telegram_messages WHERE chat_id = $1
+      SELECT * FROM telegram_messages WHERE chat_id = ?
     `;
 
     const params: any[] = [chatId];
-    let paramIndex = 2;
 
     if (messageText) {
-      query += ` AND message_text LIKE $${paramIndex++}`;
+      query += ` AND message_text LIKE ?`;
       params.push(`%${messageText}%`);
     }
 
     if (senderId) {
-      query += ` AND sender_id = $${paramIndex++}`;
+      query += ` AND sender_id = ?`;
       params.push(senderId);
     }
 
     if (senderUsername) {
-      query += ` AND sender_username LIKE $${paramIndex++}`;
+      query += ` AND sender_username LIKE ?`;
       params.push(`%${senderUsername}%`);
     }
 
     if (startTimestamp) {
-      query += ` AND message_timestamp >= $${paramIndex++}`;
+      query += ` AND message_timestamp >= ?`;
       params.push(startTimestamp);
     }
 
     if (endTimestamp) {
-      query += ` AND message_timestamp <= $${paramIndex++}`;
+      query += ` AND message_timestamp <= ?`;
       params.push(endTimestamp);
     }
 
@@ -206,7 +211,7 @@ export class TgContext extends DurableObject<Env> {
       FROM (${query})
     `;
 
-    const countResultCursor = this.sql.exec(countQuery, params);
+    const countResultCursor = this.sql.exec(countQuery, ...params);
     const countResults = [];
     for (const result of countResultCursor) {
       countResults.push(result);
@@ -217,12 +222,19 @@ export class TgContext extends DurableObject<Env> {
         : 0;
 
     // Add sorting and pagination
-    query += ` ORDER BY ${sortBy} ${sortOrder === 'asc' ? 'ASC' : 'DESC'}`;
-    query += ` LIMIT $${paramIndex++} OFFSET $${paramIndex++}`;
+    const validSortColumns = ['message_timestamp', 'message_id']; // 添加其他合法的排序列
+    const sanitizedSortBy = validSortColumns.includes(sortBy)
+      ? sortBy
+      : 'message_timestamp';
+    const sanitizedSortOrder =
+      sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+
+    query += ` ORDER BY ${sanitizedSortBy} ${sanitizedSortOrder}`;
+    query += ` LIMIT ? OFFSET ?`;
     params.push(limit, offset);
 
     // Execute the final query
-    const messagesCursor = this.sql.exec(query, params);
+    const messagesCursor = this.sql.exec(query, ...params);
     const messages = [];
     for (const message of messagesCursor) {
       messages.push(message);
@@ -312,9 +324,9 @@ export class TgContext extends DurableObject<Env> {
           SELECT m.*, d.id as dialog_id, d.chat_title, d.chat_type, d.is_public, d.is_free
           FROM telegram_messages m
           JOIN telegram_dialogs d ON m.chat_id = d.chat_id
-          WHERE m.id = $1 AND d.status = 'active'
+          WHERE m.id = ? AND d.status = 'active'
           `,
-          [matchId]
+          ...[matchId]
         );
 
         const matchMessages = [];
@@ -338,22 +350,23 @@ export class TgContext extends DurableObject<Env> {
         const contextQuery = `
           SELECT m.*
           FROM telegram_messages m
-          WHERE m.chat_id = $1
+          WHERE m.chat_id = ?
           AND m.message_timestamp BETWEEN 
-            (SELECT message_timestamp FROM telegram_messages WHERE id = $2) - ${
-              messageRange * 3600
-            } 
-            AND (SELECT message_timestamp FROM telegram_messages WHERE id = $3) + ${
-              messageRange * 3600
-            }
+            (SELECT message_timestamp FROM telegram_messages WHERE id = ?) - ? 
+            AND (SELECT message_timestamp FROM telegram_messages WHERE id = ?) + ?
           ORDER BY m.message_timestamp
         `;
 
-        const contextMessagesCursor = this.sql.exec(contextQuery, [
-          matchMessage.chat_id,
-          matchId,
-          matchId,
-        ]);
+        const contextMessagesCursor = this.sql.exec(
+          contextQuery,
+          ...[
+            matchMessage.chat_id,
+            matchId,
+            messageRange * 3600,
+            matchId,
+            messageRange * 3600,
+          ]
+        );
 
         const contextMessages = [];
         for (const message of contextMessagesCursor) {
@@ -429,8 +442,8 @@ export class TgContext extends DurableObject<Env> {
 
     // Check if chat already exists
     const existingChatCursor = this.sql.exec(
-      `SELECT * FROM telegram_dialogs WHERE chat_id = $1`,
-      [chat_id]
+      `SELECT * FROM telegram_dialogs WHERE chat_id = ?`,
+      ...[chat_id]
     );
 
     const existingChats = [];
@@ -447,17 +460,17 @@ export class TgContext extends DurableObject<Env> {
         `
         UPDATE telegram_dialogs
         SET 
-          chat_title = $1,
-          chat_type = $2,
-          is_public = $3,
-          is_free = $4,
-          subscription_fee = $5,
-          last_synced_at = $6,
-          updated_at = $7,
+          chat_title = ?,
+          chat_type = ?,
+          is_public = ?,
+          is_free = ?,
+          subscription_fee = ?,
+          last_synced_at = ?,
+          updated_at = ?,
           status = 'active'
-        WHERE chat_id = $8
+        WHERE chat_id = ?
         `,
-        [
+        ...[
           chat_title,
           chat_type,
           is_public ? 1 : 0,
@@ -478,9 +491,9 @@ export class TgContext extends DurableObject<Env> {
         `
         INSERT INTO telegram_dialogs
         (id, chat_id, chat_title, chat_type, is_public, is_free, subscription_fee, last_synced_at, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
-        [
+        ...[
           id,
           chat_id,
           chat_title,
@@ -506,8 +519,8 @@ export class TgContext extends DurableObject<Env> {
   ): Promise<number> {
     // Check if chat exists
     const chatCursor = this.sql.exec(
-      `SELECT * FROM telegram_dialogs WHERE chat_id = $1 AND status = 'active'`,
-      [chatId]
+      `SELECT * FROM telegram_dialogs WHERE chat_id = ? AND status = 'active'`,
+      ...[chatId]
     );
 
     const chats = [];
@@ -531,8 +544,8 @@ export class TgContext extends DurableObject<Env> {
 
         // Check if message already exists
         const existingMessageCursor = this.sql.exec(
-          `SELECT * FROM telegram_messages WHERE chat_id = $1 AND message_id = $2`,
-          [chatId, message.message_id]
+          `SELECT * FROM telegram_messages WHERE chat_id = ? AND message_id = ?`,
+          ...[chatId, message.message_id]
         );
 
         const existingMessages = [];
@@ -548,9 +561,9 @@ export class TgContext extends DurableObject<Env> {
             `
             INSERT INTO telegram_messages
             (id, chat_id, message_id, message_text, message_timestamp, sender_id, sender_username, sender_firstname, sender_lastname)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             `,
-            [
+            ...[
               id,
               chatId,
               message.message_id,
@@ -580,10 +593,10 @@ export class TgContext extends DurableObject<Env> {
       this.sql.exec(
         `
         UPDATE telegram_dialogs
-        SET last_synced_at = $1, updated_at = $2
-        WHERE chat_id = $3
+        SET last_synced_at = ?, updated_at = ?
+        WHERE chat_id = ?
         `,
-        [now, now, chatId]
+        ...[now, now, chatId]
       );
 
       // Generate embeddings for new messages in batches
@@ -639,10 +652,10 @@ export class TgContext extends DurableObject<Env> {
         this.sql.exec(
           `
           UPDATE telegram_messages
-          SET embedding_id = $1
-          WHERE id = $2
+          SET embedding_id = ?
+          WHERE id = ?
           `,
-          [message.id, message.id]
+          ...[message.id, message.id]
         );
       }
     } catch (error) {
