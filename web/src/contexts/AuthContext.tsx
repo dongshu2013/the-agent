@@ -8,7 +8,6 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
   getIdToken,
-  signInWithCustomToken,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { getUserInfo, postRotateApiKey, postToggleApiKey } from '@/lib/api_service';
@@ -58,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             credits: userData.user.balance,
             idToken,
           });
+          console.log('userData.user.api_key🍷', userData.user.api_key);
           localStorage.setItem('apiKey', userData.user.api_key);
         } catch (error) {
           console.error('Error setting up user:', error);
@@ -189,6 +189,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         credits: userData.user.balance,
         idToken: token,
       });
+
+      console.log('refreshUserData 🍷', userData.user.api_key);
       localStorage.setItem('apiKey', userData.user.api_key);
     } catch (error) {
       console.error('Error refreshing user data:', error);
