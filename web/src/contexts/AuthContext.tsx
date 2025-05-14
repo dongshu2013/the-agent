@@ -60,14 +60,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             credits: userData.user.balance,
             idToken,
           });
-          localStorage.setItem("apiKey", userData.user.api_key);
-          if (typeof window !== "undefined" && userData.user.api_key) {
+          localStorage.setItem('apiKey', userData.user.api_key);
+          if (typeof window !== 'undefined' && userData.user.api_key) {
             window.postMessage(
               {
-                type: "FROM_WEB_TO_EXTENSION",
+                type: 'FROM_WEB_TO_EXTENSION',
                 apiKey: userData.user.api_key,
               },
-              "*"
+              '*',
             );
           }
         } catch (error) {
@@ -99,7 +99,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             credits: 0,
             idToken,
           });
-          
         }
       } catch (error) {
         console.error('Error handling redirect:', error);
@@ -204,13 +203,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       localStorage.setItem('apiKey', userData.user.api_key);
-      if (typeof window !== "undefined" && userData.user.api_key) {
+      if (typeof window !== 'undefined' && userData.user.api_key) {
         window.postMessage(
           {
-            type: "FROM_WEB_TO_EXTENSION",
+            type: 'FROM_WEB_TO_EXTENSION',
             apiKey: userData.user.api_key,
           },
-          "*"
+          '*',
         );
       }
     } catch (error) {
