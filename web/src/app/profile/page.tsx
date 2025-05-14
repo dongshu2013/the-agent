@@ -43,8 +43,8 @@ export default function ProfilePage() {
     if (!user || !user.idToken) return;
     setIsLoadingTelegramStats(true);
     try {
-      const response = await getTelegramStats(user.idToken);
-      setTelegramStats(response);
+      const data = await getTelegramStats(user.idToken);
+      setTelegramStats(data);
     } catch (error) {
       console.error('Error fetching Telegram stats:', error);
     } finally {

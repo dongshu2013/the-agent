@@ -2,6 +2,11 @@ import { OpenAPIRoute } from 'chanfana';
 import { z } from 'zod';
 import { Context } from 'hono';
 import { corsHeaders } from '../utils/common';
+import {
+  createSuccessResponse,
+  createErrorResponse,
+  ApiErrorCode,
+} from '../types/api';
 
 // ===== GET TELEGRAM STATS =====
 
@@ -22,6 +27,20 @@ export class GetTelegramStats extends OpenAPIRoute {
           },
         },
       },
+      '500': {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: z.object({
+              success: z.boolean(),
+              error: z.object({
+                code: z.string(),
+                message: z.string(),
+              }),
+            }),
+          },
+        },
+      },
     },
   };
 
@@ -32,27 +51,15 @@ export class GetTelegramStats extends OpenAPIRoute {
       const stub = c.env.TgContext.get(id);
       const result = await stub.getStats();
 
-      return c.json(
-        {
-          success: true,
-          data: result,
-        },
-        200
-      );
+      return c.json(createSuccessResponse(result), 200);
     } catch (error) {
       console.error('Error getting Telegram stats:', error);
 
       return c.json(
-        {
-          success: false,
-          error: {
-            code: 'INTERNAL_ERROR',
-            message:
-              error instanceof Error
-                ? error.message
-                : 'An unknown error occurred',
-          },
-        },
+        createErrorResponse(
+          ApiErrorCode.INTERNAL_ERROR,
+          error instanceof Error ? error.message : 'An unknown error occurred'
+        ),
         500
       );
     }
