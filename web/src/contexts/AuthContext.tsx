@@ -43,12 +43,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Handle user data when Firebase auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log('firebaseUser🍷', firebaseUser);
       if (firebaseUser) {
         try {
           const idToken = await getIdToken(firebaseUser);
           const userData = await getUserInfo(idToken);
-          console.log('userData.user.api_key🍷', userData.user.api_key);
           localStorage.setItem('apiKey', userData.user.api_key);
           setUser({
             id: firebaseUser.uid,
@@ -193,7 +191,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const token = await getIdToken(auth.currentUser);
       const userData = await getUserInfo(token);
-      console.log('refreshUserData 🍷', userData.user.api_key);
       setUser({
         ...user,
         apiKey: userData.user.api_key,
