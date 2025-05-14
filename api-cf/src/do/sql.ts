@@ -11,8 +11,8 @@ export const CREATE_MESSAGE_TABLE_QUERY = `CREATE TABLE IF NOT EXISTS agent_mess
   id INTEGER PRIMARY KEY,
   conversation_id INTEGER NOT NULL,
   role TEXT NOT NULL,
-  content JSONB NOT NULL,
-  tool_calls JSONB,
+  content TEXT NOT NULL,
+  tool_calls TEXT,
   tool_call_id TEXT,
   name TEXT,
   FOREIGN KEY (conversation_id) REFERENCES agent_conversations(id)

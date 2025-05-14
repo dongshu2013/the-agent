@@ -16,7 +16,6 @@ interface UserInfo {
   created_at: string;
   updated_at: string;
   selectedModelId: string;
-  api_url: string;
   photoURL?: string;
 }
 

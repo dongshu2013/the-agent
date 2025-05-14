@@ -5,7 +5,7 @@ import { env } from "./env";
 export const fetchOpenAIModelsFromAPI = async (apiKey: string) => {
   const response = await fetch("https://api.openai.com/v1/models", {
     headers: {
-      Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+      // Authorization: `Bearer ${env.OPENAI_API_KEY}`,
     },
   });
   if (!response.ok) throw new Error("Failed to fetch OpenAI models");

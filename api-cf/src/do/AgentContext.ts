@@ -1,19 +1,11 @@
 import { DurableObject } from 'cloudflare:workers';
 import OpenAI from 'openai';
-import {
-  AgentMessage,
-  Conversation,
-  Message,
-  TextMessage,
-  ToolCall,
-} from './types';
+import { Conversation, Message, ToolCall } from './types';
 import {
   CREATE_CONVERSATION_TABLE_QUERY,
   CREATE_MESSAGE_TABLE_QUERY,
 } from './sql';
-
-const EMBEDDING_MODEL = 'intfloat/multilingual-e5-large';
-const EMBEDDING_API_BASE_URL = 'https://api.deepinfra.com/v1/openai';
+import { createEmbeddingClient, generateEmbedding } from './embedding';
 
 const DEFAULT_VECTOR_NAMESPACE = 'default';
 
@@ -26,24 +18,21 @@ export class AgentContext extends DurableObject<Env> {
     this.sql = ctx.storage.sql;
     this.sql.exec(CREATE_CONVERSATION_TABLE_QUERY);
     this.sql.exec(CREATE_MESSAGE_TABLE_QUERY);
-
-    this.openai = new OpenAI({
-      apiKey: env.EMBEDDING_API_KEY,
-      baseURL: EMBEDDING_API_BASE_URL,
-    });
+    this.openai = createEmbeddingClient(env);
   }
 
   createConversation(conversationId: number): number {
-    this.sql.exec(`INSERT INTO agent_conversations (id) VALUES ($1)`, [
-      conversationId,
-    ]);
+    this.sql.exec(
+      `INSERT INTO agent_conversations (id) VALUES (?)`,
+      conversationId
+    );
     return conversationId;
   }
 
   deleteConversation(conversationId: number): void {
     this.sql.exec(
-      `UPDATE agent_conversations SET status = 'deleted' WHERE id = $1`,
-      [conversationId]
+      `UPDATE agent_conversations SET status = 'deleted' WHERE id = ?`,
+      conversationId
     );
   }
 
@@ -58,8 +47,8 @@ export class AgentContext extends DurableObject<Env> {
     );
     for (const row of conversations) {
       const messages = this.sql.exec(
-        `SELECT * FROM agent_messages WHERE conversation_id = $1`,
-        [row.id]
+        `SELECT * FROM agent_messages WHERE conversation_id = ?`,
+        row.id
       );
       const msgs: Message[] = [];
       for (const message of messages) {
@@ -67,7 +56,7 @@ export class AgentContext extends DurableObject<Env> {
           id: message.id as number,
           conversation_id: message.conversation_id as number,
           role: message.role as string,
-          content: JSON.parse(message.content as string) as AgentMessage[],
+          content: message.content as string,
           tool_calls: JSON.parse(message.tool_calls as string) as ToolCall[],
           tool_call_id: message.tool_call_id as string,
         });
@@ -85,40 +74,39 @@ export class AgentContext extends DurableObject<Env> {
     topK = 3,
     threshold = 0.7
   ): Promise<{ success: boolean; topKMessageIds: string[] }> {
+    const insertQuery =
+      'INSERT INTO agent_messages' +
+      '(id, conversation_id, role, content, tool_calls, tool_call_id, name)' +
+      'VALUES (?, ?, ?, ?, ?, ?, ?)';
     this.sql.exec(
-      `INSERT INTO agent_messages
-        (id, conversation_id, role, content, tool_calls, tool_call_id)
-        VALUES ($1, $2, $3, $4, $5, $6)`,
-      [
-        message.id,
-        message.conversation_id,
-        message.role,
-        message.content ? JSON.stringify(message.content) : null,
-        message.tool_calls ? JSON.stringify(message.tool_calls) : null,
-        message.tool_call_id,
-      ]
+      insertQuery,
+      message.id,
+      message.conversation_id,
+      message.role,
+      message.content,
+      message.tool_calls ? JSON.stringify(message.tool_calls) : null,
+      message.tool_call_id,
+      message.name
     );
     this.sql.exec(
-      `UPDATE agent_conversations SET last_message_at = $1 WHERE id = $2`,
-      [message.id, message.conversation_id]
+      'UPDATE agent_conversations SET last_message_at = ? WHERE id = ?',
+      message.id,
+      message.conversation_id
     );
-    const texts =
-      message.content
-        ?.filter((m): m is TextMessage => m.type === 'text')
-        .map((m) => m.text?.value)
-        ?.filter((v): v is string => v?.trim().length > 0) || [];
-    if (texts.length === 0) {
+    const text = collectText(message);
+    if (!text) {
       return {
         success: true,
         topKMessageIds: [],
       };
     }
-    const response = await this.openai.embeddings.create({
-      input: texts.join('\n'),
-      model: EMBEDDING_MODEL,
-      encoding_format: 'float',
-    });
-    const embedding = response.data[0].embedding;
+    const embedding = await generateEmbedding(this.openai, [text]);
+    if (embedding === null) {
+      return {
+        success: true,
+        topKMessageIds: [],
+      };
+    }
     const toInsert = [
       {
         id: message.id.toString(),
@@ -158,5 +146,42 @@ export class AgentContext extends DurableObject<Env> {
         topKMessageIds: [],
       };
     }
+  }
+}
+
+function collectText(message: Message): string {
+  if (!message.content) {
+    return '';
+  }
+
+  try {
+    const parsed = JSON.parse(message.content);
+    if (Array.isArray(parsed)) {
+      const texts: string[] = [];
+      for (const c of parsed) {
+        if (c.type === 'text') {
+          if (typeof c.text === 'string') {
+            if (c.text.trim().length > 0) {
+              texts.push(c.text);
+            }
+          } else if (c.text?.value) {
+            texts.push(c.text.value);
+          }
+        }
+      }
+      if (texts.length === 0) {
+        return '';
+      }
+      return texts.join('\n');
+    } else {
+      console.error('Invalid message content:', message.content);
+      return '';
+    }
+  } catch (error) {
+    if (typeof message.content === 'string') {
+      return message.content;
+    }
+    console.error('Error collecting text from message:', error);
+    return '';
   }
 }

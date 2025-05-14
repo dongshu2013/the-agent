@@ -45,11 +45,10 @@ const Header = ({
               models: [],
             };
           }
-          fullGroups[model.type].models.push(model); // 保留完整对象
+          fullGroups[model.type].models.push(model);
         });
         const fullProviderGroups = Object.values(fullGroups);
 
-        // 构建 providerGroups（只含 id, name）
         const providerGroups = fullProviderGroups.map((g: any) => ({
           type: g.type,
           models: g.models.map((m: any) => ({ id: m.id, name: m.name })),

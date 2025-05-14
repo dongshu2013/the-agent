@@ -8,7 +8,6 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
   getIdToken,
-  signInWithCustomToken,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { getUserInfo, postRotateApiKey, postToggleApiKey } from '@/lib/api_service';
@@ -48,6 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const idToken = await getIdToken(firebaseUser);
           const userData = await getUserInfo(idToken);
+          console.log('userData.user.api_key🍷', userData.user.api_key);
+          localStorage.setItem('apiKey', userData.user.api_key);
           setUser({
             id: firebaseUser.uid,
             email: firebaseUser.email,
@@ -87,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             credits: 0,
             idToken,
           });
+          
         }
       } catch (error) {
         console.error('Error handling redirect:', error);
@@ -180,6 +182,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const token = await getIdToken(auth.currentUser);
       const userData = await getUserInfo(token);
+      console.log('refreshUserData 🍷', userData.user.api_key);
+      localStorage.setItem('apiKey', userData.user.api_key);
       setUser({
         ...user,
         apiKey: userData.user.api_key,
@@ -187,6 +191,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         credits: userData.user.balance,
         idToken: token,
       });
+
     } catch (error) {
       console.error('Error refreshing user data:', error);
     }
