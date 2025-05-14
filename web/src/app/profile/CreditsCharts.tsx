@@ -3,7 +3,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { Expand } from 'lucide-react';
 import { getCreditHistory } from '@/lib/api_service';
-import { CreditLog } from '@/types';
+import { CreditLog, TransactionType } from '@/types';
+import { formatCredits } from '@/lib/utils';
 
 interface ChartData {
   name: string;
@@ -33,7 +34,8 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
 
     setIsLoading(true);
     try {
-      const { history } = await getCreditHistory(user.idToken);
+      const { history } = await getCreditHistory(user.idToken, {});
+      // console.log('---history:', history);
       if (history) {
         processCreditsData(history);
       } else {
@@ -66,8 +68,8 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
       const date = new Date(transaction.created_at);
       const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
 
-      // Only process completion transactions for spend data
-      if (transaction.tx_reason === 'completion' && transaction.tx_credits < 0) {
+      // Only process debit transactions for spend data
+      if (transaction.tx_type === TransactionType.DEBIT) {
         // Add to daily spend
         if (!dailySpend[dateKey]) {
           dailySpend[dateKey] = 0;
@@ -136,11 +138,11 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
         <div className="flex justify-between mt-4">
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400">Last day</p>
-            <p className="text-lg font-medium">${lastDaySpend}</p>
+            <p className="text-lg font-medium">${formatCredits(lastDaySpend)}</p>
           </div>
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400">Last week</p>
-            <p className="text-lg font-medium">${lastWeekSpend}</p>
+            <p className="text-lg font-medium">${formatCredits(lastWeekSpend)}</p>
           </div>
         </div>
       </div>

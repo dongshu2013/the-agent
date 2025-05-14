@@ -2,6 +2,13 @@ import { OpenAPIRoute } from 'chanfana';
 import { z } from 'zod';
 import { Context } from 'hono';
 import { ChatMessageSchema } from '../types/chat';
+import { GatewayServiceError } from '../types/service';
+import { Message } from '../do/types';
+
+const MessageSchema = ChatMessageSchema.extend({
+  id: z.number(),
+  conversation_id: z.number(),
+});
 
 export class SaveMessage extends OpenAPIRoute {
   schema = {
@@ -10,10 +17,7 @@ export class SaveMessage extends OpenAPIRoute {
         content: {
           'application/json': {
             schema: z.object({
-              message: ChatMessageSchema.extend({
-                id: z.number(),
-                conversation_id: z.number(),
-              }),
+              message: MessageSchema,
               top_k_related: z.number().default(0),
               threshold: z.number().default(0.7),
             }),
@@ -54,11 +58,20 @@ export class SaveMessage extends OpenAPIRoute {
     const userId = c.get('userId');
     const body = await c.req.json();
 
+    // Validate the message
+    let message: Message;
+    try {
+      message = MessageSchema.parse(body.message);
+    } catch (error) {
+      console.error('Invalid message format:', error);
+      throw new GatewayServiceError(400, 'Invalid message format');
+    }
+
     // Save the message
     const doId = c.env.AgentContext.idFromName(userId);
     const stub = c.env.AgentContext.get(doId);
     const { success, topKMessageIds } = await stub.saveMessage(
-      body.message,
+      message,
       body.top_k_related,
       body.threshold
     );

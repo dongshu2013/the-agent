@@ -1,4 +1,4 @@
-import { CreditLog, GetUserResponse } from '@/types';
+import { CreditLog, GetUserResponse, TransactionReason, TransactionType } from '@/types';
 
 async function postApiService(endpoint: string, token: string, body?: object) {
   if (!process.env.NEXT_PUBLIC_API_URL) {
@@ -65,8 +65,27 @@ export interface GetCreditHistoryResponse {
   history: CreditLog[];
 }
 
-export async function getCreditHistory(token: string): Promise<GetCreditHistoryResponse> {
-  return await getApiService('v1/user/credit_history', token);
+export async function getCreditHistory(
+  token: string,
+  params: {
+    startDate?: string;
+    endDate?: string;
+    model?: string;
+    transType?: TransactionType;
+    transReason?: TransactionReason;
+  } = {},
+): Promise<GetCreditHistoryResponse> {
+  const queryParams = new URLSearchParams();
+  if (params.startDate) queryParams.append('startDate', params.startDate);
+  if (params.endDate) queryParams.append('endDate', params.endDate);
+  if (params.model) queryParams.append('model', params.model);
+  if (params.transType) queryParams.append('transType', params.transType);
+  if (params.transReason) queryParams.append('transReason', params.transReason);
+
+  const queryString = queryParams.toString();
+  const endpoint = queryString ? `v1/user/credit_history?${queryString}` : 'v1/user/credit_history';
+
+  return await getApiService(endpoint, token);
 }
 
 export interface GetTelegramStatsResponse {

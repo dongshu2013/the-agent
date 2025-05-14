@@ -101,22 +101,69 @@ export async function toggleApiKeyEnabled(
 export async function getCreditLogs(
   env: Env,
   userId: string,
-  limit = 10
+  options: {
+    limit?: number;
+    startDate?: string;
+    endDate?: string;
+    model?: string;
+    transType?: string;
+    transReason?: string;
+  } = {}
 ): Promise<CreditLog[]> {
+  const {
+    limit = 100,
+    startDate,
+    endDate,
+    model,
+    transType,
+    transReason,
+  } = options;
+
   const db = env.DB;
+  let query =
+    'SELECT id, tx_credits, tx_type, tx_reason, model, created_at' +
+    ' FROM credit_history' +
+    ' WHERE user_id = ?';
+
+  const params: any[] = [userId];
+
+  if (startDate) {
+    query += ' AND created_at >= ?';
+    params.push(startDate);
+  }
+
+  if (endDate) {
+    query += ' AND created_at <= ?';
+    params.push(endDate);
+  }
+
+  if (model) {
+    query += ' AND model = ?';
+    params.push(model);
+  }
+
+  if (transType) {
+    query += ' AND tx_type = ?';
+    params.push(transType);
+  }
+
+  if (transReason) {
+    query += ' AND tx_reason = ?';
+    params.push(transReason);
+  }
+
+  query += ' ORDER BY created_at DESC LIMIT ?';
+  params.push(limit);
+
   const result = await db
-    .prepare(
-      'SELECT id, tx_credits, tx_type, tx_reason, model, created_at' +
-        ' FROM credit_history' +
-        ' WHERE user_id = ?' +
-        ' ORDER BY created_at DESC' +
-        ' LIMIT ?'
-    )
-    .bind(userId, limit)
+    .prepare(query)
+    .bind(...params)
     .all();
+
   if (!result.success) {
     throw new GatewayServiceError(500, 'Failed to query db');
   }
+
   return result.results.map((r) => ({
     id: r.id as number,
     tx_credits: r.tx_credits as number,

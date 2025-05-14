@@ -1,5 +1,5 @@
 import { GatewayServiceError } from '../types/service';
-import { OrderStatus } from './types';
+import { OrderStatus, TransactionType, TransactionReason } from './types';
 
 const BASE = 10000; // 10000 * 100 = 10^6 = 1USDT
 
@@ -56,13 +56,25 @@ export async function finalizeOrder(
   const order = orders.results[0];
   const credits = getCreditFromAmount(amount);
 
-  const stmt1 = db.prepare('UPDATE orders SET status = ?, stripe_session_id = ? WHERE id = ?');
-  const stmt2 = db.prepare('INSERT INTO credit_history (user_id, tx_credits, tx_type, tx_reason, order_id) VALUES (?, ?, ?, ?, ?)');
-  const stmt3 = db.prepare('UPDATE users SET balance = balance + ? WHERE id = ?');
+  const stmt1 = db.prepare(
+    'UPDATE orders SET status = ?, stripe_session_id = ? WHERE id = ?'
+  );
+  const stmt2 = db.prepare(
+    'INSERT INTO credit_history (user_id, tx_credits, tx_type, tx_reason, order_id) VALUES (?, ?, ?, ?, ?)'
+  );
+  const stmt3 = db.prepare(
+    'UPDATE users SET balance = balance + ? WHERE id = ?'
+  );
 
   const [result1, result2, result3] = await db.batch([
-    stmt1.bind('finalized', sessionId, orderId),
-    stmt2.bind(order.user_id, credits, 'credit', 'order', orderId),
+    stmt1.bind(OrderStatus.FINALIZED, sessionId, orderId),
+    stmt2.bind(
+      order.user_id,
+      credits,
+      TransactionType.CREDIT,
+      TransactionReason.ORDER_PAY,
+      orderId
+    ),
     stmt3.bind(credits, order.user_id),
   ]);
 

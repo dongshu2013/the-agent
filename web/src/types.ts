@@ -1,9 +1,19 @@
-export type TransactionReason = 'new_user' | 'order_pay' | 'system_add' | 'completion';
+export enum TransactionType {
+  CREDIT = 'credit',
+  DEBIT = 'debit',
+}
+
+export enum TransactionReason {
+  NEW_USER = 'new_user',
+  ORDER_PAY = 'order_pay',
+  SYSTEM_ADD = 'system_add',
+  COMPLETION = 'completion',
+}
 
 export interface CreditLog {
   id: number;
   tx_credits: number;
-  tx_type: 'debit' | 'credit';
+  tx_type: TransactionType;
   tx_reason?: TransactionReason;
   model?: string;
   created_at: string;

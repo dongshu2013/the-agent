@@ -6,7 +6,7 @@ const ToolCallFunctionSchema = z.object({
   arguments: z.string(),
 });
 
-const ToolCallSchema = z.object({
+export const ToolCallSchema = z.object({
   function: ToolCallFunctionSchema,
   id: z.string(),
   type: z.string().optional(),
@@ -16,7 +16,7 @@ const ToolCallSchema = z.object({
 // Chat message types
 export const ChatMessageSchema = z.object({
   role: z.string(),
-  content: z.string().optional(),
+  content: z.string(),
   tool_call_id: z.string().optional(),
   tool_calls: z.array(ToolCallSchema).optional(),
   name: z.string().optional(),

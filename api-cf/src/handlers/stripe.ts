@@ -5,6 +5,7 @@ import { z } from 'zod';
 import Stripe from 'stripe';
 import { createOrder, finalizeOrder, updateOrderStatus } from '../d1/payment';
 import { GatewayServiceError } from '../types/service';
+import { OrderStatus } from '../d1/types';
 
 export function getStripe(env: Env) {
   if (!env.STRIPE_PRIVATE_KEY) {
@@ -142,7 +143,7 @@ export class StripeWebhook extends OpenAPIRoute {
           c.env,
           expired.metadata?.orderId,
           expired.id,
-          'cancelled'
+          OrderStatus.CANCELLED
         );
         break;
       case 'checkout.session.async_payment_failed':
@@ -155,7 +156,7 @@ export class StripeWebhook extends OpenAPIRoute {
           c.env,
           failed.metadata?.orderId,
           failed.id,
-          'failed'
+          OrderStatus.FAILED
         );
         break;
       default:
