@@ -6,7 +6,7 @@ export async function createUser(
   userId: string,
   email: string
 ): Promise<UserInfo> {
-  const db = env.UDB;
+  const db = env.DB;
   const apiKey = crypto.randomUUID();
   const result = await db
     .prepare(
@@ -30,7 +30,7 @@ export async function getUserInfo(
   env: Env,
   userId: string
 ): Promise<UserInfo | null> {
-  const db = env.UDB;
+  const db = env.DB;
   const result = await db
     .prepare(
       'SELECT id, user_email, api_key, api_key_enabled, balance FROM users WHERE id = ?'
@@ -53,7 +53,7 @@ export async function getUserFromApiKey(
   env: Env,
   apiKey: string
 ): Promise<{ id: string; email: string }> {
-  const db = env.UDB;
+  const db = env.DB;
   const result = await db
     .prepare(
       'SELECT id, user_email FROM users ' +
@@ -71,7 +71,7 @@ export async function getUserFromApiKey(
 }
 
 export async function rotateApiKey(env: Env, userId: string): Promise<string> {
-  const db = env.UDB;
+  const db = env.DB;
   const newApiKey = crypto.randomUUID();
   const result = await db
     .prepare('UPDATE users SET api_key = ? WHERE id = ?')
@@ -88,7 +88,7 @@ export async function toggleApiKeyEnabled(
   userId: string,
   enabled: boolean
 ): Promise<void> {
-  const db = env.UDB;
+  const db = env.DB;
   const result = await db
     .prepare('UPDATE users SET api_key_enabled = ? WHERE id = ?')
     .bind(enabled ? 1 : 0, userId)
@@ -103,7 +103,7 @@ export async function getCreditLogs(
   userId: string,
   limit = 10
 ): Promise<CreditLog[]> {
-  const db = env.UDB;
+  const db = env.DB;
   const result = await db
     .prepare(
       'SELECT id, tx_credits, tx_type, tx_reason, model, created_at' +
@@ -131,7 +131,7 @@ export async function getUserBalance(
   env: Env,
   userId: string
 ): Promise<number> {
-  const db = env.UDB;
+  const db = env.DB;
   const result = await db
     .prepare('SELECT balance FROM users WHERE id = ?')
     .bind(userId)
@@ -149,7 +149,7 @@ export async function deductUserCredits(
   amount: number,
   model?: string
 ): Promise<{ success: boolean; remainingCredits: number }> {
-  const db = env.UDB;
+  const db = env.DB;
 
   // Get current credits
   const currentCredits = await getUserBalance(env, userId);

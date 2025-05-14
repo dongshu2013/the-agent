@@ -12,7 +12,7 @@ export async function createOrder(
   userId: string,
   amount: number
 ): Promise<string> {
-  const db = env.UDB;
+  const db = env.DB;
   const result = await db
     .prepare('INSERT INTO orders (user_id, amount) VALUES (?, ?)')
     .bind(userId, amount)
@@ -29,7 +29,7 @@ export async function updateOrderStatus(
   sessionId: string,
   status: OrderStatus
 ) {
-  const db = env.UDB;
+  const db = env.DB;
   const result = await db
     .prepare('UPDATE orders SET status = ?, stripe_session_id = ? WHERE id = ?')
     .bind(status, sessionId, orderId)
@@ -45,7 +45,7 @@ export async function finalizeOrder(
   sessionId: string,
   amount: number
 ) {
-  const db = env.UDB;
+  const db = env.DB;
   const orders = await db
     .prepare('SELECT user_id FROM orders WHERE id = ?')
     .bind(orderId)

@@ -10,5 +10,5 @@ interface Env {
   MYSTA_TG_INDEX: Vectorize;
   MYTSTA_E5_INDEX: Vectorize;
   AgentContext: DurableObjectNamespace<AgentContext>;
-  UDB: D1Database;
+  DB: D1Database;
 }
