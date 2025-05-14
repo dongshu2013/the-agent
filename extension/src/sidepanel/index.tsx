@@ -107,16 +107,15 @@ const Sidepanel = () => {
         }
 
         // 2. 验证 API Key
-        const verifyResponse = await fetch(
-          `${env.BACKEND_URL}/v1/auth/verify`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${storedApiKey}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        const verifyResponse = await fetch(`${env.BACKEND_URL}/v1/user`, {
+          method: "GET",
+          headers: {
+            "x-api-key": storedApiKey,
+            "Content-Type": "application/json",
+          },
+        });
+
+        console.log("verifyResponse🍷", verifyResponse);
 
         if (!verifyResponse.ok) {
           if (verifyResponse.status === 401 || verifyResponse.status === 403) {
@@ -136,14 +135,13 @@ const Sidepanel = () => {
             username:
               verifyData.user.displayName || verifyData.user.email || "unknown",
             email: verifyData.user.email,
-            api_key_enabled: true, // 你可以根据 verifyData.user 里的字段调整
+            api_key_enabled: true,
             api_key: storedApiKey,
             credits: verifyData.user.credits || "0",
-            created_at: now, // 如果已有 created_at 可复用
+            created_at: now,
             updated_at: now,
-            selectedModelId: "system", // 或你实际选中的模型 id
-            api_url: "", // 如果有自定义 api_url 可填
-            photoURL: verifyData.user.photoURL,
+            selectedModelId: "system",
+            photo_url: verifyData.user.photoURL,
           };
 
           // 保存到 indexdb

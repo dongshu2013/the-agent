@@ -58,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             credits: userData.user.balance,
             idToken,
           });
+          localStorage.setItem('apiKey', userData.user.api_key);
         } catch (error) {
           console.error('Error setting up user:', error);
         }
@@ -87,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             credits: 0,
             idToken,
           });
+          
         }
       } catch (error) {
         console.error('Error handling redirect:', error);
@@ -187,6 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         credits: userData.user.balance,
         idToken: token,
       });
+      localStorage.setItem('apiKey', userData.user.api_key);
     } catch (error) {
       console.error('Error refreshing user data:', error);
     }
