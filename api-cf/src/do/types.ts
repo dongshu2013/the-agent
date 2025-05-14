@@ -28,9 +28,10 @@ export interface Message {
   id: number;
   conversation_id: number;
   role: string;
-  content: AgentMessage[];
-  tool_calls: ToolCall[];
-  tool_call_id: string;
+  content?: AgentMessage[];
+  tool_calls?: ToolCall[];
+  tool_call_id?: string;
+  name?: string;
 }
 
 export interface Conversation {

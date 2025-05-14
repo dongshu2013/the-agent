@@ -93,8 +93,8 @@ export class AgentContext extends DurableObject<Env> {
         message.id,
         message.conversation_id,
         message.role,
-        JSON.stringify(message.content),
-        JSON.stringify(message.tool_calls),
+        message.content ? JSON.stringify(message.content) : null,
+        message.tool_calls ? JSON.stringify(message.tool_calls) : null,
         message.tool_call_id,
       ]
     );
@@ -102,10 +102,11 @@ export class AgentContext extends DurableObject<Env> {
       `UPDATE agent_conversations SET last_message_at = $1 WHERE id = $2`,
       [message.id, message.conversation_id]
     );
-    const texts = message.content
-      .filter((m): m is TextMessage => m.type === 'text')
-      .map((m) => m.text?.value)
-      .filter((v): v is string => v?.trim().length > 0);
+    const texts =
+      message.content
+        ?.filter((m): m is TextMessage => m.type === 'text')
+        .map((m) => m.text?.value)
+        ?.filter((v): v is string => v?.trim().length > 0) || [];
     if (texts.length === 0) {
       return {
         success: true,
