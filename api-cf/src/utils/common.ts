@@ -4,6 +4,6 @@ export const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-API-Key',
 };
 
-export const DEFAULT_MODEL = 'deepseek-chat';
+export const DEFAULT_MODEL = 'deepseek/deepseek-chat';
 
 export const FIREBASE_PROJECT_ID = 'ashcoin-51786';

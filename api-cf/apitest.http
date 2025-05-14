@@ -38,24 +38,24 @@ x-api-key: {{apiKey}}
 }
 
 ### Create Conversation
-POST {{baseUrl}}/v2/conversation/create
+POST {{baseUrl}}/v1/conversation/create
 Content-Type: application/json
 x-api-key: {{apiKey}}
 
 ### List Conversations
-GET {{baseUrl}}/v2/conversation/list
+GET {{baseUrl}}/v1/conversation/list
 Content-Type: application/json
 x-api-key: {{apiKey}}
 
 ### Delete Conversation
 # Replace {conversationId} with an actual conversation ID
 @conversationId = 1747056387705
-POST {{baseUrl}}/v2/conversation/delete?conversationId={{conversationId}}
+POST {{baseUrl}}/v1/conversation/delete?conversationId={{conversationId}}
 Content-Type: application/json
 x-api-key: {{apiKey}}
 
 ### Save Message
-POST {{baseUrl}}/v2/message/save
+POST {{baseUrl}}/v1/message/save
 Content-Type: application/json
 x-api-key: {{apiKey}}
 
@@ -71,31 +71,44 @@ x-api-key: {{apiKey}}
 }
 
 ### Chat Completion
-POST {{baseUrl}}/v2/chat/completions
+POST {{baseUrl}}/v1/chat/completions
 Content-Type: application/json
 x-api-key: {{apiKey}}
 
 {
   "messages": [
-    {"role": "system", "content": "你是一个有用的AI助手。"},
-    {"role": "user", "content": "你好，请介绍一下自己。"}
+    {
+      "role": "system",
+      "content": "You are a helpful AI assistant."
+    },
+    {
+      "role": "user",
+      "content": "What can you do?"
+    }
   ],
-  "model": "gpt-3.5-turbo",
+  "model": "deepseek/deepseek-chat",
   "temperature": 0.7,
-  "max_tokens": 500
+  "max_tokens": 500,
+  "stream": false
 }
 
 ### Chat Completion with Streaming
-POST {{baseUrl}}/v2/chat/completions
+POST {{baseUrl}}/v1/chat/completions
 Content-Type: application/json
 x-api-key: {{apiKey}}
 
 {
   "messages": [
-    {"role": "system", "content": "你是一个有用的AI助手。"},
-    {"role": "user", "content": "你好，请介绍一下自己。"}
+    {
+      "role": "system",
+      "content": "You are a helpful AI assistant."
+    },
+    {
+      "role": "user",
+      "content": "What can you do?"
+    }
   ],
-  "model": "gpt-3.5-turbo",
+  "model": "deepseek/deepseek-chat",
   "temperature": 0.7,
   "max_tokens": 500,
   "stream": true
