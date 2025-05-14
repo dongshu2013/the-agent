@@ -439,9 +439,9 @@ export class TgContext extends DurableObject<Env> {
           chat_id,
           chat_title,
           chat_type,
-          is_public,
-          is_free,
-          subscription_fee,
+          is_public = false,
+          is_free = true,
+          subscription_fee = 0,
         } = chatData;
 
         // Check if chat already exists
@@ -562,7 +562,7 @@ export class TgContext extends DurableObject<Env> {
           existingMessages.length > 0 ? existingMessages[0] : null;
 
         if (!existingMessage) {
-          // Insert new message
+          // Insert new message with optional fields
           this.sql.exec(
             `
             INSERT INTO telegram_messages
@@ -576,9 +576,9 @@ export class TgContext extends DurableObject<Env> {
               message.message_text,
               message.message_timestamp,
               message.sender_id,
-              message.sender_username,
-              message.sender_firstname,
-              message.sender_lastname,
+              message.sender_username || null,
+              message.sender_firstname || null,
+              message.sender_lastname || null,
             ]
           );
 

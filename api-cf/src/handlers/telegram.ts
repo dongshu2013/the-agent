@@ -610,16 +610,16 @@ export class SyncTelegramMessages extends OpenAPIRoute {
         content: {
           'application/json': {
             schema: z.object({
-              chat_id: z.string(),
               messages: z.array(
                 z.object({
+                  chat_id: z.string(),
                   message_id: z.string(),
                   message_text: z.string(),
                   message_timestamp: z.number(),
                   sender_id: z.string(),
-                  sender_username: z.string().nullable(),
-                  sender_firstname: z.string().nullable(),
-                  sender_lastname: z.string().nullable(),
+                  sender_username: z.string().nullable().optional(),
+                  sender_firstname: z.string().nullable().optional(),
+                  sender_lastname: z.string().nullable().optional(),
                 })
               ),
             }),
@@ -661,16 +661,32 @@ export class SyncTelegramMessages extends OpenAPIRoute {
       const userId = c.get('userId');
       const body = await c.req.json();
 
-      // Use Durable Object to sync Telegram messages
+      // Group messages by chat_id
+      const messagesByChat = new Map<string, any[]>();
+      for (const message of body.messages) {
+        if (!messagesByChat.has(message.chat_id)) {
+          messagesByChat.set(message.chat_id, []);
+        }
+        messagesByChat.get(message.chat_id)?.push(message);
+      }
+
+      let totalCount = 0;
+
+      // Use Durable Object to sync Telegram messages for each chat
       const id = c.env.TgContext.idFromName(userId);
       const stub = c.env.TgContext.get(id);
-      const result = await stub.syncMessages(body.chat_id, body.messages);
+
+      // Process each chat's messages
+      for (const [chatId, messages] of messagesByChat) {
+        const result = await stub.syncMessages(chatId, messages);
+        totalCount += result;
+      }
 
       // Return success response with CORS headers
       return c.json(
         {
           success: true,
-          count: result,
+          count: totalCount,
         },
         200,
         corsHeaders

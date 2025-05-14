@@ -177,7 +177,7 @@ x-api-key: {{apiKey}}
 {
   "chats": [
   {
-    "chat_id": "-202505150057",
+    "chat_id": "-202505150125",
     "chat_title": "Test Chat",
     "chat_type": "group",
     "is_public": true,
@@ -185,12 +185,9 @@ x-api-key: {{apiKey}}
     "subscription_fee": 0
   },
   {
-    "chat_id": "-202505150058",
+    "chat_id": "-202505150126",
     "chat_title": "Test Chat 2",
-    "chat_type": "group",
-    "is_public": true,
-    "is_free": true,
-    "subscription_fee": 0
+    "chat_type": "group"
   }
   ]
 }
@@ -201,9 +198,9 @@ Content-Type: application/json
 x-api-key: {{apiKey}}
 
 {
-  "chat_id": "-202505150057",
   "messages": [
     {
+      "chat_id": "-202505150125",
       "message_id": "msg1",
       "message_text": "Hello, this is a test message",
       "message_timestamp": 1704067200,
@@ -213,13 +210,11 @@ x-api-key: {{apiKey}}
       "sender_lastname": "User"
     },
     {
+      "chat_id": "-202505150126",
       "message_id": "msg2",
       "message_text": "This is a reply to the test message",
       "message_timestamp": 1704067300,
-      "sender_id": "user456",
-      "sender_username": "replyuser",
-      "sender_firstname": "Reply",
-      "sender_lastname": "User"
+      "sender_id": "user456"
     }
   ]
 }
