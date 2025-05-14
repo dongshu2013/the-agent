@@ -1,6 +1,6 @@
 ### Variables
 @baseUrl = http://localhost:8787
-@apiKey = 06c375fa-d9a1-4b13-84e2-d7d58d091994
+@apiKey = 429e272b-d37a-4490-a39c-b5646003458f
 @token = 
 
 ### Health Check
@@ -38,24 +38,24 @@ x-api-key: {{apiKey}}
 }
 
 ### Create Conversation
-POST {{baseUrl}}/v2/conversation/create
+POST {{baseUrl}}/v1/conversation/create
 Content-Type: application/json
 x-api-key: {{apiKey}}
 
 ### List Conversations
-GET {{baseUrl}}/v2/conversation/list
+GET {{baseUrl}}/v1/conversation/list
 Content-Type: application/json
 x-api-key: {{apiKey}}
 
 ### Delete Conversation
 # Replace {conversationId} with an actual conversation ID
 @conversationId = 1747056387705
-POST {{baseUrl}}/v2/conversation/delete?conversationId={{conversationId}}
+POST {{baseUrl}}/v1/conversation/delete?conversationId={{conversationId}}
 Content-Type: application/json
 x-api-key: {{apiKey}}
 
 ### Save Message
-POST {{baseUrl}}/v2/message/save
+POST {{baseUrl}}/v1/message/save
 Content-Type: application/json
 x-api-key: {{apiKey}}
 
@@ -71,31 +71,44 @@ x-api-key: {{apiKey}}
 }
 
 ### Chat Completion
-POST {{baseUrl}}/v2/chat/completions
+POST {{baseUrl}}/v1/chat/completions
 Content-Type: application/json
 x-api-key: {{apiKey}}
 
 {
   "messages": [
-    {"role": "system", "content": "你是一个有用的AI助手。"},
-    {"role": "user", "content": "你好，请介绍一下自己。"}
+    {
+      "role": "system",
+      "content": "You are a helpful AI assistant."
+    },
+    {
+      "role": "user",
+      "content": "What can you do?"
+    }
   ],
-  "model": "gpt-3.5-turbo",
+  "model": "deepseek/deepseek-chat",
   "temperature": 0.7,
-  "max_tokens": 500
+  "max_tokens": 500,
+  "stream": false
 }
 
 ### Chat Completion with Streaming
-POST {{baseUrl}}/v2/chat/completions
+POST {{baseUrl}}/v1/chat/completions
 Content-Type: application/json
 x-api-key: {{apiKey}}
 
 {
   "messages": [
-    {"role": "system", "content": "你是一个有用的AI助手。"},
-    {"role": "user", "content": "你好，请介绍一下自己。"}
+    {
+      "role": "system",
+      "content": "You are a helpful AI assistant."
+    },
+    {
+      "role": "user",
+      "content": "What can you do?"
+    }
   ],
-  "model": "gpt-3.5-turbo",
+  "model": "deepseek/deepseek-chat",
   "temperature": 0.7,
   "max_tokens": 500,
   "stream": true
@@ -134,4 +147,67 @@ stripe-signature: test_signature
       }
     }
   }
+}
+
+### Telegram Stats
+GET {{baseUrl}}/v1/tg/stats
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+### Get Telegram Dialogs
+GET {{baseUrl}}/v1/tg/get_dialogs?limit=10&offset=0&chat_title=test&is_public=true&is_free=true&status=active&sort_by=updated_at&sort_order=desc
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+### Get Telegram Messages
+GET {{baseUrl}}/v1/tg/get_messages?chat_id=123456&limit=50&offset=0&message_text=test&sender_id=user123&sender_username=testuser&start_timestamp=1672531200&end_timestamp=1704067200&sort_by=message_timestamp&sort_order=desc
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+### Search Telegram Messages
+GET {{baseUrl}}/v1/tg/search_messages?query=hello world&chat_id=123456&top_k=10&message_range=2&threshold=0.7&is_public=true&is_free=true
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+### Sync Telegram Chat
+POST {{baseUrl}}/v1/tg/sync_chat
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+{
+  "chat_id": "123456",
+  "chat_title": "Test Chat",
+  "chat_type": "group",
+  "is_public": true,
+  "is_free": true,
+  "subscription_fee": 0
+}
+
+### Sync Telegram Messages
+POST {{baseUrl}}/v1/tg/sync_messages
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+{
+  "chat_id": "123456",
+  "messages": [
+    {
+      "message_id": "msg1",
+      "message_text": "Hello, this is a test message",
+      "message_timestamp": 1704067200,
+      "sender_id": "user123",
+      "sender_username": "testuser",
+      "sender_firstname": "Test",
+      "sender_lastname": "User"
+    },
+    {
+      "message_id": "msg2",
+      "message_text": "This is a reply to the test message",
+      "message_timestamp": 1704067300,
+      "sender_id": "user456",
+      "sender_username": "replyuser",
+      "sender_firstname": "Reply",
+      "sender_lastname": "User"
+    }
+  ]
 }
