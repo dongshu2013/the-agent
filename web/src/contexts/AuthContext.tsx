@@ -47,6 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const idToken = await getIdToken(firebaseUser);
           const userData = await getUserInfo(idToken);
+          console.log('userData.user.api_key🍷', userData.user.api_key);
+          localStorage.setItem('apiKey', userData.user.api_key);
           setUser({
             id: firebaseUser.uid,
             email: firebaseUser.email,
@@ -57,8 +59,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             credits: userData.user.balance,
             idToken,
           });
-          console.log('userData.user.api_key🍷', userData.user.api_key);
-          localStorage.setItem('apiKey', userData.user.api_key);
         } catch (error) {
           console.error('Error setting up user:', error);
         }
@@ -182,6 +182,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const token = await getIdToken(auth.currentUser);
       const userData = await getUserInfo(token);
+      console.log('refreshUserData 🍷', userData.user.api_key);
+      localStorage.setItem('apiKey', userData.user.api_key);
       setUser({
         ...user,
         apiKey: userData.user.api_key,
@@ -190,8 +192,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         idToken: token,
       });
 
-      console.log('refreshUserData 🍷', userData.user.api_key);
-      localStorage.setItem('apiKey', userData.user.api_key);
     } catch (error) {
       console.error('Error refreshing user data:', error);
     }
