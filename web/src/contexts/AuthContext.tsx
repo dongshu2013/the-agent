@@ -43,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Handle user data when Firebase auth state changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log('firebaseUser🍷', firebaseUser);
       if (firebaseUser) {
         try {
           const idToken = await getIdToken(firebaseUser);
@@ -59,6 +60,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             credits: userData.user.balance,
             idToken,
           });
+          localStorage.setItem("apiKey", userData.user.api_key);
+          if (typeof window !== "undefined" && userData.user.api_key) {
+            window.postMessage(
+              {
+                type: "FROM_WEB_TO_EXTENSION",
+                apiKey: userData.user.api_key,
+              },
+              "*"
+            );
+          }
         } catch (error) {
           console.error('Error setting up user:', error);
         }
@@ -184,7 +195,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const token = await getIdToken(auth.currentUser);
       const userData = await getUserInfo(token);
       console.log('refreshUserData 🍷', userData.user.api_key);
-      localStorage.setItem('apiKey', userData.user.api_key);
       setUser({
         ...user,
         apiKey: userData.user.api_key,
@@ -193,6 +203,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         idToken: token,
       });
 
+      localStorage.setItem('apiKey', userData.user.api_key);
+      if (typeof window !== "undefined" && userData.user.api_key) {
+        window.postMessage(
+          {
+            type: "FROM_WEB_TO_EXTENSION",
+            apiKey: userData.user.api_key,
+          },
+          "*"
+        );
+      }
     } catch (error) {
       console.error('Error refreshing user data:', error);
     }

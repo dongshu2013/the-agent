@@ -45,8 +45,6 @@ const Sidepanel = () => {
 
   const conversations = useLiveQuery(() => db.getAllConversations(), []) ?? [];
 
-  const user = useLiveQuery(() => db.getCurrentUser(), []);
-
   // 工具函数
   const redirectToLogin = useCallback(() => {
     if (!didRedirect.current) {
@@ -110,7 +108,7 @@ const Sidepanel = () => {
         const verifyResponse = await fetch(`${env.BACKEND_URL}/v1/user`, {
           method: "GET",
           headers: {
-            "x-api-key": storedApiKey,
+            Authorization: `Bearer ${storedApiKey}`,
             "Content-Type": "application/json",
           },
         });
