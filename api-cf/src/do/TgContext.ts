@@ -535,10 +535,8 @@ export class TgContext extends DurableObject<Env> {
     let insertedCount = 0;
     const messagesToEmbed: { id: string; text: string }[] = [];
 
-    // Insert messages in transaction
-    this.sql.exec('BEGIN TRANSACTION');
-
-    try {
+    // Use storage.transaction() instead of SQL transaction
+    await this.ctx.storage.transaction(async () => {
       for (const message of messages) {
         const id = crypto.randomUUID();
 
@@ -598,21 +596,17 @@ export class TgContext extends DurableObject<Env> {
         `,
         ...[now, now, chatId]
       );
+    });
 
-      // Generate embeddings for new messages in batches
-      if (messagesToEmbed.length > 0) {
-        for (let i = 0; i < messagesToEmbed.length; i += batchSize) {
-          const batch = messagesToEmbed.slice(i, i + batchSize);
-          await this._generateAndStoreEmbeddings(batch, chatId);
-        }
+    // Generate embeddings for new messages in batches
+    if (messagesToEmbed.length > 0) {
+      for (let i = 0; i < messagesToEmbed.length; i += batchSize) {
+        const batch = messagesToEmbed.slice(i, i + batchSize);
+        await this._generateAndStoreEmbeddings(batch, chatId);
       }
-
-      return insertedCount;
-    } catch (error) {
-      // Rollback on error
-      this.sql.exec('ROLLBACK');
-      throw error;
     }
+
+    return insertedCount;
   }
 
   // Helper method to generate and store embeddings
