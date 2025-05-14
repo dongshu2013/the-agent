@@ -122,29 +122,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await signInWithPopup(auth, provider);
       const idToken = await getIdToken(result.user);
 
-      // 调用后端获取自定义 JWT
-      const resp = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
-      });
-
-      if (!resp.ok) throw new Error('Login failed');
-      const { jwt } = await resp.json();
-      // 用自定义 JWT 登录 Firebase
-      const userCredential = await signInWithCustomToken(auth, jwt);
-      const user = userCredential.user;
-
       // 更新用户状态
       setUser({
-        id: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL,
+        id: result.user.uid,
+        email: result.user.email,
+        displayName: result.user.displayName,
+        photoURL: result.user.photoURL,
         apiKey: null,
         apiKeyEnabled: false,
         credits: 0,
-        idToken: jwt,
+        idToken,
       });
     } catch (error) {
       console.error('Error signing in with Google', error);

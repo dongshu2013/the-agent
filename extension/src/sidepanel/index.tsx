@@ -143,6 +143,7 @@ const Sidepanel = () => {
             updated_at: now,
             selectedModelId: "system", // 或你实际选中的模型 id
             api_url: "", // 如果有自定义 api_url 可填
+            photoURL: verifyData.user.photoURL,
           };
 
           // 保存到 indexdb
@@ -176,8 +177,6 @@ const Sidepanel = () => {
               setCurrentConversationId(newConv.id);
             }
           }
-
-          const user = await db.getUser(userId);
         }
       } catch (error) {
         console.error("Initialization error:", error);
