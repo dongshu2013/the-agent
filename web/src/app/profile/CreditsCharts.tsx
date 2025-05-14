@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { Expand } from 'lucide-react';
 import { getCreditHistory } from '@/lib/api_service';
 import { CreditLog, TransactionType } from '@/types';
@@ -125,6 +125,10 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
               <BarChart data={spendData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
                 <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                 <YAxis hide />
+                <Tooltip
+                  formatter={(value: number) => [`$${formatCredits(value, 6)}`, 'Credits']}
+                  cursor={{ fill: 'rgba(0, 0, 0, 0.1)' }}
+                />
                 <Bar dataKey="value" fill="#F6465D" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
