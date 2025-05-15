@@ -21,6 +21,7 @@ export default function LoginModal({
                 window.location.reload();
               });
             } else {
+              // 可提示"请在 web 端登录后再点击此按钮"
               window.open(webUrl, "_blank");
             }
           }

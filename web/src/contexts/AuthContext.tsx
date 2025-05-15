@@ -225,14 +225,5 @@ export function useAuth() {
 function setAuthToLocalAndPostMessage({ apiKey }: { apiKey?: string }) {
   if (apiKey) {
     localStorage.setItem('apiKey', apiKey);
-    if (typeof window !== 'undefined') {
-      window.postMessage(
-        {
-          type: 'FROM_WEB_TO_EXTENSION',
-          apiKey,
-        },
-        '*',
-      );
-    }
   }
 }

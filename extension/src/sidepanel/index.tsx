@@ -105,7 +105,7 @@ const Sidepanel = () => {
         }
 
         if (!storedApiKey) {
-          redirectToLogin();
+          showLoginModal();
           return;
         }
 
@@ -114,7 +114,6 @@ const Sidepanel = () => {
           method: "GET",
           headers: {
             "x-api-key": storedApiKey,
-            Authorization: `Bearer ${storedApiKey}`,
             "Content-Type": "application/json",
           },
         });
@@ -123,7 +122,7 @@ const Sidepanel = () => {
 
         if (!verifyResponse.ok) {
           if (verifyResponse.status === 401 || verifyResponse.status === 403) {
-            redirectToLogin();
+            showLoginModal();
           }
           return;
         }
@@ -181,7 +180,7 @@ const Sidepanel = () => {
         }
       } catch (error) {
         console.error("Initialization error:", error);
-        redirectToLogin();
+        showLoginModal();
         handleApiError(error);
       } finally {
         setIsLoading(false);
@@ -355,10 +354,14 @@ const Sidepanel = () => {
     return () => window.removeEventListener("SHOW_LOGIN_MODAL", handler);
   }, []);
 
-  // 检测不到 apiKey 时，触发全局事件
+  // 初始化时只弹窗，不自动跳转
   useEffect(() => {
-    if (!apiKey) showLoginModal();
-  }, [apiKey]);
+    const checkLogin = async () => {
+      const key = await getApiKey();
+      if (!key) showLoginModal();
+    };
+    checkLogin();
+  }, []);
 
   return (
     <div
