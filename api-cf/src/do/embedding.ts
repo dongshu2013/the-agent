@@ -1,7 +1,6 @@
 import OpenAI from 'openai';
-
-const EMBEDDING_API_BASE_URL = 'https://api.deepinfra.com/v1/openai';
-const EMBEDDING_MODEL = 'intfloat/multilingual-e5-large';
+import { calculateEmbeddingCredits } from '../utils/creditCalculator';
+import { EMBEDDING_API_BASE_URL, EMBEDDING_MODEL } from '../utils/common';
 
 export function createEmbeddingClient(env: Env): OpenAI {
   const openai = new OpenAI({
@@ -14,15 +13,27 @@ export function createEmbeddingClient(env: Env): OpenAI {
 export async function generateEmbedding(
   openai: OpenAI,
   texts: string[]
-): Promise<number[] | null> {
+): Promise<{ embedding: number[]; totalCost: number } | null> {
   try {
+    const inputText = texts.join('\n');
     const response = await openai.embeddings.create({
-      input: texts.join('\n'),
+      input: inputText,
       model: EMBEDDING_MODEL,
       encoding_format: 'float',
     });
+
+    // Calculate data size in bytes
+    const dataSize = new TextEncoder().encode(inputText).length;
+
+    // Calculate credits based on token usage and data size
+    const cost = calculateEmbeddingCredits(
+      EMBEDDING_MODEL,
+      response.usage.total_tokens,
+      dataSize
+    );
+
     const embedding = response.data[0].embedding;
-    return embedding;
+    return { embedding, totalCost: cost.totalCost };
   } catch (error) {
     console.error('Error generating embeddings:', error);
     // Continue execution even if embedding fails

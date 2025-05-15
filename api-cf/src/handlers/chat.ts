@@ -4,7 +4,6 @@ import { Context } from 'hono';
 import { createOpenAIClient } from '../utils/openai';
 import { getUserBalance, deductUserCredits } from '../d1/user';
 import { ChatCompletionCreateParamSchema } from '../types/chat';
-import { DEFAULT_MODEL } from '../utils/common';
 import {
   calculateCredits,
   createStreamingTokenTracker,

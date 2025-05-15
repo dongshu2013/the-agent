@@ -232,5 +232,6 @@ export async function deductUserCredits(
   if (!result1.success || !result2.success) {
     throw new GatewayServiceError(500, 'Failed to deduct credits');
   }
+  console.log('success deduct credits from user:', userId, amount, model);
   return { success: true, remainingCredits: currentCredits - amount };
 }

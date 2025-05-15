@@ -73,7 +73,11 @@ export class AgentContext extends DurableObject<Env> {
     message: Message,
     topK = 3,
     threshold = 0.7
-  ): Promise<{ success: boolean; topKMessageIds: string[] }> {
+  ): Promise<{
+    success: boolean;
+    topKMessageIds: string[];
+    totalCost: number;
+  }> {
     const insertQuery =
       'INSERT INTO agent_messages' +
       '(id, conversation_id, role, content, tool_calls, tool_call_id, name)' +
@@ -98,15 +102,20 @@ export class AgentContext extends DurableObject<Env> {
       return {
         success: true,
         topKMessageIds: [],
+        totalCost: 0,
       };
     }
-    const embedding = await generateEmbedding(this.openai, [text]);
-    if (embedding === null) {
+    // Generate embedding
+    const embeddingResult = await generateEmbedding(this.openai, [text]);
+    if (embeddingResult === null) {
       return {
-        success: true,
+        success: false,
         topKMessageIds: [],
+        totalCost: 0,
       };
     }
+    const { embedding, totalCost } = embeddingResult;
+
     const toInsert = [
       {
         id: message.id.toString(),
@@ -138,12 +147,14 @@ export class AgentContext extends DurableObject<Env> {
       return {
         success: true,
         topKMessageIds,
+        totalCost,
       };
     } else {
       await this.env.MYTSTA_E5_INDEX.insert(toInsert);
       return {
         success: true,
         topKMessageIds: [],
+        totalCost,
       };
     }
   }

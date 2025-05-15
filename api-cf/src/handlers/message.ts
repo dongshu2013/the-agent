@@ -4,7 +4,8 @@ import { Context } from 'hono';
 import { ChatMessageSchema } from '../types/chat';
 import { GatewayServiceError } from '../types/service';
 import { Message } from '../do/types';
-
+import { deductUserCredits } from '../d1/user';
+import { EMBEDDING_MODEL } from '../utils/common';
 const MessageSchema = ChatMessageSchema.extend({
   id: z.number(),
   conversation_id: z.number(),
@@ -70,11 +71,14 @@ export class SaveMessage extends OpenAPIRoute {
     // Save the message
     const doId = c.env.AgentContext.idFromName(userId);
     const stub = c.env.AgentContext.get(doId);
-    const { success, topKMessageIds } = await stub.saveMessage(
+    const { success, topKMessageIds, totalCost } = await stub.saveMessage(
       message,
       body.top_k_related,
       body.threshold
     );
+
+    // Deduct credits from user
+    await deductUserCredits(c.env, userId, totalCost, EMBEDDING_MODEL);
 
     // Return success response with CORS headers
     return c.json(

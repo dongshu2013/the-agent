@@ -1,4 +1,9 @@
-import { MODEL_PRICING, COST_MULTIPLIERS } from './common';
+import {
+  MODEL_PRICING,
+  COST_MULTIPLIERS,
+  TOKEN_COST_MULTIPLIER,
+  DATA_SIZE_COST_MULTIPLIER,
+} from './common';
 
 export interface TokenUsage {
   promptTokens: number;
@@ -6,9 +11,10 @@ export interface TokenUsage {
 }
 
 export interface Cost {
-  totalCost: number;
   inputCost: number;
   outputCost: number;
+  dataSizeCost?: number;
+  totalCost: number;
 }
 
 export interface CreditCalculationResult {
@@ -71,5 +77,35 @@ export function createStreamingTokenTracker() {
       promptTokens,
       completionTokens,
     }),
+  };
+}
+
+/**
+ * Calculates the credit cost for embeddings based on token usage and data size
+ */
+export function calculateEmbeddingCredits(
+  model: string,
+  totalTokens: number,
+  dataSize: number
+): Cost {
+  const pricing = MODEL_PRICING[model];
+  if (!pricing) {
+    throw new Error(`Model ${model} not found in pricing`);
+  }
+
+  // Calculate token-based cost
+  const tokenBasedCost =
+    (totalTokens * pricing.inputPrice * TOKEN_COST_MULTIPLIER) / 1000000;
+
+  // Calculate data size-based cost
+  const dataSizeCost = dataSize * DATA_SIZE_COST_MULTIPLIER;
+
+  const totalCost = tokenBasedCost + dataSizeCost;
+
+  return {
+    inputCost: tokenBasedCost,
+    outputCost: 0, // Embeddings don't have output costs
+    dataSizeCost: dataSizeCost,
+    totalCost: totalCost,
   };
 }
