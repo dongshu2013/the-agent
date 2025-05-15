@@ -60,24 +60,24 @@ export class ChatHandler {
     // }
 
     const currentPrompt = prompt.trim();
-    const userMessageId = crypto.randomUUID();
-    const assistantMessageId = crypto.randomUUID();
     const baseTimestamp = new Date();
+    let messageIdOffset = 0;
+
+    const generateMessageId = () =>
+      baseTimestamp.getTime() + messageIdOffset++;
 
     const userMessage: Message = {
-      id: userMessageId,
+      id: generateMessageId(),
       role: "user",
       content: currentPrompt,
-      created_at: baseTimestamp.toISOString(),
       conversation_id: this.options.currentConversationId,
       status: "completed",
     };
 
     const loadingMessage: Message = {
-      id: assistantMessageId,
+      id: generateMessageId(),
       role: "assistant",
       content: "",
-      created_at: new Date(baseTimestamp.getTime() + 1).toISOString(),
       conversation_id: this.options.currentConversationId,
       status: "pending",
       isLoading: true,
@@ -237,7 +237,7 @@ Keep responses concise and focused on the current task.
               const assistantMessage: Message = {
                 role: "assistant",
                 content: currentResponse,
-                id: crypto.randomUUID(),
+                id: generateMessageId(),
                 conversation_id: this.options.currentConversationId,
                 tool_calls: toolCalls,
               };
@@ -245,9 +245,6 @@ Keep responses concise and focused on the current task.
               await this.updateMessage({
                 ...assistantMessage,
                 status: "completed",
-                created_at: new Date(
-                  baseTimestamp.getTime() + toolCallCount * 1000
-                ).toISOString(),
               });
               await saveMessageApi({
                 conversation_id: this.options.currentConversationId,
@@ -268,7 +265,7 @@ Keep responses concise and focused on the current task.
                   .replace("WebToolkit_", "");
 
                 // 创建工具调用消息
-                const toolMessageId = crypto.randomUUID();
+                const toolMessageId = generateMessageId();
                 const toolMessage: Message = {
                   id: toolMessageId,
                   role: "tool",
@@ -277,11 +274,7 @@ Keep responses concise and focused on the current task.
                     toolCall.function.name === "WebToolkit_screenshot"
                       ? `I will take a screenshot.\n`
                       : `I will ${simplifiedName}.\n${toolResult.success ? "success" : "failed"} ${JSON.stringify(toolResult.data)}`,
-                  created_at: new Date(
-                    baseTimestamp.getTime() + (toolCallCount + 2) * 1000
-                  ).toISOString(),
                   conversation_id: this.options.currentConversationId,
-                  status: "completed",
                   tool_call_id: toolCall.id,
                   tool_calls: [
                     {
@@ -291,7 +284,10 @@ Keep responses concise and focused on the current task.
                   ],
                 };
 
-                await this.updateMessage(toolMessage);
+                await this.updateMessage({
+                  ...toolMessage,
+                  status: "completed",
+                });
                 await saveMessageApi({
                   conversation_id: this.options.currentConversationId,
                   message: toolMessage,
@@ -359,13 +355,10 @@ Now reply to user's message: ${currentPrompt}`,
       // 修改最终消息的时间戳
       const aiMessage: Message = {
         ...loadingMessage,
+        id: generateMessageId(),
         content: finalContent,
-        status: "completed",
         isLoading: false,
         tokenUsage,
-        created_at: new Date(
-          baseTimestamp.getTime() + (toolCallCount + 3) * 1000
-        ).toISOString(),
       };
 
       // 只打印到控制台，不显示在界面
@@ -394,7 +387,10 @@ Now reply to user's message: ${currentPrompt}`,
         console.error("Error deducting credits:", error);
       }
 
-      await this.updateMessage(aiMessage);
+      await this.updateMessage({
+        ...aiMessage,
+        status: "completed",
+      });
       await saveMessageApi({
         conversation_id: this.options.currentConversationId,
         message: aiMessage,

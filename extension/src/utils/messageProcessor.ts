@@ -67,7 +67,7 @@ export const processAIMessage = (message: Message): Message => {
     ...message,
     content: message.content || "",
     role: message.role || "assistant",
-    message_id: message.message_id || crypto.randomUUID(),
+    id: message.id || crypto.randomUUID(),
     created_at: message.created_at || new Date().toISOString(),
     conversation_id: message.conversation_id || "",
   };

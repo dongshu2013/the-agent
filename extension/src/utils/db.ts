@@ -3,6 +3,7 @@ import { Conversation } from "../types/conversations";
 import Dexie, { Table } from "dexie";
 import { env } from "./env";
 import { Model, ModelType } from "~/types";
+import { getApiKey } from "~/services/utils";
 
 export const systemModelId = "system";
 
@@ -36,16 +37,17 @@ class MizuDB extends Dexie {
     super("mizu-agent");
 
     this.version(6).stores({
-      conversations: "id, created_at, *messages",
-      messages: "message_id, conversation_id, created_at",
-      users: "id, updated_at",
+      conversations: "id, *messages, user_id",
+      messages: "id, conversation_id",
+      users:
+        "id, api_key, api_key_enabled, credits, created_at, email, username, photoURL, updated_at",
       models: "id, userId, type",
     });
 
     // Add index definitions
     this.messages.hook("creating", function (primKey, obj) {
-      if (!obj.created_at) {
-        obj.created_at = new Date().toISOString();
+      if (!obj.id) {
+        obj.id = Date.now();
       }
     });
   }
@@ -119,7 +121,7 @@ class MizuDB extends Dexie {
 
   async getAllConversations(): Promise<Conversation[]> {
     const conversations = await this.conversations
-      .orderBy("created_at")
+      .orderBy("id")
       .reverse()
       .toArray();
 
@@ -129,7 +131,7 @@ class MizuDB extends Dexie {
         messages: await this.messages
           .where("conversation_id")
           .equals(conversation.id)
-          .sortBy("created_at"),
+          .sortBy("id"),
       })) || []
     );
   }
@@ -141,15 +143,12 @@ class MizuDB extends Dexie {
   // Message operations
   async saveMessage(message: Message): Promise<void> {
     if (!message.id) {
-      console.warn("Message missing message_id, generating new one");
-      throw new Error("Message missing message_id");
+      throw new Error("Message missing id");
     }
 
     try {
       await this.messages.put(message);
-      console.log("Message saved successfully:", message.id);
     } catch (error) {
-      console.error("Error in saveMessage:", error);
       throw error;
     }
   }
@@ -162,7 +161,7 @@ class MizuDB extends Dexie {
     const messages = await this.messages
       .where("conversation_id")
       .equals(conversationId)
-      .sortBy("created_at");
+      .sortBy("id");
     return messages || [];
   }
 
@@ -175,13 +174,13 @@ class MizuDB extends Dexie {
 
   // Related messages operations
   async getRelatedMessagesWithContext(
-    messageIds: string[],
+    messageIds: number[],
     conversationId: string
   ): Promise<Message[]> {
     const allMessages = await this.messages
       .where("conversation_id")
       .equals(conversationId)
-      .sortBy("created_at");
+      .sortBy("id");
 
     const contextMessages: Message[] = [];
 
@@ -208,15 +207,15 @@ class MizuDB extends Dexie {
       .where("conversation_id")
       .equals(conversationId)
       .reverse()
-      .sortBy("created_at");
+      .sortBy("id");
 
     return messages.slice(0, limit);
   }
 
   // Conversation and Messages operations
   async saveConversationsAndMessages(
-    conversations: Array<{ conversation: Conversation }>,
-    userId?: string
+    conversations: Conversation[],
+    userId: string
   ): Promise<void> {
     try {
       await this.transaction(
@@ -224,37 +223,30 @@ class MizuDB extends Dexie {
         [this.conversations, this.messages],
         async () => {
           // If userId is provided, clear old data first
-          if (userId) {
-            await this.clearUserData(userId);
-          }
+          await this.clearUserData(userId);
 
-          for (const { conversation } of conversations) {
+          for (const conversation of conversations) {
             if (!conversation || !conversation.id) {
-              console.warn("Invalid conversation data:", conversation);
               continue;
             }
-
-            // Save conversation
-            await this.conversations.put({
-              ...conversation,
-              created_at: conversation.created_at || new Date().toISOString(),
-            });
+            await this.conversations.put(conversation);
 
             // Save messages if they exist
             if (conversation.messages && conversation.messages.length > 0) {
-              const validMessages = conversation.messages.filter(
-                (msg) => msg && msg.id && msg.conversation_id
-              );
-
-              if (validMessages.length > 0) {
-                await this.messages.bulkPut(validMessages);
-              }
+              const validMessages = conversation.messages.filter((msg) => {
+                if (msg && msg.id) {
+                  return {
+                    ...msg,
+                    conversation_id: conversation.id,
+                  };
+                }
+              });
+              await this.messages.bulkPut(validMessages);
             }
           }
         }
       );
     } catch (error) {
-      console.error("Error in saveConversationsAndMessages:", error);
       throw new Error(
         `Failed to save conversations and messages: ${error instanceof Error ? error.message : "Unknown error"}`
       );
@@ -373,6 +365,12 @@ class MizuDB extends Dexie {
         `Failed to save/update user: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     }
+  }
+  async getUserByApiKey(): Promise<UserInfo | null> {
+    const apiKey = await getApiKey();
+    if (!apiKey) return null;
+    const user = await this.users.where("api_key").equals(apiKey).first();
+    return user || null;
   }
 }
 

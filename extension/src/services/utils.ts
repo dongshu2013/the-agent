@@ -1,7 +1,6 @@
 /**
  * Utility functions for the application
  */
-
 import { env } from "~/utils/env";
 /**
  * Gets the API key from local storage

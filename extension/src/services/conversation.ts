@@ -13,7 +13,7 @@ import { Message } from "~/types";
  */
 export const createConversationApi = async (
   apiKey?: string
-): Promise<{ success: boolean; data?: Conversation; error?: string }> => {
+): Promise<{ success: boolean; id?: string; error?: string }> => {
   try {
     const API_ENDPOINT = "/v1/conversation/create";
     const headers: Record<string, string> = {
@@ -40,27 +40,14 @@ export const createConversationApi = async (
         return handleAuthError();
       }
 
-      return {
-        success: false,
-        error:
-          errorData.detail ||
+      throw new Error(
+        errorData.detail ||
           errorData.error?.message ||
-          `API Error: ${response.status} - ${response.statusText}`,
-      };
+          `API Error: ${response.status} - ${response.statusText}`
+      );
     }
 
-    const data = await response.json();
-    return {
-      success: true,
-      data: {
-        id: data.id || crypto.randomUUID(),
-        title: data.title || "New Chat",
-        user_id: data.user_id,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at,
-        status: data.status,
-      },
-    };
+    return await response.json();
   } catch (error) {
     return {
       success: false,
@@ -132,25 +119,24 @@ export const getConversationsApi = async (
   apiKey?: string
 ): Promise<{
   success: boolean;
-  data?: { conversations: { id: string; messages: Message[] }[] };
+  conversations: { id: string; messages: Message[] }[];
   error?: string;
 }> => {
   try {
     const API_ENDPOINT = "/v1/conversation/list";
-    const keyToUse = apiKey || (await getApiKey());
-    if (!keyToUse) {
-      return handleAuthError();
-    }
-
-    const formattedKey = keyToUse.trim();
-    if (!formattedKey) {
-      return handleAuthError();
+    const keyToUse = (apiKey || (await getApiKey()))?.trim();
+    if (!keyToUse || !keyToUse.trim()) {
+      return {
+        success: false,
+        conversations: [],
+        error: "Unauthorized",
+      };
     }
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${formattedKey}`,
-      "x-api-key": formattedKey,
+      Authorization: `Bearer ${keyToUse}`,
+      "x-api-key": keyToUse,
     };
 
     const url = `${env.BACKEND_URL}${API_ENDPOINT}`;
@@ -162,12 +148,16 @@ export const getConversationsApi = async (
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-
       if (response.status === 401 || response.status === 403) {
-        return handleAuthError();
+        return {
+          success: false,
+          conversations: [],
+          error: "Unauthorized",
+        };
       }
       return {
         success: false,
+        conversations: [],
         error:
           errorData.detail ||
           errorData.error?.message ||
@@ -175,11 +165,11 @@ export const getConversationsApi = async (
       };
     }
 
-    const data = await response.json();
-    return { success: true, data };
+    return await response.json();
   } catch (error) {
     return {
       success: false,
+      conversations: [],
       error: error instanceof Error ? error.message : "Unknown error occurred",
     };
   }
@@ -191,31 +181,30 @@ export const getConversationsApi = async (
 export const getConversations = async (): Promise<Conversation[]> => {
   try {
     const response = await getConversationsApi();
-    if (!response.success || !response.data) {
-      throw new Error(response.error || "Failed to fetch conversations");
+    const user = await db.getUserByApiKey();
+    if (!user) {
+      throw new Error("User not found");
     }
 
-    const serverConversations: Conversation[] =
-      response.data?.conversations?.map((conv: any) => ({
+    console.log("response = 🍓🍓 .... ", response);
+    const serverConversations: Conversation[] = response?.conversations?.map(
+      (conv: any) => ({
         id: conv.id,
         title:
           conv?.title || conv.messages[0]?.content.slice(0, 20) || "New Chat",
-        user_id: conv.user_id,
-        status: conv.status,
+        user_id: user?.id || "",
         messages: conv.messages.map((msg: any) => ({
           id: msg.id,
           role: msg.role,
           content: msg.content,
           timestamp: new Date(msg.timestamp),
         })),
-        createdAt: new Date(conv.created_at),
-        updatedAt: new Date(conv.updated_at),
-      }));
-
-    await db.saveConversationsAndMessages(
-      serverConversations.map((conv) => ({ conversation: conv })),
-      serverConversations[0].user_id
+      })
     );
+
+    console.log("serverConversations = 🍓🍓 .... ", serverConversations);
+
+    await db.saveConversationsAndMessages(serverConversations, user.id);
 
     return serverConversations;
   } catch (error) {
@@ -243,24 +232,21 @@ export const getCurrentConversation =
 export const createNewConversation = async (): Promise<Conversation> => {
   try {
     const response = await createConversationApi();
-    if (!response.success || !response.data) {
+    const user = await db.getUserByApiKey();
+    if (!response.success || !response.id || !user) {
       throw new Error(response.error || "Failed to create conversation");
     }
 
     const conversation: Conversation = {
-      id: response.data.id,
-      title: response?.data?.title || "New Chat",
-      user_id: response.data.user_id,
-      createdAt: response.data.createdAt,
-      updatedAt: response.data.updatedAt,
-      status: response.data.status,
+      id: response.id,
+      title: "New Chat",
+      user_id: user?.id || "",
     };
 
     await db.saveConversation(conversation);
 
     return conversation;
   } catch (error) {
-    console.error("Error creating conversation:", error);
     throw error;
   }
 };

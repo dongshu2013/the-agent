@@ -108,7 +108,7 @@ export interface CacheData<T> {
 }
 
 export enum ModelType {
-  system = "SYSTEM",
+  system = "Default",
   custom = "CUSTOM",
 }
 

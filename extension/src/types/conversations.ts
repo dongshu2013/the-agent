@@ -12,10 +12,7 @@ export interface Conversation {
   id: string;
   title: string;
   user_id: string;
-  status: string;
   messages?: Message[];
-  createdAt?: Date;
-  updatedAt?: Date;
 }
 
 /**
@@ -50,7 +47,7 @@ export interface CreateConversationResponse {
 export interface SaveMessageResponse {
   success: boolean;
   data?: {
-    top_k_messages: string[];
+    top_k_messages: number[];
   };
   error?: string;
 }

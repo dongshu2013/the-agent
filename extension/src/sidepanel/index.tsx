@@ -33,6 +33,10 @@ const Sidepanel = () => {
   const [chatHandler, setChatHandler] = useState<ChatHandler | null>(null);
   const didRedirect = useRef(false);
 
+  // 用于生成有序消息ID
+  let messageIdOffset = 0;
+  const generateMessageId = () => Date.now() + messageIdOffset++;
+
   // 数据查询
   const messages =
     useLiveQuery(
@@ -56,13 +60,12 @@ const Sidepanel = () => {
   const handleApiError = useCallback(
     (error: any) => {
       db.saveMessage({
-        id: crypto.randomUUID(),
+        id: generateMessageId(),
         status: "error",
         content:
           typeof error === "string"
             ? error
             : "An error occurred. Please try again.",
-        created_at: new Date().toISOString(),
         conversation_id: currentConversationId || "",
         role: "system",
       });
@@ -89,11 +92,8 @@ const Sidepanel = () => {
         // 1. 获取并验证 API Key
         let storedApiKey = await getApiKey();
 
-        console.log("storedApiKey🍷", storedApiKey);
-
         if (!storedApiKey) {
           const apiKeyFromStorage = await getApiKeyFromStorage();
-          console.log("apiKeyFromStorage🍷", apiKeyFromStorage);
 
           if (apiKeyFromStorage) {
             setApiKey(apiKeyFromStorage);
@@ -128,9 +128,6 @@ const Sidepanel = () => {
         const verifyData = await verifyResponse.json();
         if (verifyData.success && verifyData.user) {
           setApiKey(storedApiKey);
-
-          console.log("verifyData🍷", verifyData);
-
           // 构造 UserInfo 对象
           const now = new Date().toISOString();
           const userInfo = {
@@ -160,7 +157,7 @@ const Sidepanel = () => {
               apiUrl:
                 model.id === "system" ? env.LLM_API_URL || "" : model.apiUrl,
               name: model.id === "system" ? env.OPENAI_MODEL || "" : model.name,
-              type: model.id === "system" ? "SYSTEM" : provider.type,
+              type: model.id === "system" ? "Default" : provider.type,
             }))
           );
           await db.models.bulkPut(allModels);
@@ -378,7 +375,6 @@ const Sidepanel = () => {
         <Header
           createNewConversation={handleCreateNewConversation}
           setShowConversationList={() => toggleConversationList()}
-          onLogout={handleLogout}
         />
       </div>
 

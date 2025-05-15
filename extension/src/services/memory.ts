@@ -27,14 +27,14 @@ export async function generateMemory(
         {
           role: "system",
           content: options.systemPrompt || "You are a helpful AI assistant.",
-          message_id: crypto.randomUUID(),
+          id: crypto.randomUUID(),
           created_at: new Date().toISOString(),
           conversation_id: conversationId,
         },
         {
           role: "user",
           content: currentMessage,
-          message_id: crypto.randomUUID(),
+          id: crypto.randomUUID(),
           created_at: new Date().toISOString(),
           conversation_id: conversationId,
         },
@@ -72,14 +72,14 @@ export async function generateMemory(
       {
         role: "system",
         content: options.systemPrompt || "You are a helpful AI assistant.",
-        message_id: crypto.randomUUID(),
+        id: crypto.randomUUID(),
         created_at: new Date().toISOString(),
         conversation_id: conversationId,
       },
       {
         role: "user",
         content: currentMessage,
-        message_id: crypto.randomUUID(),
+        id: crypto.randomUUID(),
         created_at: new Date().toISOString(),
         conversation_id: conversationId,
       },
@@ -107,7 +107,7 @@ export async function addMessageToMemory(messageId: string): Promise<boolean> {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        message_id: messageId,
+        id: messageId,
       }),
     });
 

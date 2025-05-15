@@ -1,22 +1,21 @@
 import { MessageCircleMore, SquarePen, User as UserIcon } from "lucide-react";
 import { db, systemModelId } from "~/utils/db";
 import { useState, useEffect } from "react";
-import { Modal, Dropdown, Menu } from "antd";
+import { Modal, Dropdown } from "antd";
 import ModelCascader, { ProviderGroup } from "./ModelCascader";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Model } from "~/types";
+import { ItemType } from "antd/es/menu/interface";
 
 interface HeaderProps {
   createNewConversation: () => void;
   setShowConversationList: (value?: boolean) => void;
-  onLogout: () => void;
   onModelChange?: (model: string) => void;
 }
 
 const Header = ({
   createNewConversation,
   setShowConversationList,
-  onLogout,
   onModelChange,
 }: HeaderProps) => {
   const [providerGroups, setProviderGroups] = useState<ProviderGroup[]>([]);
@@ -171,17 +170,24 @@ const Header = ({
     }
   };
 
-  const menu = (
-    <Menu>
-      <Menu.Item key="profile" disabled>
-        {user?.email || user?.username || "User"}
-      </Menu.Item>
-      <Menu.Divider />
-      <Menu.Item key="logout" onClick={onLogout}>
-        Logout
-      </Menu.Item>
-    </Menu>
-  );
+  const menuItems = [
+    {
+      key: "profile",
+      label: user?.email || user?.username || "User",
+      disabled: true,
+    },
+    {
+      type: "divider",
+    },
+    // Add more items as needed
+    {
+      key: "view-profile",
+      label: "View Profile",
+      onClick: () => {
+        window.open(process.env.PLASMO_PUBLIC_WEB_URL || "", "_blank");
+      },
+    },
+  ];
 
   return (
     <div
@@ -274,7 +280,11 @@ const Header = ({
         >
           <SquarePen size={20} />
         </button>
-        <Dropdown overlay={menu} trigger={["click"]} placement="bottomRight">
+        <Dropdown
+          menu={{ items: menuItems as ItemType[] }}
+          trigger={["click"]}
+          placement="bottomRight"
+        >
           <button
             style={{
               display: "flex",
