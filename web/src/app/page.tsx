@@ -17,25 +17,24 @@ export default function Home() {
   }, [user, loading, router]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <main className="flex flex-col items-center gap-8 max-w-md w-full">
-        <div className="flex flex-col items-center text-center">
-          <Image
-            src="/mysta-logo.png"
-            alt="Mysta Agent Logo"
-            width={80}
-            height={80}
-            className="mb-6"
-            priority
-          />
-          <h1 className="text-4xl font-bold mb-2">Welcome to Mysta Agent</h1>
-          <p className="text-gray-600 dark:text-gray-400 mb-8">
-            Your intelligent AI assistant dashboard
-          </p>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-blue-50 to-green-50">
+      <div className="w-full max-w-[560px] bg-white rounded-[20px] p-12 shadow-lg">
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-[240px] h-[96px] relative">
+            <Image
+              src="/mysta-brand-logo.png"
+              alt="Mysta Logo"
+              fill
+              style={{ objectFit: 'contain' }}
+              priority
+            />
+          </div>
+        </div>
 
+        <div className="space-y-4">
           <button
             onClick={signInWithGoogle}
-            className="flex items-center justify-center gap-3 w-full max-w-xs bg-white hover:bg-gray-100 text-gray-700 rounded-lg py-3 px-6 shadow-md transition-all hover:shadow-lg"
+            className="flex items-center justify-center w-full gap-3 py-3 px-6 text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors cursor-pointer"
           >
             <Image
               src="/google-logo.svg"
@@ -44,29 +43,21 @@ export default function Home() {
               height={20}
               className="w-5 h-5"
             />
-            <span className="font-medium">Sign in with Google</span>
+            <span>Sign in with Google</span>
           </button>
         </div>
-      </main>
 
-      <footer className="mt-16 text-center text-sm text-gray-500 dark:text-gray-400">
-        {/* <div className="mb-2">{new Date().getFullYear()} Mysta Agent. All rights reserved.</div> */}
-        <div className="flex justify-center gap-4">
-          <Link
-            href="/privacy"
-            className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-          >
-            Privacy policy
-          </Link>
-          <span>|</span>
-          <Link
-            href="/tos"
-            className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-          >
-            Terms of service
+        <div className="mt-6 text-center text-sm text-gray-500 whitespace-nowrap">
+          By signing up, you agree to our{' '}
+          <Link href="/tos" className="text-blue-500 hover:text-blue-600">
+            Terms and Conditions
+          </Link>{' '}
+          and{' '}
+          <Link href="/privacy" className="text-blue-500 hover:text-blue-600">
+            Privacy Policy
           </Link>
         </div>
-      </footer>
+      </div>
     </div>
   );
 }
