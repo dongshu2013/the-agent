@@ -6,7 +6,7 @@ import { Message } from "../types/messages";
 import { SaveMessageResponse } from "../types/conversations";
 import OpenAI from "openai";
 import { env } from "../utils/env";
-import { getIdToken, handleAuthError } from "./utils";
+import { getApiKey, handleAuthError } from "./utils";
 import { db } from "../utils/db";
 import { ChatRequest } from "../types/api";
 import { getToolDescriptions } from "../tools/tool-descriptions";
@@ -14,16 +14,15 @@ import { getToolDescriptions } from "../tools/tool-descriptions";
 // 发送聊天请求到后端
 export const sendChatCompletion = async (
   request: ChatRequest,
-  apiKey?: string,
   options: { stream?: boolean; signal?: AbortSignal } = {}
 ): Promise<any> => {
   try {
-    const idToken = apiKey || (await getIdToken());
-    if (!idToken) {
+    const apiKey = await getApiKey();
+    if (!apiKey) {
       return handleAuthError();
     }
     const client = new OpenAI({
-      apiKey: idToken,
+      apiKey: apiKey,
       baseURL: env.BACKEND_URL + "/v1",
       dangerouslyAllowBrowser: true,
     });
@@ -81,18 +80,15 @@ export const saveMessageApi = async ({
   conversation_id,
   message,
   top_k_related = 0,
-  apiKey,
 }: {
   conversation_id: string;
   message: Message;
   top_k_related?: number;
-  apiKey?: string;
 }): Promise<SaveMessageResponse> => {
   try {
     const API_ENDPOINT = "/v1/message/save";
-    const user = await db.getCurrentUser();
-    const apiKeyToUse = apiKey || user?.api_key;
-    if (!apiKeyToUse) {
+    const apiKey = await getApiKey();
+    if (!apiKey) {
       return handleAuthError();
     }
 
@@ -100,8 +96,8 @@ export const saveMessageApi = async ({
       "Content-Type": "application/json",
     };
 
-    headers["Authorization"] = `Bearer ${apiKeyToUse}`;
-    headers["x-api-key"] = apiKeyToUse;
+    headers["Authorization"] = `Bearer ${apiKey}`;
+    headers["x-api-key"] = apiKey;
     const requestBody = {
       conversation_id: conversation_id,
       message: message,

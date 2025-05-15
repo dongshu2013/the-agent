@@ -14,15 +14,6 @@ export const getApiKey = async (): Promise<string | null> => {
   });
 };
 
-export const getIdToken = async (): Promise<string | null> => {
-  return new Promise((resolve) => {
-    chrome.storage.local.get("idToken", (result) => {
-      const storedIdToken = result.idToken ?? null;
-      resolve(storedIdToken?.replace(/"/g, "") ?? null);
-    });
-  });
-};
-
 export const handleAuthError = () => {
   chrome.runtime.sendMessage({
     name: "api-key-missing",

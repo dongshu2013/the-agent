@@ -23,19 +23,18 @@ export async function generateMemory(
     const apiKey = getApiKey();
     if (!apiKey) {
       console.error("API key not found for memory generation");
+      const timestamp = Date.now();
       return [
         {
           role: "system",
           content: options.systemPrompt || "You are a helpful AI assistant.",
-          id: crypto.randomUUID(),
-          created_at: new Date().toISOString(),
+          id: timestamp,
           conversation_id: conversationId,
         },
         {
           role: "user",
           content: currentMessage,
-          id: crypto.randomUUID(),
-          created_at: new Date().toISOString(),
+          id: timestamp,
           conversation_id: conversationId,
         },
       ];
@@ -67,20 +66,20 @@ export async function generateMemory(
   } catch (error) {
     console.error("Error generating memory:", error);
 
+    const timestamp = Date.now();
+
     // 在故障情况下返回基本上下文
     return [
       {
         role: "system",
         content: options.systemPrompt || "You are a helpful AI assistant.",
-        id: crypto.randomUUID(),
-        created_at: new Date().toISOString(),
+        id: timestamp,
         conversation_id: conversationId,
       },
       {
         role: "user",
         content: currentMessage,
-        id: crypto.randomUUID(),
-        created_at: new Date().toISOString(),
+        id: timestamp,
         conversation_id: conversationId,
       },
     ];

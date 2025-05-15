@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             credits: userData.user.balance,
             idToken,
           });
-          setAuthToLocalAndPostMessage({ apiKey: userData.user.api_key, idToken });
+          setAuthToLocalAndPostMessage({ apiKey: userData.user.api_key });
         } catch (error) {
           console.error('Error setting up user:', error);
         }
@@ -102,7 +102,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const newToken = await getIdToken(auth.currentUser);
       setUser((prev) => (prev ? { ...prev, idToken: newToken } : null));
-      setAuthToLocalAndPostMessage({ idToken: newToken });
       return newToken;
     } catch (error) {
       console.error('Error refreshing token:', error);
@@ -190,7 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         idToken: token,
       });
 
-      setAuthToLocalAndPostMessage({ apiKey: userData.user.api_key, idToken: token });
+      setAuthToLocalAndPostMessage({ apiKey: userData.user.api_key });
     } catch (error) {
       console.error('Error refreshing user data:', error);
     }
@@ -223,7 +222,7 @@ export function useAuth() {
 }
 
 // 新增：封装设置 apiKey 并 postMessage 的函数
-function setAuthToLocalAndPostMessage({ apiKey, idToken }: { apiKey?: string; idToken?: string }) {
+function setAuthToLocalAndPostMessage({ apiKey }: { apiKey?: string }) {
   if (apiKey) {
     localStorage.setItem('apiKey', apiKey);
     if (typeof window !== 'undefined') {
@@ -231,18 +230,6 @@ function setAuthToLocalAndPostMessage({ apiKey, idToken }: { apiKey?: string; id
         {
           type: 'FROM_WEB_TO_EXTENSION',
           apiKey,
-        },
-        '*',
-      );
-    }
-  }
-  if (idToken) {
-    localStorage.setItem('idToken', idToken);
-    if (typeof window !== 'undefined') {
-      window.postMessage(
-        {
-          type: 'FROM_WEB_TO_EXTENSION',
-          idToken,
         },
         '*',
       );

@@ -11,7 +11,7 @@ interface Props {
 export default function MessageComponent({ message }: Props) {
   const isUser = message?.role === "user";
   const isLoading = message?.isLoading === true;
-  const isError = message?.status === "error";
+  const isError = message?.error === "error";
   const [copySuccess, setCopySuccess] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const isTool = message?.role === "tool";

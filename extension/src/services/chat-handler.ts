@@ -3,8 +3,6 @@ import { ChatMessage, Message } from "../types/messages";
 import { saveMessageApi, sendChatCompletion } from "./chat";
 import { toolExecutor } from "./tool-executor";
 import { db } from "~/utils/db";
-import { calculateAIUsageCredits } from "~/utils/creditCalculator";
-import { deductCreditsApi } from "./credit";
 
 interface ChatHandlerOptions {
   apiKey: string;
@@ -36,35 +34,11 @@ export class ChatHandler {
       return;
     }
 
-    // Check if user has enough credits before proceeding
-    // const creditsResponse = await getUserCredits();
-    // if (
-    //   !creditsResponse.success ||
-    //   !creditsResponse.credits ||
-    //   creditsResponse.credits <= 0
-    // ) {
-    //   // Not enough credits, show error message
-    //   const errorMessage: Message = {
-    //     message_id: crypto.randomUUID(),
-    //     role: "system",
-    //     content:
-    //       "You don't have enough credits to send messages. Please purchase more credits to continue.",
-    //     created_at: new Date().toISOString(),
-    //     conversation_id: this.options.currentConversationId,
-    //     status: "error",
-    //     error: "Insufficient credits",
-    //   };
-    //   await this.updateMessage(errorMessage);
-    //   this.options.onError({ message: "Insufficient credits" });
-    //   return;
-    // }
-
     const currentPrompt = prompt.trim();
     const baseTimestamp = new Date();
     let messageIdOffset = 0;
 
-    const generateMessageId = () =>
-      baseTimestamp.getTime() + messageIdOffset++;
+    const generateMessageId = () => baseTimestamp.getTime() + messageIdOffset++;
 
     const userMessage: Message = {
       id: generateMessageId(),
@@ -189,7 +163,6 @@ Keep responses concise and focused on the current task.
                 messages: [systemMessage, ...inputMessages],
                 currentModel,
               },
-              this.options.apiKey,
               {
                 signal: this.abortController?.signal,
               }
@@ -221,7 +194,8 @@ Keep responses concise and focused on the current task.
                 await this.updateMessage({
                   ...loadingMessage,
                   content: accumulatedContent,
-                  isLoading: true,
+                  isLoading: false,
+                  status: "completed",
                 });
                 return {
                   content: accumulatedContent,
@@ -242,10 +216,6 @@ Keep responses concise and focused on the current task.
                 tool_calls: toolCalls,
               };
 
-              await this.updateMessage({
-                ...assistantMessage,
-                status: "completed",
-              });
               await saveMessageApi({
                 conversation_id: this.options.currentConversationId,
                 message: assistantMessage,
@@ -284,10 +254,6 @@ Keep responses concise and focused on the current task.
                   ],
                 };
 
-                await this.updateMessage({
-                  ...toolMessage,
-                  status: "completed",
-                });
                 await saveMessageApi({
                   conversation_id: this.options.currentConversationId,
                   message: toolMessage,
@@ -352,45 +318,15 @@ Now reply to user's message: ${currentPrompt}`,
         },
       ]);
 
-      // 修改最终消息的时间戳
       const aiMessage: Message = {
         ...loadingMessage,
         id: generateMessageId(),
         content: finalContent,
-        isLoading: false,
         tokenUsage,
+        isLoading: false,
+        status: "completed",
       };
 
-      // 只打印到控制台，不显示在界面
-      console.log(`Token usage statistics:`, tokenUsage);
-      console.log(`Total tokens: ${tokenUsage.totalTokens}`);
-
-      const aiCreditsToDeduct = calculateAIUsageCredits(
-        tokenUsage,
-        env.OPENAI_MODEL
-      );
-
-      // Deduct credits from user account using API key
-      try {
-        // Convert Decimal to number for the database update
-        let creditsToDeduct = parseFloat(aiCreditsToDeduct.toString());
-        if (creditsToDeduct < 0.01) {
-          creditsToDeduct = 0.01;
-        }
-        // Use API key directly for credit deduction
-        await deductCreditsApi(
-          creditsToDeduct,
-          this.options.currentConversationId,
-          env.OPENAI_MODEL
-        );
-      } catch (error) {
-        console.error("Error deducting credits:", error);
-      }
-
-      await this.updateMessage({
-        ...aiMessage,
-        status: "completed",
-      });
       await saveMessageApi({
         conversation_id: this.options.currentConversationId,
         message: aiMessage,
@@ -400,7 +336,7 @@ Now reply to user's message: ${currentPrompt}`,
       this.options.onError(error);
       await this.updateMessage({
         ...loadingMessage,
-        status: "error",
+        status: "completed",
         content: `Network error, please try again later.`,
         error: error.message,
         isLoading: false,
@@ -412,7 +348,6 @@ Now reply to user's message: ${currentPrompt}`,
   }
 
   private async updateMessage(message: Message) {
-    await db.saveMessage(message);
     this.options.onMessageUpdate(message);
   }
 
