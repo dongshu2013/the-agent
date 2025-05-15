@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import Link from 'next/link';
 
 export default function Home() {
   const { user, loading, signInWithGoogle } = useAuth();
@@ -22,12 +23,12 @@ export default function Home() {
           <Image
             src="/mysta-logo.png"
             alt="Mysta Agent Logo"
-            width={120}
-            height={120}
+            width={80}
+            height={80}
             className="mb-6"
             priority
           />
-          <h1 className="text-4xl font-bold mb-2">Mysta Agent</h1>
+          <h1 className="text-4xl font-bold mb-2">Welcome to Mysta Agent</h1>
           <p className="text-gray-600 dark:text-gray-400 mb-8">
             Your intelligent AI assistant dashboard
           </p>
@@ -49,7 +50,22 @@ export default function Home() {
       </main>
 
       <footer className="mt-16 text-center text-sm text-gray-500 dark:text-gray-400">
-        {new Date().getFullYear()} Mysta Agent. All rights reserved.
+        {/* <div className="mb-2">{new Date().getFullYear()} Mysta Agent. All rights reserved.</div> */}
+        <div className="flex justify-center gap-4">
+          <Link
+            href="/privacy"
+            className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+          >
+            Privacy policy
+          </Link>
+          <span>|</span>
+          <Link
+            href="/tos"
+            className="hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+          >
+            Terms of service
+          </Link>
+        </div>
       </footer>
     </div>
   );
