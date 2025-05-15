@@ -268,9 +268,14 @@ export default function ProfilePage() {
                 </p>
                 <button
                   className="px-4 py-2 text-sm font-medium text-white bg-black rounded-md hover:opacity-70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black transition-opacity"
-                  onClick={() =>
-                    window.open(process.env.NEXT_PUBLIC_TG_WEBAPP_URL || '#', '_blank')
-                  }
+                  onClick={() => {
+                    const baseUrl = process.env.NEXT_PUBLIC_TG_WEBAPP_URL || '#';
+                    const url = new URL(baseUrl);
+                    if (user.apiKey) {
+                      url.searchParams.set('apiKey', user.apiKey);
+                    }
+                    window.open(url.toString(), '_blank');
+                  }}
                 >
                   Import Telegram Data
                 </button>
