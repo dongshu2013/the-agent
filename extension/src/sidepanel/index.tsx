@@ -17,6 +17,8 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { ChatHandler } from "../services/chat-handler";
 import { env } from "~/utils/env";
 import { PROVIDER_MODELS } from "~/utils/openaiModels";
+import LoginModal from "./components/LoginModal";
+import { showLoginModal } from "~/utils/globalEvent";
 
 const Sidepanel = () => {
   // 状态管理
@@ -32,6 +34,7 @@ const Sidepanel = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [chatHandler, setChatHandler] = useState<ChatHandler | null>(null);
   const didRedirect = useRef(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
 
   // 用于生成有序消息ID
   let messageIdOffset = 0;
@@ -345,6 +348,18 @@ const Sidepanel = () => {
     }
   };
 
+  // 只监听全局事件
+  useEffect(() => {
+    const handler = () => setLoginModalOpen(true);
+    window.addEventListener("SHOW_LOGIN_MODAL", handler);
+    return () => window.removeEventListener("SHOW_LOGIN_MODAL", handler);
+  }, []);
+
+  // 检测不到 apiKey 时，触发全局事件
+  useEffect(() => {
+    if (!apiKey) showLoginModal();
+  }, [apiKey]);
+
   return (
     <div
       style={{
@@ -487,6 +502,11 @@ const Sidepanel = () => {
           }
         />
       )}
+
+      <LoginModal
+        open={loginModalOpen}
+        onCancel={() => setLoginModalOpen(false)}
+      />
     </div>
   );
 };

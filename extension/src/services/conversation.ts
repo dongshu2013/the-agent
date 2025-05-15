@@ -3,10 +3,11 @@
  */
 
 import { env } from "../utils/env";
-import { getApiKey, handleAuthError } from "./utils";
+import { getApiKey } from "./utils";
 import { Conversation } from "../types/conversations";
 import { db } from "../utils/db";
 import { Message } from "~/types";
+import { showLoginModal } from "~/utils/globalEvent";
 
 /**
  * 创建新会话（调用后端接口）
@@ -25,7 +26,11 @@ export const createConversationApi = async (
       headers["Authorization"] = `Bearer ${keyToUse}`;
       headers["x-api-key"] = keyToUse;
     } else {
-      return handleAuthError();
+      showLoginModal();
+      return {
+        success: false,
+        error: "Unauthorized",
+      };
     }
 
     const response = await fetch(`${env.BACKEND_URL}${API_ENDPOINT}`, {
@@ -37,7 +42,7 @@ export const createConversationApi = async (
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       if (response.status === 401 || response.status === 403) {
-        return handleAuthError();
+        showLoginModal();
       }
 
       throw new Error(
@@ -71,10 +76,13 @@ export const deleteConversationApi = async (
     const keyToUse = apiKey || (await getApiKey());
 
     if (keyToUse) {
-      headers["Authorization"] = `Bearer ${keyToUse}`;
       headers["x-api-key"] = keyToUse;
     } else {
-      return handleAuthError();
+      showLoginModal();
+      return {
+        success: false,
+        error: "Unauthorized",
+      };
     }
 
     const response = await fetch(`${env.BACKEND_URL}${API_ENDPOINT}`, {
@@ -86,7 +94,7 @@ export const deleteConversationApi = async (
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       if (response.status === 401 || response.status === 403) {
-        return handleAuthError();
+        showLoginModal();
       }
       if (response.status === 404) {
         return {
@@ -126,6 +134,7 @@ export const getConversationsApi = async (
     const API_ENDPOINT = "/v1/conversation/list";
     const keyToUse = (apiKey || (await getApiKey()))?.trim();
     if (!keyToUse || !keyToUse.trim()) {
+      showLoginModal();
       return {
         success: false,
         conversations: [],

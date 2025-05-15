@@ -1,5 +1,6 @@
+import { showLoginModal } from "~/utils/globalEvent";
 import { env } from "../utils/env";
-import { handleAuthError, getApiKey } from "./utils";
+import { getApiKey } from "./utils";
 
 /**
  * Get user's available credits by calling the backend API
@@ -15,7 +16,11 @@ export const getUserCredits = async (): Promise<{
     const apiKey = await getApiKey();
 
     if (!apiKey) {
-      return handleAuthError();
+      showLoginModal();
+      return {
+        success: false,
+        error: "Unauthorized",
+      };
     }
 
     const headers: Record<string, string> = {
@@ -33,7 +38,7 @@ export const getUserCredits = async (): Promise<{
       const errorData = await response.json().catch(() => ({}));
 
       if (response.status === 401 || response.status === 403) {
-        return handleAuthError();
+        showLoginModal();
       }
 
       return {
@@ -82,7 +87,11 @@ export const deductCreditsApi = async (
     const apiKey = await getApiKey();
 
     if (!apiKey) {
-      return handleAuthError();
+      showLoginModal();
+      return {
+        success: false,
+        error: "Unauthorized",
+      };
     }
 
     const headers: Record<string, string> = {
@@ -107,7 +116,7 @@ export const deductCreditsApi = async (
       const errorData = await response.json().catch(() => ({}));
 
       if (response.status === 401 || response.status === 403) {
-        return handleAuthError();
+        showLoginModal();
       }
 
       throw new Error(

@@ -1,4 +1,3 @@
-import { env } from "~/utils/env";
 import { ChatMessage, Message } from "../types/messages";
 import { saveMessageApi, sendChatCompletion } from "./chat";
 import { toolExecutor } from "./tool-executor";

@@ -1,12 +1,13 @@
-import { WebInteractionResult } from './tab-toolkit';
-import { env } from '../utils/env';
-import { handleAuthError, getApiKey } from '../services/utils';
+import { WebInteractionResult } from "./tab-toolkit";
+import { env } from "../utils/env";
+import { getApiKey } from "../services/utils";
+import { showLoginModal } from "~/utils/globalEvent";
 
 // Ensure Chrome types are available
 declare const chrome: any;
 
 export class TgToolkit {
-  private static readonly API_ENDPOINT = '/v1/tg';
+  private static readonly API_ENDPOINT = "/v1/tg";
 
   /**
    * Get a list of user's Telegram dialogs
@@ -33,59 +34,68 @@ export class TgToolkit {
     try {
       // Build query parameters
       const params = new URLSearchParams();
-      params.append('limit', limit.toString());
-      params.append('offset', offset.toString());
-      
-      if (chatTitle) params.append('chat_title', chatTitle);
-      if (isPublic !== undefined) params.append('is_public', isPublic.toString());
-      if (isFree !== undefined) params.append('is_free', isFree.toString());
-      if (status) params.append('status', status);
-      params.append('sort_by', sortBy);
-      params.append('sort_order', sortOrder);
+      params.append("limit", limit.toString());
+      params.append("offset", offset.toString());
+
+      if (chatTitle) params.append("chat_title", chatTitle);
+      if (isPublic !== undefined)
+        params.append("is_public", isPublic.toString());
+      if (isFree !== undefined) params.append("is_free", isFree.toString());
+      if (status) params.append("status", status);
+      params.append("sort_by", sortBy);
+      params.append("sort_order", sortOrder);
 
       // Get API key
       const apiKeyToUse = apiKey || (await getApiKey());
       if (!apiKeyToUse) {
-        return handleAuthError();
+        showLoginModal();
+        return {
+          success: false,
+          error: "Unauthorized",
+        };
       }
 
       const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       };
 
-      headers['Authorization'] = `Bearer ${apiKeyToUse}`;
+      headers["Authorization"] = `Bearer ${apiKeyToUse}`;
 
       // Make API request
-      const response = await fetch(`${env.BACKEND_URL}${this.API_ENDPOINT}/get_dialogs?${params.toString()}`, {
-        method: 'GET',
-        headers
-      });
+      const response = await fetch(
+        `${env.BACKEND_URL}${this.API_ENDPOINT}/get_dialogs?${params.toString()}`,
+        {
+          method: "GET",
+          headers,
+        }
+      );
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        
+
         if (response.status === 401 || response.status === 403) {
-          return handleAuthError();
+          showLoginModal();
         }
-        
+
         return {
           success: false,
-          error: errorData.detail || 
-                 errorData.error?.message || 
-                 `API Error: ${response.status} - ${response.statusText}`
+          error:
+            errorData.detail ||
+            errorData.error?.message ||
+            `API Error: ${response.status} - ${response.statusText}`,
         };
       }
 
       return {
         success: true,
-        data: data.data
+        data: data.data,
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -117,60 +127,69 @@ export class TgToolkit {
     try {
       // Build query parameters
       const params = new URLSearchParams();
-      params.append('chat_id', chatId);
-      params.append('limit', limit.toString());
-      params.append('offset', offset.toString());
-      
-      if (messageText) params.append('message_text', messageText);
-      if (senderId) params.append('sender_id', senderId);
-      if (startTimestamp) params.append('start_timestamp', startTimestamp.toString());
-      if (endTimestamp) params.append('end_timestamp', endTimestamp.toString());
-      params.append('sort_by', sortBy);
-      params.append('sort_order', sortOrder);
+      params.append("chat_id", chatId);
+      params.append("limit", limit.toString());
+      params.append("offset", offset.toString());
+
+      if (messageText) params.append("message_text", messageText);
+      if (senderId) params.append("sender_id", senderId);
+      if (startTimestamp)
+        params.append("start_timestamp", startTimestamp.toString());
+      if (endTimestamp) params.append("end_timestamp", endTimestamp.toString());
+      params.append("sort_by", sortBy);
+      params.append("sort_order", sortOrder);
 
       // Get API key
       const apiKeyToUse = apiKey || (await getApiKey());
       if (!apiKeyToUse) {
-        return handleAuthError();
+        showLoginModal();
+        return {
+          success: false,
+          error: "Unauthorized",
+        };
       }
 
       const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       };
 
-      headers['Authorization'] = `Bearer ${apiKeyToUse}`;
+      headers["Authorization"] = `Bearer ${apiKeyToUse}`;
 
       // Make API request
-      const response = await fetch(`${env.BACKEND_URL}${this.API_ENDPOINT}/get_messages?${params.toString()}`, {
-        method: 'GET',
-        headers
-      });
+      const response = await fetch(
+        `${env.BACKEND_URL}${this.API_ENDPOINT}/get_messages?${params.toString()}`,
+        {
+          method: "GET",
+          headers,
+        }
+      );
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        
+
         if (response.status === 401 || response.status === 403) {
-          return handleAuthError();
+          showLoginModal();
         }
-        
+
         return {
           success: false,
-          error: errorData.detail || 
-                 errorData.error?.message || 
-                 `API Error: ${response.status} - ${response.statusText}`
+          error:
+            errorData.detail ||
+            errorData.error?.message ||
+            `API Error: ${response.status} - ${response.statusText}`,
         };
       }
 
       return {
         success: true,
-        data: data.data
+        data: data.data,
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
@@ -198,77 +217,68 @@ export class TgToolkit {
     try {
       // Build query parameters
       const params = new URLSearchParams();
-      params.append('query', query);
-      
-      if (chatId) params.append('chat_id', chatId);
-      params.append('top_k', topK.toString());
-      params.append('message_range', messageRange.toString());
-      params.append('threshold', threshold.toString());
-      if (isPublic !== undefined) params.append('is_public', isPublic.toString());
-      if (isFree !== undefined) params.append('is_free', isFree.toString());
+      params.append("query", query);
+
+      if (chatId) params.append("chat_id", chatId);
+      params.append("top_k", topK.toString());
+      params.append("message_range", messageRange.toString());
+      params.append("threshold", threshold.toString());
+      if (isPublic !== undefined)
+        params.append("is_public", isPublic.toString());
+      if (isFree !== undefined) params.append("is_free", isFree.toString());
 
       // Get API key
       const apiKeyToUse = apiKey || (await getApiKey());
       if (!apiKeyToUse) {
-        return handleAuthError();
+        showLoginModal();
+        return {
+          success: false,
+          error: "Unauthorized",
+        };
       }
 
       const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       };
 
-      headers['Authorization'] = `Bearer ${apiKeyToUse}`;
+      headers["Authorization"] = `Bearer ${apiKeyToUse}`;
 
       // Make API request
-      const response = await fetch(`${env.BACKEND_URL}${this.API_ENDPOINT}/search_messages?${params.toString()}`, {
-        method: 'GET',
-        headers
-      });
+      const response = await fetch(
+        `${env.BACKEND_URL}${this.API_ENDPOINT}/search_messages?${params.toString()}`,
+        {
+          method: "GET",
+          headers,
+        }
+      );
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        
+
         if (response.status === 401 || response.status === 403) {
-          return handleAuthError();
+          showLoginModal();
         }
-        
+
         return {
           success: false,
-          error: errorData.detail || 
-                 errorData.error?.message || 
-                 `API Error: ${response.status} - ${response.statusText}`
+          error:
+            errorData.detail ||
+            errorData.error?.message ||
+            `API Error: ${response.status} - ${response.statusText}`,
         };
       }
 
       return {
         success: true,
-        data: data.data
+        data: data.data,
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
       };
     }
   }
-
-  // Note: We're no longer using this method as we're using the getApiKey from services/utils
-  // Keeping this commented out for reference
-  /*
-  private static async getApiKey(): Promise<string> {
-    return new Promise((resolve, reject) => {
-      chrome.storage.local.get(['apiKey'], (result: { apiKey?: string }) => {
-        if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError.message);
-        } else if (result.apiKey) {
-          resolve(result.apiKey);
-        } else {
-          reject('API key not found in storage');
-        }
-      });
-    });
-  }
-  */
 }

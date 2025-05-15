@@ -6,10 +6,11 @@ import { Message } from "../types/messages";
 import { SaveMessageResponse } from "../types/conversations";
 import OpenAI from "openai";
 import { env } from "../utils/env";
-import { getApiKey, handleAuthError } from "./utils";
+import { getApiKey } from "./utils";
 import { db } from "../utils/db";
 import { ChatRequest } from "../types/api";
 import { getToolDescriptions } from "../tools/tool-descriptions";
+import { showLoginModal } from "~/utils/globalEvent";
 
 // 发送聊天请求到后端
 export const sendChatCompletion = async (
@@ -19,7 +20,8 @@ export const sendChatCompletion = async (
   try {
     const apiKey = await getApiKey();
     if (!apiKey) {
-      return handleAuthError();
+      showLoginModal();
+      return;
     }
     const client = new OpenAI({
       apiKey: apiKey,
@@ -89,7 +91,11 @@ export const saveMessageApi = async ({
     const API_ENDPOINT = "/v1/message/save";
     const apiKey = await getApiKey();
     if (!apiKey) {
-      return handleAuthError();
+      showLoginModal();
+      return {
+        success: false,
+        error: "Unauthorized",
+      };
     }
 
     const headers: Record<string, string> = {
@@ -114,7 +120,7 @@ export const saveMessageApi = async ({
       const errorData = await response.json().catch(() => ({}));
 
       if (response.status === 401 || response.status === 403) {
-        return handleAuthError();
+        showLoginModal();
       }
 
       return {
