@@ -10,9 +10,8 @@ import {
   TelegramChatData,
   TelegramMessageData,
 } from './types';
+import { DEEPINFRA_API_BASE_URL, EMBEDDING_MODEL } from '../utils/common';
 
-const EMBEDDING_MODEL = 'intfloat/multilingual-e5-large';
-const EMBEDDING_API_BASE_URL = 'https://api.deepinfra.com/v1/openai';
 const TG_VECTOR_NAMESPACE = 'tg';
 
 export class TgContext extends DurableObject<Env> {
@@ -26,8 +25,8 @@ export class TgContext extends DurableObject<Env> {
     this.sql.exec(CREATE_TELEGRAM_MESSAGES_TABLE_QUERY);
 
     this.openai = new OpenAI({
-      apiKey: env.EMBEDDING_API_KEY,
-      baseURL: EMBEDDING_API_BASE_URL,
+      apiKey: env.DEEPINFRA_API_KEY,
+      baseURL: DEEPINFRA_API_BASE_URL,
     });
   }
 

@@ -8,9 +8,6 @@ export const DEFAULT_MODEL = 'deepseek/deepseek-chat';
 
 export const FIREBASE_PROJECT_ID = 'ashcoin-51786';
 
-export const EMBEDDING_API_BASE_URL = 'https://api.deepinfra.com/v1/openai';
-export const EMBEDDING_MODEL = 'intfloat/multilingual-e5-large';
-
 export const AMOUNT_BASE = 1000000; // 10^6 = 1USDT
 
 export function getCreditFromAmount(amount: number) {
@@ -60,3 +57,8 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
     outputPrice: 0, // Embeddings don't have output tokens
   },
 };
+
+export const DEEPSEEK_API_URL = 'https://api.deepseek.com';
+export const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1';
+export const DEEPINFRA_API_BASE_URL = 'https://api.deepinfra.com/v1/openai';
+export const EMBEDDING_MODEL = 'intfloat/multilingual-e5-large';

@@ -1,8 +1,8 @@
 interface Env {
   // variables
-  LLM_API_KEY: string;
-  LLM_API_URL: string;
-  EMBEDDING_API_KEY: string;
+  OPENROUTER_API_KEY: string;
+  DEEPSEEK_API_KEY: string;
+  DEEPINFRA_API_KEY: string;
   STRIPE_PUBLIC_KEY: string;
   STRIPE_PRIVATE_KEY: string;
   STRIPE_WEBHOOK_SECRET: string;
