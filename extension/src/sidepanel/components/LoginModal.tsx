@@ -1,6 +1,6 @@
 import { Modal } from "antd";
 import { env } from "~/utils/env";
-
+import MystaLogo from "~/assets/mysta-logo.png";
 export default function LoginModal({
   open,
   onCancel,
@@ -10,26 +10,8 @@ export default function LoginModal({
 }) {
   const handleLogin = async () => {
     const webUrl = env.WEB_URL;
-    chrome.tabs.query({ url: `${webUrl}/*` }, (tabs) => {
-      if (tabs.length > 0) {
-        chrome.tabs.sendMessage(
-          tabs[0].id!,
-          { type: "GET_API_KEY" },
-          (response) => {
-            if (response && response.apiKey) {
-              chrome.storage.local.set({ apiKey: response.apiKey }, () => {
-                window.location.reload();
-              });
-            } else {
-              // 可提示"请在 web 端登录后再点击此按钮"
-              window.open(webUrl, "_blank");
-            }
-          }
-        );
-      } else {
-        window.open(webUrl, "_blank");
-      }
-    });
+    const loginUrl = `${webUrl}?source=chrome_extension`;
+    window.open(loginUrl, "_blank");
   };
 
   return (
@@ -49,7 +31,7 @@ export default function LoginModal({
     >
       {/* Logo */}
       <img
-        src="/mysta-logo.png"
+        src={MystaLogo}
         alt="Mysta Logo"
         style={{ width: 64, height: 64, marginBottom: 16 }}
       />

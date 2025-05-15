@@ -23,7 +23,6 @@ export const createConversationApi = async (
     const keyToUse = apiKey || (await getApiKey());
 
     if (keyToUse) {
-      headers["Authorization"] = `Bearer ${keyToUse}`;
       headers["x-api-key"] = keyToUse;
     } else {
       showLoginModal();
@@ -133,7 +132,6 @@ export const getConversationsApi = async (
   try {
     const API_ENDPOINT = "/v1/conversation/list";
     const keyToUse = (apiKey || (await getApiKey()))?.trim();
-    console.log("keyToUse = 🍓🍓 .... ", keyToUse);
     if (!keyToUse || !keyToUse.trim()) {
       showLoginModal();
       return {

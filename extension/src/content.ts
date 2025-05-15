@@ -1,6 +1,8 @@
+// 监听来自 Web 端的消息
 window.addEventListener("message", (event) => {
   if (event.source !== window) return;
   if (event.data && event.data.type === "FROM_WEB_TO_EXTENSION") {
+    // 保存 API key 到 chrome.storage.local
     chrome.storage.local.set({
       apiKey: event.data.apiKey,
     });

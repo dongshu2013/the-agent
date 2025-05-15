@@ -52,7 +52,6 @@ const Sidepanel = () => {
 
   const conversations = useLiveQuery(() => db.getAllConversations(), []) ?? [];
 
-  // 工具函数
   const redirectToLogin = useCallback(() => {
     if (!didRedirect.current) {
       window.open(`${env.WEB_URL}`, "_blank");
@@ -76,13 +75,15 @@ const Sidepanel = () => {
     [currentConversationId]
   );
 
-  const getApiKeyFromStorage = async () => {
-    return new Promise<string | null>((resolve) => {
-      chrome.storage.local.get(["apiKey"], (result) => {
-        resolve(result.apiKey ?? null);
-      });
-    });
-  };
+  // 监听登录弹窗事件
+  useEffect(() => {
+    const handler = () => {
+      console.log("SHOW_LOGIN_MODAL event triggered");
+      setLoginModalOpen(true);
+    };
+    window.addEventListener("SHOW_LOGIN_MODAL", handler);
+    return () => window.removeEventListener("SHOW_LOGIN_MODAL", handler);
+  }, []);
 
   // 初始化应用
   useEffect(() => {
@@ -94,17 +95,10 @@ const Sidepanel = () => {
 
         // 1. 获取并验证 API Key
         let storedApiKey = await getApiKey();
+        console.log("storedApiKey🍷", storedApiKey);
 
         if (!storedApiKey) {
-          const apiKeyFromStorage = await getApiKeyFromStorage();
-
-          if (apiKeyFromStorage) {
-            setApiKey(apiKeyFromStorage);
-            storedApiKey = apiKeyFromStorage;
-          }
-        }
-
-        if (!storedApiKey) {
+          console.log("No API key found, showing login modal");
           showLoginModal();
           return;
         }
@@ -118,10 +112,9 @@ const Sidepanel = () => {
           },
         });
 
-        console.log("verifyResponse🍷", verifyResponse);
-
         if (!verifyResponse.ok) {
           if (verifyResponse.status === 401 || verifyResponse.status === 403) {
+            console.log("API key invalid, showing login modal");
             showLoginModal();
           }
           return;
@@ -146,10 +139,8 @@ const Sidepanel = () => {
             photo_url: verifyData.user.photoURL,
           };
 
-          // 保存到 indexdb
           await db.saveOrUpdateUser(userInfo);
 
-          // 3. 初始化模型数据
           const userId = verifyData.user.user_id;
           const allModels = PROVIDER_MODELS.flatMap((provider) =>
             provider.models.map((model) => ({
@@ -189,7 +180,7 @@ const Sidepanel = () => {
     };
 
     initializeApp();
-  }, [isInitialized, currentConversationId, redirectToLogin, handleApiError]);
+  }, [isInitialized, handleApiError]);
 
   // 消息处理
   useEffect(() => {
@@ -331,11 +322,6 @@ const Sidepanel = () => {
 
   const handleCreateNewConversation = async () => {
     if (isLoading) return;
-    if (!apiKey) {
-      redirectToLogin();
-      return;
-    }
-
     setIsLoading(true);
     try {
       const newConv = await createNewConversation();
@@ -347,18 +333,28 @@ const Sidepanel = () => {
     }
   };
 
-  // 只监听全局事件
+  // 监听 chrome.storage.local 变化
   useEffect(() => {
-    const handler = () => setLoginModalOpen(true);
-    window.addEventListener("SHOW_LOGIN_MODAL", handler);
-    return () => window.removeEventListener("SHOW_LOGIN_MODAL", handler);
+    const listener = (changes: any, area: string) => {
+      if (area === "local" && changes.apiKey) {
+        setApiKey(changes.apiKey.newValue);
+        // 如果是从 Web 端同步的 API key，自动刷新页面
+        if (changes.apiKey.newValue) {
+          window.location.reload();
+        }
+      }
+    };
+    chrome.storage.onChanged.addListener(listener);
+    return () => chrome.storage.onChanged.removeListener(listener);
   }, []);
 
-  // 初始化时只弹窗，不自动跳转
+  // 初始化时检查登录状态
   useEffect(() => {
     const checkLogin = async () => {
       const key = await getApiKey();
-      if (!key) showLoginModal();
+      if (!key) {
+        showLoginModal();
+      }
     };
     checkLogin();
   }, []);
