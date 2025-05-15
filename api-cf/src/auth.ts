@@ -5,6 +5,17 @@ import { GatewayServiceContext, GatewayServiceError } from './types/service';
 import { getUserFromApiKey } from './d1/user';
 import { FIREBASE_PROJECT_ID } from './utils/common';
 
+async function validateApiKey(
+  c: GatewayServiceContext,
+  apiKey: string,
+  next: Next
+) {
+  const user = await getUserFromApiKey(c.env, apiKey);
+  c.set('userId', user.id);
+  c.set('userEmail', user.email);
+  await next();
+}
+
 // Authentication middleware for JWT or API_KEY
 export async function jwtOrApiKeyAuthMiddleware(
   c: GatewayServiceContext,
@@ -12,21 +23,22 @@ export async function jwtOrApiKeyAuthMiddleware(
 ) {
   // Check for API Key in x-api-key header
   const apiKey = c.req.header('x-api-key');
-
   if (apiKey) {
-    const user = await getUserFromApiKey(c.env, apiKey);
-    c.set('userId', user.id);
-    c.set('userEmail', user.email);
-    await next();
-    return;
+    await validateApiKey(c, apiKey, next);
+  } else {
+    // Check for JWT in Authorization: Bearer header
+    const token = getBearer(c);
+    if (isUUID(token)) {
+      // we need to support api key as bearer token
+      // for openai lib compatibility
+      await validateApiKey(c, token, next);
+    } else {
+      const { userId, userEmail } = await verifyJWT(token);
+      c.set('userId', userId);
+      c.set('userEmail', userEmail);
+      await next();
+    }
   }
-
-  // Check for JWT in Authorization: Bearer header
-  const token = getBearer(c);
-  const { userId, userEmail } = await verifyJWT(token);
-  c.set('userId', userId);
-  c.set('userEmail', userEmail);
-  await next();
 }
 
 const CACHE_URL =
@@ -118,4 +130,10 @@ function getBearer(c: GatewayServiceContext): string {
     throw new GatewayServiceError(401, 'Invalid token');
   }
   return token;
+}
+
+function isUUID(str: string): boolean {
+  const uuidRegex =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
 }
