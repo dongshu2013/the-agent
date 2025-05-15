@@ -308,7 +308,8 @@ export const CreditsTable = () => {
                         : 'text-red-600 dark:text-red-400'
                     }`}
                   >
-                    {formatCredits(credit.tx_credits)}
+                    {credit.tx_type === TransactionType.CREDIT ? '+' : '-'}
+                    {formatCredits(credit.tx_credits, 6)}
                   </td>
                 </tr>
               ))

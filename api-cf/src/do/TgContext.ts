@@ -429,86 +429,94 @@ export class TgContext extends DurableObject<Env> {
     };
   }
 
-  // Sync a Telegram chat
-  async syncChat(chatData: TelegramChatData): Promise<string> {
-    const {
-      chat_id,
-      chat_title,
-      chat_type,
-      is_public,
-      is_free,
-      subscription_fee,
-    } = chatData;
+  // Sync multiple Telegram chats
+  async syncChats(chatsData: TelegramChatData[]): Promise<number> {
+    let successCount = 0;
 
-    // Check if chat already exists
-    const existingChatCursor = this.sql.exec(
-      `SELECT * FROM telegram_dialogs WHERE chat_id = ?`,
-      ...[chat_id]
-    );
-
-    const existingChats = [];
-    for (const chat of existingChatCursor) {
-      existingChats.push(chat);
-    }
-    const existingChat = existingChats.length > 0 ? existingChats[0] : null;
-
-    const now = new Date().toISOString();
-
-    if (existingChat) {
-      // Update existing chat
-      this.sql.exec(
-        `
-        UPDATE telegram_dialogs
-        SET 
-          chat_title = ?,
-          chat_type = ?,
-          is_public = ?,
-          is_free = ?,
-          subscription_fee = ?,
-          last_synced_at = ?,
-          updated_at = ?,
-          status = 'active'
-        WHERE chat_id = ?
-        `,
-        ...[
-          chat_title,
-          chat_type,
-          is_public ? 1 : 0,
-          is_free ? 1 : 0,
-          subscription_fee,
-          now,
-          now,
-          chat_id,
-        ]
-      );
-
-      return chat_id;
-    } else {
-      // Insert new chat
-      const id = crypto.randomUUID();
-
-      this.sql.exec(
-        `
-        INSERT INTO telegram_dialogs
-        (id, chat_id, chat_title, chat_type, is_public, is_free, subscription_fee, last_synced_at, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `,
-        ...[
-          id,
+    for (const chatData of chatsData) {
+      try {
+        const {
           chat_id,
           chat_title,
           chat_type,
-          is_public ? 1 : 0,
-          is_free ? 1 : 0,
-          subscription_fee,
-          now,
-          now,
-          now,
-        ]
-      );
+          is_public = false,
+          is_free = true,
+          subscription_fee = 0,
+        } = chatData;
 
-      return chat_id;
+        // Check if chat already exists
+        const existingChatCursor = this.sql.exec(
+          `SELECT * FROM telegram_dialogs WHERE chat_id = ?`,
+          ...[chat_id]
+        );
+
+        const existingChats = [];
+        for (const chat of existingChatCursor) {
+          existingChats.push(chat);
+        }
+        const existingChat = existingChats.length > 0 ? existingChats[0] : null;
+
+        const now = new Date().toISOString();
+
+        if (existingChat) {
+          // Update existing chat
+          this.sql.exec(
+            `
+            UPDATE telegram_dialogs
+            SET 
+              chat_title = ?,
+              chat_type = ?,
+              is_public = ?,
+              is_free = ?,
+              subscription_fee = ?,
+              last_synced_at = ?,
+              updated_at = ?,
+              status = 'active'
+            WHERE chat_id = ?
+            `,
+            ...[
+              chat_title,
+              chat_type,
+              is_public ? 1 : 0,
+              is_free ? 1 : 0,
+              subscription_fee,
+              now,
+              now,
+              chat_id,
+            ]
+          );
+        } else {
+          // Insert new chat
+          const id = crypto.randomUUID();
+
+          this.sql.exec(
+            `
+            INSERT INTO telegram_dialogs
+            (id, chat_id, chat_title, chat_type, is_public, is_free, subscription_fee, last_synced_at, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `,
+            ...[
+              id,
+              chat_id,
+              chat_title,
+              chat_type,
+              is_public ? 1 : 0,
+              is_free ? 1 : 0,
+              subscription_fee,
+              now,
+              now,
+              now,
+            ]
+          );
+        }
+        successCount++;
+      } catch (error) {
+        console.error(`Error syncing chat ${chatData.chat_id}:`, error);
+        // Continue with next chat even if one fails
+      }
     }
+
+    return successCount;
   }
 
   // Sync messages for a chat
@@ -535,10 +543,8 @@ export class TgContext extends DurableObject<Env> {
     let insertedCount = 0;
     const messagesToEmbed: { id: string; text: string }[] = [];
 
-    // Insert messages in transaction
-    this.sql.exec('BEGIN TRANSACTION');
-
-    try {
+    // Use storage.transaction() instead of SQL transaction
+    await this.ctx.storage.transaction(async () => {
       for (const message of messages) {
         const id = crypto.randomUUID();
 
@@ -556,7 +562,7 @@ export class TgContext extends DurableObject<Env> {
           existingMessages.length > 0 ? existingMessages[0] : null;
 
         if (!existingMessage) {
-          // Insert new message
+          // Insert new message with optional fields
           this.sql.exec(
             `
             INSERT INTO telegram_messages
@@ -570,9 +576,9 @@ export class TgContext extends DurableObject<Env> {
               message.message_text,
               message.message_timestamp,
               message.sender_id,
-              message.sender_username,
-              message.sender_firstname,
-              message.sender_lastname,
+              message.sender_username || null,
+              message.sender_firstname || null,
+              message.sender_lastname || null,
             ]
           );
 
@@ -598,21 +604,17 @@ export class TgContext extends DurableObject<Env> {
         `,
         ...[now, now, chatId]
       );
+    });
 
-      // Generate embeddings for new messages in batches
-      if (messagesToEmbed.length > 0) {
-        for (let i = 0; i < messagesToEmbed.length; i += batchSize) {
-          const batch = messagesToEmbed.slice(i, i + batchSize);
-          await this._generateAndStoreEmbeddings(batch, chatId);
-        }
+    // Generate embeddings for new messages in batches
+    if (messagesToEmbed.length > 0) {
+      for (let i = 0; i < messagesToEmbed.length; i += batchSize) {
+        const batch = messagesToEmbed.slice(i, i + batchSize);
+        await this._generateAndStoreEmbeddings(batch, chatId);
       }
-
-      return insertedCount;
-    } catch (error) {
-      // Rollback on error
-      this.sql.exec('ROLLBACK');
-      throw error;
     }
+
+    return insertedCount;
   }
 
   // Helper method to generate and store embeddings

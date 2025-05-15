@@ -1,4 +1,10 @@
-import { CreditLog, GetUserResponse, TransactionReason, TransactionType } from '@/types';
+import {
+  CreditLog,
+  GetUserResponse,
+  TelegramStats,
+  TransactionReason,
+  TransactionType,
+} from '@/types';
 
 async function postApiService(endpoint: string, token: string, body?: object) {
   if (!process.env.NEXT_PUBLIC_API_URL) {
@@ -88,11 +94,10 @@ export async function getCreditHistory(
   return await getApiService(endpoint, token);
 }
 
-export interface GetTelegramStatsResponse {
-  channels_count: number;
-  messages_count: number;
-}
-
-export async function getTelegramStats(token: string): Promise<GetTelegramStatsResponse> {
-  return await getApiService('v1/tg/stats', token);
+export async function getTelegramStats(token: string): Promise<TelegramStats> {
+  const response = await getApiService('v1/tg/stats', token);
+  if (!response.success) {
+    throw new Error(response.error?.message || 'Failed to fetch Telegram stats');
+  }
+  return response.data;
 }

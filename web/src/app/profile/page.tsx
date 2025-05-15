@@ -43,8 +43,8 @@ export default function ProfilePage() {
     if (!user || !user.idToken) return;
     setIsLoadingTelegramStats(true);
     try {
-      const response = await getTelegramStats(user.idToken);
-      setTelegramStats(response);
+      const data = await getTelegramStats(user.idToken);
+      setTelegramStats(data);
     } catch (error) {
       console.error('Error fetching Telegram stats:', error);
     } finally {
@@ -268,9 +268,14 @@ export default function ProfilePage() {
                 </p>
                 <button
                   className="px-4 py-2 text-sm font-medium text-white bg-black rounded-md hover:opacity-70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black transition-opacity"
-                  onClick={() =>
-                    window.open(process.env.NEXT_PUBLIC_TG_WEBAPP_URL || '#', '_blank')
-                  }
+                  onClick={() => {
+                    const baseUrl = process.env.NEXT_PUBLIC_TG_WEBAPP_URL || '#';
+                    const url = new URL(baseUrl);
+                    if (user.apiKey) {
+                      url.searchParams.set('apiKey', user.apiKey);
+                    }
+                    window.open(url.toString(), '_blank');
+                  }}
                 >
                   Import Telegram Data
                 </button>
@@ -354,7 +359,7 @@ export default function ProfilePage() {
 
             <div className="flex items-center space-x-4">
               <div className="text-lg font-bold text-gray-900 dark:text-white">
-                ${formatCredits(user.credits)}
+                ${formatCredits(user.credits, 2)}
               </div>
               <div className="flex space-x-2">
                 <button

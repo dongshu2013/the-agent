@@ -2,6 +2,11 @@ import { OpenAPIRoute } from 'chanfana';
 import { z } from 'zod';
 import { Context } from 'hono';
 import { corsHeaders } from '../utils/common';
+import {
+  createSuccessResponse,
+  createErrorResponse,
+  ApiErrorCode,
+} from '../types/api';
 
 // ===== GET TELEGRAM STATS =====
 
@@ -22,6 +27,20 @@ export class GetTelegramStats extends OpenAPIRoute {
           },
         },
       },
+      '500': {
+        description: 'Internal server error',
+        content: {
+          'application/json': {
+            schema: z.object({
+              success: z.boolean(),
+              error: z.object({
+                code: z.string(),
+                message: z.string(),
+              }),
+            }),
+          },
+        },
+      },
     },
   };
 
@@ -32,27 +51,15 @@ export class GetTelegramStats extends OpenAPIRoute {
       const stub = c.env.TgContext.get(id);
       const result = await stub.getStats();
 
-      return c.json(
-        {
-          success: true,
-          data: result,
-        },
-        200
-      );
+      return c.json(createSuccessResponse(result), 200);
     } catch (error) {
       console.error('Error getting Telegram stats:', error);
 
       return c.json(
-        {
-          success: false,
-          error: {
-            code: 'INTERNAL_ERROR',
-            message:
-              error instanceof Error
-                ? error.message
-                : 'An unknown error occurred',
-          },
-        },
+        createErrorResponse(
+          ApiErrorCode.INTERNAL_ERROR,
+          error instanceof Error ? error.message : 'An unknown error occurred'
+        ),
         500
       );
     }
@@ -513,12 +520,16 @@ export class SyncTelegramChat extends OpenAPIRoute {
         content: {
           'application/json': {
             schema: z.object({
-              chat_id: z.string(),
-              chat_title: z.string(),
-              chat_type: z.string(),
-              is_public: z.boolean().default(false),
-              is_free: z.boolean().default(true),
-              subscription_fee: z.number().default(0),
+              chats: z.array(
+                z.object({
+                  chat_id: z.string(),
+                  chat_title: z.string(),
+                  chat_type: z.string(),
+                  is_public: z.boolean().default(false),
+                  is_free: z.boolean().default(true),
+                  subscription_fee: z.number().default(0),
+                })
+              ),
             }),
           },
         },
@@ -526,12 +537,12 @@ export class SyncTelegramChat extends OpenAPIRoute {
     },
     responses: {
       '200': {
-        description: 'Chat synchronized successfully',
+        description: 'Number of chats synchronized successfully',
         content: {
           'application/json': {
             schema: z.object({
               success: z.boolean(),
-              chat_id: z.string(),
+              count: z.number(),
             }),
           },
         },
@@ -542,23 +553,36 @@ export class SyncTelegramChat extends OpenAPIRoute {
   async handle(c: Context) {
     try {
       const userId = c.get('userId');
-      const body = await c.req.json();
+      const { chats } = await c.req.json();
 
-      // Use Durable Object to sync Telegram chat
+      if (!Array.isArray(chats)) {
+        return c.json(
+          {
+            success: false,
+            error: {
+              code: 'INVALID_REQUEST',
+              message: 'Request must contain a chats array',
+            },
+          },
+          400
+        );
+      }
+
+      // Use Durable Object to sync Telegram chats
       const id = c.env.TgContext.idFromName(userId);
       const stub = c.env.TgContext.get(id);
-      const result = await stub.syncChat(body);
+      const result = await stub.syncChats(chats);
 
       // Return success response with CORS headers
       return c.json(
         {
           success: true,
-          chat_id: result,
+          count: result,
         },
         200
       );
     } catch (error) {
-      console.error('Error syncing Telegram chat:', error);
+      console.error('Error syncing Telegram chats:', error);
 
       return c.json(
         {
@@ -586,16 +610,16 @@ export class SyncTelegramMessages extends OpenAPIRoute {
         content: {
           'application/json': {
             schema: z.object({
-              chat_id: z.string(),
               messages: z.array(
                 z.object({
+                  chat_id: z.string(),
                   message_id: z.string(),
                   message_text: z.string(),
                   message_timestamp: z.number(),
                   sender_id: z.string(),
-                  sender_username: z.string().nullable(),
-                  sender_firstname: z.string().nullable(),
-                  sender_lastname: z.string().nullable(),
+                  sender_username: z.string().nullable().optional(),
+                  sender_firstname: z.string().nullable().optional(),
+                  sender_lastname: z.string().nullable().optional(),
                 })
               ),
             }),
@@ -637,16 +661,32 @@ export class SyncTelegramMessages extends OpenAPIRoute {
       const userId = c.get('userId');
       const body = await c.req.json();
 
-      // Use Durable Object to sync Telegram messages
+      // Group messages by chat_id
+      const messagesByChat = new Map<string, any[]>();
+      for (const message of body.messages) {
+        if (!messagesByChat.has(message.chat_id)) {
+          messagesByChat.set(message.chat_id, []);
+        }
+        messagesByChat.get(message.chat_id)?.push(message);
+      }
+
+      let totalCount = 0;
+
+      // Use Durable Object to sync Telegram messages for each chat
       const id = c.env.TgContext.idFromName(userId);
       const stub = c.env.TgContext.get(id);
-      const result = await stub.syncMessages(body.chat_id, body.messages);
+
+      // Process each chat's messages
+      for (const [chatId, messages] of messagesByChat) {
+        const result = await stub.syncMessages(chatId, messages);
+        totalCount += result;
+      }
 
       // Return success response with CORS headers
       return c.json(
         {
           success: true,
-          count: result,
+          count: totalCount,
         },
         200,
         corsHeaders

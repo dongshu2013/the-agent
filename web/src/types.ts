@@ -27,3 +27,8 @@ export interface GetUserResponse {
     email: string;
   };
 }
+
+export interface TelegramStats {
+  channels_count: number;
+  messages_count: number;
+}
