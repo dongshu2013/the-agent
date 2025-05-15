@@ -57,16 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             credits: userData.user.balance,
             idToken,
           });
-          localStorage.setItem('apiKey', userData.user.api_key);
-          if (typeof window !== 'undefined' && userData.user.api_key) {
-            window.postMessage(
-              {
-                type: 'FROM_WEB_TO_EXTENSION',
-                apiKey: userData.user.api_key,
-              },
-              '*',
-            );
-          }
+          setAuthToLocalAndPostMessage({ apiKey: userData.user.api_key, idToken });
         } catch (error) {
           console.error('Error setting up user:', error);
         }
@@ -111,6 +102,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const newToken = await getIdToken(auth.currentUser);
       setUser((prev) => (prev ? { ...prev, idToken: newToken } : null));
+      setAuthToLocalAndPostMessage({ idToken: newToken });
       return newToken;
     } catch (error) {
       console.error('Error refreshing token:', error);
@@ -162,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { newApiKey } = await postRotateApiKey(user.idToken);
       setUser((prev) => (prev ? { ...prev, apiKey: newApiKey } : null));
-      localStorage.setItem('apiKey', newApiKey);
+      setAuthToLocalAndPostMessage({ apiKey: newApiKey });
       return newApiKey;
     } catch (error) {
       console.error('Error rotating API key:', error);
@@ -198,16 +190,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         idToken: token,
       });
 
-      localStorage.setItem('apiKey', userData.user.api_key);
-      if (typeof window !== 'undefined' && userData.user.api_key) {
-        window.postMessage(
-          {
-            type: 'FROM_WEB_TO_EXTENSION',
-            apiKey: userData.user.api_key,
-          },
-          '*',
-        );
-      }
+      setAuthToLocalAndPostMessage({ apiKey: userData.user.api_key, idToken: token });
     } catch (error) {
       console.error('Error refreshing user data:', error);
     }
@@ -237,4 +220,32 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+}
+
+// 新增：封装设置 apiKey 并 postMessage 的函数
+function setAuthToLocalAndPostMessage({ apiKey, idToken }: { apiKey?: string; idToken?: string }) {
+  if (apiKey) {
+    localStorage.setItem('apiKey', apiKey);
+    if (typeof window !== 'undefined') {
+      window.postMessage(
+        {
+          type: 'FROM_WEB_TO_EXTENSION',
+          apiKey,
+        },
+        '*',
+      );
+    }
+  }
+  if (idToken) {
+    localStorage.setItem('idToken', idToken);
+    if (typeof window !== 'undefined') {
+      window.postMessage(
+        {
+          type: 'FROM_WEB_TO_EXTENSION',
+          idToken,
+        },
+        '*',
+      );
+    }
+  }
 }

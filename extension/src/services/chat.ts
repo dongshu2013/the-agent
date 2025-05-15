@@ -6,7 +6,7 @@ import { Message } from "../types/messages";
 import { SaveMessageResponse } from "../types/conversations";
 import OpenAI from "openai";
 import { env } from "../utils/env";
-import { handleAuthError } from "./utils";
+import { getIdToken, handleAuthError } from "./utils";
 import { db } from "../utils/db";
 import { ChatRequest } from "../types/api";
 import { getToolDescriptions } from "../tools/tool-descriptions";
@@ -18,13 +18,12 @@ export const sendChatCompletion = async (
   options: { stream?: boolean; signal?: AbortSignal } = {}
 ): Promise<any> => {
   try {
-    const currentUser = await db.getCurrentUser();
-    const apiKeyToUse = apiKey || currentUser?.api_key;
-    if (!apiKeyToUse) {
+    const idToken = apiKey || (await getIdToken());
+    if (!idToken) {
       return handleAuthError();
     }
     const client = new OpenAI({
-      apiKey: apiKeyToUse,
+      apiKey: idToken,
       baseURL: env.BACKEND_URL + "/v1",
       dangerouslyAllowBrowser: true,
     });

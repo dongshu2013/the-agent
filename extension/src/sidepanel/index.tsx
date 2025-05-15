@@ -345,12 +345,6 @@ const Sidepanel = () => {
     }
   };
 
-  const handleLogout = () => {
-    chrome.storage.local.remove("apiKey");
-    setApiKey(null);
-    redirectToLogin();
-  };
-
   return (
     <div
       style={{
