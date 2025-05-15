@@ -11,6 +11,12 @@ export const FIREBASE_PROJECT_ID = 'ashcoin-51786';
 export const EMBEDDING_API_BASE_URL = 'https://api.deepinfra.com/v1/openai';
 export const EMBEDDING_MODEL = 'intfloat/multilingual-e5-large';
 
+export const AMOUNT_BASE = 1000000; // 10^6 = 1USDT
+
+export function getCreditFromAmount(amount: number) {
+  return amount * AMOUNT_BASE;
+}
+
 // Cost multipliers for different types of operations
 export const COST_MULTIPLIERS = {
   input: 1.0, // Base multiplier for input tokens
