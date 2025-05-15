@@ -47,6 +47,22 @@ export class OpenAIClient {
 
     return this.createChatCompletion(streamParams);
   }
+
+  // Get final token usage for a streaming completion
+  async getFinalTokenUsage(params: ChatCompletionCreateParam): Promise<{
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
+  }> {
+    // Make a non-streaming request to get the final token usage
+    const nonStreamParams = { ...params, stream: false };
+    const response = await this.createChatCompletion(nonStreamParams);
+    const result = (await response.json()) as {
+      usage?: {
+        prompt_tokens?: number;
+        completion_tokens?: number;
+      };
+    };
+    return result;
+  }
 }
 
 // Factory function to create an OpenAI client

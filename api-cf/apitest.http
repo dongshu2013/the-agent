@@ -60,14 +60,14 @@ Content-Type: application/json
 x-api-key: {{apiKey}}
 
 {
-  "conversation_id": 1747067974956,
   "message": {
-    "message_id": 1747067974956,
-    "created_at": "2025-05-12T11:46:06+08:00",
+    "id": 1747067974962,
+    "conversation_id": 1747244130473,
     "role": "user",
     "content": "Hello, this is a test message"
   },
-  "top_k_related": 0
+  "top_k_related": 0,
+  "threshold": 0.7
 }
 
 ### Chat Completion
@@ -86,7 +86,7 @@ x-api-key: {{apiKey}}
       "content": "What can you do?"
     }
   ],
-  "model": "deepseek/deepseek-chat",
+  "model": "google/gemini-2.0-flash-001",
   "temperature": 0.7,
   "max_tokens": 500,
   "stream": false
@@ -108,7 +108,7 @@ x-api-key: {{apiKey}}
       "content": "What can you do?"
     }
   ],
-  "model": "deepseek/deepseek-chat",
+  "model": "google/gemini-2.0-flash-001",
   "temperature": 0.7,
   "max_tokens": 500,
   "stream": true

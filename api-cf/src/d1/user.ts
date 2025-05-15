@@ -1,4 +1,5 @@
 import { GatewayServiceError } from '../types/service';
+import { getCreditFromAmount } from '../utils/common';
 import {
   CreditLog,
   TransactionReason,
@@ -203,9 +204,11 @@ export async function deductUserCredits(
 ): Promise<{ success: boolean; remainingCredits: number }> {
   const db = env.DB;
 
+  const deductCredits = getCreditFromAmount(amount);
+
   // Get current credits
   const currentCredits = await getUserBalance(env, userId);
-  if (currentCredits < amount) {
+  if (currentCredits < deductCredits) {
     throw new GatewayServiceError(400, 'Insufficient credits');
   }
 
@@ -222,15 +225,21 @@ export async function deductUserCredits(
   const [result1, result2] = await db.batch([
     insertTxStmt.bind(
       userId,
-      amount,
+      deductCredits,
       TransactionType.DEBIT,
       TransactionReason.COMPLETION,
       model
     ),
-    updateBalanceStmt.bind(amount, userId),
+    updateBalanceStmt.bind(deductCredits, userId),
   ]);
   if (!result1.success || !result2.success) {
     throw new GatewayServiceError(500, 'Failed to deduct credits');
   }
-  return { success: true, remainingCredits: currentCredits - amount };
+  console.log(
+    'success deduct credits from user:',
+    userId,
+    deductCredits,
+    model
+  );
+  return { success: true, remainingCredits: currentCredits - deductCredits };
 }

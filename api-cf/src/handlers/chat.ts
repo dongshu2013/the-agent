@@ -4,7 +4,10 @@ import { Context } from 'hono';
 import { createOpenAIClient } from '../utils/openai';
 import { getUserBalance, deductUserCredits } from '../d1/user';
 import { ChatCompletionCreateParamSchema } from '../types/chat';
-import { DEFAULT_MODEL } from '../utils/common';
+import {
+  calculateCredits,
+  createStreamingTokenTracker,
+} from '../utils/creditCalculator';
 
 export class ChatCompletions extends OpenAPIRoute {
   schema = {
@@ -52,10 +55,9 @@ export class ChatCompletions extends OpenAPIRoute {
     // Get user credits
     const credits = await getUserBalance(env, userId);
 
-    // Check if user has enough credits (assuming 0.01 credits per request for simplicity)
-    // TODO calculate cost credits based on model and tokens
-    const requiredCredits = 0.01;
-    if (credits < requiredCredits) {
+    // Set minimum required credits (we'll do proper calculation after the response)
+    const MIN_REQUIRED_CREDITS = 0.01;
+    if (credits < MIN_REQUIRED_CREDITS) {
       return c.json(
         {
           error: {
@@ -71,17 +73,14 @@ export class ChatCompletions extends OpenAPIRoute {
     }
 
     // Create OpenAI client
-    // Note: In a real implementation, you'd get the API key from a secure source
-    // or use a service like OpenRouter
     const llmApiKey = env.LLM_API_KEY;
     const llmApiUrl = env.LLM_API_URL;
     const client = createOpenAIClient(llmApiKey, llmApiUrl);
 
-    params.model = DEFAULT_MODEL;
-
     // Handle streaming response
     if (params.stream) {
       const stream = await client.streamChatCompletion(params);
+      const tokenTracker = createStreamingTokenTracker();
 
       // Create a TransformStream to handle the streaming response
       const { readable, writable } = new TransformStream();
@@ -95,21 +94,58 @@ export class ChatCompletions extends OpenAPIRoute {
           return;
         }
 
+        let lastChunk = '';
         try {
           while (true) {
             const { done, value } = await reader.read();
             if (done) {
+              // Before sending [DONE], try to parse the last chunk for token usage
+              try {
+                const lastData = JSON.parse(lastChunk.slice(6));
+                if (lastData.usage) {
+                  tokenTracker.setPromptTokens(
+                    lastData.usage.prompt_tokens || 0
+                  );
+                  tokenTracker.setCompletionTokens(
+                    lastData.usage.completion_tokens || 0
+                  );
+                }
+              } catch (e) {
+                // Ignore parse errors for the last chunk
+              }
+
               // Send the [DONE] marker
               const doneMsg = new TextEncoder().encode('data: [DONE]\n\n');
               await writer.write(doneMsg);
               break;
             }
 
+            // Parse the chunk and track token usage
+            const text = new TextDecoder().decode(value);
+            lastChunk = ''; // Reset last chunk
+            const lines = text.split('\n');
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                lastChunk = line; // Store the last data line
+                try {
+                  const data = JSON.parse(line.slice(6));
+                  if (data.usage) {
+                    tokenTracker.setPromptTokens(data.usage.prompt_tokens || 0);
+                    tokenTracker.setCompletionTokens(
+                      data.usage.completion_tokens || 0
+                    );
+                  }
+                } catch (e) {
+                  // Ignore parse errors for non-JSON lines
+                }
+              }
+            }
+
             // Forward the chunk
             await writer.write(value);
           }
         } catch (error) {
-          // Handle error
+          console.error('Stream error:', error);
           const errorMsg = new TextEncoder().encode(
             `data: ${JSON.stringify({
               error: { message: 'Stream error', type: 'server_error' },
@@ -117,14 +153,34 @@ export class ChatCompletions extends OpenAPIRoute {
           );
           await writer.write(errorMsg);
         } finally {
+          // Get final token usage from the last response
+          const finalResponse = await client.getFinalTokenUsage(params);
+          if (finalResponse && finalResponse.usage) {
+            tokenTracker.setPromptTokens(
+              finalResponse.usage.prompt_tokens || 0
+            );
+            tokenTracker.setCompletionTokens(
+              finalResponse.usage.completion_tokens || 0
+            );
+          }
+
+          // Calculate and deduct credits based on actual token usage
+          const tokenUsage = tokenTracker.getTokenUsage();
+          const { cost, tokenUsage: usage } = calculateCredits(
+            params.model,
+            tokenUsage
+          );
+          console.log(`Credit usage for ${userId}:`, {
+            model: params.model,
+            tokenUsage: usage,
+            cost,
+          });
+
+          await deductUserCredits(env, userId, cost.totalCost, params.model);
           writer.close();
           reader.releaseLock();
         }
       })();
-
-      // Deduct credits in the background
-      // In a real implementation, you'd want to track token usage and charge accordingly
-      deductUserCredits(env, userId, requiredCredits, params.model);
 
       // Return the streaming response with proper headers
       return new Response(readable, {
@@ -137,10 +193,31 @@ export class ChatCompletions extends OpenAPIRoute {
     } else {
       // Handle non-streaming response
       const response = await client.createChatCompletion(params);
-      const result = await response.json();
+      const result = (await response.json()) as {
+        usage?: {
+          prompt_tokens?: number;
+          completion_tokens?: number;
+        };
+      } & Record<string, unknown>;
+
+      // Calculate credits based on token usage from the response
+      const tokenUsage = {
+        promptTokens: result.usage?.prompt_tokens || 0,
+        completionTokens: result.usage?.completion_tokens || 0,
+      };
+
+      const { cost, tokenUsage: usage } = calculateCredits(
+        params.model,
+        tokenUsage
+      );
+      console.log(`Credit usage for ${userId}:`, {
+        model: params.model,
+        tokenUsage: usage,
+        cost,
+      });
 
       // Deduct credits
-      await deductUserCredits(env, userId, requiredCredits, params.model);
+      await deductUserCredits(env, userId, cost.totalCost, params.model);
 
       // Return the response
       return c.json(result as Record<string, unknown>, 200);
