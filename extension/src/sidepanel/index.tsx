@@ -149,7 +149,7 @@ const Sidepanel = () => {
               apiKey: model.id === "system" ? env.LLM_API_KEY || "" : "",
               apiUrl:
                 model.id === "system" ? env.LLM_API_URL || "" : model.apiUrl,
-              name: model.id === "system" ? env.OPENAI_MODEL || "" : model.name,
+              name: model.id === "system" ? env.DEFAULT_MODEL || "" : model.name,
               type: model.id === "system" ? "Default" : provider.type,
             }))
           );
