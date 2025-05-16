@@ -328,14 +328,13 @@ class MizuDB extends Dexie {
       const now = new Date().toISOString();
       const existing = await this.users.get(user.id);
 
-      console.log(".....", env.LLM_API_KEY, env.LLM_API_URL);
       const systemModel = {
         id: systemModelId,
         type: "system",
         name: "Mysta Model",
         userId: user.id,
-        apiKey: env.LLM_API_KEY,
-        apiUrl: env.LLM_API_URL,
+        apiKey: "",
+        apiUrl: "",
       };
 
       if (existing) {
@@ -371,8 +370,8 @@ class MizuDB extends Dexie {
         userId: "",
         name: model.id === "system" ? env.DEFAULT_MODEL : model.name,
         type: model.id === "system" ? "Default" : provider.type,
-        apiKey: model.id === "system" ? env.LLM_API_KEY || "" : "",
-        apiUrl: model.id === "system" ? env.LLM_API_URL || "" : model.apiUrl,
+        apiKey: model.id === "system" ? "" : "",
+        apiUrl: model.id === "system" ? "" : model.apiUrl,
       }))
     );
     await this.models.bulkPut(allModels);

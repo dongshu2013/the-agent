@@ -35,62 +35,64 @@ const Header = ({
 
   useEffect(() => {
     const init = async () => {
-      console.log("user", user);
-      if (user) {
-        // 构建 fullProviderGroups（含完整模型信息）
-        const fullGroups: Record<string, any> = {};
-        (models ?? []).forEach((model) => {
-          if (!fullGroups[model.type]) {
-            fullGroups[model.type] = {
-              type: model.type,
-              models: [],
-            };
-          }
-          fullGroups[model.type].models.push(model);
-        });
-        const fullProviderGroups = Object.values(fullGroups);
-
-        const providerGroups = fullProviderGroups.map((g: any) => ({
-          type: g.type,
-          models: g.models.map((m: any) => ({ id: m.id, name: m.name })),
-        }));
-        console.log("groupArr", providerGroups);
-        setProviderGroups(providerGroups);
-        // Set default provider/model
-        if (providerGroups.length > 0) {
-          if (user?.selectedModelId) {
-            let found = false;
-            let defaultProvider = providerGroups[0].type;
-            let defaultModelId = systemModelId;
-
-            providerGroups.forEach((group) => {
-              const match = group.models.find(
-                (m: Model) => m.id === user.selectedModelId
-              );
-              if (match) {
-                defaultProvider = group.type;
-                defaultModelId = match.id;
-                found = true;
-              }
-            });
-
-            if (!found) {
-              providerGroups.forEach((group) => {
-                const match = group.models.find(
-                  (m: Model) => m.id === systemModelId
-                );
-                if (match) {
-                  defaultProvider = group.type;
-                  defaultModelId = systemModelId;
-                }
-              });
-            }
-
-            setSelectedProvider(defaultProvider);
-            setSelectedModelId(defaultModelId);
-          }
+      // 构建 fullProviderGroups（含完整模型信息）
+      const fullGroups: Record<string, any> = {};
+      (models ?? []).forEach((model) => {
+        if (!fullGroups[model.type]) {
+          fullGroups[model.type] = {
+            type: model.type,
+            models: [],
+          };
         }
+        fullGroups[model.type].models.push(model);
+      });
+      const fullProviderGroups = Object.values(fullGroups);
+
+      const providerGroups = fullProviderGroups.map((g: any) => ({
+        type: g.type,
+        models: g.models.map((m: any) => ({ id: m.id, name: m.name })),
+      }));
+      setProviderGroups(providerGroups);
+
+      // 默认选中 Default provider 和 systemModelId
+      let defaultProvider = "Default";
+      let defaultModelId = systemModelId;
+
+      // 如果有 Default provider
+      const defaultGroup = providerGroups.find((g) => g.type === "Default");
+      if (defaultGroup) {
+        defaultProvider = defaultGroup.type;
+        const systemModel = defaultGroup.models.find(
+          (m: Model) => m.id === systemModelId
+        );
+        if (systemModel) {
+          defaultModelId = systemModelId;
+        } else if (defaultGroup.models.length > 0) {
+          defaultModelId = defaultGroup.models[0].id;
+        }
+      } else if (providerGroups.length > 0) {
+        // 没有 Default provider，选第一个
+        defaultProvider = providerGroups[0].type;
+        defaultModelId = providerGroups[0].models[0]?.id;
       }
+
+      // 如果用户有选中的模型，优先用用户的
+      if (user?.selectedModelId) {
+        let found = false;
+        providerGroups.forEach((group) => {
+          const match = group.models.find(
+            (m: Model) => m.id === user.selectedModelId
+          );
+          if (match) {
+            defaultProvider = group.type;
+            defaultModelId = match.id;
+            found = true;
+          }
+        });
+      }
+
+      setSelectedProvider(defaultProvider);
+      setSelectedModelId(defaultModelId);
     };
     init();
   }, [user, models]);

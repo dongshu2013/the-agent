@@ -16,9 +16,6 @@ export * from "./settings";
 export interface Env {
   DEFAULT_MODEL: string;
   BACKEND_URL: string;
-  SYSTEM_PROMPT: string;
-  LLM_API_URL: string;
-  LLM_API_KEY: string;
   WEB_URL: string;
 }
 /**

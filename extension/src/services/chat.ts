@@ -64,7 +64,7 @@ export const sendChatCompletion = async (
             api_key: request.currentModel?.apiKey,
             api_url:
               request.currentModel?.id === "system"
-                ? env.LLM_API_URL
+                ? ""
                 : request.currentModel?.apiUrl,
           }),
         },
