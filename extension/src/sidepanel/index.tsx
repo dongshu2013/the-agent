@@ -18,6 +18,7 @@ import { ChatHandler } from "../services/chat-handler";
 import { env } from "~/utils/env";
 import LoginModal from "./components/LoginModal";
 import { showLoginModal } from "~/utils/global-event";
+import LoadingBrain from "./components/LoadingBrain";
 
 const Sidepanel = () => {
   // 状态管理
@@ -143,7 +144,7 @@ const Sidepanel = () => {
 
   const handleSwitchAccount = useCallback(async () => {
     if (!pendingApiKey) return;
-    const newDb = await resetDB(); // 清空并重建 db
+    const newDb = await resetDB();
     setDbInstance(newDb);
     await setApiKey(pendingApiKey);
     setApiKeyState(pendingApiKey);
@@ -383,12 +384,10 @@ const Sidepanel = () => {
     }
   };
 
-  // 监听 chrome.storage.local 变化
   useEffect(() => {
     const listener = (changes: any, area: string) => {
       if (area === "local" && changes.apiKey) {
         setApiKeyState(changes.apiKey.newValue);
-        // 如果是从 Web 端同步的 API key，自动刷新页面
         if (changes.apiKey.newValue) {
           window.location.reload();
         }
@@ -398,7 +397,6 @@ const Sidepanel = () => {
     return () => chrome.storage.onChanged.removeListener(listener);
   }, []);
 
-  // 初始化时检查登录状态
   useEffect(() => {
     const checkLogin = async () => {
       const key = await getApiKey();
@@ -502,6 +500,11 @@ const Sidepanel = () => {
             </div>
           ) : (
             <div style={{ paddingBottom: "32px" }}>
+              {isStreaming && (
+                <div style={{ padding: "16px 0", textAlign: "center" }}>
+                  <LoadingBrain />
+                </div>
+              )}
               {messages.map((message, index) => (
                 <Message
                   key={message.id || index}

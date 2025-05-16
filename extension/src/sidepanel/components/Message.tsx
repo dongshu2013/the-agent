@@ -1,5 +1,4 @@
 import { Message as MessageType } from "../../types/messages";
-import LoadingBrain from "./LoadingBrain";
 import { useState } from "react";
 import { processMarkdown } from "../../utils/markdown-processor";
 import React from "react";
@@ -13,9 +12,7 @@ function areEqual(prevProps: Props, nextProps: Props) {
   return (
     prevProps.message.id === nextProps.message.id &&
     prevProps.message.content === nextProps.message.content &&
-    prevProps.message.role === nextProps.message.role &&
-    prevProps.message.isLoading === nextProps.message.isLoading &&
-    prevProps.message.status === nextProps.message.status
+    prevProps.message.role === nextProps.message.role
   );
 }
 
@@ -23,7 +20,6 @@ const MessageComponent = React.memo(function MessageComponent({
   message,
 }: Props) {
   const isUser = message?.role === "user";
-  const isLoading = message?.isLoading === true;
   const isError = message?.error === "error";
   const [copySuccess, setCopySuccess] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -36,7 +32,7 @@ const MessageComponent = React.memo(function MessageComponent({
   }
 
   const handleCopy = () => {
-    if (isLoading || !message.content) return;
+    if (!message.content) return;
 
     navigator.clipboard
       .writeText(message.content)
@@ -50,7 +46,6 @@ const MessageComponent = React.memo(function MessageComponent({
   };
 
   const shouldShowCopyButton = () => {
-    if (isLoading) return false;
     if (isError) return false;
     if (!message.content) return false;
     if (message.role === "tool") return false;
@@ -120,15 +115,6 @@ const MessageComponent = React.memo(function MessageComponent({
   };
 
   const renderContent = () => {
-    console.log("🔥 isLoading:🍷", message);
-    if (isLoading && !message.content) {
-      return (
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <LoadingBrain />
-        </div>
-      );
-    }
-
     if (isUser || isError) {
       return (
         <div style={{ whiteSpace: "pre-wrap" }}>{message.content || ""}</div>
@@ -162,7 +148,6 @@ const MessageComponent = React.memo(function MessageComponent({
 
     return (
       <>
-        {/* 先文本描述和图片 */}
         <div
           style={{ width: "100%", overflow: "auto" }}
           dangerouslySetInnerHTML={{

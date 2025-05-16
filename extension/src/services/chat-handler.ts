@@ -46,22 +46,11 @@ export class ChatHandler {
       conversation_id: this.options.currentConversationId,
     };
 
-    const loadingMessage: Message = {
-      id: generateMessageId(),
-      role: "assistant",
-      content: "",
-      conversation_id: this.options.currentConversationId,
-      status: "pending",
-      isLoading: true,
-      tool_calls: [],
-      tool_call_id: "",
-    };
-
     this.isStreaming = true;
     this.abortController = new AbortController();
     this.options.onStreamStart();
 
-    await db.saveMessages([userMessage, loadingMessage]);
+    await db.saveMessages([userMessage]);
 
     try {
       const saveResponse = await saveMessageApi({
@@ -194,9 +183,6 @@ Keep responses concise and focused on the current task.
 
               toolCallCount += toolCalls.length;
 
-              console.log("🔥 toolCalls:🍷", toolCalls);
-
-              // 添加助手消息到输入消息列表
               const assistantMessage: Message = {
                 role: "assistant",
                 content: currentResponse,
@@ -205,11 +191,7 @@ Keep responses concise and focused on the current task.
                 tool_calls: toolCalls,
               };
 
-              await this.updateMessage({
-                ...assistantMessage,
-                status: "completed",
-                isLoading: false,
-              });
+              await this.updateMessage(assistantMessage);
               await saveMessageApi({
                 message: assistantMessage,
               });
@@ -244,11 +226,7 @@ Keep responses concise and focused on the current task.
                   ],
                 };
 
-                await this.updateMessage({
-                  ...toolMessage,
-                  status: "completed",
-                  isLoading: false,
-                });
+                await this.updateMessage(toolMessage);
 
                 await saveMessageApi({
                   message: toolMessage,
@@ -273,28 +251,22 @@ Keep responses concise and focused on the current task.
           console.error("Error in processRequest:", error);
           if (error.name === "AbortError") {
             await this.updateMessage({
-              ...loadingMessage,
-              status: "completed",
+              ...userMessage,
               content:
                 accumulatedContent +
                 `${accumulatedContent ? "\n\n" : ""}Stream aborted.`,
               error: "Stream aborted",
-              isLoading: false,
               role: "system",
               tokenUsage: totalTokenUsage,
             });
           } else {
             this.options.onError(error);
             await this.updateMessage({
-              ...loadingMessage,
-              status: "completed",
-              content:
-                accumulatedContent +
-                `${accumulatedContent ? "\n\n" : ""}Network error, please try again later.`,
-              error: error.message,
-              isLoading: false,
+              id: generateMessageId(),
               role: "system",
-              tokenUsage: totalTokenUsage,
+              content: `Network error, please try again later.`,
+              error: error.message,
+              conversation_id: this.options.currentConversationId,
             });
           }
           return { content: accumulatedContent, tokenUsage: totalTokenUsage };
@@ -313,15 +285,13 @@ Now reply to user's message: ${currentPrompt}`,
       ]);
 
       const aiMessage: Message = {
-        ...loadingMessage,
+        id: generateMessageId(),
+        role: "assistant",
         content: finalContent,
+        conversation_id: this.options.currentConversationId,
         tokenUsage,
       };
-      await this.updateMessage({
-        ...aiMessage,
-        status: "completed",
-        isLoading: false,
-      });
+      await this.updateMessage(aiMessage);
 
       await saveMessageApi({
         message: aiMessage,
@@ -330,12 +300,11 @@ Now reply to user's message: ${currentPrompt}`,
       console.error("Error in handleSubmit:", error);
       this.options.onError(error);
       await this.updateMessage({
-        ...loadingMessage,
-        status: "completed",
+        id: generateMessageId(),
+        role: "system",
         content: `Network error, please try again later.`,
         error: error.message,
-        isLoading: false,
-        role: "system",
+        conversation_id: this.options.currentConversationId,
       });
     } finally {
       this.stopStreaming();
