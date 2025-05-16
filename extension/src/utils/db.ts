@@ -109,20 +109,22 @@ class MizuDB extends Dexie {
     return conversation || null;
   }
 
-  async getAllConversations(): Promise<Conversation[]> {
+  async getAllConversations(userId: string): Promise<Conversation[]> {
     const conversations = await this.conversations
-      .orderBy("id")
-      .reverse()
+      .where("user_id")
+      .equals(userId)
       .toArray();
 
     return await Promise.all(
-      conversations.map(async (conversation) => ({
-        ...conversation,
-        messages: await this.messages
-          .where("conversation_id")
-          .equals(conversation.id)
-          .sortBy("id"),
-      })) || []
+      conversations
+        .sort((a, b) => Number(b.id) - Number(a.id))
+        .map(async (conversation: Conversation) => ({
+          ...conversation,
+          messages: await this.messages
+            .where("conversation_id")
+            .equals(conversation.id)
+            .sortBy("id"),
+        })) || []
     );
   }
 
@@ -216,14 +218,11 @@ class MizuDB extends Dexie {
           await this.clearUserData(userId);
 
           for (const conversation of conversations) {
-            if (!conversation || !conversation.id) {
-              continue;
-            }
-            await this.conversations.put(conversation);
+            const { messages, ...rest } = conversation;
+            await this.conversations.put(rest);
 
-            // Save messages if they exist
-            if (conversation.messages && conversation.messages.length > 0) {
-              const validMessages = conversation.messages.filter((msg) => {
+            if (messages && messages.length > 0) {
+              const validMessages = messages.filter((msg) => {
                 if (msg && msg.id) {
                   return {
                     ...msg,
@@ -379,3 +378,10 @@ class MizuDB extends Dexie {
 }
 
 export const db = new MizuDB();
+
+export async function resetDB() {
+  await db.delete();
+  const newDb = new MizuDB();
+  (window as any).mizuDB = newDb;
+  return newDb;
+}

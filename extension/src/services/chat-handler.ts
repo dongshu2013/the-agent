@@ -235,10 +235,7 @@ Keep responses concise and focused on the current task.
                   id: toolMessageId,
                   role: "tool",
                   name: toolCall.function.name,
-                  content:
-                    toolCall.function.name === "WebToolkit_screenshot"
-                      ? `I will take a screenshot.\n`
-                      : `I will ${simplifiedName}.\n${toolResult.success ? "success" : "failed"} ${JSON.stringify(toolResult.data)}`,
+                  content: `I will ${simplifiedName}.\n`,
                   conversation_id: this.options.currentConversationId,
                   tool_call_id: toolCall.id,
                   tool_calls: [

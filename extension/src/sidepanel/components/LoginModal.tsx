@@ -2,7 +2,23 @@ import { Modal } from "antd";
 import { env } from "~/utils/env";
 import MystaLogo from "~/assets/mysta-logo.png";
 
-export default function LoginModal({ open }: { open: boolean }) {
+interface LoginModalProps {
+  open: boolean;
+  showSwitch: boolean;
+  pendingUserId?: string | null;
+  currentUserId?: string | null;
+  onContinue?: () => void;
+  onClose?: () => void;
+}
+
+export default function LoginModal({
+  open,
+  showSwitch,
+  pendingUserId,
+  currentUserId,
+  onContinue,
+  onClose,
+}: LoginModalProps) {
   const handleLogin = () => {
     const webUrl = env.WEB_URL;
     window.open(webUrl, "_blank");
@@ -38,37 +54,77 @@ export default function LoginModal({ open }: { open: boolean }) {
       >
         MYSTA
       </div>
-      {/* 登录按钮 */}
-      <button
-        onClick={handleLogin}
-        style={{
-          width: "100%",
-          maxWidth: 320,
-          height: 48,
-          borderRadius: 24,
-          border: "1.5px solid #d1d5db",
-          background: "#fff",
-          fontSize: 18,
-          fontWeight: 500,
-          color: "#222",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 12,
-          marginBottom: 24,
-          boxShadow: "0 1px 4px 0 rgba(0,0,0,0.04)",
-          cursor: "pointer",
-          transition: "background 0.2s, color 0.2s",
-        }}
-        onMouseOver={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background = "#f3f4f6";
-        }}
-        onMouseOut={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background = "#fff";
-        }}
-      >
-        <span>Sign in with Mysta Web</span>
-      </button>
+      {showSwitch ? (
+        <>
+          <div style={{ color: "#e11d48", fontWeight: 500, marginBottom: 16 }}>
+            Detected Mysta account change, switch?
+            <div style={{ fontSize: 14, color: "#333", marginTop: 8 }}>
+              Current account:{" "}
+              <span style={{ color: "#888" }}>{currentUserId || "None"}</span>
+              <br />
+              New account:{" "}
+              <span style={{ color: "#22c55e" }}>{pendingUserId || "无"}</span>
+            </div>
+          </div>
+          <button
+            onClick={onContinue}
+            style={{
+              width: "100%",
+              maxWidth: 320,
+              height: 48,
+              borderRadius: 24,
+              border: "1.5px solid #d1d5db",
+              background: "#22c55e",
+              color: "#fff",
+              fontSize: 18,
+              fontWeight: 500,
+              marginBottom: 16,
+              cursor: "pointer",
+            }}
+          >
+            Switch Account
+          </button>
+          <button
+            onClick={onClose}
+            style={{
+              width: "100%",
+              maxWidth: 320,
+              height: 48,
+              borderRadius: 24,
+              border: "1.5px solid #d1d5db",
+              background: "#fff",
+              color: "#222",
+              fontSize: 18,
+              fontWeight: 500,
+              marginBottom: 8,
+              cursor: "pointer",
+            }}
+          >
+            Cancel
+          </button>
+        </>
+      ) : (
+        <button
+          onClick={handleLogin}
+          style={{
+            width: "100%",
+            maxWidth: 320,
+            height: 48,
+            borderRadius: 24,
+            border: "1.5px solid #d1d5db",
+            background: "#fff",
+            fontSize: 18,
+            fontWeight: 500,
+            color: "#222",
+            marginBottom: 24,
+            boxShadow: "0 1px 4px 0 rgba(0,0,0,0.04)",
+            cursor: "pointer",
+            transition: "background 0.2s, color 0.2s",
+          }}
+        >
+          <span>Sign in with Mysta Web</span>
+        </button>
+      )}
     </Modal>
   );
 }

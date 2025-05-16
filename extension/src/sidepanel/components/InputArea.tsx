@@ -37,16 +37,6 @@ export default function InputArea({
   // 使用useRef和useEffect自动调整textArea高度
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = `${Math.min(
-        textareaRef.current.scrollHeight,
-        80
-      )}px`;
-    }
-  }, [prompt]);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleAttachFile = useCallback(() => {
@@ -96,23 +86,20 @@ export default function InputArea({
               style={{
                 flex: 1,
                 padding: "10px 16px",
-                maxHeight: "40vh",
-                minHeight: "42px",
+                height: "42px",
                 outline: "none",
                 resize: "none",
                 border: "none",
                 backgroundColor: "transparent",
                 color: "#333333",
-                overflowY: "auto",
                 fontSize: "13px",
                 lineHeight: "1.5",
                 fontWeight: "normal",
                 boxSizing: "border-box",
-                transition: "max-height 0.2s",
               }}
             />
           </div>
-          
+
           <div
             style={{
               display: "flex",
@@ -147,8 +134,19 @@ export default function InputArea({
                   e.currentTarget.style.backgroundColor = "transparent";
                 }}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path fillRule="evenodd" clipRule="evenodd" d="M9 7C9 4.23858 11.2386 2 14 2C16.7614 2 19 4.23858 19 7V15C19 18.866 15.866 22 12 22C8.13401 22 5 18.866 5 15V9C5 8.44772 5.44772 8 6 8C6.55228 8 7 8.44772 7 9V15C7 17.7614 9.23858 20 12 20C14.7614 20 17 17.7614 17 15V7C17 5.34315 15.6569 4 14 4C12.3431 4 11 5.34315 11 7V15C11 15.5523 11.4477 16 12 16C12.5523 16 13 15.5523 13 15V9C13 8.44772 13.4477 8 14 8C14.5523 8 15 8.44772 15 9V15C15 16.6569 13.6569 18 12 18C10.3431 18 9 16.6569 9 15V7Z" fill="currentColor"></path>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                    d="M9 7C9 4.23858 11.2386 2 14 2C16.7614 2 19 4.23858 19 7V15C19 18.866 15.866 22 12 22C8.13401 22 5 18.866 5 15V9C5 8.44772 5.44772 8 6 8C6.55228 8 7 8.44772 7 9V15C7 17.7614 9.23858 20 12 20C14.7614 20 17 17.7614 17 15V7C17 5.34315 15.6569 4 14 4C12.3431 4 11 5.34315 11 7V15C11 15.5523 11.4477 16 12 16C12.5523 16 13 15.5523 13 15V9C13 8.44772 13.4477 8 14 8C14.5523 8 15 8.44772 15 9V15C15 16.6569 13.6569 18 12 18C10.3431 18 9 16.6569 9 15V7Z"
+                    fill="currentColor"
+                  ></path>
                 </svg>
               </button>
               <input
@@ -158,9 +156,9 @@ export default function InputArea({
                 style={{ display: "none" }}
               />
             </div>
-            
+
             <div style={{ flex: 1 }}></div>
-            
+
             <button
               id="audio-recorder"
               type="button"
@@ -186,15 +184,15 @@ export default function InputArea({
                 e.currentTarget.style.backgroundColor = "transparent";
               }}
             >
-              <svg 
-                xmlns="http://www.w3.org/2000/svg" 
-                width="20" 
-                height="20" 
-                viewBox="0 0 24 24" 
-                fill="none" 
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
                 stroke="#4b5563"
-                strokeWidth="2" 
-                strokeLinecap="round" 
+                strokeWidth="2"
+                strokeLinecap="round"
                 strokeLinejoin="round"
               >
                 <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
@@ -202,7 +200,7 @@ export default function InputArea({
                 <line x1="12" x2="12" y1="19" y2="22"></line>
               </svg>
             </button>
-            
+
             <div style={{ marginRight: "2px" }}>
               {isStreaming ? (
                 <button
@@ -221,7 +219,8 @@ export default function InputArea({
                     transition: "transform 0.2s, background-color 0.2s",
                   }}
                   onMouseOver={(e) => {
-                    e.currentTarget.style.backgroundColor = "rgba(0, 0, 0, 0.7)";
+                    e.currentTarget.style.backgroundColor =
+                      "rgba(0, 0, 0, 0.7)";
                   }}
                   onMouseOut={(e) => {
                     e.currentTarget.style.backgroundColor = "#333333";
@@ -282,18 +281,18 @@ export default function InputArea({
                     }
                   }}
                 >
-                  <svg 
-                    width="20" 
-                    height="20" 
-                    viewBox="0 0 24 24" 
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
                     fill="none"
                     className="text-white dark:text-black"
                   >
-                    <path 
-                      d="M7 11L12 6L17 11M12 18V7" 
-                      stroke="white" 
-                      strokeWidth="1.8" 
-                      strokeLinecap="round" 
+                    <path
+                      d="M7 11L12 6L17 11M12 18V7"
+                      stroke="white"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
                       strokeLinejoin="round"
                     ></path>
                   </svg>

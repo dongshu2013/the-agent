@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, use } from 'react';
 import {
   GoogleAuthProvider,
   signInWithPopup,
@@ -162,6 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleApiKey = async (enabled: boolean): Promise<boolean> => {
+    console.log('toggleApiKey', user, enabled);
     if (!user) return false;
 
     try {
@@ -194,6 +195,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Error refreshing user data:', error);
     }
   };
+
+  useEffect(() => {
+    if (user?.apiKey) {
+      setAuthToLocalAndPostMessage({ apiKey: user.apiKey });
+    }
+  }, [user?.apiKey]);
 
   return (
     <AuthContext.Provider

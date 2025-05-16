@@ -78,6 +78,7 @@ export default function ProfilePage() {
       setIsToggling(true);
       try {
         await toggleApiKey(!user.apiKeyEnabled);
+        await refreshUserData();
       } catch (error) {
         console.error('Error toggling API key:', error);
       } finally {
