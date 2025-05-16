@@ -1,11 +1,12 @@
 import { Modal } from "antd";
 import { env } from "~/utils/env";
 import MystaLogo from "~/assets/mysta-logo.png";
+import { setApiKey } from "~/services/cache";
 
 export default function LoginModal({ open }: { open: boolean }) {
   const handleLogin = async () => {
     const webUrl = env.WEB_URL;
-    // 1. 查找 web 端 tab
+
     chrome.tabs.query({ url: `${webUrl}/*` }, (tabs) => {
       console.log("tabs🍷", tabs);
       if (tabs.length > 0) {
@@ -13,20 +14,20 @@ export default function LoginModal({ open }: { open: boolean }) {
         chrome.tabs.sendMessage(
           tabs[0].id!,
           { type: "GET_API_KEY" },
-          (response) => {
+          async (response) => {
+            console.log("response🍷", response);
             if (response && response.apiKey) {
-              // 3. 拿到 apiKey，写入插件 storage 并刷新
-              chrome.storage.local.set({ apiKey: response.apiKey }, () => {
-                window.location.reload();
-              });
+              const apiKey = response.apiKey;
+              await setApiKey(apiKey);
+              window.location.reload();
             } else {
-              // 4. 没拿到，跳转 web 端登录页
+              console.log("没拿到 apiKey，跳转 web 端登录页");
               window.open(webUrl, "_blank");
             }
           }
         );
       } else {
-        // 没有 web 端 tab，直接跳转
+        console.log("没有 web 端 tab，跳转 web 端登录页");
         window.open(webUrl, "_blank");
       }
     });

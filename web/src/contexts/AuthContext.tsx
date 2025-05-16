@@ -225,20 +225,12 @@ export function useAuth() {
 function setAuthToLocalAndPostMessage({ apiKey }: { apiKey?: string }) {
   if (apiKey) {
     localStorage.setItem('apiKey', apiKey);
-
-    // 检查是否是 Chrome 插件触发的登录
-    const urlParams = new URLSearchParams(window.location.search);
-    const isChromeExtension = urlParams.get('source') === 'chrome_extension';
-
-    // 只有是 Chrome 插件触发的登录才发送消息
-    if (isChromeExtension) {
-      window.postMessage(
-        {
-          type: 'FROM_WEB_TO_EXTENSION',
-          apiKey,
-        },
-        '*',
-      );
-    }
+    window.postMessage(
+      {
+        type: 'FROM_WEB_TO_EXTENSION',
+        apiKey,
+      },
+      '*',
+    );
   }
 }

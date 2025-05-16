@@ -9,3 +9,8 @@ export const getApiKey = async (): Promise<string | null> => {
     });
   });
 };
+
+export const setApiKey = async (apiKey: string) => {
+  const apiKeyWithoutQuotes = apiKey.replace(/"/g, "");
+  chrome.storage.local.set({ apiKey: apiKeyWithoutQuotes });
+};
