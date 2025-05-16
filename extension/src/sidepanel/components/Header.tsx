@@ -27,11 +27,9 @@ const Header = ({
 
   const user = useLiveQuery(() => db.getCurrentUser(), []);
   const models = useLiveQuery(
-    () => (user?.id ? db.getUserModels(user.id) : db.getModels()),
+    () => (user?.id ? db.getUserModels(user.id) : []),
     [user?.id]
   );
-
-  console.log("models🍷", models);
 
   useEffect(() => {
     const init = async () => {
@@ -71,14 +69,11 @@ const Header = ({
           defaultModelId = defaultGroup.models[0].id;
         }
       } else if (providerGroups.length > 0) {
-        // 没有 Default provider，选第一个
         defaultProvider = providerGroups[0].type;
         defaultModelId = providerGroups[0].models[0]?.id;
       }
 
-      // 如果用户有选中的模型，优先用用户的
       if (user?.selectedModelId) {
-        let found = false;
         providerGroups.forEach((group) => {
           const match = group.models.find(
             (m: Model) => m.id === user.selectedModelId
@@ -86,7 +81,6 @@ const Header = ({
           if (match) {
             defaultProvider = group.type;
             defaultModelId = match.id;
-            found = true;
           }
         });
       }

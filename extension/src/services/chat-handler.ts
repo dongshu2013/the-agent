@@ -112,8 +112,6 @@ export class ChatHandler {
         });
       }
 
-      console.log("🔥 currentPrompt:", currentPrompt);
-
       const systemMessage: ChatMessage = {
         role: "system",
         content: `

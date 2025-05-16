@@ -92,10 +92,7 @@ const Sidepanel = () => {
       try {
         setIsLoading(true);
 
-        // init models
-        await db.initModels();
-
-        // 2. get and verify api key
+        // 1. get and verify api key
         let storedApiKey = await getApiKey();
         console.log("storedApiKey🍷", storedApiKey);
 
@@ -125,7 +122,8 @@ const Sidepanel = () => {
         const verifyData = await verifyResponse.json();
         if (verifyData.success && verifyData.user) {
           setApiKey(storedApiKey);
-          // 构造 UserInfo 对象
+          await db.initModels(verifyData.user.user_id);
+
           const now = new Date().toISOString();
           const userInfo = {
             id: verifyData.user.user_id,

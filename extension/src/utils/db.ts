@@ -363,11 +363,11 @@ class MizuDB extends Dexie {
     return user || null;
   }
 
-  async initModels(): Promise<void> {
+  async initModels(userId: string): Promise<void> {
     const allModels = PROVIDER_MODELS.flatMap((provider) =>
       provider.models.map((model) => ({
         ...model,
-        userId: "",
+        userId,
         name: model.id === "system" ? env.DEFAULT_MODEL : model.name,
         type: model.id === "system" ? "Default" : provider.type,
         apiKey: model.id === "system" ? "" : "",
@@ -375,20 +375,6 @@ class MizuDB extends Dexie {
       }))
     );
     await this.models.bulkPut(allModels);
-  }
-  async getModels() {
-    const models = await this.models.toArray();
-    // 使用 Map 按 name 去重，保留最新的记录
-    const uniqueModels = new Map();
-    models.forEach((model) => {
-      if (
-        !uniqueModels.has(model.name) ||
-        model.id > uniqueModels.get(model.name).id
-      ) {
-        uniqueModels.set(model.name, model);
-      }
-    });
-    return Array.from(uniqueModels.values());
   }
 }
 
