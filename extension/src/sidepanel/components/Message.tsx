@@ -21,7 +21,6 @@ function areEqual(prevProps: Props, nextProps: Props) {
 
 const MessageComponent = React.memo(function MessageComponent({
   message,
-  isLatestResponse,
 }: Props) {
   const isUser = message?.role === "user";
   const isLoading = message?.isLoading === true;
