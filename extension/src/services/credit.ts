@@ -1,6 +1,6 @@
 import { showLoginModal } from "~/utils/globalEvent";
 import { env } from "../utils/env";
-import { getApiKey } from "./utils";
+import { getApiKey } from "./cache";
 
 /**
  * Get user's available credits by calling the backend API

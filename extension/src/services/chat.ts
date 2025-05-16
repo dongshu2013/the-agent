@@ -6,7 +6,7 @@ import { Message } from "../types/messages";
 import { SaveMessageResponse } from "../types/conversations";
 import OpenAI from "openai";
 import { env } from "../utils/env";
-import { getApiKey } from "./utils";
+import { getApiKey } from "./cache";
 import { db } from "../utils/db";
 import { ChatRequest } from "../types/api";
 import { getToolDescriptions } from "../tools/tool-descriptions";

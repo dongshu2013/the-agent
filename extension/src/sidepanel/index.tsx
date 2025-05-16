@@ -11,7 +11,7 @@ import {
   deleteConversation as deleteConv,
   getConversations,
 } from "../services/conversation";
-import { getApiKey } from "~/services/utils";
+import { getApiKey } from "~/services/cache";
 import { db } from "~/utils/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ChatHandler } from "../services/chat-handler";

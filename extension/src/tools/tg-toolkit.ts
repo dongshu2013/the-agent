@@ -1,6 +1,6 @@
 import { WebInteractionResult } from "./tab-toolkit";
 import { env } from "../utils/env";
-import { getApiKey } from "../services/utils";
+import { getApiKey } from "../services/cache";
 import { showLoginModal } from "~/utils/globalEvent";
 
 // Ensure Chrome types are available
