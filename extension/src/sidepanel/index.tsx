@@ -192,6 +192,8 @@ const Sidepanel = () => {
           await db.saveOrUpdateUser(userInfo);
           setCurrentUserId(verifyData.user.user_id);
 
+          setLoginModalOpen(false);
+
           const dbConversations = await db.getAllConversations(
             verifyData.user.user_id
           );
