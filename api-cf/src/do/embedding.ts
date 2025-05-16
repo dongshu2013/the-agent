@@ -1,11 +1,11 @@
 import OpenAI from 'openai';
 import { calculateEmbeddingCredits } from '../utils/creditCalculator';
-import { EMBEDDING_API_BASE_URL, EMBEDDING_MODEL } from '../utils/common';
+import { DEEPINFRA_API_BASE_URL, EMBEDDING_MODEL } from '../utils/common';
 
 export function createEmbeddingClient(env: Env): OpenAI {
   const openai = new OpenAI({
-    apiKey: env.EMBEDDING_API_KEY,
-    baseURL: EMBEDDING_API_BASE_URL,
+    apiKey: env.DEEPINFRA_API_KEY,
+    baseURL: DEEPINFRA_API_BASE_URL,
   });
   return openai;
 }

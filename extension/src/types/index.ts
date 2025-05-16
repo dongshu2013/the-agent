@@ -14,10 +14,9 @@ export * from "./settings";
  * Used for managing environment variables throughout the application
  */
 export interface Env {
-  OPENAI_MODEL: string;
+  DEFAULT_MODEL: string;
   BACKEND_URL: string;
   SYSTEM_PROMPT: string;
-  SERVER_URL: string;
   LLM_API_URL: string;
   LLM_API_KEY: string;
   WEB_URL: string;

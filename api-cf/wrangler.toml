@@ -24,7 +24,6 @@ name = "TgContext"
 class_name = "TgContext"
 
 [vars]
-LLM_API_URL = "https://openrouter.ai/api/v1"
 MYSTA_PUBLIC_DOMAIN = "https://staging.mysta.ai"
 
 [[migrations]]

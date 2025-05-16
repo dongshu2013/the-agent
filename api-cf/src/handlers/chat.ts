@@ -8,6 +8,7 @@ import {
   calculateCredits,
   createStreamingTokenTracker,
 } from '../utils/creditCalculator';
+import { DEEPSEEK_API_URL, OPENROUTER_API_URL } from '../utils/common';
 
 export class ChatCompletions extends OpenAPIRoute {
   schema = {
@@ -73,8 +74,12 @@ export class ChatCompletions extends OpenAPIRoute {
     }
 
     // Create OpenAI client
-    const llmApiKey = env.LLM_API_KEY;
-    const llmApiUrl = env.LLM_API_URL;
+    let llmApiUrl = OPENROUTER_API_URL;
+    let llmApiKey = env.OPENROUTER_API_KEY;
+    if (params.model === 'deepseek-chat') {
+      llmApiUrl = DEEPSEEK_API_URL;
+      llmApiKey = env.DEEPSEEK_API_KEY;
+    }
     const client = createOpenAIClient(llmApiKey, llmApiUrl);
 
     // Handle streaming response

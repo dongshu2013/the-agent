@@ -45,7 +45,7 @@ export const sendChatCompletion = async (
       {
         model:
           request.currentModel?.id === "system"
-            ? env.OPENAI_MODEL || ""
+            ? env.DEFAULT_MODEL || ""
             : request.currentModel?.name || "",
         messages: request.messages as OpenAI.Chat.ChatCompletionMessageParam[],
         tools: tools,
@@ -59,7 +59,7 @@ export const sendChatCompletion = async (
             type: request.currentModel?.type,
             name:
               request.currentModel?.id === "system"
-                ? env.OPENAI_MODEL
+                ? env.DEFAULT_MODEL
                 : request.currentModel?.name,
             api_key: request.currentModel?.apiKey,
             api_url:
