@@ -162,7 +162,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleApiKey = async (enabled: boolean): Promise<boolean> => {
-    console.log('toggleApiKey', user, enabled);
     if (!user) return false;
 
     try {
