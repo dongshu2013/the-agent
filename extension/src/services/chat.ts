@@ -64,11 +64,9 @@ export const sendChatCompletion = async (
  * 保存消息（调用后端接口）
  */
 export const saveMessageApi = async ({
-  conversation_id,
   message,
-  top_k_related = 0,
+  top_k_related = 3,
 }: {
-  conversation_id: string;
   message: Message;
   top_k_related?: number;
 }): Promise<SaveMessageResponse> => {
@@ -89,7 +87,6 @@ export const saveMessageApi = async ({
     };
 
     const requestBody = {
-      conversation_id: conversation_id,
       message: message,
       top_k_related: top_k_related,
     };

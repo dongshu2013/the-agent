@@ -65,7 +65,6 @@ export class ChatHandler {
 
     try {
       const saveResponse = await saveMessageApi({
-        conversation_id: this.options.currentConversationId,
         message: userMessage,
         top_k_related: 3,
       });
@@ -212,7 +211,6 @@ Keep responses concise and focused on the current task.
                 isLoading: false,
               });
               await saveMessageApi({
-                conversation_id: this.options.currentConversationId,
                 message: assistantMessage,
               });
 
@@ -253,7 +251,6 @@ Keep responses concise and focused on the current task.
                 });
 
                 await saveMessageApi({
-                  conversation_id: this.options.currentConversationId,
                   message: toolMessage,
                 });
 
@@ -327,7 +324,6 @@ Now reply to user's message: ${currentPrompt}`,
       });
 
       await saveMessageApi({
-        conversation_id: this.options.currentConversationId,
         message: aiMessage,
       });
     } catch (error: any) {
