@@ -1,36 +1,11 @@
 import { Modal } from "antd";
 import { env } from "~/utils/env";
 import MystaLogo from "~/assets/mysta-logo.png";
-import { setApiKey } from "~/services/cache";
 
 export default function LoginModal({ open }: { open: boolean }) {
-  const handleLogin = async () => {
+  const handleLogin = () => {
     const webUrl = env.WEB_URL;
-
-    chrome.tabs.query({ url: `${webUrl}/*` }, (tabs) => {
-      console.log("tabs🍷", tabs);
-      if (tabs.length > 0) {
-        // 2. 发送消息请求 API key
-        chrome.tabs.sendMessage(
-          tabs[0].id!,
-          { type: "GET_API_KEY" },
-          async (response) => {
-            console.log("response🍷", response);
-            if (response && response.apiKey) {
-              const apiKey = response.apiKey;
-              await setApiKey(apiKey);
-              window.location.reload();
-            } else {
-              console.log("没拿到 apiKey，跳转 web 端登录页");
-              window.open(webUrl, "_blank");
-            }
-          }
-        );
-      } else {
-        console.log("没有 web 端 tab，跳转 web 端登录页");
-        window.open(webUrl, "_blank");
-      }
-    });
+    window.open(webUrl, "_blank");
   };
 
   return (

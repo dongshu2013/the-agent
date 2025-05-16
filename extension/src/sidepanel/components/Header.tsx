@@ -290,7 +290,7 @@ const Header = ({
               alignItems: "center",
               justifyContent: "center",
               width: 36,
-              height: 36,
+              height: "auto",
               borderRadius: "50%",
               border: "none",
               background: "#f3f4f6",
@@ -305,7 +305,7 @@ const Header = ({
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
               />
             ) : (
-              <UserIcon size={20} color="#6b7280" />
+              <UserIcon size={24} color="#6b7280" />
             )}
           </button>
         </Dropdown>
