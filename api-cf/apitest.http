@@ -154,6 +154,11 @@ GET {{baseUrl}}/v1/tg/stats
 Content-Type: application/json
 x-api-key: {{apiKey}}
 
+### Get My Chat
+GET {{baseUrl}}/v1/tg/get_my_chat
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
 ### Get Telegram Dialogs
 GET {{baseUrl}}/v1/tg/get_dialogs?limit=10&offset=0&chat_title=test&is_public=true&is_free=true&status=active&sort_by=updated_at&sort_order=desc
 Content-Type: application/json
@@ -177,7 +182,7 @@ x-api-key: {{apiKey}}
 {
   "chats": [
   {
-    "chat_id": "-202505150125",
+    "chat_id": "-202505162001",
     "chat_title": "Test Chat",
     "chat_type": "group",
     "is_public": true,
@@ -185,7 +190,7 @@ x-api-key: {{apiKey}}
     "subscription_fee": 0
   },
   {
-    "chat_id": "-202505150126",
+    "chat_id": "-202505162002",
     "chat_title": "Test Chat 2",
     "chat_type": "group"
   }

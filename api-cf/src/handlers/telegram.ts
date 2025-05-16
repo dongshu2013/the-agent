@@ -8,6 +8,60 @@ import {
   ApiErrorCode,
 } from '../types/api';
 
+// ===== GET MY CHAT =====
+
+export class GetMyChat extends OpenAPIRoute {
+  schema = {
+    responses: {
+      '200': {
+        description: 'My chat',
+        content: {
+          'application/json': {
+            schema: z.array(
+              z.object({
+                success: z.boolean(),
+                data: z.object({
+                  chat_id: z.string(),
+                  chat_title: z.string(),
+                  chat_type: z.string(),
+                  is_public: z.boolean(),
+                  is_free: z.boolean(),
+                  subscription_fee: z.number(),
+                  last_synced_at: z.string(),
+                  created_at: z.string(),
+                  updated_at: z.string(),
+                  status: z.string(),
+                }),
+              })
+            ),
+          },
+        },
+      },
+    },
+  };
+
+  async handle(c: Context) {
+    try {
+      const userId = c.get('userId');
+      const id = c.env.TgContext.idFromName(userId);
+      const stub = c.env.TgContext.get(id);
+      const result = await stub.getMyChat();
+
+      return c.json(createSuccessResponse(result), 200);
+    } catch (error) {
+      console.error('Error getting my chat:', error);
+
+      return c.json(
+        createErrorResponse(
+          ApiErrorCode.INTERNAL_ERROR,
+          error instanceof Error ? error.message : 'An unknown error occurred'
+        ),
+        500
+      );
+    }
+  }
+}
+
 // ===== GET TELEGRAM STATS =====
 
 export class GetTelegramStats extends OpenAPIRoute {
