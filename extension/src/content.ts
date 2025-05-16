@@ -6,6 +6,5 @@ window.addEventListener("message", (event) => {
     chrome.storage.local.set({
       apiKey: event.data.apiKey,
     });
-    window.location.reload();
   }
 });
