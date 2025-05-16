@@ -57,7 +57,7 @@ const ModelCascader: React.FC<ModelCascaderProps> = ({
     label: provider.type.charAt(0).toUpperCase() + provider.type.slice(1),
     children: provider.models.map((model) => ({
       value: model.id,
-      label: model.id === "system" ? "Mysta(default)" : model.name,
+      label: model.id === "system" ? "Mysta" : model.name,
     })),
   }));
 
@@ -66,6 +66,8 @@ const ModelCascader: React.FC<ModelCascaderProps> = ({
   const optionRender = (option: any, context?: { level: number }) => {
     const isProvider =
       Array.isArray(option.children) && option.children.length > 0;
+
+    console.log("🔥 option:🍷", option);
     if ((context && context.level === 0) || isProvider) {
       return (
         <div
@@ -80,7 +82,7 @@ const ModelCascader: React.FC<ModelCascaderProps> = ({
             {/* {providerIcons[option.value] || providerIcons.default} */}
             <span>{option.label}</span>
           </div>
-          {option.value !== "system" && (
+          {option.value !== "Default" && (
             <button
               style={{
                 background: "none",

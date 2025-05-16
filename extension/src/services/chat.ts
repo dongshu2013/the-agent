@@ -85,9 +85,9 @@ export const saveMessageApi = async ({
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
+      "x-api-key": apiKey,
     };
 
-    headers["x-api-key"] = apiKey;
     const requestBody = {
       conversation_id: conversation_id,
       message: message,
@@ -117,8 +117,6 @@ export const saveMessageApi = async ({
     }
 
     const data = await response.json();
-
-  
 
     return {
       success: true,

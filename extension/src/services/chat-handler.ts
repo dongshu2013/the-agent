@@ -44,8 +44,6 @@ export class ChatHandler {
       role: "user",
       content: currentPrompt,
       conversation_id: this.options.currentConversationId,
-      status: "completed",
-      isLoading: false,
     };
 
     const loadingMessage: Message = {
@@ -206,11 +204,13 @@ Keep responses concise and focused on the current task.
                 id: generateMessageId(),
                 conversation_id: this.options.currentConversationId,
                 tool_calls: toolCalls,
-                status: "completed",
-                isLoading: false,
               };
 
-              await this.updateMessage(assistantMessage);
+              await this.updateMessage({
+                ...assistantMessage,
+                status: "completed",
+                isLoading: false,
+              });
               await saveMessageApi({
                 conversation_id: this.options.currentConversationId,
                 message: assistantMessage,
@@ -322,10 +322,12 @@ Now reply to user's message: ${currentPrompt}`,
         ...loadingMessage,
         content: finalContent,
         tokenUsage,
-        isLoading: false,
-        status: "completed",
       };
-      await this.updateMessage(aiMessage);
+      await this.updateMessage({
+        ...aiMessage,
+        status: "completed",
+        isLoading: false,
+      });
 
       await saveMessageApi({
         conversation_id: this.options.currentConversationId,

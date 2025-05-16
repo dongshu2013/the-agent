@@ -47,7 +47,7 @@ const Header = ({
       const fullProviderGroups = Object.values(fullGroups);
 
       const providerGroups = fullProviderGroups.map((g: any) => ({
-        type: g.type,
+        type: g.type === "system" ? "Default" : g.type,
         models: g.models.map((m: any) => ({ id: m.id, name: m.name })),
       }));
       setProviderGroups(providerGroups);

@@ -331,7 +331,7 @@ class MizuDB extends Dexie {
       const systemModel = {
         id: systemModelId,
         type: "system",
-        name: "Mysta Model",
+        name: "Mysta",
         userId: user.id,
         apiKey: "",
         apiUrl: "",
