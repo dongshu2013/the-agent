@@ -107,15 +107,11 @@ export interface CacheData<T> {
   timestamp: number;
 }
 
-export enum ModelType {
-  system = "Default",
-  custom = "CUSTOM",
-}
-
 export interface Model {
   id: string;
   name: string;
-  type: ModelType;
+  type: string;
   apiKey: string;
   apiUrl: string;
+  userId: string;
 }

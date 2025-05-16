@@ -47,26 +47,10 @@ export const PROVIDER_MODELS = [
   {
     type: "openai",
     models: [
-      {
-        id: "gpt-3.5-turbo",
-        name: "GPT-3.5 Turbo",
-        apiUrl: "https://api.openai.com/v1",
-      },
-      {
-        id: "gpt-3.5-turbo-16k",
-        name: "GPT-3.5 Turbo 16K",
-        apiUrl: "https://api.openai.com/v1",
-      },
-      { id: "gpt-4", name: "GPT-4", apiUrl: "https://api.openai.com/v1" },
-      {
-        id: "gpt-4-32k",
-        name: "GPT-4 32K",
-        apiUrl: "https://api.openai.com/v1",
-      },
       { id: "gpt-4o", name: "GPT-4o", apiUrl: "https://api.openai.com/v1" },
       {
-        id: "gpt-4-turbo",
-        name: "GPT-4 Turbo",
+        id: "gpt-4o-mini",
+        name: "GPT-4o-mini",
         apiUrl: "https://api.openai.com/v1",
       },
     ],
@@ -79,29 +63,14 @@ export const PROVIDER_MODELS = [
         name: "Deepseek Chat",
         apiUrl: "https://api.deepseek.com",
       },
-      {
-        id: "deepseek-coder",
-        name: "Deepseek Coder",
-        apiUrl: "https://api.deepseek.com",
-      },
     ],
   },
   {
     type: "google",
     models: [
       {
-        id: "gemini-pro",
-        name: "Gemini Pro",
-        apiUrl: "https://api.google.com",
-      },
-      {
-        id: "gemini-1.5-pro",
-        name: "Gemini 1.5 Pro",
-        apiUrl: "https://api.google.com",
-      },
-      {
-        id: "gemini-1.5-flash",
-        name: "Gemini 1.5 Flash",
+        id: "gemini-2.5-pro-preview-03-25",
+        name: "Gemini 2.5 Pro Preview",
         apiUrl: "https://api.google.com",
       },
     ],

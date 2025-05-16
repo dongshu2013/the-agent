@@ -2,8 +2,9 @@ import { Message } from "../types/messages";
 import { Conversation } from "../types/conversations";
 import Dexie, { Table } from "dexie";
 import { env } from "./env";
-import { Model, ModelType } from "~/types";
+import { Model } from "~/types";
 import { getApiKey } from "~/services/utils";
+import { PROVIDER_MODELS } from "./openaiModels";
 
 export const systemModelId = "system";
 
@@ -24,14 +25,7 @@ class MizuDB extends Dexie {
   conversations!: Table<Conversation>;
   messages!: Table<Message>;
   users!: Table<UserInfo>;
-  models!: Table<{
-    id: string;
-    type: string;
-    name: string;
-    userId: string;
-    apiKey: string;
-    apiUrl: string;
-  }>;
+  models!: Table<Model>;
 
   constructor() {
     super("mizu-agent");
@@ -41,7 +35,7 @@ class MizuDB extends Dexie {
       messages: "id, conversation_id",
       users:
         "id, api_key, api_key_enabled, credits, created_at, email, username, photoURL, updated_at",
-      models: "id, userId, type",
+      models: "id, userId, type, [userId+id]",
     });
 
     // Add index definitions
@@ -89,20 +83,16 @@ class MizuDB extends Dexie {
     apiKey: string;
     apiUrl: string;
   }) {
-    await this.models.put(model);
-  }
-
-  async updateModels(
-    models: {
-      id: string;
-      type: string;
-      name: string;
-      userId: string;
-      apiKey: string;
-      apiUrl: string;
-    }[]
-  ) {
-    await this.models.bulkPut(models);
+    const existingModel = await this.models
+      .where("id")
+      .equals(model.id)
+      .and((m) => m.userId === "")
+      .first();
+    if (existingModel) {
+      await this.models.put({ ...existingModel, ...model });
+    } else {
+      await this.models.put(model);
+    }
   }
 
   async deleteModel(modelId: string) {
@@ -317,9 +307,10 @@ class MizuDB extends Dexie {
       return {
         id: selectedModel.id,
         name: selectedModel.name,
-        type: selectedModel.type as ModelType,
+        type: selectedModel.type,
         apiKey: selectedModel.apiKey,
         apiUrl: selectedModel.apiUrl,
+        userId: selectedModel.userId,
       };
     } catch (error) {
       console.error("Error getting selected model:", error);
@@ -371,6 +362,34 @@ class MizuDB extends Dexie {
     if (!apiKey) return null;
     const user = await this.users.where("api_key").equals(apiKey).first();
     return user || null;
+  }
+
+  async initModels(): Promise<void> {
+    const allModels = PROVIDER_MODELS.flatMap((provider) =>
+      provider.models.map((model) => ({
+        ...model,
+        userId: "",
+        name: model.id === "system" ? env.OPENAI_MODEL : model.name,
+        type: model.id === "system" ? "Default" : provider.type,
+        apiKey: model.id === "system" ? env.LLM_API_KEY || "" : "",
+        apiUrl: model.id === "system" ? env.LLM_API_URL || "" : model.apiUrl,
+      }))
+    );
+    await this.models.bulkPut(allModels);
+  }
+  async getModels() {
+    const models = await this.models.toArray();
+    // 使用 Map 按 name 去重，保留最新的记录
+    const uniqueModels = new Map();
+    models.forEach((model) => {
+      if (
+        !uniqueModels.has(model.name) ||
+        model.id > uniqueModels.get(model.name).id
+      ) {
+        uniqueModels.set(model.name, model);
+      }
+    });
+    return Array.from(uniqueModels.values());
   }
 }
 

@@ -16,7 +16,6 @@ import { db } from "~/utils/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ChatHandler } from "../services/chat-handler";
 import { env } from "~/utils/env";
-import { PROVIDER_MODELS } from "~/utils/openaiModels";
 import LoginModal from "./components/LoginModal";
 import { showLoginModal } from "~/utils/globalEvent";
 
@@ -93,7 +92,10 @@ const Sidepanel = () => {
       try {
         setIsLoading(true);
 
-        // 1. 获取并验证 API Key
+        // init models
+        await db.initModels();
+
+        // 2. get and verify api key
         let storedApiKey = await getApiKey();
         console.log("storedApiKey🍷", storedApiKey);
 
@@ -140,20 +142,6 @@ const Sidepanel = () => {
           };
 
           await db.saveOrUpdateUser(userInfo);
-
-          const userId = verifyData.user.user_id;
-          const allModels = PROVIDER_MODELS.flatMap((provider) =>
-            provider.models.map((model) => ({
-              ...model,
-              userId,
-              apiKey: model.id === "system" ? env.LLM_API_KEY || "" : "",
-              apiUrl:
-                model.id === "system" ? env.LLM_API_URL || "" : model.apiUrl,
-              name: model.id === "system" ? env.OPENAI_MODEL || "" : model.name,
-              type: model.id === "system" ? "Default" : provider.type,
-            }))
-          );
-          await db.models.bulkPut(allModels);
 
           // 4. 初始化会话
           const dbConversations = await db.getAllConversations();

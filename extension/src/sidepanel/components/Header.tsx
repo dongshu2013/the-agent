@@ -27,9 +27,11 @@ const Header = ({
 
   const user = useLiveQuery(() => db.getCurrentUser(), []);
   const models = useLiveQuery(
-    () => (user?.id ? db.getUserModels(user.id) : []),
+    () => (user?.id ? db.getUserModels(user.id) : db.getModels()),
     [user?.id]
   );
+
+  console.log("models🍷", models);
 
   useEffect(() => {
     const init = async () => {
@@ -149,6 +151,7 @@ const Header = ({
             ...model,
             apiKey: apiKeyInput,
             type: editingProvider || "",
+            userId: user.id,
           });
         }
         // Refresh provider groups
