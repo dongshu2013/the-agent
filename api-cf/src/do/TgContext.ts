@@ -30,6 +30,29 @@ export class TgContext extends DurableObject<Env> {
     });
   }
 
+  // get my chat
+  async getMyChat() {
+    const cursor = await this.sql.exec(`SELECT * FROM telegram_dialogs`);
+    const chats = [];
+
+    for await (const row of cursor) {
+      chats.push({
+        chat_id: row.chat_id,
+        chat_title: row.chat_title,
+        chat_type: row.chat_type,
+        is_public: Boolean(row.is_public),
+        is_free: Boolean(row.is_free),
+        subscription_fee: Number(row.subscription_fee),
+        last_synced_at: row.last_synced_at,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        status: row.status,
+      });
+    }
+
+    return chats;
+  }
+
   // Get stats for Telegram data
   async getStats() {
     const dialogsCountCursor = this.sql.exec(
