@@ -1,23 +1,40 @@
 import { Modal } from "antd";
 import { env } from "~/utils/env";
 import MystaLogo from "~/assets/mysta-logo.png";
-export default function LoginModal({
-  open,
-  onCancel,
-}: {
-  open: boolean;
-  onCancel?: () => void;
-}) {
+
+export default function LoginModal({ open }: { open: boolean }) {
   const handleLogin = async () => {
     const webUrl = env.WEB_URL;
-    const loginUrl = `${webUrl}?source=chrome_extension`;
-    window.open(loginUrl, "_blank");
+    // 1. 查找 web 端 tab
+    chrome.tabs.query({ url: `${webUrl}/*` }, (tabs) => {
+      console.log("tabs🍷", tabs);
+      if (tabs.length > 0) {
+        // 2. 发送消息请求 API key
+        chrome.tabs.sendMessage(
+          tabs[0].id!,
+          { type: "GET_API_KEY" },
+          (response) => {
+            if (response && response.apiKey) {
+              // 3. 拿到 apiKey，写入插件 storage 并刷新
+              chrome.storage.local.set({ apiKey: response.apiKey }, () => {
+                window.location.reload();
+              });
+            } else {
+              // 4. 没拿到，跳转 web 端登录页
+              window.open(webUrl, "_blank");
+            }
+          }
+        );
+      } else {
+        // 没有 web 端 tab，直接跳转
+        window.open(webUrl, "_blank");
+      }
+    });
   };
 
   return (
     <Modal
       open={open}
-      onCancel={onCancel}
       footer={null}
       centered
       closable={false}

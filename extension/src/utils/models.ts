@@ -4,7 +4,7 @@ export const PROVIDER_MODELS = [
     models: [
       {
         id: "system",
-        name: "Mysta(default)",
+        name: "Mysta",
         apiUrl: "",
       },
     ],

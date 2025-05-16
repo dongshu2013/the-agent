@@ -488,10 +488,7 @@ const Sidepanel = () => {
         />
       )}
 
-      <LoginModal
-        open={loginModalOpen}
-        onCancel={() => setLoginModalOpen(false)}
-      />
+      <LoginModal open={loginModalOpen} />
     </div>
   );
 };
