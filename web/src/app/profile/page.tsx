@@ -271,10 +271,23 @@ export default function ProfilePage() {
                   onClick={() => {
                     const baseUrl = process.env.NEXT_PUBLIC_TG_WEBAPP_URL || '#';
                     const url = new URL(baseUrl);
+
+                    // Add required user parameters
                     if (user.apiKey) {
                       url.searchParams.set('apiKey', user.apiKey);
                     }
-                    window.open(url.toString(), '_blank');
+                    if (user.displayName) {
+                      url.searchParams.set('displayName', encodeURIComponent(user.displayName));
+                    }
+                    if (user.photoURL) {
+                      url.searchParams.set('photoURL', encodeURIComponent(user.photoURL));
+                    }
+
+                    // Open in new tab with proper security attributes
+                    const newWindow = window.open(url.toString(), '_blank');
+                    if (newWindow) {
+                      newWindow.opener = null; // Prevent reverse tabnabbing
+                    }
                   }}
                 >
                   Import Telegram Data
