@@ -1,3 +1,4 @@
+import { GatewayServiceError } from '../types/service';
 import {
   MODEL_PRICING,
   COST_MULTIPLIERS,
@@ -31,7 +32,7 @@ export function calculateCredits(
 ): CreditCalculationResult {
   const pricing = MODEL_PRICING[model];
   if (!pricing) {
-    throw new Error(`Model ${model} not found in pricing`);
+    throw new GatewayServiceError(401, `${model} not found in model pricing`);
   }
 
   // Calculate costs with multipliers (per 1M tokens)
@@ -90,7 +91,7 @@ export function calculateEmbeddingCredits(
 ): Cost {
   const pricing = MODEL_PRICING[model];
   if (!pricing) {
-    throw new Error(`Model ${model} not found in pricing`);
+    throw new GatewayServiceError(401, `${model} not found in model pricing`);
   }
 
   // Calculate token-based cost
