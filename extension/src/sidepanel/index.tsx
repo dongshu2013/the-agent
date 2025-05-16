@@ -12,7 +12,7 @@ import {
   getConversations,
 } from "../services/conversation";
 import { getApiKey } from "~/services/cache";
-import { db } from "~/utils/indexdb";
+import { db } from "~/utils/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ChatHandler } from "../services/chat-handler";
 import { env } from "~/utils/env";

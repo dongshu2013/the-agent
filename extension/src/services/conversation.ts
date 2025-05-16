@@ -5,7 +5,7 @@
 import { env } from "../utils/env";
 import { getApiKey } from "./cache";
 import { Conversation } from "../types/conversations";
-import { db } from "../utils/indexdb";
+import { db } from "../utils/db";
 import { Message } from "~/types";
 import { showLoginModal } from "~/utils/global-event";
 

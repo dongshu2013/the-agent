@@ -1,7 +1,7 @@
 import { ChatMessage, Message } from "../types/messages";
 import { saveMessageApi, sendChatCompletion } from "./chat";
 import { toolExecutor } from "./tool-executor";
-import { db } from "~/utils/indexdb";
+import { db } from "~/utils/db";
 
 interface ChatHandlerOptions {
   apiKey: string;
