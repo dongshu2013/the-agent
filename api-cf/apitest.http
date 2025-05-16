@@ -86,7 +86,7 @@ x-api-key: {{apiKey}}
       "content": "What can you do?"
     }
   ],
-  "model": "google/gemini-2.0-flash-001",
+  "model": "deepseek-chat",
   "temperature": 0.7,
   "max_tokens": 500,
   "stream": false
@@ -108,7 +108,7 @@ x-api-key: {{apiKey}}
       "content": "What can you do?"
     }
   ],
-  "model": "google/gemini-2.0-flash-001",
+  "model": "deepseek-chat",
   "temperature": 0.7,
   "max_tokens": 500,
   "stream": true

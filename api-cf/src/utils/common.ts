@@ -32,23 +32,31 @@ export interface ModelPricing {
 // Cost per million tokens for the prompt.
 export const MODEL_PRICING: Record<string, ModelPricing> = {
   // Gemini
-  'google/gemini-2.0-flash-exp:free': {
-    inputPrice: 0,
-    outputPrice: 0,
-  },
-  'google/gemini-2.0-flash-001': {
-    inputPrice: 0.1,
-    outputPrice: 0.4,
-  },
-  'google/gemini-2.5-pro-preview-03-25': {
-    inputPrice: 1.25,
-    outputPrice: 10,
-  },
+  // 'google/gemini-2.0-flash-exp:free': {
+  //   inputPrice: 0,
+  //   outputPrice: 0,
+  // },
+  // 'google/gemini-2.0-flash-001': {
+  //   inputPrice: 0.1,
+  //   outputPrice: 0.4,
+  // },
+  // 'google/gemini-2.5-pro-preview-03-25': {
+  //   inputPrice: 1.25,
+  //   outputPrice: 10,
+  // },
 
   // DeepSeek
-  'deepseek/deepseek-r1-distill-llama-70b': {
-    inputPrice: 0.0,
-    outputPrice: 0.0,
+  // 'deepseek/deepseek-r1-distill-llama-70b': {
+  //   inputPrice: 0.0,
+  //   outputPrice: 0.0,
+  // },
+  'deepseek/deepseek-chat': {
+    inputPrice: 0.28,
+    outputPrice: 1.11,
+  },
+  'deepseek-chat': {
+    inputPrice: 0.28,
+    outputPrice: 1.11,
   },
 
   // Embedding Models
