@@ -369,7 +369,7 @@ class MizuDB extends Dexie {
       provider.models.map((model) => ({
         ...model,
         userId: "",
-        name: model.id === "system" ? env.OPENAI_MODEL : model.name,
+        name: model.id === "system" ? env.DEFAULT_MODEL : model.name,
         type: model.id === "system" ? "Default" : provider.type,
         apiKey: model.id === "system" ? env.LLM_API_KEY || "" : "",
         apiUrl: model.id === "system" ? env.LLM_API_URL || "" : model.apiUrl,
