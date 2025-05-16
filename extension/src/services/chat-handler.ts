@@ -239,7 +239,7 @@ Keep responses concise and focused on the current task.
                   tool_calls: [
                     {
                       ...toolCall,
-                      result: toolResult.data,
+                      result: JSON.stringify(toolResult.data),
                     },
                   ],
                 };
