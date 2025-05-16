@@ -1,4 +1,4 @@
-import { showLoginModal } from "~/utils/globalEvent";
+import { showLoginModal } from "~/utils/global-event";
 import { env } from "../utils/env";
 import { getApiKey } from "./cache";
 

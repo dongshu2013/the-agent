@@ -7,10 +7,10 @@ import { SaveMessageResponse } from "../types/conversations";
 import OpenAI from "openai";
 import { env } from "../utils/env";
 import { getApiKey } from "./cache";
-import { db } from "../utils/db";
+import { db } from "../utils/indexdb";
 import { ChatRequest } from "../types/api";
 import { getToolDescriptions } from "../tools/tool-descriptions";
-import { showLoginModal } from "~/utils/globalEvent";
+import { showLoginModal } from "~/utils/global-event";
 
 // 发送聊天请求到后端
 export const sendChatCompletion = async (

@@ -1,7 +1,7 @@
 import { WebInteractionResult } from "./tab-toolkit";
 import { env } from "../utils/env";
 import { getApiKey } from "../services/cache";
-import { showLoginModal } from "~/utils/globalEvent";
+import { showLoginModal } from "~/utils/global-event";
 
 // Ensure Chrome types are available
 declare const chrome: any;

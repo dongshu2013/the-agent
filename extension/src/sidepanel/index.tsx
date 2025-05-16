@@ -12,12 +12,12 @@ import {
   getConversations,
 } from "../services/conversation";
 import { getApiKey } from "~/services/cache";
-import { db } from "~/utils/db";
+import { db } from "~/utils/indexdb";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ChatHandler } from "../services/chat-handler";
 import { env } from "~/utils/env";
 import LoginModal from "./components/LoginModal";
-import { showLoginModal } from "~/utils/globalEvent";
+import { showLoginModal } from "~/utils/global-event";
 
 const Sidepanel = () => {
   // 状态管理

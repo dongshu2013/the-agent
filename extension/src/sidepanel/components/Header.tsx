@@ -1,5 +1,5 @@
 import { MessageCircleMore, SquarePen, User as UserIcon } from "lucide-react";
-import { db, systemModelId } from "~/utils/db";
+import { db, systemModelId } from "~/utils/indexdb";
 import { useState, useEffect } from "react";
 import { Modal, Dropdown } from "antd";
 import ModelCascader, { ProviderGroup } from "./ModelCascader";

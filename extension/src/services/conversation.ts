@@ -5,9 +5,9 @@
 import { env } from "../utils/env";
 import { getApiKey } from "./cache";
 import { Conversation } from "../types/conversations";
-import { db } from "../utils/db";
+import { db } from "../utils/indexdb";
 import { Message } from "~/types";
-import { showLoginModal } from "~/utils/globalEvent";
+import { showLoginModal } from "~/utils/global-event";
 
 /**
  * 创建新会话（调用后端接口）

@@ -4,7 +4,7 @@ import Dexie, { Table } from "dexie";
 import { env } from "./env";
 import { Model } from "~/types";
 import { getApiKey } from "~/services/cache";
-import { PROVIDER_MODELS } from "./openaiModels";
+import { PROVIDER_MODELS } from "./models";
 
 export const systemModelId = "system";
 
