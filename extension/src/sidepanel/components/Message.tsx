@@ -2,13 +2,27 @@ import { Message as MessageType } from "../../types/messages";
 import LoadingBrain from "./LoadingBrain";
 import { useState } from "react";
 import { processMarkdown } from "../../utils/markdown-processor";
+import React from "react";
 
 interface Props {
   message: MessageType;
   isLatestResponse?: boolean;
 }
 
-export default function MessageComponent({ message }: Props) {
+function areEqual(prevProps: Props, nextProps: Props) {
+  return (
+    prevProps.message.id === nextProps.message.id &&
+    prevProps.message.content === nextProps.message.content &&
+    prevProps.message.role === nextProps.message.role &&
+    prevProps.message.isLoading === nextProps.message.isLoading &&
+    prevProps.message.status === nextProps.message.status
+  );
+}
+
+const MessageComponent = React.memo(function MessageComponent({
+  message,
+  isLatestResponse,
+}: Props) {
   const isUser = message?.role === "user";
   const isLoading = message?.isLoading === true;
   const isError = message?.error === "error";
@@ -107,6 +121,7 @@ export default function MessageComponent({ message }: Props) {
   };
 
   const renderContent = () => {
+    console.log("🔥 isLoading:🍷", message);
     if (isLoading && !message.content) {
       return (
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -124,7 +139,6 @@ export default function MessageComponent({ message }: Props) {
     const content = message.content || "";
     const htmlContent = processMarkdown(content);
 
-    // 获取截图 dataURL
     let screenshotRaw = message.tool_calls?.find(
       (tool) => tool.function.name === "WebToolkit_screenshot"
     )?.result;
@@ -285,4 +299,6 @@ export default function MessageComponent({ message }: Props) {
       </div>
     </div>
   );
-}
+}, areEqual);
+
+export default MessageComponent;

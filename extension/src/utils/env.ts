@@ -10,6 +10,6 @@ const defaultEnv = {
 export const env: Env = {
   DEFAULT_MODEL:
     process.env.PLASMO_PUBLIC_DEFAULT_MODEL || defaultEnv.DEFAULT_MODEL,
-  BACKEND_URL: defaultEnv.DEFAULT_MODEL,
+  BACKEND_URL: process.env.PLASMO_PUBLIC_BACKEND_URL || defaultEnv.BACKEND_URL,
   WEB_URL: process.env.PLASMO_PUBLIC_WEB_URL || defaultEnv.WEB_URL,
 };

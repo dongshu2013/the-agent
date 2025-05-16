@@ -45,6 +45,7 @@ export class ChatHandler {
       content: currentPrompt,
       conversation_id: this.options.currentConversationId,
       status: "completed",
+      isLoading: false,
     };
 
     const loadingMessage: Message = {
@@ -188,12 +189,6 @@ Keep responses concise and focused on the current task.
             const toolCalls = resp.choices[0].message.tool_calls;
             if (toolCalls) {
               if (toolCallCount >= MAX_TOOL_CALLS) {
-                await this.updateMessage({
-                  ...loadingMessage,
-                  content: accumulatedContent,
-                  isLoading: false,
-                  status: "completed",
-                });
                 return {
                   content: accumulatedContent,
                   tokenUsage: totalTokenUsage,
@@ -211,8 +206,11 @@ Keep responses concise and focused on the current task.
                 id: generateMessageId(),
                 conversation_id: this.options.currentConversationId,
                 tool_calls: toolCalls,
+                status: "completed",
+                isLoading: false,
               };
 
+              await this.updateMessage(assistantMessage);
               await saveMessageApi({
                 conversation_id: this.options.currentConversationId,
                 message: assistantMessage,
@@ -251,12 +249,17 @@ Keep responses concise and focused on the current task.
                   ],
                 };
 
+                await this.updateMessage({
+                  ...toolMessage,
+                  status: "completed",
+                  isLoading: false,
+                });
+
                 await saveMessageApi({
                   conversation_id: this.options.currentConversationId,
                   message: toolMessage,
                 });
 
-                // 添加工具响应到输入消息列表，对于截图只发送成功状态
                 inputMessages.push({
                   role: "tool",
                   name: toolCall.function.name,
@@ -277,7 +280,7 @@ Keep responses concise and focused on the current task.
           if (error.name === "AbortError") {
             await this.updateMessage({
               ...loadingMessage,
-              status: "error",
+              status: "completed",
               content:
                 accumulatedContent +
                 `${accumulatedContent ? "\n\n" : ""}Stream aborted.`,
@@ -290,7 +293,7 @@ Keep responses concise and focused on the current task.
             this.options.onError(error);
             await this.updateMessage({
               ...loadingMessage,
-              status: "error",
+              status: "completed",
               content:
                 accumulatedContent +
                 `${accumulatedContent ? "\n\n" : ""}Network error, please try again later.`,
@@ -317,12 +320,12 @@ Now reply to user's message: ${currentPrompt}`,
 
       const aiMessage: Message = {
         ...loadingMessage,
-        id: generateMessageId(),
         content: finalContent,
         tokenUsage,
         isLoading: false,
         status: "completed",
       };
+      await this.updateMessage(aiMessage);
 
       await saveMessageApi({
         conversation_id: this.options.currentConversationId,
