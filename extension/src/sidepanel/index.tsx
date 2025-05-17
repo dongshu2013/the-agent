@@ -45,6 +45,8 @@ const Sidepanel = () => {
   let messageIdOffset = 0;
   const generateMessageId = () => Date.now() + messageIdOffset++;
 
+  console.log(".........初始化数据.,.,.,", showSwitch, loginModalOpen);
+
   // 数据查询
   const messages =
     useLiveQuery(
@@ -99,7 +101,6 @@ const Sidepanel = () => {
   useEffect(() => {
     const listener = async (changes: any, area: string) => {
       if (area === "local" && changes.apiKey) {
-        console.log("Sidepanel: apiKey changed", changes.apiKey);
         const newApiKey = changes.apiKey.newValue;
         if (!newApiKey) return;
 
@@ -114,25 +115,22 @@ const Sidepanel = () => {
         const data = await res.json();
         const newUserId = data?.user?.user_id;
 
+        // 这里一定要用 getCurrentUser 拿到"切换前"的 userId
         const user = await db.getCurrentUser();
         const oldUserId = user?.id;
 
-        console.log(
-          "oldUserId: 🐦 🚀",
-          oldUserId,
-          "newUserId: 🐦 🚀",
-          newUserId
-        );
+        console.log("API Key changed:", newApiKey);
+        console.log("oldUserId:", oldUserId, "newUserId:", newUserId);
 
-        // 只有当新旧用户ID不同时才显示切换提示
         if (oldUserId && newUserId && oldUserId !== newUserId) {
+          // 只要 userId 变了，先弹窗，不要立刻初始化新账号
           setPendingApiKey(newApiKey);
           setPendingUserId(newUserId);
           setCurrentUserId(oldUserId);
           setShowSwitch(true);
           setLoginModalOpen(true);
         } else {
-          // 如果是首次登录或相同用户，直接更新
+          // 只有 userId 没变时，才自动初始化
           setApiKeyState(newApiKey);
           await initializeUserAndData(newApiKey);
         }
@@ -172,6 +170,8 @@ const Sidepanel = () => {
         }
 
         const verifyData = await verifyResponse.json();
+
+        console.log(".........😊😊.,.,.,", verifyData);
         if (verifyData.success && verifyData.user) {
           await db.initModels(verifyData.user.user_id);
 

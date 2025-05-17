@@ -148,6 +148,7 @@ const MessageComponent = React.memo(function MessageComponent({
 
     return (
       <>
+        {/* 先文本描述和图片 */}
         <div
           style={{ width: "100%", overflow: "auto" }}
           dangerouslySetInnerHTML={{

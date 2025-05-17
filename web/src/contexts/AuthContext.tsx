@@ -47,6 +47,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const idToken = await getIdToken(firebaseUser);
           const userData = await getUserInfo(idToken);
+
+          // 这里主动 postMessage
+          setAuthToLocalAndPostMessage({ apiKey: userData.user.api_key });
+
           setUser({
             id: firebaseUser.uid,
             email: firebaseUser.email,
@@ -57,12 +61,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             credits: userData.user.balance,
             idToken,
           });
-          setAuthToLocalAndPostMessage({ apiKey: userData.user.api_key });
         } catch (error) {
           console.error('Error setting up user:', error);
         }
       } else {
         setUser(null);
+        // 这里可以 postMessage 空 key，通知插件端登出
+        setAuthToLocalAndPostMessage({ apiKey: '' });
       }
       setLoading(false);
     });
@@ -112,36 +117,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      // Configure auth provider with custom parameters to avoid COOP issues
       provider.setCustomParameters({
         prompt: 'select_account',
-        // This helps with some cross-origin issues
         auth_type: 'rerequest',
       });
 
       const result = await signInWithPopup(auth, provider);
       const idToken = await getIdToken(result.user);
 
-      // 更新用户状态
+      // 获取用户信息
+      const userData = await getUserInfo(idToken);
+
+      // 这里主动 postMessage
+      setAuthToLocalAndPostMessage({ apiKey: userData.user.api_key });
+
       setUser({
         id: result.user.uid,
         email: result.user.email,
         displayName: result.user.displayName,
         photoURL: result.user.photoURL,
-        apiKey: null,
-        apiKeyEnabled: false,
-        credits: 0,
+        apiKey: userData.user.api_key,
+        apiKeyEnabled: userData.user.api_key_enabled,
+        credits: userData.user.balance,
         idToken,
       });
     } catch (error) {
       console.error('Error signing in with Google', error);
     }
   };
-
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
       setUser(null);
+      // 这里主动 postMessage 空 key
+      setAuthToLocalAndPostMessage({ apiKey: '' });
     } catch (error) {
       console.error('Error signing out', error);
     }
