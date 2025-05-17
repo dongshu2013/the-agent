@@ -214,8 +214,16 @@ class MizuDB extends Dexie {
         "rw",
         [this.conversations, this.messages],
         async () => {
-          // If userId is provided, clear old data first
-          await this.clearUserData(userId);
+          const userConversations = await this.conversations
+            .where("user_id")
+            .equals(userId)
+            .toArray();
+          const conversationIds = userConversations.map((conv) => conv.id);
+          await this.messages
+            .where("conversation_id")
+            .anyOf(conversationIds)
+            .delete();
+          await this.conversations.where("user_id").equals(userId).delete();
 
           for (const conversation of conversations) {
             const { messages, ...rest } = conversation;
@@ -245,8 +253,7 @@ class MizuDB extends Dexie {
   async clearAllConversations() {
     await this.transaction(
       "rw",
-      this.conversations,
-      this.messages,
+      [this.conversations, this.messages],
       async () => {
         await this.messages.clear();
         await this.conversations.clear();
