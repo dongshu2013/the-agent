@@ -44,29 +44,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        try {
-          const idToken = await getIdToken(firebaseUser);
-          const userData = await getUserInfo(idToken);
-
-          // 这里主动 postMessage
-          setAuthToLocalAndPostMessage({ apiKey: userData.user.api_key });
-
-          setUser({
-            id: firebaseUser.uid,
-            email: firebaseUser.email,
-            displayName: firebaseUser.displayName,
-            photoURL: firebaseUser.photoURL,
-            apiKey: userData.user.api_key,
-            apiKeyEnabled: userData.user.api_key_enabled,
-            credits: userData.user.balance,
-            idToken,
-          });
-        } catch (error) {
-          console.error('Error setting up user:', error);
-        }
+        const idToken = await getIdToken(firebaseUser);
+        const userData = await getUserInfo(idToken);
+        setAuthToLocalAndPostMessage({ apiKey: userData.user.api_key });
+        setUser({
+          id: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName,
+          photoURL: firebaseUser.photoURL,
+          apiKey: userData.user.api_key,
+          apiKeyEnabled: userData.user.api_key_enabled,
+          credits: userData.user.balance,
+          idToken,
+        });
+        console.log('Web端 onAuthStateChanged, userId:', firebaseUser.uid);
       } else {
         setUser(null);
-        // 这里可以 postMessage 空 key，通知插件端登出
         setAuthToLocalAndPostMessage({ apiKey: '' });
       }
       setLoading(false);

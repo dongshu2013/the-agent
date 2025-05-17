@@ -104,7 +104,7 @@ const Sidepanel = () => {
         const newApiKey = changes.apiKey.newValue;
         if (!newApiKey) return;
 
-        // 获取新 userId
+        // 用新 apiKey 获取新 userId
         const res = await fetch(`${env.BACKEND_URL}/v1/user`, {
           method: "GET",
           headers: {
