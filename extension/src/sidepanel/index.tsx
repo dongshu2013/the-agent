@@ -41,6 +41,8 @@ const Sidepanel = () => {
       [currentConversationId]
     ) ?? [];
 
+  console.log("currentUser ===== ", currentUser);
+
   const conversations =
     useLiveQuery(
       () =>
@@ -126,6 +128,7 @@ const Sidepanel = () => {
         setLoginModalOpen(false);
       } catch (error) {
         handleApiError(error);
+
       } finally {
         setIsLoading(false);
       }
