@@ -42,18 +42,8 @@ export default function LoginModal({
       <img
         src={MystaLogo}
         alt="Mysta Logo"
-        style={{ width: 64, height: 64, marginBottom: 16 }}
+        style={{ width: 218, height: "auto", marginBottom: 16 }}
       />
-      <div
-        style={{
-          fontSize: 32,
-          fontWeight: 700,
-          letterSpacing: 2,
-          marginBottom: 32,
-        }}
-      >
-        MYSTA
-      </div>
       {showSwitch ? (
         <>
           <div style={{ color: "#e11d48", fontWeight: 500, marginBottom: 16 }}>

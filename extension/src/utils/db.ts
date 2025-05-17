@@ -377,11 +377,22 @@ class MizuDB extends Dexie {
   }
 }
 
-export const db = new MizuDB();
+let dbInstance = new MizuDB();
 
 export async function resetDB() {
-  await db.delete();
-  const newDb = new MizuDB();
-  (window as any).mizuDB = newDb;
-  return newDb;
+  await dbInstance.delete();
+  dbInstance = new MizuDB();
+  (window as any).mizuDB = dbInstance;
+  return dbInstance;
 }
+
+const dbProxy = new Proxy(
+  {},
+  {
+    get(target, prop) {
+      return dbInstance[prop as keyof MizuDB];
+    },
+  }
+);
+
+export const db = dbProxy as MizuDB;

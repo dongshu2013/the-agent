@@ -39,7 +39,6 @@ const Sidepanel = () => {
   const [pendingApiKey, setPendingApiKey] = useState<string | null>(null);
   const [pendingUserId, setPendingUserId] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [dbInstance, setDbInstance] = useState(db);
 
   // 用于生成有序消息ID
   let messageIdOffset = 0;
@@ -52,17 +51,16 @@ const Sidepanel = () => {
     useLiveQuery(
       () =>
         currentConversationId
-          ? dbInstance.getMessagesByConversation(currentConversationId)
+          ? db.getMessagesByConversation(currentConversationId)
           : [],
-      [currentConversationId, dbInstance]
+      [currentConversationId]
     ) ?? [];
 
   console.log("........", currentUserId);
   const conversations =
     useLiveQuery(
-      () =>
-        currentUserId ? dbInstance.getAllConversations(currentUserId) : [],
-      [dbInstance, currentUserId]
+      () => (currentUserId ? db.getAllConversations(currentUserId) : []),
+      [currentUserId]
     ) ?? [];
 
   const redirectToLogin = useCallback(() => {
@@ -87,70 +85,6 @@ const Sidepanel = () => {
     },
     [currentConversationId]
   );
-
-  // 监听登录弹窗事件
-  useEffect(() => {
-    const handler = () => {
-      console.log("SHOW_LOGIN_MODAL event triggered");
-      setLoginModalOpen(true);
-    };
-    window.addEventListener("SHOW_LOGIN_MODAL", handler);
-    return () => window.removeEventListener("SHOW_LOGIN_MODAL", handler);
-  }, []);
-
-  useEffect(() => {
-    const listener = async (changes: any, area: string) => {
-      if (area === "local" && changes.apiKey) {
-        const newApiKey = changes.apiKey.newValue;
-        if (!newApiKey) return;
-
-        // 用新 apiKey 获取新 userId
-        const res = await fetch(`${env.BACKEND_URL}/v1/user`, {
-          method: "GET",
-          headers: {
-            "x-api-key": newApiKey,
-            "Content-Type": "application/json",
-          },
-        });
-        const data = await res.json();
-        const newUserId = data?.user?.user_id;
-
-        // 这里一定要用 getCurrentUser 拿到"切换前"的 userId
-        const user = await db.getCurrentUser();
-        const oldUserId = user?.id;
-
-        console.log("API Key changed:", newApiKey);
-        console.log("oldUserId:", oldUserId, "newUserId:", newUserId);
-
-        if (oldUserId && newUserId && oldUserId !== newUserId) {
-          // 只要 userId 变了，先弹窗，不要立刻初始化新账号
-          setPendingApiKey(newApiKey);
-          setPendingUserId(newUserId);
-          setCurrentUserId(oldUserId);
-          setShowSwitch(true);
-          setLoginModalOpen(true);
-        } else {
-          // 只有 userId 没变时，才自动初始化
-          setApiKeyState(newApiKey);
-          await initializeUserAndData(newApiKey);
-        }
-      }
-    };
-    chrome.storage.onChanged.addListener(listener);
-    return () => chrome.storage.onChanged.removeListener(listener);
-  }, []);
-
-  const handleSwitchAccount = useCallback(async () => {
-    if (!pendingApiKey) return;
-    const newDb = await resetDB();
-    setDbInstance(newDb);
-    await setApiKey(pendingApiKey);
-    setApiKeyState(pendingApiKey);
-    setLoginModalOpen(false);
-    setShowSwitch(false);
-    setCurrentConversationId(null);
-    await initializeUserAndData(pendingApiKey);
-  }, [pendingApiKey]);
 
   const initializeUserAndData = useCallback(
     async (apiKeyToUse: string) => {
@@ -216,6 +150,69 @@ const Sidepanel = () => {
     },
     [currentConversationId]
   );
+
+  const handleSwitchAccount = useCallback(async () => {
+    if (!pendingApiKey) return;
+    await resetDB();
+    await setApiKey(pendingApiKey);
+    setApiKeyState(pendingApiKey);
+    setLoginModalOpen(false);
+    setShowSwitch(false);
+    setCurrentConversationId(null);
+    await initializeUserAndData(pendingApiKey);
+  }, [pendingApiKey, initializeUserAndData]);
+
+  // 监听登录弹窗事件
+  useEffect(() => {
+    const handler = () => {
+      console.log("SHOW_LOGIN_MODAL event triggered");
+      setLoginModalOpen(true);
+    };
+    window.addEventListener("SHOW_LOGIN_MODAL", handler);
+    return () => window.removeEventListener("SHOW_LOGIN_MODAL", handler);
+  }, []);
+
+  useEffect(() => {
+    const listener = async (changes: any, area: string) => {
+      if (area === "local" && changes.apiKey) {
+        const newApiKey = changes.apiKey.newValue;
+        if (!newApiKey) return;
+
+        // 用新 apiKey 获取新 userId
+        const res = await fetch(`${env.BACKEND_URL}/v1/user`, {
+          method: "GET",
+          headers: {
+            "x-api-key": newApiKey,
+            "Content-Type": "application/json",
+          },
+        });
+        const data = await res.json();
+        const newUserId = data?.user?.user_id;
+
+        // 这里一定要用 getCurrentUser 拿到"切换前"的 userId
+        const user = await db.getCurrentUser();
+        const oldUserId = user?.id;
+
+        console.log("API Key changed:", newApiKey);
+        console.log("oldUserId:", oldUserId, "newUserId:", newUserId);
+
+        if (oldUserId && newUserId && oldUserId !== newUserId) {
+          // 只要 userId 变了，先弹窗，不要立刻初始化新账号
+          setPendingApiKey(newApiKey);
+          setPendingUserId(newUserId);
+          setCurrentUserId(oldUserId);
+          setShowSwitch(true);
+          setLoginModalOpen(true);
+        } else {
+          // 只有 userId 没变时，才自动初始化
+          setApiKeyState(newApiKey);
+          await initializeUserAndData(newApiKey);
+        }
+      }
+    };
+    chrome.storage.onChanged.addListener(listener);
+    return () => chrome.storage.onChanged.removeListener(listener);
+  }, []);
 
   // 首次加载
   useEffect(() => {
@@ -383,19 +380,6 @@ const Sidepanel = () => {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    const listener = (changes: any, area: string) => {
-      if (area === "local" && changes.apiKey) {
-        setApiKeyState(changes.apiKey.newValue);
-        if (changes.apiKey.newValue) {
-          window.location.reload();
-        }
-      }
-    };
-    chrome.storage.onChanged.addListener(listener);
-    return () => chrome.storage.onChanged.removeListener(listener);
-  }, []);
 
   useEffect(() => {
     const checkLogin = async () => {
