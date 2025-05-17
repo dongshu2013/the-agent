@@ -1,12 +1,13 @@
 import { Modal } from "antd";
 import { env } from "~/utils/env";
 import MystaLogo from "~/assets/mysta-logo.png";
+import { UserInfo } from "~/utils/db";
 
 interface LoginModalProps {
   open: boolean;
   showSwitch: boolean;
-  pendingUserId?: string | null;
-  currentUserId?: string | null;
+  pendingUser?: UserInfo | null;
+  currentUser?: UserInfo | null;
   onContinue?: () => void;
   onClose?: () => void;
 }
@@ -14,14 +15,20 @@ interface LoginModalProps {
 export default function LoginModal({
   open,
   showSwitch,
-  pendingUserId,
-  currentUserId,
+  pendingUser,
+  currentUser,
   onContinue,
   onClose,
 }: LoginModalProps) {
   const handleLogin = () => {
     const webUrl = env.WEB_URL;
     window.open(webUrl, "_blank");
+  };
+
+  // 获取友好的用户名
+  const getDisplayName = (user?: UserInfo | null) => {
+    if (!user) return "None";
+    return user.username || user.email || "unknown";
   };
 
   return (
@@ -50,10 +57,14 @@ export default function LoginModal({
             Detected Mysta account change, switch?
             <div style={{ fontSize: 14, color: "#333", marginTop: 8 }}>
               Current account:{" "}
-              <span style={{ color: "#888" }}>{currentUserId || "None"}</span>
+              <span style={{ color: "#888" }}>
+                {getDisplayName(currentUser)}
+              </span>
               <br />
               New account:{" "}
-              <span style={{ color: "#22c55e" }}>{pendingUserId || "无"}</span>
+              <span style={{ color: "#22c55e" }}>
+                {getDisplayName(pendingUser)}
+              </span>
             </div>
           </div>
           <button

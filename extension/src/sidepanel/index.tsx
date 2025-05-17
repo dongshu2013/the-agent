@@ -12,7 +12,7 @@ import {
   getConversations,
 } from "../services/conversation";
 import { getApiKey, setApiKey } from "~/services/cache";
-import { db, resetDB } from "~/utils/db";
+import { db, resetDB, UserInfo } from "~/utils/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ChatHandler } from "../services/chat-handler";
 import { env } from "~/utils/env";
@@ -37,14 +37,12 @@ const Sidepanel = () => {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [showSwitch, setShowSwitch] = useState(false);
   const [pendingApiKey, setPendingApiKey] = useState<string | null>(null);
-  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [pendingUser, setPendingUser] = useState<UserInfo | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
 
   // 用于生成有序消息ID
   let messageIdOffset = 0;
   const generateMessageId = () => Date.now() + messageIdOffset++;
-
-  console.log(".........初始化数据.,.,.,", showSwitch, loginModalOpen);
 
   // 数据查询
   const messages =
@@ -56,11 +54,10 @@ const Sidepanel = () => {
       [currentConversationId]
     ) ?? [];
 
-  console.log("........", currentUserId);
   const conversations =
     useLiveQuery(
-      () => (currentUserId ? db.getAllConversations(currentUserId) : []),
-      [currentUserId]
+      () => (currentUser ? db.getAllConversations(currentUser.id) : []),
+      [currentUser?.id]
     ) ?? [];
 
   const redirectToLogin = useCallback(() => {
@@ -105,7 +102,6 @@ const Sidepanel = () => {
 
         const verifyData = await verifyResponse.json();
 
-        console.log(".........😊😊.,.,.,", verifyData);
         if (verifyData.success && verifyData.user) {
           await db.initModels(verifyData.user.user_id);
 
@@ -125,7 +121,7 @@ const Sidepanel = () => {
           };
 
           await db.saveOrUpdateUser(userInfo);
-          setCurrentUserId(verifyData.user.user_id);
+          setCurrentUser(verifyData.user);
 
           setLoginModalOpen(false);
 
@@ -199,8 +195,8 @@ const Sidepanel = () => {
         if (oldUserId && newUserId && oldUserId !== newUserId) {
           // 只要 userId 变了，先弹窗，不要立刻初始化新账号
           setPendingApiKey(newApiKey);
-          setPendingUserId(newUserId);
-          setCurrentUserId(oldUserId);
+          setPendingUser(data.user);
+          setCurrentUser(user);
           setShowSwitch(true);
           setLoginModalOpen(true);
         } else {
@@ -542,8 +538,8 @@ const Sidepanel = () => {
       <LoginModal
         open={loginModalOpen}
         showSwitch={showSwitch}
-        pendingUserId={pendingUserId}
-        currentUserId={currentUserId}
+        pendingUser={pendingUser}
+        currentUser={currentUser}
         onContinue={handleSwitchAccount}
         onClose={() => {
           setLoginModalOpen(false);

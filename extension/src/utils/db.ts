@@ -8,7 +8,7 @@ import { PROVIDER_MODELS } from "./models";
 
 export const systemModelId = "system";
 
-interface UserInfo {
+export interface UserInfo {
   id: string;
   username: string;
   email: string | null;
