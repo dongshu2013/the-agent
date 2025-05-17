@@ -56,7 +56,10 @@ const Sidepanel = () => {
 
   const conversations =
     useLiveQuery(
-      () => (currentUser ? db.getAllConversations(currentUser.id) : []),
+      () =>
+        currentUser && currentUser.id
+          ? db.getAllConversations(currentUser.id)
+          : [],
       [currentUser?.id]
     ) ?? [];
 
