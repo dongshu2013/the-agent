@@ -12,7 +12,7 @@ import {
   getConversations,
 } from "../services/conversation";
 import { getApiKey, setApiKey } from "~/services/cache";
-import { db, resetDB } from "~/utils/db";
+import { db, resetDB, UserInfo } from "~/utils/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { ChatHandler } from "../services/chat-handler";
 import { env } from "~/utils/env";
@@ -37,32 +37,27 @@ const Sidepanel = () => {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [showSwitch, setShowSwitch] = useState(false);
   const [pendingApiKey, setPendingApiKey] = useState<string | null>(null);
-  const [pendingUserId, setPendingUserId] = useState<string | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [dbInstance, setDbInstance] = useState(db);
+  const [pendingUser, setPendingUser] = useState<UserInfo | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
 
   // 用于生成有序消息ID
   let messageIdOffset = 0;
   const generateMessageId = () => Date.now() + messageIdOffset++;
-
-  console.log(".........初始化数据.,.,.,", showSwitch, loginModalOpen);
 
   // 数据查询
   const messages =
     useLiveQuery(
       () =>
         currentConversationId
-          ? dbInstance.getMessagesByConversation(currentConversationId)
+          ? db.getMessagesByConversation(currentConversationId)
           : [],
-      [currentConversationId, dbInstance]
+      [currentConversationId]
     ) ?? [];
 
-  console.log("........", currentUserId);
   const conversations =
     useLiveQuery(
-      () =>
-        currentUserId ? dbInstance.getAllConversations(currentUserId) : [],
-      [dbInstance, currentUserId]
+      () => (currentUser ? db.getAllConversations(currentUser.id) : []),
+      [currentUser?.id]
     ) ?? [];
 
   const redirectToLogin = useCallback(() => {
@@ -87,6 +82,81 @@ const Sidepanel = () => {
     },
     [currentConversationId]
   );
+
+  const initializeUserAndData = useCallback(
+    async (apiKeyToUse: string) => {
+      try {
+        setIsLoading(true);
+        const verifyResponse = await fetch(`${env.BACKEND_URL}/v1/user`, {
+          method: "GET",
+          headers: {
+            "x-api-key": apiKeyToUse,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!verifyResponse.ok) {
+          setLoginModalOpen(true);
+          return;
+        }
+
+        const verifyData = await verifyResponse.json();
+
+        if (verifyData.success && verifyData.user) {
+          await db.initModels(verifyData.user.user_id);
+
+          const now = new Date().toISOString();
+          const userInfo = {
+            id: verifyData.user.user_id,
+            username:
+              verifyData.user.displayName || verifyData.user.email || "unknown",
+            email: verifyData.user.email,
+            api_key_enabled: true,
+            api_key: apiKeyToUse,
+            credits: verifyData.user.credits || "0",
+            created_at: now,
+            updated_at: now,
+            selectedModelId: "system",
+            photo_url: verifyData.user.photoURL,
+          };
+
+          await db.saveOrUpdateUser(userInfo);
+          setCurrentUser(verifyData.user);
+
+          setLoginModalOpen(false);
+
+          const dbConversations = await db.getAllConversations(
+            verifyData.user.user_id
+          );
+          if (
+            !currentConversationId ||
+            !(await db.getConversation(currentConversationId))
+          ) {
+            if (dbConversations?.length > 0) {
+              setCurrentConversationId(dbConversations[0].id);
+            } else {
+              const newConv = await createNewConversation();
+              setCurrentConversationId(newConv.id);
+            }
+          }
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [currentConversationId]
+  );
+
+  const handleSwitchAccount = useCallback(async () => {
+    if (!pendingApiKey) return;
+    await resetDB();
+    await setApiKey(pendingApiKey);
+    setApiKeyState(pendingApiKey);
+    setLoginModalOpen(false);
+    setShowSwitch(false);
+    setCurrentConversationId(null);
+    await initializeUserAndData(pendingApiKey);
+  }, [pendingApiKey, initializeUserAndData]);
 
   // 监听登录弹窗事件
   useEffect(() => {
@@ -125,8 +195,8 @@ const Sidepanel = () => {
         if (oldUserId && newUserId && oldUserId !== newUserId) {
           // 只要 userId 变了，先弹窗，不要立刻初始化新账号
           setPendingApiKey(newApiKey);
-          setPendingUserId(newUserId);
-          setCurrentUserId(oldUserId);
+          setPendingUser(data.user);
+          setCurrentUser(user);
           setShowSwitch(true);
           setLoginModalOpen(true);
         } else {
@@ -139,83 +209,6 @@ const Sidepanel = () => {
     chrome.storage.onChanged.addListener(listener);
     return () => chrome.storage.onChanged.removeListener(listener);
   }, []);
-
-  const handleSwitchAccount = useCallback(async () => {
-    if (!pendingApiKey) return;
-    const newDb = await resetDB();
-    setDbInstance(newDb);
-    await setApiKey(pendingApiKey);
-    setApiKeyState(pendingApiKey);
-    setLoginModalOpen(false);
-    setShowSwitch(false);
-    setCurrentConversationId(null);
-    await initializeUserAndData(pendingApiKey);
-  }, [pendingApiKey]);
-
-  const initializeUserAndData = useCallback(
-    async (apiKeyToUse: string) => {
-      try {
-        setIsLoading(true);
-        const verifyResponse = await fetch(`${env.BACKEND_URL}/v1/user`, {
-          method: "GET",
-          headers: {
-            "x-api-key": apiKeyToUse,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!verifyResponse.ok) {
-          setLoginModalOpen(true);
-          return;
-        }
-
-        const verifyData = await verifyResponse.json();
-
-        console.log(".........😊😊.,.,.,", verifyData);
-        if (verifyData.success && verifyData.user) {
-          await db.initModels(verifyData.user.user_id);
-
-          const now = new Date().toISOString();
-          const userInfo = {
-            id: verifyData.user.user_id,
-            username:
-              verifyData.user.displayName || verifyData.user.email || "unknown",
-            email: verifyData.user.email,
-            api_key_enabled: true,
-            api_key: apiKeyToUse,
-            credits: verifyData.user.credits || "0",
-            created_at: now,
-            updated_at: now,
-            selectedModelId: "system",
-            photo_url: verifyData.user.photoURL,
-          };
-
-          await db.saveOrUpdateUser(userInfo);
-          setCurrentUserId(verifyData.user.user_id);
-
-          setLoginModalOpen(false);
-
-          const dbConversations = await db.getAllConversations(
-            verifyData.user.user_id
-          );
-          if (
-            !currentConversationId ||
-            !(await db.getConversation(currentConversationId))
-          ) {
-            if (dbConversations?.length > 0) {
-              setCurrentConversationId(dbConversations[0].id);
-            } else {
-              const newConv = await createNewConversation();
-              setCurrentConversationId(newConv.id);
-            }
-          }
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [currentConversationId]
-  );
 
   // 首次加载
   useEffect(() => {
@@ -385,19 +378,6 @@ const Sidepanel = () => {
   };
 
   useEffect(() => {
-    const listener = (changes: any, area: string) => {
-      if (area === "local" && changes.apiKey) {
-        setApiKeyState(changes.apiKey.newValue);
-        if (changes.apiKey.newValue) {
-          window.location.reload();
-        }
-      }
-    };
-    chrome.storage.onChanged.addListener(listener);
-    return () => chrome.storage.onChanged.removeListener(listener);
-  }, []);
-
-  useEffect(() => {
     const checkLogin = async () => {
       const key = await getApiKey();
       if (!key) {
@@ -558,8 +538,8 @@ const Sidepanel = () => {
       <LoginModal
         open={loginModalOpen}
         showSwitch={showSwitch}
-        pendingUserId={pendingUserId}
-        currentUserId={currentUserId}
+        pendingUser={pendingUser}
+        currentUser={currentUser}
         onContinue={handleSwitchAccount}
         onClose={() => {
           setLoginModalOpen(false);
