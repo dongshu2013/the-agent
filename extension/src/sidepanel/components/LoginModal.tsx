@@ -25,7 +25,6 @@ export default function LoginModal({
     window.open(webUrl, "_blank");
   };
 
-  // 获取友好的用户名
   const getDisplayName = (user?: UserInfo | null) => {
     if (!user) return "None";
     return user.username || user.email || "unknown";
@@ -38,14 +37,15 @@ export default function LoginModal({
       centered
       closable={false}
       width={400}
-      bodyStyle={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        borderRadius: 24,
+      styles={{
+        body: {
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          borderRadius: 24,
+        },
       }}
     >
-      {/* Logo */}
       <img
         src={MystaLogo}
         alt="Mysta Logo"
