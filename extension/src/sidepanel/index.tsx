@@ -21,8 +21,7 @@ import { showLoginModal } from "~/utils/global-event";
 import LoadingBrain from "./components/LoadingBrain";
 
 const Sidepanel = () => {
-  // 状态管理
-  const [apiKey, setApiKeyState] = useStorage("apiKey");
+  const [apiKey, setApiKeyState] = useStorage<string>("apiKey", "");
   const [isLoading, setIsLoading] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [currentConversationId, setCurrentConversationId] = useStorage<
@@ -40,7 +39,6 @@ const Sidepanel = () => {
   const [pendingUser, setPendingUser] = useState<UserInfo | null>(null);
   const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
 
-  // 用于生成有序消息ID
   let messageIdOffset = 0;
   const generateMessageId = () => Date.now() + messageIdOffset++;
 
@@ -53,6 +51,8 @@ const Sidepanel = () => {
           : [],
       [currentConversationId]
     ) ?? [];
+
+  console.log("currentUser ===== ", currentUser);
 
   const conversations =
     useLiveQuery(
@@ -124,7 +124,7 @@ const Sidepanel = () => {
           };
 
           await db.saveOrUpdateUser(userInfo);
-          setCurrentUser(verifyData.user);
+          setCurrentUser(userInfo);
 
           setLoginModalOpen(false);
 
@@ -161,7 +161,6 @@ const Sidepanel = () => {
     await initializeUserAndData(pendingApiKey);
   }, [pendingApiKey, initializeUserAndData]);
 
-  // 监听登录弹窗事件
   useEffect(() => {
     const handler = () => {
       console.log("SHOW_LOGIN_MODAL event triggered");
@@ -203,7 +202,6 @@ const Sidepanel = () => {
           setShowSwitch(true);
           setLoginModalOpen(true);
         } else {
-          // 只有 userId 没变时，才自动初始化
           setApiKeyState(newApiKey);
           await initializeUserAndData(newApiKey);
         }
@@ -253,7 +251,7 @@ const Sidepanel = () => {
     if (apiKey && currentConversationId) {
       setChatHandler(
         new ChatHandler({
-          apiKey,
+          apiKey: apiKey as string,
           currentConversationId,
           onError: (error) => {
             if (
@@ -388,6 +386,12 @@ const Sidepanel = () => {
       }
     };
     checkLogin();
+  }, []);
+
+  useEffect(() => {
+    chrome.storage.local.get("apiKey", (result) => {
+      if (result.apiKey) setApiKeyState(result.apiKey);
+    });
   }, []);
 
   return (
