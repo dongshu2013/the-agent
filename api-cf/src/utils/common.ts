@@ -6,7 +6,7 @@ export const corsHeaders = {
 
 export const DEFAULT_MODEL = 'deepseek/deepseek-chat';
 
-export const FIREBASE_PROJECT_ID = 'ashcoin-51786';
+export const FIREBASE_PROJECT_ID = 'mysta-ai';
 
 export const AMOUNT_BASE = 1000000; // 10^6 = 1USDT
 
