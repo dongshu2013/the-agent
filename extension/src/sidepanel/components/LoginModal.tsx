@@ -1,6 +1,7 @@
 import { Modal } from "antd";
 import { env } from "~/utils/env";
-import MystaLogo from "~/assets/mysta-logo.png";
+import logoIcon from "~/assets/icon64.png";
+import betaIcon from "~/assets/beta.png";
 import { UserInfo } from "~/utils/db";
 
 interface LoginModalProps {
@@ -25,7 +26,6 @@ export default function LoginModal({
     window.open(webUrl, "_blank");
   };
 
-  // 获取友好的用户名
   const getDisplayName = (user?: UserInfo | null) => {
     if (!user) return "None";
     return user.username || user.email || "unknown";
@@ -38,23 +38,48 @@ export default function LoginModal({
       centered
       closable={false}
       width={400}
-      bodyStyle={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        borderRadius: 24,
+      styles={{
+        body: {
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          borderRadius: 24,
+        },
       }}
     >
-      {/* Logo */}
-      <img
-        src={MystaLogo}
-        alt="Mysta Logo"
-        style={{ width: 218, height: "auto", marginBottom: 16 }}
-      />
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "10px",
+        marginBottom: "24px",
+      }}>
+        <img 
+          src={logoIcon}
+          alt="Mysta Logo" 
+          style={{ 
+            height: "40px" 
+          }} 
+        />
+        <h2 style={{ 
+          margin: "0", 
+          fontSize: "40px",
+          fontWeight: "600",
+        }}>
+          MYSTA
+        </h2>
+        <img 
+          src={betaIcon}
+          alt="Beta" 
+          style={{ 
+            height: "20px",
+          }} 
+        />
+      </div>
       {showSwitch ? (
         <>
           <div style={{ color: "#e11d48", fontWeight: 500, marginBottom: 16 }}>
-            Detected Mysta account change, switch?
+            New Mysta account detected
             <div style={{ fontSize: 14, color: "#333", marginTop: 8 }}>
               Current account:{" "}
               <span style={{ color: "#888" }}>
@@ -75,7 +100,7 @@ export default function LoginModal({
               height: 48,
               borderRadius: 24,
               border: "1.5px solid #d1d5db",
-              background: "#22c55e",
+              background: "#000",
               color: "#fff",
               fontSize: 18,
               fontWeight: 500,
@@ -113,17 +138,17 @@ export default function LoginModal({
             height: 48,
             borderRadius: 24,
             border: "1.5px solid #d1d5db",
-            background: "#fff",
+            background: "#000",
             fontSize: 18,
             fontWeight: 500,
-            color: "#222",
+            color: "#fff",
             marginBottom: 24,
             boxShadow: "0 1px 4px 0 rgba(0,0,0,0.04)",
             cursor: "pointer",
             transition: "background 0.2s, color 0.2s",
           }}
         >
-          <span>Sign in with Mysta Web</span>
+          <span>Sign In with Mysta Web</span>
         </button>
       )}
     </Modal>

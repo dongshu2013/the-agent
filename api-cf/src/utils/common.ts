@@ -6,7 +6,7 @@ export const corsHeaders = {
 
 export const DEFAULT_MODEL = 'deepseek/deepseek-chat';
 
-export const FIREBASE_PROJECT_ID = 'ashcoin-51786';
+export const FIREBASE_PROJECT_ID = 'mysta-ai';
 
 export const AMOUNT_BASE = 1000000; // 10^6 = 1USDT
 
@@ -22,7 +22,7 @@ export const COST_MULTIPLIERS = {
 
 // Constants for save message embedding cost calculations
 export const TOKEN_COST_MULTIPLIER = 0.01; // Cost per token
-export const DATA_SIZE_COST_MULTIPLIER = 0.002; // Cost per byte
+export const DATA_SIZE_COST_MULTIPLIER = 1; // Cost per GB
 
 export interface ModelPricing {
   inputPrice: number;
@@ -31,25 +31,6 @@ export interface ModelPricing {
 
 // Cost per million tokens for the prompt.
 export const MODEL_PRICING: Record<string, ModelPricing> = {
-  // Gemini
-  // 'google/gemini-2.0-flash-exp:free': {
-  //   inputPrice: 0,
-  //   outputPrice: 0,
-  // },
-  // 'google/gemini-2.0-flash-001': {
-  //   inputPrice: 0.1,
-  //   outputPrice: 0.4,
-  // },
-  // 'google/gemini-2.5-pro-preview-03-25': {
-  //   inputPrice: 1.25,
-  //   outputPrice: 10,
-  // },
-
-  // DeepSeek
-  // 'deepseek/deepseek-r1-distill-llama-70b': {
-  //   inputPrice: 0.0,
-  //   outputPrice: 0.0,
-  // },
   'deepseek/deepseek-chat': {
     inputPrice: 0.28,
     outputPrice: 1.11,
@@ -58,10 +39,9 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
     inputPrice: 0.28,
     outputPrice: 1.11,
   },
-
   // Embedding Models
   'intfloat/multilingual-e5-large': {
-    inputPrice: 1, // Price per million tokens
+    inputPrice: 0.02, // Price per million tokens
     outputPrice: 0, // Embeddings don't have output tokens
   },
 };

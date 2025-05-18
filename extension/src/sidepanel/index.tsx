@@ -19,6 +19,8 @@ import { env } from "~/utils/env";
 import LoginModal from "./components/LoginModal";
 import { showLoginModal } from "~/utils/global-event";
 import LoadingBrain from "./components/LoadingBrain";
+import logoIcon from "~/assets/icon64.png";
+import betaIcon from "~/assets/beta.png";
 
 const Sidepanel = () => {
   const [apiKey, setApiKeyState] = useStorage<string>("apiKey", "");
@@ -440,48 +442,45 @@ const Sidepanel = () => {
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
-                padding: "64px 0",
+                padding: "120px 24px",
+                minHeight: "100%",
               }}
             >
-              <h1
-                style={{
+              <div style={{
+                maxWidth: "480px",
+                textAlign: "center",
+              }}>
+                <h3 style={{
                   fontSize: "28px",
-                  fontWeight: 600,
-                  color: "#1f2937",
+                  fontWeight: "600",
+                  color: "#374151",
                   marginBottom: "16px",
-                  letterSpacing: "-0.025em",
-                }}
-              >
-                Welcome to Mysta
-              </h1>
-              <p
-                style={{
+                  lineHeight: "1.3",
+                }}>
+                  Ask anything. Automate everything.
+                </h3>
+                <p style={{
                   fontSize: "16px",
-                  color: "#4b5563",
-                  textAlign: "center",
-                  marginBottom: "32px",
+                  color: "#6b7280",
                   lineHeight: "1.6",
-                  maxWidth: "450px",
-                }}
-              >
-                Start a new conversation to explore the AI's capabilities.
-                <br />
-                Ask a question, get help, or brainstorm ideas.
-              </p>
-              {!apiKey && (
-                <p
-                  style={{
-                    fontSize: "14px",
-                    color: "#6b7280",
-                    textAlign: "center",
-                    maxWidth: "400px",
-                    lineHeight: "1.5",
-                  }}
-                >
-                  You haven't set up your API key yet. Please login to your web
-                  account to get started.
+                  marginBottom: !apiKey ? "32px" : "0",
+                }}>
+                  Start typing — your AI agent is here to help.
                 </p>
-              )}
+                {!apiKey && (
+                  <p
+                    style={{
+                      fontSize: "14px",
+                      color: "#9ca3af",
+                      maxWidth: "400px",
+                      lineHeight: "1.5",
+                    }}
+                  >
+                    You haven't set up your API key yet. Please login to your web
+                    account to get started.
+                  </p>
+                )}
+              </div>
             </div>
           ) : (
             <div style={{ paddingBottom: "32px" }}>

@@ -20,15 +20,14 @@ export default function Home() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-blue-50 to-green-50">
       <div className="w-full max-w-[560px] bg-white rounded-[20px] p-12 shadow-lg">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-[240px] h-[96px] relative">
-            <Image
-              src="/mysta-brand-logo.png"
-              alt="Mysta Logo"
-              fill
-              style={{ objectFit: 'contain' }}
-              priority
-            />
+          <div className="flex items-center gap-2.5">
+            <Image src="/mysta-logo.png" alt="Mysta Logo" width={40} height={40} />
+            <h1 className="text-[40px] font-semibold text-gray-900 dark:text-white m-0">MYSTA</h1>
+            <Image src="/beta.png" alt="Beta" width={50} height={20} />
           </div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mt-4">
+            Your private AI, in your browser.
+          </h2>
         </div>
 
         <div className="space-y-4">
@@ -49,11 +48,11 @@ export default function Home() {
 
         <div className="mt-6 text-center text-sm text-gray-500 whitespace-nowrap">
           By signing up, you agree to our{' '}
-          <Link href="/tos" className="text-blue-500 hover:text-blue-600">
+          <Link href="/tos" target="_blank" className="text-blue-500 hover:text-blue-600">
             Terms and Conditions
           </Link>{' '}
           and{' '}
-          <Link href="/privacy" className="text-blue-500 hover:text-blue-600">
+          <Link href="/privacy" target="_blank" className="text-blue-500 hover:text-blue-600">
             Privacy Policy
           </Link>
         </div>
