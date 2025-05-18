@@ -11,45 +11,27 @@ export const FIREBASE_PROJECT_ID = 'mysta-ai';
 export const AMOUNT_BASE = 1000000; // 10^6 = 1USDT
 
 export function getCreditFromAmount(amount: number) {
-  return amount * AMOUNT_BASE;
+  return Math.max(1, Math.ceil(amount));
 }
 
 // Cost multipliers for different types of operations
 export const COST_MULTIPLIERS = {
-  input: 1.0, // Base multiplier for input tokens
-  output: 1.2, // Higher multiplier for output tokens to account for generation costs
+  inference: 3, // Base multiplier for ai tokens
+  embedding: 5,
 };
 
 // Constants for save message embedding cost calculations
-export const TOKEN_COST_MULTIPLIER = 0.01; // Cost per token
-export const DATA_SIZE_COST_MULTIPLIER = 0.002; // Cost per byte
+export const API_COST_PRICE = 1; // credit cost per call
+export const EMBEDDING_QUERY_COST_PRICE = 10.24; // credit cost per embedding query
+export const DATA_COST_PRICE = 0.001; // credit cost per byte
 
 export interface ModelPricing {
   inputPrice: number;
   outputPrice: number;
 }
 
-// Cost per million tokens for the prompt.
+// credit cost per token for the prompt.
 export const MODEL_PRICING: Record<string, ModelPricing> = {
-  // Gemini
-  // 'google/gemini-2.0-flash-exp:free': {
-  //   inputPrice: 0,
-  //   outputPrice: 0,
-  // },
-  // 'google/gemini-2.0-flash-001': {
-  //   inputPrice: 0.1,
-  //   outputPrice: 0.4,
-  // },
-  // 'google/gemini-2.5-pro-preview-03-25': {
-  //   inputPrice: 1.25,
-  //   outputPrice: 10,
-  // },
-
-  // DeepSeek
-  // 'deepseek/deepseek-r1-distill-llama-70b': {
-  //   inputPrice: 0.0,
-  //   outputPrice: 0.0,
-  // },
   'deepseek/deepseek-chat': {
     inputPrice: 0.28,
     outputPrice: 1.11,
@@ -58,11 +40,10 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
     inputPrice: 0.28,
     outputPrice: 1.11,
   },
-
   // Embedding Models
   'intfloat/multilingual-e5-large': {
-    inputPrice: 1, // Price per million tokens
-    outputPrice: 0, // Embeddings don't have output tokens
+    inputPrice: 0.02,
+    outputPrice: 0,
   },
 };
 

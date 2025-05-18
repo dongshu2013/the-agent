@@ -47,38 +47,42 @@ export default function LoginModal({
         },
       }}
     >
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "10px",
-        marginBottom: "24px",
-      }}>
-        <img 
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "10px",
+          marginBottom: "24px",
+        }}
+      >
+        <img
           src={logoIcon}
-          alt="Mysta Logo" 
-          style={{ 
-            height: "40px" 
-          }} 
+          alt="Mysta Logo"
+          style={{
+            height: "40px",
+          }}
         />
-        <h2 style={{ 
-          margin: "0", 
-          fontSize: "40px",
-          fontWeight: "600",
-        }}>
+        <h2
+          style={{
+            margin: "0",
+            fontSize: "40px",
+            fontWeight: "600",
+          }}
+        >
           MYSTA
         </h2>
-        <img 
+        <img
           src={betaIcon}
-          alt="Beta" 
-          style={{ 
+          alt="Beta"
+          style={{
             height: "20px",
-          }} 
+          }}
         />
       </div>
       {showSwitch ? (
         <>
-          <div style={{ color: "#e11d48", fontWeight: 500, marginBottom: 16 }}>
+          <div style={{ fontWeight: 500, marginBottom: 16 }}>
             New Mysta account detected
             <div style={{ fontSize: 14, color: "#333", marginTop: 8 }}>
               Current account:{" "}

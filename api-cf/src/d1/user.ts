@@ -226,7 +226,7 @@ export async function deductUserCredits(
     insertTxStmt.bind(
       userId,
       deductCredits,
-      TransactionType.DEBIT,
+      TransactionType.CREDIT,
       TransactionReason.COMPLETION,
       model
     ),

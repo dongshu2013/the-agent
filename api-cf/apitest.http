@@ -61,12 +61,12 @@ x-api-key: {{apiKey}}
 
 {
   "message": {
-    "id": 1747067974962,
-    "conversation_id": 1747244130473,
+    "id": 1747563300,
+    "conversation_id": 1747384379706,
     "role": "user",
     "content": "Hello, this is a test message"
   },
-  "top_k_related": 0,
+  "top_k_related": 3,
   "threshold": 0.7
 }
 

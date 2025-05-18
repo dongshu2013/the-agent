@@ -58,6 +58,7 @@ export class StripeCheckout extends OpenAPIRoute {
     const orderId = await createOrder(env, userId, params.amount);
     const options: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ['card'],
+      allow_promotion_codes: true,
       line_items: [
         {
           price_data: {

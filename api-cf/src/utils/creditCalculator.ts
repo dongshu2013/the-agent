@@ -2,8 +2,9 @@ import { GatewayServiceError } from '../types/service';
 import {
   MODEL_PRICING,
   COST_MULTIPLIERS,
-  TOKEN_COST_MULTIPLIER,
-  DATA_SIZE_COST_MULTIPLIER,
+  DATA_COST_PRICE,
+  API_COST_PRICE,
+  EMBEDDING_QUERY_COST_PRICE,
 } from './common';
 
 export interface TokenUsage {
@@ -14,8 +15,8 @@ export interface TokenUsage {
 export interface Cost {
   inputCost: number;
   outputCost: number;
-  dataSizeCost?: number;
   totalCost: number;
+  totalCostWithMultiplier: number;
 }
 
 export interface CreditCalculationResult {
@@ -36,19 +37,14 @@ export function calculateCredits(
   }
 
   // Calculate costs with multipliers (per 1M tokens)
-  const inputCost =
-    (tokenUsage.promptTokens * pricing.inputPrice * COST_MULTIPLIERS.input) /
-    1000000;
-  const outputCost =
-    (tokenUsage.completionTokens *
-      pricing.outputPrice *
-      COST_MULTIPLIERS.output) /
-    1000000;
-
+  const inputCost = tokenUsage.promptTokens * pricing.inputPrice;
+  const outputCost = tokenUsage.completionTokens * pricing.outputPrice;
+  const totalCost = inputCost + outputCost;
   const cost: Cost = {
     inputCost,
     outputCost,
-    totalCost: inputCost + outputCost,
+    totalCost,
+    totalCostWithMultiplier: totalCost * COST_MULTIPLIERS.inference,
   };
 
   return {
@@ -83,30 +79,37 @@ export function createStreamingTokenTracker() {
 
 /**
  * Calculates the credit cost for embeddings based on token usage and data size
+ * @param model The model name
+ * @param totalTokens Total number of tokens
+ * @param dataSize Data size in bytes
  */
 export function calculateEmbeddingCredits(
   model: string,
   totalTokens: number,
-  dataSize: number
+  dataSize: number,
+  topK: number
 ): Cost {
   const pricing = MODEL_PRICING[model];
   if (!pricing) {
     throw new GatewayServiceError(401, `${model} not found in model pricing`);
   }
+  // Cost per million calls
+  const apiCost = API_COST_PRICE;
 
-  // Calculate token-based cost
-  const tokenBasedCost =
-    (totalTokens * pricing.inputPrice * TOKEN_COST_MULTIPLIER) / 1000000;
+  // Calculate Embedding cost
+  const embeddingQueryCost = EMBEDDING_QUERY_COST_PRICE * topK;
+  const embeddingTokenCost = totalTokens * pricing.inputPrice;
+  const embeddingCost = embeddingQueryCost + embeddingTokenCost;
 
   // Calculate data size-based cost
-  const dataSizeCost = dataSize * DATA_SIZE_COST_MULTIPLIER;
+  const storageCost = dataSize * DATA_COST_PRICE;
 
-  const totalCost = tokenBasedCost + dataSizeCost;
+  const totalCost = apiCost + embeddingCost + storageCost;
 
   return {
-    inputCost: tokenBasedCost,
+    inputCost: embeddingCost,
     outputCost: 0, // Embeddings don't have output costs
-    dataSizeCost: dataSizeCost,
     totalCost: totalCost,
+    totalCostWithMultiplier: totalCost * COST_MULTIPLIERS.embedding,
   };
 }

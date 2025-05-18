@@ -104,15 +104,14 @@ export default function ProfilePage() {
       <header className="bg-white dark:bg-gray-800 shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="flex items-center">
-            <div className="relative w-[180px] h-[72px]">
-              <Image
-                src="/mysta-beta-logo.png"
-                alt="Mysta Logo"
-                fill
-                style={{ objectFit: 'contain' }}
-                priority
-              />
+            <div className="flex items-center gap-2.5">
+              <Image src="/mysta-logo.png" alt="Mysta Logo" width={40} height={40} />
+              <h1 className="text-[40px] font-semibold text-gray-900 dark:text-white m-0">MYSTA</h1>
+              <Image src="/beta.png" alt="Beta" width={50} height={20} />
             </div>
+            <span className="text-xl font-semibold text-gray-600 dark:text-gray-300 ml-4">
+              Dashboard
+            </span>
           </div>
           <button
             onClick={signOut}
@@ -178,7 +177,7 @@ export default function ProfilePage() {
               </div>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Use this API key to authenticate requests to the Mysta Agent API.
+              Use this API key to authenticate requests to the Mysta API.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
@@ -241,7 +240,7 @@ export default function ProfilePage() {
               Manage Your Data
             </h3>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Connect your data sources to enhance your Mysta Agent experience
+              Connect your data sources to enhance your Mysta experience
             </p>
           </div>
           <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-5 sm:p-6">
@@ -397,7 +396,7 @@ export default function ProfilePage() {
       </main>
 
       <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
-        {new Date().getFullYear()} Mysta Agent. All rights reserved.
+        {new Date().getFullYear()} MYSTA. All rights reserved.
       </footer>
 
       {/* Modals */}

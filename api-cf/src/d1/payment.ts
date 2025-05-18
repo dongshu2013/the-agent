@@ -71,7 +71,7 @@ export async function finalizeOrder(
     stmt2.bind(
       order.user_id,
       credits,
-      TransactionType.CREDIT,
+      TransactionType.DEBIT,
       TransactionReason.ORDER_PAY,
       orderId
     ),

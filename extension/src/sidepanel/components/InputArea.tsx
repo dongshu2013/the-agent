@@ -114,7 +114,7 @@ export default function InputArea({
               <button
                 type="button"
                 aria-label="Attach file"
-                onClick={handleAttachFile}
+                disabled={true}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -124,29 +124,33 @@ export default function InputArea({
                   borderRadius: "50%",
                   backgroundColor: "transparent",
                   border: "none",
-                  cursor: "pointer",
+                  cursor: "not-allowed",
+                  opacity: 0.5,
                   transition: "background-color 0.2s",
                 }}
                 onMouseOver={(e) => {
-                  e.currentTarget.style.backgroundColor = "#f3f4f6";
+                  // Disabled hover effect
                 }}
                 onMouseOut={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
+                  // Disabled hover effect
                 }}
               >
                 <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
+                  style={{
+                    width: "20px",
+                    height: "20px",
+                    color: "#9ca3af"
+                  }}
                   fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
                   <path
-                    fillRule="evenodd"
-                    clipRule="evenodd"
-                    d="M9 7C9 4.23858 11.2386 2 14 2C16.7614 2 19 4.23858 19 7V15C19 18.866 15.866 22 12 22C8.13401 22 5 18.866 5 15V9C5 8.44772 5.44772 8 6 8C6.55228 8 7 8.44772 7 9V15C7 17.7614 9.23858 20 12 20C14.7614 20 17 17.7614 17 15V7C17 5.34315 15.6569 4 14 4C12.3431 4 11 5.34315 11 7V15C11 15.5523 11.4477 16 12 16C12.5523 16 13 15.5523 13 15V9C13 8.44772 13.4477 8 14 8C14.5523 8 15 8.44772 15 9V15C15 16.6569 13.6569 18 12 18C10.3431 18 9 16.6569 9 15V7Z"
-                    fill="currentColor"
-                  ></path>
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                  />
                 </svg>
               </button>
               <input
@@ -160,44 +164,45 @@ export default function InputArea({
             <div style={{ flex: 1 }}></div>
 
             <button
-              id="audio-recorder"
               type="button"
-              aria-label="Use microphone"
-              title="Use microphone"
-              onClick={onRecordAudio}
+              aria-label="Record audio"
+              disabled={true}
               style={{
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                width: "36px",
-                height: "36px",
+                width: "32px",
+                height: "32px",
                 borderRadius: "50%",
                 backgroundColor: "transparent",
                 border: "none",
-                cursor: "pointer",
+                cursor: "not-allowed",
+                opacity: 0.5,
                 transition: "background-color 0.2s",
               }}
               onMouseOver={(e) => {
-                e.currentTarget.style.backgroundColor = "#f3f4f6";
+                // Disabled hover effect
               }}
               onMouseOut={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
+                // Disabled hover effect
               }}
             >
               <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
+                style={{
+                  width: "20px",
+                  height: "20px",
+                  color: "#9ca3af"
+                }}
                 fill="none"
-                stroke="#4b5563"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                <line x1="12" x2="12" y1="19" y2="22"></line>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
+                />
               </svg>
             </button>
 

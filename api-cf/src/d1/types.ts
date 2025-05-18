@@ -36,8 +36,8 @@ export enum OrderStatus {
 }
 
 export enum TransactionType {
-  CREDIT = 'credit',
-  DEBIT = 'debit',
+  CREDIT = 'credit', // cost credits
+  DEBIT = 'debit', // earn credits
 }
 
 export enum TransactionReason {
