@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Mysta Agent",
-  "version": "1.0.0",
-  "description": "Mysta Agent - AI Powered Chrome Extension",
+  "name": "Mysta",
+  "version": "0.1.0",
+  "description": "Mysta - Your private AI agent, in your browser.",
   "permissions": [
     "storage",
     "sidePanel",
