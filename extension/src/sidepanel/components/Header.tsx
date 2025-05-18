@@ -188,6 +188,16 @@ const Header = ({
     },
   ];
 
+  const buttonStyle = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    border: "none",
+    borderRadius: "50%",
+    padding: 0,
+    cursor: "pointer",
+  };
+
   return (
     <div
       style={{
@@ -209,50 +219,31 @@ const Header = ({
         }}
       >
         <button
+          style={buttonStyle}
           onClick={() => setShowConversationList(true)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "44px",
-            height: "44px",
-            color: "#6b7280",
-            background: "none",
-            border: "none",
-            padding: 0,
-            cursor: "pointer",
-            transition: "all 0.2s",
-            borderRadius: "8px",
-          }}
           onMouseOver={(e) => {
             e.currentTarget.style.color = "#374151";
-            e.currentTarget.style.backgroundColor = "#F3F4F6";
+            e.currentTarget.style.backgroundColor = "#E5E7EB";
           }}
           onMouseOut={(e) => {
             e.currentTarget.style.color = "#6b7280";
-            e.currentTarget.style.backgroundColor = "transparent";
+            e.currentTarget.style.backgroundColor = "#f3f4f6";
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <MessageCircleMore size={20} />
-          </div>
+          <MessageCircleMore color="#374151" />
         </button>
-        <span style={{
-          fontSize: "13px",
-          color: "#059669",
-          fontWeight: 600,
-          background: "#ECFDF5",
-          padding: "4px 8px",
-          borderRadius: "6px",
-          border: "1px solid #D1FAE5",
-          letterSpacing: "0.02em",
-        }}>
+        <span
+          style={{
+            fontSize: "13px",
+            color: "#059669",
+            fontWeight: 600,
+            background: "#ECFDF5",
+            padding: "4px 8px",
+            borderRadius: "6px",
+            border: "1px solid #D1FAE5",
+            letterSpacing: "0.02em",
+          }}
+        >
           BETA
         </span>
       </div>
@@ -265,31 +256,18 @@ const Header = ({
           onProviderSetting={handleProviderSetting}
         /> */}
         <button
+          style={buttonStyle}
           onClick={createNewConversation}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            width: "44px",
-            height: "44px",
-            color: "#6b7280",
-            background: "none",
-            border: "none",
-            padding: 0,
-            cursor: "pointer",
-            transition: "all 0.2s",
-            borderRadius: "8px",
-          }}
           onMouseOver={(e) => {
             e.currentTarget.style.color = "#374151";
-            e.currentTarget.style.backgroundColor = "#F3F4F6";
+            e.currentTarget.style.backgroundColor = "#E5E7EB";
           }}
           onMouseOut={(e) => {
             e.currentTarget.style.color = "#6b7280";
-            e.currentTarget.style.backgroundColor = "transparent";
+            e.currentTarget.style.backgroundColor = "#f3f4f6";
           }}
         >
-          <SquarePen size={20} />
+          <SquarePen color="#374151" />
         </button>
         <Dropdown
           menu={{ items: menuItems as ItemType[] }}
@@ -297,27 +275,30 @@ const Header = ({
           placement="bottomRight"
         >
           <button
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 36,
-              height: "auto",
-              borderRadius: "50%",
-              border: "none",
-              background: "#f3f4f6",
-              cursor: "pointer",
-              overflow: "hidden",
+            style={buttonStyle}
+            onMouseOver={(e) => {
+              e.currentTarget.style.color = "#374151";
+              e.currentTarget.style.backgroundColor = "#E5E7EB";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.color = "#6b7280";
+              e.currentTarget.style.backgroundColor = "#f3f4f6";
             }}
           >
             {user?.photoURL ? (
               <img
                 src={user.photoURL}
                 alt={user.username || "User"}
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  borderRadius: "50%",
+                  display: "block",
+                }}
               />
             ) : (
-              <UserIcon size={28} />
+              <UserIcon color="#374151" />
             )}
           </button>
         </Dropdown>

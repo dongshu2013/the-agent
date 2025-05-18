@@ -1,8 +1,8 @@
 {
-  "name": "mizu-agent",
-  "displayName": "Mysta",
+  "name": "the-agent",
+  "displayName": "MYSTA",
   "version": "0.1.0",
-  "description": "Mysta - Your private AI, in your browser.",
+  "description": "MYSTA - Your private AI, in your browser.",
   "manifest": {
     "permissions": [
       "storage",
