@@ -19,8 +19,6 @@ import { env } from "~/utils/env";
 import LoginModal from "./components/LoginModal";
 import { showLoginModal } from "~/utils/global-event";
 import LoadingBrain from "./components/LoadingBrain";
-import logoIcon from "~/assets/icon64.png";
-import betaIcon from "~/assets/beta.png";
 
 const Sidepanel = () => {
   const [apiKey, setApiKeyState] = useStorage<string>("apiKey", "");
@@ -74,7 +72,6 @@ const Sidepanel = () => {
     (error: any) => {
       db.saveMessage({
         id: generateMessageId(),
-        status: "error",
         content:
           typeof error === "string"
             ? error
@@ -246,7 +243,6 @@ const Sidepanel = () => {
     return () => chrome.runtime.onMessage.removeListener(handleMessages);
   }, [redirectToLogin]);
 
-  // 聊天处理器初始化
   useEffect(() => {
     if (apiKey && currentConversationId) {
       setChatHandler(
@@ -446,25 +442,31 @@ const Sidepanel = () => {
                 minHeight: "100%",
               }}
             >
-              <div style={{
-                maxWidth: "480px",
-                textAlign: "center",
-              }}>
-                <h3 style={{
-                  fontSize: "28px",
-                  fontWeight: "600",
-                  color: "#374151",
-                  marginBottom: "16px",
-                  lineHeight: "1.3",
-                }}>
+              <div
+                style={{
+                  maxWidth: "480px",
+                  textAlign: "center",
+                }}
+              >
+                <h3
+                  style={{
+                    fontSize: "28px",
+                    fontWeight: "600",
+                    color: "#374151",
+                    marginBottom: "16px",
+                    lineHeight: "1.3",
+                  }}
+                >
                   Ask anything. Automate everything.
                 </h3>
-                <p style={{
-                  fontSize: "16px",
-                  color: "#6b7280",
-                  lineHeight: "1.6",
-                  marginBottom: !apiKey ? "32px" : "0",
-                }}>
+                <p
+                  style={{
+                    fontSize: "16px",
+                    color: "#6b7280",
+                    lineHeight: "1.6",
+                    marginBottom: !apiKey ? "32px" : "0",
+                  }}
+                >
                   Start typing — your AI agent is here to help.
                 </p>
                 {!apiKey && (
@@ -476,8 +478,8 @@ const Sidepanel = () => {
                       lineHeight: "1.5",
                     }}
                   >
-                    You haven't set up your API key yet. Please login to your web
-                    account to get started.
+                    You haven't set up your API key yet. Please login to your
+                    web account to get started.
                   </p>
                 )}
               </div>

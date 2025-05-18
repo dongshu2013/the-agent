@@ -20,7 +20,7 @@ const MessageComponent = React.memo(function MessageComponent({
   message,
 }: Props) {
   const isUser = message?.role === "user";
-  const isError = message?.error === "error";
+  const isError = message?.role === "system";
   const [copySuccess, setCopySuccess] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const isTool = message?.role === "tool";
@@ -51,10 +51,7 @@ const MessageComponent = React.memo(function MessageComponent({
     if (message.role === "tool") return false;
     if (message.toolCalls?.length || message.tool_calls?.length) return false;
 
-    // AI 回复的复制按钮始终显示
     if (!isUser) return true;
-
-    // 用户消息的复制按钮只在 hover 时显示
     return isHovered;
   };
 
@@ -140,7 +137,6 @@ const MessageComponent = React.memo(function MessageComponent({
         ? (screenshotRaw as string)
         : null;
 
-    // 工具调用提示（只在 tool 消息中显示）
     const toolCallHint =
       message.role === "tool" && message.tool_calls?.length ? (
         <div style={{ marginTop: 8 }}>{renderToolCalls()}</div>
@@ -148,7 +144,6 @@ const MessageComponent = React.memo(function MessageComponent({
 
     return (
       <>
-        {/* 先文本描述和图片 */}
         <div
           style={{ width: "100%", overflow: "auto" }}
           dangerouslySetInnerHTML={{

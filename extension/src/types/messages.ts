@@ -42,9 +42,6 @@ export interface Message extends ChatMessage {
   id: number;
   created_at?: string;
   conversation_id: string;
-  status?: "pending" | "completed" | "error";
-  error?: string;
-  isLoading?: boolean;
   tokenUsage?: {
     promptTokens: number;
     completionTokens: number;

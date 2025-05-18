@@ -202,14 +202,12 @@ Keep responses concise and focused on the current task.
                 tool_calls: toolCalls,
               });
 
-              // 处理每个工具调用
               for (const toolCall of toolCalls) {
                 const toolResult = await toolExecutor.executeToolCall(toolCall);
                 const simplifiedName = toolCall.function.name
                   .replace("TabToolkit_", "")
                   .replace("WebToolkit_", "");
 
-                // 创建工具调用消息
                 const toolMessageId = generateMessageId();
                 const toolMessage: Message = {
                   id: toolMessageId,
@@ -238,7 +236,7 @@ Keep responses concise and focused on the current task.
                   content:
                     toolCall.function.name === "WebToolkit_screenshot"
                       ? `${toolResult.success ? "success" : "failed"}`
-                      : `${toolResult.success ? "success" : "failed"} ${JSON.stringify(toolResult.data)}`,
+                      : `${JSON.stringify(toolResult.data)}`,
                   tool_call_id: toolCall.id,
                 });
               }
@@ -248,14 +246,12 @@ Keep responses concise and focused on the current task.
           }
           return { content: accumulatedContent, tokenUsage: totalTokenUsage };
         } catch (error: any) {
-          console.error("Error in processRequest:", error);
           if (error.name === "AbortError") {
             await this.updateMessage({
               ...userMessage,
               content:
                 accumulatedContent +
                 `${accumulatedContent ? "\n\n" : ""}Stream aborted.`,
-              error: "Stream aborted",
               role: "system",
               tokenUsage: totalTokenUsage,
             });
@@ -264,8 +260,8 @@ Keep responses concise and focused on the current task.
             await this.updateMessage({
               id: generateMessageId(),
               role: "system",
-              content: `Network error, please try again later.`,
-              error: error.message,
+              content:
+                error?.message || "Network error, please try again later.",
               conversation_id: this.options.currentConversationId,
             });
           }
@@ -297,13 +293,11 @@ Now reply to user's message: ${currentPrompt}`,
         message: aiMessage,
       });
     } catch (error: any) {
-      console.error("Error in handleSubmit:", error);
       this.options.onError(error);
       await this.updateMessage({
         id: generateMessageId(),
         role: "system",
-        content: `Network error, please try again later.`,
-        error: error.message,
+        content: error?.message || "Network error, please try again later.",
         conversation_id: this.options.currentConversationId,
       });
     } finally {
