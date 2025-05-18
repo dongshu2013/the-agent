@@ -2,9 +2,9 @@
 
 ## Terms of Service Agreement
 
-Effective Date: 2025/05/18
+Effective Date: May 18, 2025
 
-Last Updated: 2025/05/18
+Last Updated: May 18, 2025
 
 This Terms of Service Agreement (“Agreement”) constitutes a legally binding contract between you (“User,” “you,” or “your”) and Mysta Technologies, Inc., a Delaware corporation (“Mysta,” “we,” “us,” or “our”), governing your access to and use of the Mysta browser-native software extension, documentation, related materials, and services (collectively, the “Service”).
 
@@ -84,8 +84,9 @@ Sections 4, 6, 7, 8, 9, and 10 survive termination.
 
 ## Privacy Policy
 
-Effective Date: [INSERT DATE]  
-Last Updated: [INSERT DATE]
+Effective Date: May 18, 2025
+
+Last Updated: May 18, 2025
 
 Mysta Technologies, Inc. (“Mysta”) respects your privacy. This Privacy Policy (“Policy”) describes our current data handling practices for the Mysta browser extension (the “Service”).
 
