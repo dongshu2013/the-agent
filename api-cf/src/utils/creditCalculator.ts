@@ -2,8 +2,10 @@ import { GatewayServiceError } from '../types/service';
 import {
   MODEL_PRICING,
   COST_MULTIPLIERS,
-  TOKEN_COST_MULTIPLIER,
-  DATA_SIZE_COST_MULTIPLIER,
+  DATA_COST_PRICE,
+  API_COST_PRICE,
+  EMBEDDING_QUERY_COST_PRICE,
+  CALCULATE_BASE,
 } from './common';
 
 export interface TokenUsage {
@@ -14,7 +16,6 @@ export interface TokenUsage {
 export interface Cost {
   inputCost: number;
   outputCost: number;
-  dataSizeCost?: number;
   totalCost: number;
 }
 
@@ -96,21 +97,34 @@ export function calculateEmbeddingCredits(
   if (!pricing) {
     throw new GatewayServiceError(401, `${model} not found in model pricing`);
   }
+  // Cost per million calls
+  const apiCost = API_COST_PRICE / CALCULATE_BASE;
 
-  // Calculate token-based cost
-  const tokenBasedCost =
-    (totalTokens * pricing.inputPrice * TOKEN_COST_MULTIPLIER) / 1000000;
+  // Calculate Emb cost
+  const embeddingQueryCost = EMBEDDING_QUERY_COST_PRICE / CALCULATE_BASE;
+  const embeddingTokenCost =
+    (totalTokens * pricing.inputPrice) / CALCULATE_BASE;
+  const embeddingCost = embeddingQueryCost + embeddingTokenCost;
 
   // Convert bytes to GB and calculate data size-based cost
   const sizeInGB = dataSize / (1024 * 1024 * 1024);
-  const dataSizeCost = sizeInGB * DATA_SIZE_COST_MULTIPLIER;
+  const storageCost = sizeInGB * DATA_COST_PRICE;
 
-  const totalCost = tokenBasedCost + dataSizeCost;
+  const totalCost = apiCost + embeddingCost + storageCost;
+
+  console.log('---calculateEmbeddingCredits', {
+    model,
+    totalTokens,
+    dataSize,
+    apiCost,
+    embeddingCost,
+    storageCost,
+    totalCost,
+  });
 
   return {
-    inputCost: tokenBasedCost,
+    inputCost: embeddingCost,
     outputCost: 0, // Embeddings don't have output costs
-    dataSizeCost: dataSizeCost,
     totalCost: totalCost,
   };
 }
