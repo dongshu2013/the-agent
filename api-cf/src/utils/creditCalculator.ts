@@ -5,7 +5,6 @@ import {
   DATA_COST_PRICE,
   API_COST_PRICE,
   EMBEDDING_QUERY_COST_PRICE,
-  CALCULATE_BASE,
 } from './common';
 
 export interface TokenUsage {
@@ -38,13 +37,9 @@ export function calculateCredits(
 
   // Calculate costs with multipliers (per 1M tokens)
   const inputCost =
-    (tokenUsage.promptTokens * pricing.inputPrice * COST_MULTIPLIERS.input) /
-    1000000;
+    tokenUsage.promptTokens * pricing.inputPrice * COST_MULTIPLIERS.input;
   const outputCost =
-    (tokenUsage.completionTokens *
-      pricing.outputPrice *
-      COST_MULTIPLIERS.output) /
-    1000000;
+    tokenUsage.completionTokens * pricing.outputPrice * COST_MULTIPLIERS.output;
 
   const cost: Cost = {
     inputCost,
@@ -98,17 +93,15 @@ export function calculateEmbeddingCredits(
     throw new GatewayServiceError(401, `${model} not found in model pricing`);
   }
   // Cost per million calls
-  const apiCost = API_COST_PRICE / CALCULATE_BASE;
+  const apiCost = API_COST_PRICE;
 
   // Calculate Emb cost
-  const embeddingQueryCost = EMBEDDING_QUERY_COST_PRICE / CALCULATE_BASE;
-  const embeddingTokenCost =
-    (totalTokens * pricing.inputPrice) / CALCULATE_BASE;
+  const embeddingQueryCost = EMBEDDING_QUERY_COST_PRICE;
+  const embeddingTokenCost = totalTokens * pricing.inputPrice;
   const embeddingCost = embeddingQueryCost + embeddingTokenCost;
 
-  // Convert bytes to GB and calculate data size-based cost
-  const sizeInGB = dataSize / (1024 * 1024 * 1024);
-  const storageCost = sizeInGB * DATA_COST_PRICE;
+  // Calculate data size-based cost
+  const storageCost = dataSize * DATA_COST_PRICE;
 
   const totalCost = apiCost + embeddingCost + storageCost;
 
