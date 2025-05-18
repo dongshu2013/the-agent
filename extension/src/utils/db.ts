@@ -21,14 +21,14 @@ export interface UserInfo {
   photoURL?: string;
 }
 
-class MizuDB extends Dexie {
+class MystaDB extends Dexie {
   conversations!: Table<Conversation>;
   messages!: Table<Message>;
   users!: Table<UserInfo>;
   models!: Table<Model>;
 
   constructor() {
-    super("mizu-agent");
+    super("mysta-agent");
 
     this.version(6).stores({
       conversations: "id, *messages, user_id",
@@ -384,12 +384,12 @@ class MizuDB extends Dexie {
   }
 }
 
-let dbInstance = new MizuDB();
+let dbInstance = new MystaDB();
 
 export async function resetDB() {
   await dbInstance.delete();
-  dbInstance = new MizuDB();
-  (window as any).mizuDB = dbInstance;
+  dbInstance = new MystaDB();
+  (window as any).mystaDB = dbInstance;
   return dbInstance;
 }
 
@@ -397,9 +397,9 @@ const dbProxy = new Proxy(
   {},
   {
     get(target, prop) {
-      return dbInstance[prop as keyof MizuDB];
+      return dbInstance[prop as keyof MystaDB];
     },
   }
 );
 
-export const db = dbProxy as MizuDB;
+export const db = dbProxy as MystaDB;
