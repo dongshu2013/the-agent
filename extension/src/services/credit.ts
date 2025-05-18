@@ -1,6 +1,6 @@
-import { showLoginModal } from "~/utils/global-event";
-import { env } from "../utils/env";
-import { getApiKey } from "./cache";
+import { showLoginModal } from '~/utils/global-event';
+import { env } from '../utils/env';
+import { getApiKey } from './cache';
 
 /**
  * Get user's available credits by calling the backend API
@@ -12,25 +12,25 @@ export const getUserCredits = async (): Promise<{
   error?: string;
 }> => {
   try {
-    const API_ENDPOINT = "/v1/credits/balance";
+    const API_ENDPOINT = '/v1/credits/balance';
     const apiKey = await getApiKey();
 
     if (!apiKey) {
       showLoginModal();
       return {
         success: false,
-        error: "Unauthorized",
+        error: 'Unauthorized',
       };
     }
 
     const headers: Record<string, string> = {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
-      "x-api-key": apiKey,
+      'x-api-key': apiKey,
     };
 
     const response = await fetch(`${env.BACKEND_URL}${API_ENDPOINT}`, {
-      method: "GET",
+      method: 'GET',
       headers,
     });
 
@@ -58,17 +58,17 @@ export const getUserCredits = async (): Promise<{
         credits: data.credits,
       };
     } else {
-      console.error("API returned success: false", data);
+      console.error('API returned success: false', data);
       return {
         success: false,
-        error: data.detail || "Unknown error occurred while getting credits",
+        error: data.detail || 'Unknown error occurred while getting credits',
       };
     }
   } catch (error) {
-    console.error("Failed to get user credits:", error);
+    console.error('Failed to get user credits:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error occurred",
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
     };
   }
 };
@@ -83,21 +83,21 @@ export const deductCreditsApi = async (
   model?: string
 ) => {
   try {
-    const API_ENDPOINT = "/v1/credits/deduct";
+    const API_ENDPOINT = '/v1/credits/deduct';
     const apiKey = await getApiKey();
 
     if (!apiKey) {
       showLoginModal();
       return {
         success: false,
-        error: "Unauthorized",
+        error: 'Unauthorized',
       };
     }
 
     const headers: Record<string, string> = {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
-      "x-api-key": apiKey,
+      'x-api-key': apiKey,
     };
 
     const requestBody = {
@@ -107,7 +107,7 @@ export const deductCreditsApi = async (
     };
 
     const response = await fetch(`${env.BACKEND_URL}${API_ENDPOINT}`, {
-      method: "POST",
+      method: 'POST',
       headers,
       body: JSON.stringify(requestBody),
     });
@@ -129,15 +129,13 @@ export const deductCreditsApi = async (
     const data = await response.json();
 
     if (!data.success) {
-      console.error("API returned success: false", data);
-      throw new Error(
-        data.detail || "Unknown error occurred during credit deduction"
-      );
+      console.error('API returned success: false', data);
+      throw new Error(data.detail || 'Unknown error occurred during credit deduction');
     }
 
     return data;
   } catch (error) {
-    console.error("Failed to deduct credits:", error);
+    console.error('Failed to deduct credits:', error);
     throw error;
   }
 };

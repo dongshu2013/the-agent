@@ -2,7 +2,7 @@
  * Tool calls functionality - will be expanded in future implementations
  */
 
-import { ToolCallResult } from "../types";
+import { ToolCallResult } from '../types';
 
 /**
  * Process a tool call request from an LLM
@@ -16,16 +16,14 @@ export async function executeToolCall(
   toolInput: Record<string, any>
 ): Promise<ToolCallResult> {
   try {
-    console.log(`Executing tool: ${toolName}`, toolInput);
-
     // This will be expanded with actual tool implementations
     // Placeholder for future development
     return {
       toolName,
       toolInput,
       toolOutput: {
-        status: "success",
-        message: "Tool call feature will be implemented in the next phase.",
+        status: 'success',
+        message: 'Tool call feature will be implemented in the next phase.',
         timestamp: new Date().toISOString(),
       },
     };
@@ -35,7 +33,7 @@ export async function executeToolCall(
       toolName,
       toolInput,
       toolOutput: null,
-      error: error instanceof Error ? error.message : "Unknown error occurred",
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
     };
   }
 }

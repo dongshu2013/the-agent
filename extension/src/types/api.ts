@@ -3,12 +3,9 @@
  * Defines all API-related interfaces used in the application
  */
 
-import { Model } from ".";
-import {
-  CreateConversationResponse,
-  SaveMessageResponse,
-} from "./conversations";
-import { ChatMessage } from "./messages";
+import { Model } from '.';
+import { CreateConversationResponse, SaveMessageResponse } from './conversations';
+import { ChatMessage } from './messages';
 
 /**
  * Chat request interface

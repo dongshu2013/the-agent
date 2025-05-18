@@ -2,15 +2,14 @@
  * 聊天服务 - 处理消息和聊天功能
  */
 
-import { Message } from "../types/messages";
-import { SaveMessageResponse } from "../types/conversations";
-import OpenAI from "openai";
-import { env } from "../utils/env";
-import { getApiKey } from "./cache";
-import { db } from "../utils/db";
-import { ChatRequest } from "../types/api";
-import { getToolDescriptions } from "../tools/tool-descriptions";
-import { showLoginModal } from "~/utils/global-event";
+import { Message } from '../types/messages';
+import { SaveMessageResponse } from '../types/conversations';
+import OpenAI from 'openai';
+import { env } from '../utils/env';
+import { getApiKey } from './cache';
+import { ChatRequest } from '../types/api';
+import { getToolDescriptions } from '../tools/tool-descriptions';
+import { showLoginModal } from '~/utils/global-event';
 
 // 发送聊天请求到后端
 export const sendChatCompletion = async (
@@ -25,13 +24,13 @@ export const sendChatCompletion = async (
     }
     const client = new OpenAI({
       apiKey: apiKey,
-      baseURL: env.BACKEND_URL + "/v1",
+      baseURL: env.BACKEND_URL + '/v1',
       dangerouslyAllowBrowser: true,
     });
 
     // get tool descriptions
-    const tools = getToolDescriptions().map((tool) => ({
-      type: "function" as const,
+    const tools = getToolDescriptions().map(tool => ({
+      type: 'function' as const,
       function: {
         name: tool.name,
         description: tool.description,
@@ -39,24 +38,22 @@ export const sendChatCompletion = async (
       },
     }));
 
-    console.log("request.currentModel", request.currentModel);
-
     return client.beta.chat.completions.stream(
       {
         model:
-          request.currentModel?.id === "system"
+          request.currentModel?.id === 'system'
             ? env.DEFAULT_MODEL
-            : request.currentModel?.name || "",
+            : request.currentModel?.name || '',
         messages: request.messages as OpenAI.Chat.ChatCompletionMessageParam[],
         tools: tools,
-        tool_choice: "auto",
+        tool_choice: 'auto',
       },
       {
         signal: options.signal,
       }
     );
   } catch (error: any) {
-    throw new Error(error.message || "Failed to send chat request");
+    throw new Error(error.message || 'Failed to send chat request');
   }
 };
 
@@ -71,19 +68,19 @@ export const saveMessageApi = async ({
   top_k_related?: number;
 }): Promise<SaveMessageResponse> => {
   try {
-    const API_ENDPOINT = "/v1/message/save";
+    const API_ENDPOINT = '/v1/message/save';
     const apiKey = await getApiKey();
     if (!apiKey) {
       showLoginModal();
       return {
         success: false,
-        error: "Unauthorized",
+        error: 'Unauthorized',
       };
     }
 
     const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
     };
 
     const requestBody = {
@@ -92,7 +89,7 @@ export const saveMessageApi = async ({
     };
 
     const response = await fetch(`${env.BACKEND_URL}${API_ENDPOINT}`, {
-      method: "POST",
+      method: 'POST',
       headers,
       body: JSON.stringify(requestBody),
     });
@@ -124,7 +121,7 @@ export const saveMessageApi = async ({
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Unknown error occurred",
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
     };
   }
 };

@@ -6,7 +6,7 @@
 /**
  * Memory strategy options
  */
-export type MemoryStrategy = "keep_all" | "window" | "summary" | "none";
+export type MemoryStrategy = 'keep_all' | 'window' | 'summary' | 'none';
 
 /**
  * Application settings
@@ -25,11 +25,11 @@ export interface Settings {
  * Default settings values
  */
 export const defaultSettings: Settings = {
-  apiKey: "",
-  apiUrl: "http://localhost:8000",
-  model: "gpt-3.5-turbo",
-  systemPrompt: "You are a helpful AI assistant.",
-  memoryStrategy: "keep_all",
+  apiKey: '',
+  apiUrl: 'http://localhost:8000',
+  model: 'gpt-3.5-turbo',
+  systemPrompt: 'You are a helpful AI assistant.',
+  memoryStrategy: 'keep_all',
   temperature: 0.7,
   maxTokens: 2000,
 };
@@ -38,10 +38,10 @@ export const defaultSettings: Settings = {
  * Memory strategy options for UI display
  */
 export const memoryStrategyOptions = [
-  { value: "keep_all", label: "Keep All Messages" },
-  { value: "window", label: "Keep Recent Messages" },
-  { value: "summary", label: "Summarize History" },
-  { value: "none", label: "No Memory" },
+  { value: 'keep_all', label: 'Keep All Messages' },
+  { value: 'window', label: 'Keep Recent Messages' },
+  { value: 'summary', label: 'Summarize History' },
+  { value: 'none', label: 'No Memory' },
 ];
 
 /**

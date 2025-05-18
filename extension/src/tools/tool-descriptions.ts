@@ -19,118 +19,116 @@ export const getToolDescriptions = (): ToolDescription[] => {
   return [
     // Telegram Toolkit Tools
     {
-      name: "TgToolkit_getDialogs",
+      name: 'TgToolkit_getDialogs',
       description: "Get a list of user's Telegram dialogs",
       parameters: {
-        type: "object",
+        type: 'object',
         properties: {
           limit: {
-            type: "number",
-            description: "Maximum number of dialogs to return (default: 100)",
+            type: 'number',
+            description: 'Maximum number of dialogs to return (default: 100)',
           },
           offset: {
-            type: "number",
-            description: "Offset for pagination (default: 0)",
+            type: 'number',
+            description: 'Offset for pagination (default: 0)',
           },
           chatTitle: {
-            type: "string",
-            description: "Optional filter by chat title",
+            type: 'string',
+            description: 'Optional filter by chat title',
           },
           isPublic: {
-            type: "boolean",
-            description: "Optional filter by public status",
+            type: 'boolean',
+            description: 'Optional filter by public status',
           },
           isFree: {
-            type: "boolean",
-            description: "Optional filter by free status",
+            type: 'boolean',
+            description: 'Optional filter by free status',
           },
           status: {
-            type: "string",
-            description: "Optional filter by status",
+            type: 'string',
+            description: 'Optional filter by status',
           },
           sortBy: {
-            type: "string",
+            type: 'string',
             description: "Field to sort by (default: 'updated_at')",
           },
           sortOrder: {
-            type: "string",
+            type: 'string',
             description: "Sort order (default: 'desc')",
           },
         },
       },
       returns: {
-        type: "object",
-        description: "List of Telegram dialogs",
+        type: 'object',
+        description: 'List of Telegram dialogs',
         properties: {
           success: {
-            type: "boolean",
-            description: "Whether the operation was successful",
+            type: 'boolean',
+            description: 'Whether the operation was successful',
           },
           data: {
-            type: "object",
-            description:
-              "Dialog data including list of dialogs and pagination info",
+            type: 'object',
+            description: 'Dialog data including list of dialogs and pagination info',
           },
         },
       },
     },
     {
-      name: "TgToolkit_getMessages",
-      description: "Get messages from a specified chat",
+      name: 'TgToolkit_getMessages',
+      description: 'Get messages from a specified chat',
       parameters: {
-        type: "object",
+        type: 'object',
         properties: {
           chatId: {
-            type: "string",
-            description: "ID of the chat to get messages from",
+            type: 'string',
+            description: 'ID of the chat to get messages from',
           },
           limit: {
-            type: "number",
-            description: "Maximum number of messages to return (default: 100)",
+            type: 'number',
+            description: 'Maximum number of messages to return (default: 100)',
           },
           offset: {
-            type: "number",
-            description: "Offset for pagination (default: 0)",
+            type: 'number',
+            description: 'Offset for pagination (default: 0)',
           },
           messageText: {
-            type: "string",
-            description: "Optional filter by message text",
+            type: 'string',
+            description: 'Optional filter by message text',
           },
           senderId: {
-            type: "string",
-            description: "Optional filter by sender ID",
+            type: 'string',
+            description: 'Optional filter by sender ID',
           },
           startTimestamp: {
-            type: "number",
-            description: "Optional filter by start timestamp",
+            type: 'number',
+            description: 'Optional filter by start timestamp',
           },
           endTimestamp: {
-            type: "number",
-            description: "Optional filter by end timestamp",
+            type: 'number',
+            description: 'Optional filter by end timestamp',
           },
           sortBy: {
-            type: "string",
+            type: 'string',
             description: "Field to sort by (default: 'message_timestamp')",
           },
           sortOrder: {
-            type: "string",
+            type: 'string',
             description: "Sort order (default: 'desc')",
           },
         },
-        required: ["chatId"],
+        required: ['chatId'],
       },
       returns: {
-        type: "object",
-        description: "List of messages from the specified chat",
+        type: 'object',
+        description: 'List of messages from the specified chat',
         properties: {
           success: {
-            type: "boolean",
-            description: "Whether the operation was successful",
+            type: 'boolean',
+            description: 'Whether the operation was successful',
           },
           data: {
-            type: "object",
-            description:
-              "Message data including list of messages and pagination info",
+            type: 'object',
+            description: 'Message data including list of messages and pagination info',
           },
         },
       },
@@ -191,89 +189,88 @@ export const getToolDescriptions = (): ToolDescription[] => {
     // },
     // Tab Toolkit Tools
     {
-      name: "TabToolkit_openTab",
+      name: 'TabToolkit_openTab',
       description:
         "Open a new browser tab with the specified URL. If a tab with the exact same URL is already open, do not open a new tab—instead, return the existing tab's ID and indicate that it was already open. Use this tool to help the user navigate to a specific website or web application.",
       parameters: {
-        type: "object",
+        type: 'object',
         properties: {
           url: {
-            type: "string",
+            type: 'string',
             description:
               "The full URL to open in a new browser tab. Must be a valid and complete URL (e.g., 'https://twitter.com').",
           },
         },
-        required: ["url"],
+        required: ['url'],
       },
       returns: {
-        type: "object",
-        description: "Information about the tab that was opened or reused.",
+        type: 'object',
+        description: 'Information about the tab that was opened or reused.',
         properties: {
           tabId: {
-            type: "number",
-            description: "The unique ID of the tab that was opened or reused.",
+            type: 'number',
+            description: 'The unique ID of the tab that was opened or reused.',
           },
           alreadyOpened: {
-            type: "boolean",
-            description:
-              "True if the tab was already open, false if a new tab was created.",
+            type: 'boolean',
+            description: 'True if the tab was already open, false if a new tab was created.',
           },
           success: {
-            type: "boolean",
-            description: "True if the operation succeeded, false otherwise.",
+            type: 'boolean',
+            description: 'True if the operation succeeded, false otherwise.',
           },
           error: {
-            type: "string",
-            description: "Error message if the operation failed.",
+            type: 'string',
+            description: 'Error message if the operation failed.',
           },
         },
       },
     },
     {
-      name: "TabToolkit_closeTab",
-      description: "Close a specific tab by its ID",
+      name: 'TabToolkit_closeTab',
+      description: 'Close a specific tab by its ID',
       parameters: {
-        type: "object",
+        type: 'object',
         properties: {
           tabId: {
-            type: "number",
-            description: "The ID of the tab to close",
+            type: 'number',
+            description: 'The ID of the tab to close',
           },
         },
-        required: ["tabId"],
+        required: ['tabId'],
       },
       returns: {
-        type: "object",
-        description: "Result of the close operation",
+        type: 'object',
+        description: 'Result of the close operation',
         properties: {
           success: {
-            type: "boolean",
-            description: "Whether the tab was successfully closed",
+            type: 'boolean',
+            description: 'Whether the tab was successfully closed',
           },
         },
       },
     },
     {
-      name: "TabToolkit_listTabs",
-      description: "List all tabs in the current window",
+      name: 'TabToolkit_listTabs',
+      description: 'List all tabs in the current window',
       returns: {
-        type: "array",
-        description: "List of matching tabs",
+        type: 'array',
+        description: 'List of matching tabs',
         properties: {
           items: {
-            type: "object",
+            type: 'object',
             properties: {
               tabId: {
-                type: "number",
-                description: "tab ID",
+                type: 'number',
+                description: 'tab ID',
               },
               url: {
-                type: "string",
-                description: "tab url",
+                type: 'string',
+                description: 'tab url',
               },
               title: {
-                type: "string",
-                description: "tab title",
+                type: 'string',
+                description: 'tab title',
               },
             },
           },
@@ -281,176 +278,173 @@ export const getToolDescriptions = (): ToolDescription[] => {
       },
     },
     {
-      name: "TabToolkit_switchToTab",
-      description: "Switch to a specific tab by its ID",
+      name: 'TabToolkit_switchToTab',
+      description: 'Switch to a specific tab by its ID',
       parameters: {
-        type: "object",
+        type: 'object',
         properties: {
           tabId: {
-            type: "number",
-            description: "The ID of the tab to switch to",
+            type: 'number',
+            description: 'The ID of the tab to switch to',
           },
         },
-        required: ["tabId"],
+        required: ['tabId'],
       },
       returns: {
-        type: "object",
-        description: "Result of the switch operation",
+        type: 'object',
+        description: 'Result of the switch operation',
         properties: {
           success: {
-            type: "boolean",
-            description: "Whether the switch was successful",
+            type: 'boolean',
+            description: 'Whether the switch was successful',
           },
         },
       },
     },
     {
-      name: "TabToolkit_getCurrentActiveTab",
-      description: "Get the currently active tab in the current window",
+      name: 'TabToolkit_getCurrentActiveTab',
+      description: 'Get the currently active tab in the current window',
       parameters: {
-        type: "object",
+        type: 'object',
         properties: {},
       },
       returns: {
-        type: "object",
-        description: "Information about the active tab",
+        type: 'object',
+        description: 'Information about the active tab',
         properties: {
           tabId: {
-            type: "number",
-            description: "The ID of the active tab",
+            type: 'number',
+            description: 'The ID of the active tab',
           },
           url: {
-            type: "string",
-            description: "The URL of the active tab",
+            type: 'string',
+            description: 'The URL of the active tab',
           },
           title: {
-            type: "string",
-            description: "The title of the active tab",
+            type: 'string',
+            description: 'The title of the active tab',
           },
         },
       },
     },
     {
-      name: "WebToolkit_getPageText",
-      description: "Get the HTML or text content of the current page",
+      name: 'WebToolkit_getPageText',
+      description: 'Get the HTML or text content of the current page',
       parameters: {
-        type: "object",
+        type: 'object',
         properties: {
           format: {
-            type: "string",
-            description: "The format of the page text (html or text)",
+            type: 'string',
+            description: 'The format of the page text (html or text)',
           },
         },
       },
       returns: {
-        type: "object",
-        description: "Source code from the page",
+        type: 'object',
+        description: 'Source code from the page',
         properties: {
           content: {
-            type: "string",
-            description: "The text content of the page",
+            type: 'string',
+            description: 'The text content of the page',
           },
         },
       },
     },
     {
-      name: "WebToolkit_screenshot",
-      description: "Take a screenshot of the current page",
+      name: 'WebToolkit_screenshot',
+      description: 'Take a screenshot of the current page',
       parameters: {
-        type: "object",
+        type: 'object',
         properties: {
           fullPage: {
-            type: "boolean",
-            description:
-              "Whether to capture the full page or just the viewport",
+            type: 'boolean',
+            description: 'Whether to capture the full page or just the viewport',
           },
         },
       },
       returns: {
-        type: "object",
-        description: "Screenshot data",
+        type: 'object',
+        description: 'Screenshot data',
         properties: {
           dataUrl: {
-            type: "string",
+            type: 'string',
             description:
-              "Base64 encoded data of the screenshot or image. If the screenshot is not available, the dataUrl will be an empty string.",
+              'Base64 encoded data of the screenshot or image. If the screenshot is not available, the dataUrl will be an empty string.',
           },
           success: {
-            type: "boolean",
-            description: "Whether the screenshot was successfully taken",
+            type: 'boolean',
+            description: 'Whether the screenshot was successfully taken',
           },
         },
       },
     },
     {
-      name: "WebToolkit_inputElement",
+      name: 'WebToolkit_inputElement',
       description:
         "Types text into a specified input element on the page. If the element is not found or not interactable, use listElements to find the correct selector. The selector can be a simple tag name (e.g., 'input'), a class name (e.g., '.username'), an ID (e.g., '#email'), or a combination of these with attributes (e.g., 'input[type=\"text\"]'). Optionally, can clear the input first, add typing delay, and/or press Enter after inputting (to submit forms or trigger search).",
       parameters: {
-        type: "object",
+        type: 'object',
         properties: {
           selector: {
-            type: "string",
+            type: 'string',
             description:
               "CSS selector for the target input element. Examples:\n- 'input' - any input\n- '.username' - input with class 'username'\n- '#email' - input with ID 'email'\n- 'input[type=\"text\"]' - text input\n- 'textarea' - any textarea\nIf the selector fails, use listElements to find the correct selector.",
           },
           value: {
-            type: "string",
-            description: "The text to input into the element",
+            type: 'string',
+            description: 'The text to input into the element',
           },
           options: {
-            type: "object",
-            description: "Optional configuration for input behavior",
+            type: 'object',
+            description: 'Optional configuration for input behavior',
             properties: {
               clearFirst: {
-                type: "boolean",
-                description:
-                  "If true, clears existing content before inputting. Default: true",
+                type: 'boolean',
+                description: 'If true, clears existing content before inputting. Default: true',
               },
               delay: {
-                type: "number",
-                description:
-                  "Delay (in milliseconds) between keystrokes. Default: 100",
+                type: 'number',
+                description: 'Delay (in milliseconds) between keystrokes. Default: 100',
               },
               pressEnterAfterInput: {
-                type: "boolean",
+                type: 'boolean',
                 description:
-                  "If true, simulates pressing the Enter key after inputting the value. Useful for submitting search forms or triggering actions. Default: false",
+                  'If true, simulates pressing the Enter key after inputting the value. Useful for submitting search forms or triggering actions. Default: false',
               },
             },
           },
         },
-        required: ["selector", "value"],
+        required: ['selector', 'value'],
       },
       returns: {
-        type: "object",
+        type: 'object',
         description:
-          "The result of the input action. If unsuccessful, use listElements to find the correct selector.",
+          'The result of the input action. If unsuccessful, use listElements to find the correct selector.',
         properties: {
           success: {
-            type: "boolean",
-            description: "Indicates whether the text was successfully input",
+            type: 'boolean',
+            description: 'Indicates whether the text was successfully input',
           },
           error: {
-            type: "string",
+            type: 'string',
             description:
               "Error message if the input failed. Common errors include: 'Element not found', 'Element is not visible', 'Element is not interactable'. If the selector is incorrect, use listElements to find the correct selector.",
           },
           data: {
-            type: "object",
-            description: "Additional information about the input operation",
+            type: 'object',
+            description: 'Additional information about the input operation',
             properties: {
               text: {
-                type: "string",
-                description: "Text content of the element",
+                type: 'string',
+                description: 'Text content of the element',
               },
               value: {
-                type: "string",
-                description: "Value of the input element",
+                type: 'string',
+                description: 'Value of the input element',
               },
               html: {
-                type: "string",
-                description: "HTML content of the element",
+                type: 'string',
+                description: 'HTML content of the element',
               },
             },
           },
@@ -458,14 +452,14 @@ export const getToolDescriptions = (): ToolDescription[] => {
       },
     },
     {
-      name: "WebToolkit_clickElement",
+      name: 'WebToolkit_clickElement',
       description:
-        "Click an element on the page. The element must be visible and clickable. Always use listElements first to find the correct selector.",
+        'Click an element on the page. The element must be visible and clickable. Always use listElements first to find the correct selector.',
       parameters: {
-        type: "object",
+        type: 'object',
         properties: {
           selector: {
-            type: "string",
+            type: 'string',
             description: `CSS selector for the element to click. Use listElements first to find the correct selector.
 
 Best practices for selectors:
@@ -491,52 +485,52 @@ If click fails:
 3. Try a more specific selector`,
           },
         },
-        required: ["selector"],
+        required: ['selector'],
       },
       returns: {
-        type: "object",
-        description: "Result of the click operation",
+        type: 'object',
+        description: 'Result of the click operation',
         properties: {
           success: {
-            type: "boolean",
-            description: "Whether the click was successful",
+            type: 'boolean',
+            description: 'Whether the click was successful',
           },
           error: {
-            type: "string",
+            type: 'string',
             description:
-              "Error details if click failed, including why the element was not clickable",
+              'Error details if click failed, including why the element was not clickable',
           },
           data: {
-            type: "object",
-            description: "Information about the clicked element",
+            type: 'object',
+            description: 'Information about the clicked element',
             properties: {
               text: {
-                type: "string",
+                type: 'string',
                 description: "Element's text content",
               },
               html: {
-                type: "string",
+                type: 'string',
                 description: "Element's HTML structure",
               },
               clicked: {
-                type: "boolean",
-                description: "Whether click was performed",
+                type: 'boolean',
+                description: 'Whether click was performed',
               },
               position: {
-                type: "object",
-                description: "Click coordinates",
+                type: 'object',
+                description: 'Click coordinates',
                 properties: {
-                  x: { type: "number" },
-                  y: { type: "number" },
+                  x: { type: 'number' },
+                  y: { type: 'number' },
                 },
               },
               elementState: {
-                type: "object",
-                description: "Element state when clicked",
+                type: 'object',
+                description: 'Element state when clicked',
                 properties: {
-                  isVisible: { type: "boolean" },
-                  isEnabled: { type: "boolean" },
-                  attributes: { type: "object" },
+                  isVisible: { type: 'boolean' },
+                  isEnabled: { type: 'boolean' },
+                  attributes: { type: 'object' },
                 },
               },
             },
@@ -545,99 +539,96 @@ If click fails:
       },
     },
     {
-      name: "WebToolkit_scrollToElement",
-      description: "Scroll the page to bring an element into view",
+      name: 'WebToolkit_scrollToElement',
+      description: 'Scroll the page to bring an element into view',
       parameters: {
-        type: "object",
+        type: 'object',
         properties: {
           selector: {
-            type: "string",
-            description: "CSS selector for the element to scroll to",
+            type: 'string',
+            description: 'CSS selector for the element to scroll to',
           },
           options: {
-            type: "object",
-            description: "Scroll options",
+            type: 'object',
+            description: 'Scroll options',
             properties: {
               behavior: {
-                type: "string",
-                description: "Scroll behavior (smooth or auto)",
-                enum: ["smooth", "auto"],
+                type: 'string',
+                description: 'Scroll behavior (smooth or auto)',
+                enum: ['smooth', 'auto'],
               },
               block: {
-                type: "string",
-                description: "Vertical alignment (start, center, end, nearest)",
-                enum: ["start", "center", "end", "nearest"],
+                type: 'string',
+                description: 'Vertical alignment (start, center, end, nearest)',
+                enum: ['start', 'center', 'end', 'nearest'],
               },
             },
           },
         },
-        required: ["selector"],
+        required: ['selector'],
       },
       returns: {
-        type: "object",
-        description: "Result of the scroll operation",
+        type: 'object',
+        description: 'Result of the scroll operation',
         properties: {
           success: {
-            type: "boolean",
-            description: "Whether the page was successfully scrolled",
+            type: 'boolean',
+            description: 'Whether the page was successfully scrolled',
           },
         },
       },
     },
     {
-      name: "WebToolkit_refreshPage",
+      name: 'WebToolkit_refreshPage',
       description:
         "Refresh the current page based on the user's context. This will reload the current page and wait for it to be fully loaded. The page to refresh is determined by the user's current context and cannot be specified directly.",
       parameters: {
-        type: "object",
+        type: 'object',
         properties: {
           url: {
-            type: "string",
+            type: 'string',
             description:
               "The URL of the page to refresh. Default: determined by the user's current context",
           },
           waitForLoad: {
-            type: "boolean",
+            type: 'boolean',
             description:
-              "Whether to wait for the page to be fully loaded after refresh. Default: true",
+              'Whether to wait for the page to be fully loaded after refresh. Default: true',
           },
           timeout: {
-            type: "number",
-            description:
-              "Maximum time to wait for page load in milliseconds. Default: 5000",
+            type: 'number',
+            description: 'Maximum time to wait for page load in milliseconds. Default: 5000',
           },
         },
       },
       returns: {
-        type: "object",
-        description: "Result of the refresh operation",
+        type: 'object',
+        description: 'Result of the refresh operation',
         properties: {
           success: {
-            type: "boolean",
-            description:
-              "Whether the page was successfully refreshed and loaded",
+            type: 'boolean',
+            description: 'Whether the page was successfully refreshed and loaded',
           },
           error: {
-            type: "string",
+            type: 'string',
             description:
               "Error message if the refresh failed. Common errors include: 'Page load timeout', 'Navigation failed', 'No active page to refresh'",
           },
           data: {
-            type: "object",
-            description: "Additional information about the refresh operation",
+            type: 'object',
+            description: 'Additional information about the refresh operation',
             properties: {
               url: {
-                type: "string",
-                description: "The URL of the refreshed page",
+                type: 'string',
+                description: 'The URL of the refreshed page',
               },
               loadTime: {
-                type: "number",
-                description: "Time taken for the page to load in milliseconds",
+                type: 'number',
+                description: 'Time taken for the page to load in milliseconds',
               },
               status: {
-                type: "string",
-                description:
-                  "Final status of the page after refresh (complete, loading, error)",
+                type: 'string',
+                description: 'Final status of the page after refresh (complete, loading, error)',
               },
             },
           },
@@ -645,14 +636,14 @@ If click fails:
       },
     },
     {
-      name: "WebToolkit_listElements",
+      name: 'WebToolkit_listElements',
       description:
-        "List elements on the page that match the given selector. Use this tool first to find the correct selector before attempting to click or input. Returns detailed information about matching elements including their attributes, text content, and role.",
+        'List elements on the page that match the given selector. Use this tool first to find the correct selector before attempting to click or input. Returns detailed information about matching elements including their attributes, text content, and role.',
       parameters: {
-        type: "object",
+        type: 'object',
         properties: {
           selectors: {
-            type: "string",
+            type: 'string',
             description: `CSS selector to find elements. Common selector patterns:
 1. Basic selectors:
    - tag: 'button', 'input', 'a'
@@ -680,45 +671,44 @@ Always use listElements first to find the correct selector before clicking or in
         },
       },
       returns: {
-        type: "object",
-        description: "List of matching elements with their properties",
+        type: 'object',
+        description: 'List of matching elements with their properties',
         properties: {
           success: {
-            type: "boolean",
-            description: "Whether elements were found",
+            type: 'boolean',
+            description: 'Whether elements were found',
           },
           data: {
-            type: "object",
+            type: 'object',
             properties: {
               elements: {
-                type: "array",
+                type: 'array',
                 items: {
-                  type: "object",
+                  type: 'object',
                   properties: {
                     selector: {
-                      type: "string",
-                      description: "Unique selector for this element",
+                      type: 'string',
+                      description: 'Unique selector for this element',
                     },
                     text: {
-                      type: "string",
-                      description: "Text content of the element",
+                      type: 'string',
+                      description: 'Text content of the element',
                     },
                     type: {
-                      type: "string",
-                      description: "Element type (button, input, link, etc)",
+                      type: 'string',
+                      description: 'Element type (button, input, link, etc)',
                     },
                     attributes: {
-                      type: "object",
-                      description:
-                        "Element attributes (role, aria-label, data-testid, etc)",
+                      type: 'object',
+                      description: 'Element attributes (role, aria-label, data-testid, etc)',
                     },
                     isVisible: {
-                      type: "boolean",
-                      description: "Whether the element is visible",
+                      type: 'boolean',
+                      description: 'Whether the element is visible',
                     },
                     isInteractive: {
-                      type: "boolean",
-                      description: "Whether the element can be interacted with",
+                      type: 'boolean',
+                      description: 'Whether the element can be interacted with',
                     },
                   },
                 },
@@ -729,20 +719,19 @@ Always use listElements first to find the correct selector before clicking or in
       },
     },
     {
-      name: "WebToolkit_getPageText",
-      description:
-        "Get the text content of the current page, format as markdown",
+      name: 'WebToolkit_getPageText',
+      description: 'Get the text content of the current page, format as markdown',
       parameters: {
-        type: "object",
+        type: 'object',
         properties: {},
       },
       returns: {
-        type: "object",
-        description: "Text content of the current page",
+        type: 'object',
+        description: 'Text content of the current page',
         properties: {
-          text: { type: "string" },
-          success: { type: "boolean" },
-          error: { type: "string" },
+          text: { type: 'string' },
+          success: { type: 'boolean' },
+          error: { type: 'string' },
         },
       },
     },

@@ -3,7 +3,7 @@
  * Defines all conversation-related interfaces used in the application
  */
 
-import { Message } from "./messages";
+import { Message } from './messages';
 
 /**
  * Conversation model

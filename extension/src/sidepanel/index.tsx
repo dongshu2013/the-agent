@@ -1,32 +1,33 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useStorage } from "@plasmohq/storage/hook";
-import "../style.css";
-import Header from "./components/Header";
-import Message from "./components/Message";
-import InputArea from "./components/InputArea";
-import ConversationList from "./components/ConversationList";
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useStorage } from '@plasmohq/storage/hook';
+import '../style.css';
+import Header from './components/Header';
+import Message from './components/Message';
+import InputArea from './components/InputArea';
+import ConversationList from './components/ConversationList';
 import {
   createNewConversation,
   selectConversation as selectConv,
   deleteConversation as deleteConv,
   getConversations,
-} from "../services/conversation";
-import { getApiKey, setApiKey } from "~/services/cache";
-import { db, resetDB, UserInfo } from "~/utils/db";
-import { useLiveQuery } from "dexie-react-hooks";
-import { ChatHandler } from "../services/chat-handler";
-import { env } from "~/utils/env";
-import LoginModal from "./components/LoginModal";
-import { showLoginModal } from "~/utils/global-event";
-import LoadingBrain from "./components/LoadingBrain";
+} from '../services/conversation';
+import { getApiKey, setApiKey } from '~/services/cache';
+import { db, resetDB, UserInfo } from '~/utils/db';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { ChatHandler } from '../services/chat-handler';
+import { env } from '~/utils/env';
+import LoginModal from './components/LoginModal';
+import { showLoginModal } from '~/utils/global-event';
+import LoadingBrain from './components/LoadingBrain';
 
 const Sidepanel = () => {
-  const [apiKey, setApiKeyState] = useStorage<string>("apiKey", "");
+  const [apiKey, setApiKeyState] = useStorage<string>('apiKey', '');
   const [isLoading, setIsLoading] = useState(false);
-  const [prompt, setPrompt] = useState("");
-  const [currentConversationId, setCurrentConversationId] = useStorage<
-    string | null
-  >("currentConversationId", null);
+  const [prompt, setPrompt] = useState('');
+  const [currentConversationId, setCurrentConversationId] = useStorage<string | null>(
+    'currentConversationId',
+    null
+  );
   const [showConversationList, setShowConversationList] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -45,25 +46,19 @@ const Sidepanel = () => {
   // 数据查询
   const messages =
     useLiveQuery(
-      () =>
-        currentConversationId
-          ? db.getMessagesByConversation(currentConversationId)
-          : [],
+      () => (currentConversationId ? db.getMessagesByConversation(currentConversationId) : []),
       [currentConversationId]
     ) ?? [];
 
   const conversations =
     useLiveQuery(
-      () =>
-        currentUser && currentUser.id
-          ? db.getAllConversations(currentUser.id)
-          : [],
+      () => (currentUser && currentUser.id ? db.getAllConversations(currentUser.id) : []),
       [currentUser?.id]
     ) ?? [];
 
   const redirectToLogin = useCallback(() => {
     if (!didRedirect.current) {
-      window.open(`${env.WEB_URL}`, "_blank");
+      window.open(`${env.WEB_URL}`, '_blank');
       didRedirect.current = true;
     }
   }, []);
@@ -72,12 +67,9 @@ const Sidepanel = () => {
     (error: any) => {
       db.saveMessage({
         id: generateMessageId(),
-        content:
-          typeof error === "string"
-            ? error
-            : "An error occurred. Please try again.",
-        conversation_id: currentConversationId || "",
-        role: "system",
+        content: typeof error === 'string' ? error : 'An error occurred. Please try again.',
+        conversation_id: currentConversationId || '',
+        role: 'system',
       });
     },
     [currentConversationId]
@@ -88,10 +80,10 @@ const Sidepanel = () => {
       try {
         setIsLoading(true);
         const verifyResponse = await fetch(`${env.BACKEND_URL}/v1/user`, {
-          method: "GET",
+          method: 'GET',
           headers: {
-            "x-api-key": apiKeyToUse,
-            "Content-Type": "application/json",
+            'x-api-key': apiKeyToUse,
+            'Content-Type': 'application/json',
           },
         });
 
@@ -108,15 +100,14 @@ const Sidepanel = () => {
           const now = new Date().toISOString();
           const userInfo = {
             id: verifyData.user.user_id,
-            username:
-              verifyData.user.displayName || verifyData.user.email || "unknown",
+            username: verifyData.user.displayName || verifyData.user.email || 'unknown',
             email: verifyData.user.email,
             api_key_enabled: true,
             api_key: apiKeyToUse,
-            credits: verifyData.user.credits || "0",
+            credits: verifyData.user.credits || '0',
             created_at: now,
             updated_at: now,
-            selectedModelId: "system",
+            selectedModelId: 'system',
             photo_url: verifyData.user.photoURL,
           };
 
@@ -125,13 +116,8 @@ const Sidepanel = () => {
 
           setLoginModalOpen(false);
 
-          const dbConversations = await db.getAllConversations(
-            verifyData.user.user_id
-          );
-          if (
-            !currentConversationId ||
-            !(await db.getConversation(currentConversationId))
-          ) {
+          const dbConversations = await db.getAllConversations(verifyData.user.user_id);
+          if (!currentConversationId || !(await db.getConversation(currentConversationId))) {
             if (dbConversations?.length > 0) {
               setCurrentConversationId(dbConversations[0].id);
             } else {
@@ -160,25 +146,24 @@ const Sidepanel = () => {
 
   useEffect(() => {
     const handler = () => {
-      console.log("SHOW_LOGIN_MODAL event triggered");
       setLoginModalOpen(true);
     };
-    window.addEventListener("SHOW_LOGIN_MODAL", handler);
-    return () => window.removeEventListener("SHOW_LOGIN_MODAL", handler);
+    window.addEventListener('SHOW_LOGIN_MODAL', handler);
+    return () => window.removeEventListener('SHOW_LOGIN_MODAL', handler);
   }, []);
 
   useEffect(() => {
     const listener = async (changes: any, area: string) => {
-      if (area === "local" && changes.apiKey) {
+      if (area === 'local' && changes.apiKey) {
         const newApiKey = changes.apiKey.newValue;
         if (!newApiKey) return;
 
         // 用新 apiKey 获取新 userId
         const res = await fetch(`${env.BACKEND_URL}/v1/user`, {
-          method: "GET",
+          method: 'GET',
           headers: {
-            "x-api-key": newApiKey,
-            "Content-Type": "application/json",
+            'x-api-key': newApiKey,
+            'Content-Type': 'application/json',
           },
         });
         const data = await res.json();
@@ -187,9 +172,6 @@ const Sidepanel = () => {
         // 这里一定要用 getCurrentUser 拿到"切换前"的 userId
         const user = await db.getCurrentUser();
         const oldUserId = user?.id;
-
-        console.log("API Key changed:", newApiKey);
-        console.log("oldUserId:", oldUserId, "newUserId:", newUserId);
 
         if (oldUserId && newUserId && oldUserId !== newUserId) {
           // 只要 userId 变了，先弹窗，不要立刻初始化新账号
@@ -212,7 +194,7 @@ const Sidepanel = () => {
   useEffect(() => {
     const initializeApp = async () => {
       if (isInitialized) return;
-      let storedApiKey = await getApiKey();
+      const storedApiKey = await getApiKey();
       if (!storedApiKey) {
         setLoginModalOpen(true);
         return;
@@ -227,14 +209,14 @@ const Sidepanel = () => {
   // 消息处理
   useEffect(() => {
     const handleMessages = (request: any) => {
-      if (request.name === "selected-text" && request.text) {
+      if (request.name === 'selected-text' && request.text) {
         setPrompt(request.text);
       }
-      if (request.name === "focus-input") {
-        const inputElement = document.querySelector("textarea");
+      if (request.name === 'focus-input') {
+        const inputElement = document.querySelector('textarea');
         inputElement?.focus();
       }
-      if (request.name === "api-key-missing") {
+      if (request.name === 'api-key-missing') {
         redirectToLogin();
       }
     };
@@ -249,13 +231,13 @@ const Sidepanel = () => {
         new ChatHandler({
           apiKey: apiKey as string,
           currentConversationId,
-          onError: (error) => {
+          onError: error => {
             if (
-              typeof error === "string" &&
-              (error.includes("Authentication failed") ||
-                error.includes("API key") ||
-                error.includes("403") ||
-                error.includes("401"))
+              typeof error === 'string' &&
+              (error.includes('Authentication failed') ||
+                error.includes('API key') ||
+                error.includes('403') ||
+                error.includes('401'))
             ) {
               redirectToLogin();
             }
@@ -268,7 +250,7 @@ const Sidepanel = () => {
             setIsLoading(false);
             setIsStreaming(false);
           },
-          onMessageUpdate: async (message) => {
+          onMessageUpdate: async message => {
             await db.saveMessage(message);
           },
         })
@@ -278,7 +260,7 @@ const Sidepanel = () => {
 
   // 自动滚动到底部
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   // 事件处理函数
@@ -287,7 +269,7 @@ const Sidepanel = () => {
     if (!prompt.trim() || !chatHandler) return;
 
     const currentPrompt = prompt.trim();
-    setPrompt("");
+    setPrompt('');
     await chatHandler.handleSubmit(currentPrompt);
   };
 
@@ -317,7 +299,7 @@ const Sidepanel = () => {
   const handleSelectConversation = async (id: string) => {
     if (isLoading) return;
 
-    if (id === "new") {
+    if (id === 'new') {
       await handleCreateNewConversation();
       return;
     }
@@ -343,7 +325,7 @@ const Sidepanel = () => {
     try {
       await deleteConv(id);
       if (id === currentConversationId) {
-        const remaining = conversations?.filter((c) => c.id !== id);
+        const remaining = conversations?.filter(c => c.id !== id);
         if (remaining?.length > 0) {
           const conversation = await selectConv(remaining[0].id);
           if (conversation) {
@@ -385,7 +367,7 @@ const Sidepanel = () => {
   }, []);
 
   useEffect(() => {
-    chrome.storage.local.get("apiKey", (result) => {
+    chrome.storage.local.get('apiKey', result => {
       if (result.apiKey) setApiKeyState(result.apiKey);
     });
   }, []);
@@ -393,21 +375,21 @@ const Sidepanel = () => {
   return (
     <div
       style={{
-        height: "100vh",
-        width: "100%",
-        position: "relative",
-        overflow: "hidden",
+        height: '100vh',
+        width: '100%',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
       {/* Header */}
       <div
         style={{
-          position: "absolute",
+          position: 'absolute',
           top: 0,
           left: 0,
           right: 0,
-          backgroundColor: "white",
-          borderBottom: "1px solid #f0f0f0",
+          backgroundColor: 'white',
+          borderBottom: '1px solid #f0f0f0',
           zIndex: 10,
         }}
       >
@@ -420,51 +402,51 @@ const Sidepanel = () => {
       {/* Messages Area */}
       <div
         style={{
-          position: "absolute",
-          top: "44px",
-          bottom: "90px",
+          position: 'absolute',
+          top: '44px',
+          bottom: '90px',
           left: 0,
           right: 0,
-          overflowY: "auto",
-          overflowX: "hidden",
-          backgroundColor: "#FFFFFF",
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          backgroundColor: '#FFFFFF',
         }}
       >
         <div className="max-w-3xl mx-auto p-4">
           {messages.length === 0 ? (
             <div
               style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "120px 24px",
-                minHeight: "100%",
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '120px 24px',
+                minHeight: '100%',
               }}
             >
               <div
                 style={{
-                  maxWidth: "480px",
-                  textAlign: "center",
+                  maxWidth: '480px',
+                  textAlign: 'center',
                 }}
               >
                 <h3
                   style={{
-                    fontSize: "28px",
-                    fontWeight: "600",
-                    color: "#374151",
-                    marginBottom: "16px",
-                    lineHeight: "1.3",
+                    fontSize: '28px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '16px',
+                    lineHeight: '1.3',
                   }}
                 >
                   Ask anything. Automate everything.
                 </h3>
                 <p
                   style={{
-                    fontSize: "16px",
-                    color: "#6b7280",
-                    lineHeight: "1.6",
-                    marginBottom: !apiKey ? "32px" : "0",
+                    fontSize: '16px',
+                    color: '#6b7280',
+                    lineHeight: '1.6',
+                    marginBottom: !apiKey ? '32px' : '0',
                   }}
                 >
                   Start typing — your AI agent is here to help.
@@ -472,32 +454,29 @@ const Sidepanel = () => {
                 {!apiKey && (
                   <p
                     style={{
-                      fontSize: "14px",
-                      color: "#9ca3af",
-                      maxWidth: "400px",
-                      lineHeight: "1.5",
+                      fontSize: '14px',
+                      color: '#9ca3af',
+                      maxWidth: '400px',
+                      lineHeight: '1.5',
                     }}
                   >
-                    You haven't set up your API key yet. Please login to your
-                    web account to get started.
+                    You haven&apos;t set up your API key yet. Please login to your web account to
+                    get started.
                   </p>
                 )}
               </div>
             </div>
           ) : (
-            <div style={{ paddingBottom: "32px" }}>
+            <div style={{ paddingBottom: '32px' }}>
               {messages.map((message, index) => (
                 <Message
                   key={message.id || index}
                   message={message}
-                  isLatestResponse={
-                    index === messages.length - 1 &&
-                    message.role === "assistant"
-                  }
+                  isLatestResponse={index === messages.length - 1 && message.role === 'assistant'}
                 />
               ))}
               {isStreaming && (
-                <div style={{ padding: "16px 0", textAlign: "center" }}>
+                <div style={{ padding: '16px 0', textAlign: 'center' }}>
                   <LoadingBrain />
                 </div>
               )}
@@ -510,11 +489,11 @@ const Sidepanel = () => {
       {/* Input Area */}
       <div
         style={{
-          position: "absolute",
+          position: 'absolute',
           bottom: 0,
           left: 0,
           right: 0,
-          backgroundColor: "white",
+          backgroundColor: 'white',
           zIndex: 10,
         }}
       >
@@ -535,9 +514,7 @@ const Sidepanel = () => {
           currentConversationId={currentConversationId}
           selectConversation={handleSelectConversation}
           deleteConversation={handleDeleteConversation}
-          setShowConversationList={(show: boolean) =>
-            toggleConversationList(show)
-          }
+          setShowConversationList={(show: boolean) => toggleConversationList(show)}
         />
       )}
 

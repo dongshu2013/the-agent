@@ -31,3 +31,19 @@ pnpm exec tsc --noEmit
 
 echo "✨ Running lint-staged..."
 pnpm lint-staged
+
+# Check extension code
+echo "\n🔍 Checking extension code..."
+cd ../extension
+
+echo "💅 Formatting code..."
+pnpm format
+
+echo "🔍 Running ESLint..."
+pnpm lint:fix
+
+echo "📝 Type checking..."
+pnpm exec tsc --noEmit
+
+echo "✨ Running lint-staged..."
+pnpm lint-staged

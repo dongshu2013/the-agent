@@ -13,7 +13,6 @@ A Chrome extension to help with replying to BUZZ posts on Edge Posting.
 
 This project is built with TypeScript, React, and webpack.
 
-
 ### Prerequisites
 
 - Node.js (v14 or later)
@@ -76,4 +75,4 @@ pnpm run zip
 
 ## License
 
-MIT 
+MIT

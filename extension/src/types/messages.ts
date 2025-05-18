@@ -4,7 +4,7 @@
  */
 
 export interface ChatMessage {
-  role?: "user" | "assistant" | "system" | "tool";
+  role?: 'user' | 'assistant' | 'system' | 'tool';
   content?: string;
   toolCallId?: string; // toolcall
   tool_call_id?: string; // toolcall
@@ -58,7 +58,7 @@ export type MessageType = Message;
 /**
  * Message name for internal message passing
  */
-export type MessageName = "selected-text" | "focus-input" | "api-key-missing";
+export type MessageName = 'selected-text' | 'focus-input' | 'api-key-missing';
 
 /**
  * Process request message
@@ -84,4 +84,29 @@ export interface ProcessRequestResponse {
  */
 export interface MessageProps {
   message: Message;
+}
+
+/**
+ * Runtime message types for background script
+ */
+export type RuntimeMessageName = 'ping' | 'execute-tool' | 'update-config' | MessageName;
+
+export interface RuntimeMessage {
+  name: RuntimeMessageName;
+  body?:
+    | {
+        name: string;
+        arguments: any;
+      }
+    | {
+        key: string;
+        value: string;
+      };
+}
+
+export interface RuntimeResponse {
+  success: boolean;
+  message?: string;
+  data?: unknown;
+  error?: string;
 }

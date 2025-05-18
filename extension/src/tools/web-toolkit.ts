@@ -1,4 +1,4 @@
-import { parseHtml, minify } from "./dom-minify";
+import { parseHtml, minify } from './dom-minify';
 
 export interface WebInteractionResult {
   success: boolean;
@@ -24,7 +24,7 @@ export class WebToolkit {
     targetId: null,
   };
 
-  private hasDebuggerSupport = typeof chrome.debugger?.attach === "function";
+  private hasDebuggerSupport = typeof chrome.debugger?.attach === 'function';
 
   private async attachDebugger(tabId: number): Promise<void> {
     if (!this.hasDebuggerSupport) {
@@ -36,22 +36,17 @@ export class WebToolkit {
     }
 
     try {
-      await chrome.debugger.attach({ tabId }, "1.3");
+      await chrome.debugger.attach({ tabId }, '1.3');
       this.debuggerState.attached = true;
       this.debuggerState.tabId = tabId;
-      console.log("Debugger attached successfully");
     } catch (error) {
-      console.error("Failed to attach debugger:", error);
+      console.error('Failed to attach debugger:', error);
       this.hasDebuggerSupport = false; // 禁用 debugger 支持
     }
   }
 
   private async detachDebugger(): Promise<void> {
-    if (
-      !this.hasDebuggerSupport ||
-      !this.debuggerState.attached ||
-      !this.debuggerState.tabId
-    ) {
+    if (!this.hasDebuggerSupport || !this.debuggerState.attached || !this.debuggerState.tabId) {
       return;
     }
 
@@ -59,27 +54,18 @@ export class WebToolkit {
       await chrome.debugger.detach({ tabId: this.debuggerState.tabId });
       this.debuggerState.attached = false;
       this.debuggerState.tabId = null;
-      console.log("Debugger detached successfully");
     } catch (error) {
-      console.error("Failed to detach debugger:", error);
+      console.error('Failed to detach debugger:', error);
     }
   }
 
   private async sendCommand(method: string, params: any = {}): Promise<any> {
-    if (
-      !this.hasDebuggerSupport ||
-      !this.debuggerState.attached ||
-      !this.debuggerState.tabId
-    ) {
-      throw new Error("Debugger not available");
+    if (!this.hasDebuggerSupport || !this.debuggerState.attached || !this.debuggerState.tabId) {
+      throw new Error('Debugger not available');
     }
 
     try {
-      return await chrome.debugger.sendCommand(
-        { tabId: this.debuggerState.tabId },
-        method,
-        params
-      );
+      return await chrome.debugger.sendCommand({ tabId: this.debuggerState.tabId }, method, params);
     } catch (error) {
       console.error(`Failed to execute command ${method}:`, error);
       throw error;
@@ -106,17 +92,17 @@ export class WebToolkit {
       // 3. 尝试查询所有窗口的活动标签页
       const tabs = await chrome.tabs.query({
         active: true,
-        windowType: "normal",
+        windowType: 'normal',
       });
       if (tabs.length > 0) {
         return tabs[0];
       }
 
       throw new Error(
-        "No active tab found. Please ensure the extension has the necessary permissions."
+        'No active tab found. Please ensure the extension has the necessary permissions.'
       );
     } catch (error) {
-      console.error("Error getting current tab:", error);
+      console.error('Error getting current tab:', error);
       throw error;
     }
   }
@@ -129,10 +115,8 @@ export class WebToolkit {
       const tab = await this.getCurrentTab();
 
       if (!tab?.id) {
-        console.error("No tab ID found. Tab info:", tab);
-        throw new Error(
-          "Tab ID not found. Please ensure the tab is properly loaded."
-        );
+        console.error('No tab ID found. Tab info:', tab);
+        throw new Error('Tab ID not found. Please ensure the tab is properly loaded.');
       }
 
       // 执行脚本
@@ -143,8 +127,8 @@ export class WebToolkit {
       });
 
       if (!result) {
-        console.error("Script execution returned no result");
-        throw new Error("No result returned from script execution");
+        console.error('Script execution returned no result');
+        throw new Error('No result returned from script execution');
       }
 
       // 如果结果是一个 Promise，等待它完成
@@ -153,13 +137,11 @@ export class WebToolkit {
         // 检查 Promise 结果是否包含错误
         if (
           promiseResult &&
-          typeof promiseResult === "object" &&
-          "success" in promiseResult &&
+          typeof promiseResult === 'object' &&
+          'success' in promiseResult &&
           !promiseResult.success
         ) {
-          throw new Error(
-            promiseResult.error || "Unknown error in Promise result"
-          );
+          throw new Error(promiseResult.error || 'Unknown error in Promise result');
         }
         return promiseResult;
       }
@@ -167,30 +149,27 @@ export class WebToolkit {
       // 检查结果是否包含错误
       if (
         result.result &&
-        typeof result.result === "object" &&
-        "success" in result.result &&
+        typeof result.result === 'object' &&
+        'success' in result.result &&
         !result.result.success
       ) {
-        throw new Error(result.result.error || "Unknown error in result");
+        throw new Error(result.result.error || 'Unknown error in result');
       }
 
       return result.result as T;
     } catch (error) {
-      console.error("executeInTab error:", error);
+      console.error('executeInTab error:', error);
       // 检查是否是权限问题
-      if (
-        error instanceof Error &&
-        error.toString().includes("Cannot access")
-      ) {
+      if (error instanceof Error && error.toString().includes('Cannot access')) {
         throw new Error(
-          "Cannot access this page. Make sure the extension has permissions for this URL."
+          'Cannot access this page. Make sure the extension has permissions for this URL.'
         );
       }
       throw error; // 向上传播错误
     }
   }
 
-  async getPageText(format: string = "text"): Promise<WebToolkitResponse> {
+  async getPageText(format: string = 'text'): Promise<WebToolkitResponse> {
     try {
       const result = await this.executeInTab<{
         html: string;
@@ -199,7 +178,7 @@ export class WebToolkit {
         title: string;
       }>(() => {
         const html = document.documentElement.outerHTML;
-        const text = document.body?.innerText || "";
+        const text = document.body?.innerText || '';
         return {
           html,
           text,
@@ -209,11 +188,11 @@ export class WebToolkit {
       }, []);
 
       if (!result || !result.html) {
-        throw new Error("No result returned from page");
+        throw new Error('No result returned from page');
       }
 
       const domTree = parseHtml(result.html);
-      if (format === "html") {
+      if (format === 'html') {
         const { html: minifiedHtml } = minify(domTree);
         return {
           success: true,
@@ -234,10 +213,10 @@ export class WebToolkit {
         };
       }
     } catch (error) {
-      console.error("Error getting page source:", error);
+      console.error('Error getting page source:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -248,27 +227,23 @@ export class WebToolkit {
       const tab = await this.getCurrentTab();
 
       if (!tab?.id) {
-        throw new Error("No active tab found");
+        throw new Error('No active tab found');
       }
 
       // 使用 chrome.tabs.captureVisibleTab 进行截图
       const dataUrl = await new Promise<string>((resolve, reject) => {
-        chrome.tabs.captureVisibleTab(
-          tab.windowId,
-          { format: "jpeg", quality: 80 },
-          (dataUrl) => {
-            if (chrome.runtime.lastError) {
-              reject(new Error(chrome.runtime.lastError.message));
-              return;
-            }
-            resolve(dataUrl);
+        chrome.tabs.captureVisibleTab(tab.windowId, { format: 'jpeg', quality: 80 }, dataUrl => {
+          if (chrome.runtime.lastError) {
+            reject(new Error(chrome.runtime.lastError.message));
+            return;
           }
-        );
+          resolve(dataUrl);
+        });
       });
 
       return { success: true, data: dataUrl };
     } catch (error) {
-      console.error("Error taking screenshot:", error);
+      console.error('Error taking screenshot:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),
@@ -289,20 +264,19 @@ export class WebToolkit {
       pressEnterAfterInput?: boolean;
     };
   }): Promise<WebInteractionResult> {
-    console.log("🤭🤭 inputElement", selector, value, options);
     try {
       const tabs = await chrome.tabs.query({
         active: true,
         currentWindow: true,
       });
       if (!tabs[0]?.id) {
-        throw new Error("No active tab found");
+        throw new Error('No active tab found');
       }
       const tabId = tabs[0].id;
 
       // 1. 获取元素信息
       const elementInfo = await this.executeInTab<any>(
-        (sel) => {
+        sel => {
           const element = document.querySelector(sel);
           if (!element) {
             return {
@@ -331,21 +305,21 @@ export class WebToolkit {
       if (!elementInfo) {
         return {
           success: false,
-          error: "Failed to get element information",
+          error: 'Failed to get element information',
         };
       }
 
       if (!elementInfo.success) {
         return {
           success: false,
-          error: elementInfo.error || "Failed to get element information",
+          error: elementInfo.error || 'Failed to get element information',
         };
       }
 
       if (!elementInfo.data.visible) {
         return {
           success: false,
-          error: "Element is not visible",
+          error: 'Element is not visible',
         };
       }
 
@@ -353,29 +327,29 @@ export class WebToolkit {
       await this.attachDebugger(tabId);
 
       // 3. 模拟鼠标移动到元素
-      await this.sendCommand("Input.dispatchMouseEvent", {
-        type: "mouseMoved",
+      await this.sendCommand('Input.dispatchMouseEvent', {
+        type: 'mouseMoved',
         x: elementInfo.data.x,
         y: elementInfo.data.y,
-        button: "none",
+        button: 'none',
         buttons: 0,
       });
 
       // 4. 模拟点击以获得焦点
-      await this.sendCommand("Input.dispatchMouseEvent", {
-        type: "mousePressed",
+      await this.sendCommand('Input.dispatchMouseEvent', {
+        type: 'mousePressed',
         x: elementInfo.data.x,
         y: elementInfo.data.y,
-        button: "left",
+        button: 'left',
         buttons: 1,
         clickCount: 1,
       });
 
-      await this.sendCommand("Input.dispatchMouseEvent", {
-        type: "mouseReleased",
+      await this.sendCommand('Input.dispatchMouseEvent', {
+        type: 'mouseReleased',
         x: elementInfo.data.x,
         y: elementInfo.data.y,
-        button: "left",
+        button: 'left',
         buttons: 0,
         clickCount: 1,
       });
@@ -383,37 +357,36 @@ export class WebToolkit {
       // 5. 如果需要清空，发送 Backspace 键
       if (options?.clearFirst) {
         const currentValue = await this.executeInTab<string>(
-          (sel) =>
-            (document.querySelector(sel) as HTMLInputElement)?.value || "",
+          sel => (document.querySelector(sel) as HTMLInputElement)?.value || '',
           [selector]
         );
 
         for (let i = 0; i < currentValue.length; i++) {
-          await this.sendCommand("Input.dispatchKeyEvent", {
-            type: "keyDown",
-            key: "Backspace",
-            code: "Backspace",
+          await this.sendCommand('Input.dispatchKeyEvent', {
+            type: 'keyDown',
+            key: 'Backspace',
+            code: 'Backspace',
           });
-          await this.sendCommand("Input.dispatchKeyEvent", {
-            type: "keyUp",
-            key: "Backspace",
-            code: "Backspace",
+          await this.sendCommand('Input.dispatchKeyEvent', {
+            type: 'keyUp',
+            key: 'Backspace',
+            code: 'Backspace',
           });
-          await new Promise((resolve) => setTimeout(resolve, 10));
+          await new Promise(resolve => setTimeout(resolve, 10));
         }
       }
 
       // 6. 模拟输入 - 使用 insertText 而不是逐个字符输入
-      await this.sendCommand("Input.insertText", {
+      await this.sendCommand('Input.insertText', {
         text: value,
       });
 
       // 7. 等待一小段时间确保事件处理完成
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // 8. 获取最终结果
       const finalResult = await this.executeInTab<any>(
-        (sel) => {
+        sel => {
           const element = document.querySelector(sel) as HTMLInputElement;
           if (!element) {
             return {
@@ -435,17 +408,17 @@ export class WebToolkit {
 
       // 9. 回车操作（如果需要）
       if (options?.pressEnterAfterInput) {
-        await this.sendCommand("Input.dispatchKeyEvent", {
-          type: "keyDown",
-          key: "Enter",
-          code: "Enter",
+        await this.sendCommand('Input.dispatchKeyEvent', {
+          type: 'keyDown',
+          key: 'Enter',
+          code: 'Enter',
           windowsVirtualKeyCode: 13,
           nativeVirtualKeyCode: 13,
         });
-        await this.sendCommand("Input.dispatchKeyEvent", {
-          type: "keyUp",
-          key: "Enter",
-          code: "Enter",
+        await this.sendCommand('Input.dispatchKeyEvent', {
+          type: 'keyUp',
+          key: 'Enter',
+          code: 'Enter',
           windowsVirtualKeyCode: 13,
           nativeVirtualKeyCode: 13,
         });
@@ -461,7 +434,6 @@ export class WebToolkit {
         };
       }
 
-      console.log("😂😂 options", options);
       return {
         success: true,
         data: {
@@ -471,7 +443,7 @@ export class WebToolkit {
         },
       };
     } catch (error) {
-      console.error("Error in inputElement:", error);
+      console.error('Error in inputElement:', error);
       // 确保调试器被分离
       await this.detachDebugger();
       return {
@@ -485,14 +457,14 @@ export class WebToolkit {
     try {
       // 1. 查找元素（主文档+iframe）
       const elementInfo = await this.executeInTab<any>(
-        (sel) => {
+        sel => {
           function findElement(sel: string): {
             element: HTMLElement | null;
             frame?: HTMLIFrameElement;
           } {
             let el = document.querySelector(sel) as HTMLElement;
             if (el) return { element: el };
-            const iframes = Array.from(document.getElementsByTagName("iframe"));
+            const iframes = Array.from(document.getElementsByTagName('iframe'));
             for (const frame of iframes) {
               try {
                 const doc = frame.contentDocument;
@@ -505,8 +477,7 @@ export class WebToolkit {
             return { element: null };
           }
           const { element, frame } = findElement(sel);
-          if (!element)
-            return { success: false, error: `Element not found: ${sel}` };
+          if (!element) return { success: false, error: `Element not found: ${sel}` };
           const rect = element.getBoundingClientRect();
           const isVisible = rect.width > 0 && rect.height > 0;
           return { success: true, data: { isVisible, frame } };
@@ -517,19 +488,18 @@ export class WebToolkit {
       if (!elementInfo?.success)
         return {
           success: false,
-          error: elementInfo?.error || "Element not found",
+          error: elementInfo?.error || 'Element not found',
         };
 
-      if (!elementInfo.data.isVisible)
-        return { success: false, error: "Element is not visible" };
+      if (!elementInfo.data.isVisible) return { success: false, error: 'Element is not visible' };
 
       // 2. 执行点击
       const clickResult = await this.executeInTab<any>(
-        (sel) => {
+        sel => {
           function findElement(sel: string): HTMLElement | null {
             let el = document.querySelector(sel) as HTMLElement;
             if (el) return el;
-            const iframes = Array.from(document.getElementsByTagName("iframe"));
+            const iframes = Array.from(document.getElementsByTagName('iframe'));
             for (const frame of iframes) {
               try {
                 const doc = frame.contentDocument;
@@ -542,9 +512,8 @@ export class WebToolkit {
             return null;
           }
           const el = findElement(sel);
-          if (!el)
-            return { success: false, error: "Element not found for click" };
-          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          if (!el) return { success: false, error: 'Element not found for click' };
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           setTimeout(() => el.click(), 50);
           return { success: true };
         },
@@ -552,12 +521,12 @@ export class WebToolkit {
       );
 
       if (!clickResult?.success)
-        return { success: false, error: clickResult?.error || "Click failed" };
+        return { success: false, error: clickResult?.error || 'Click failed' };
 
       // 3. 简单等待后返回状态
-      await new Promise((r) => setTimeout(r, 500));
+      await new Promise(r => setTimeout(r, 500));
       const stillExists = await this.executeInTab<boolean>(
-        (sel) => !!document.querySelector(sel),
+        sel => !!document.querySelector(sel),
         [selector]
       );
 
@@ -579,19 +548,19 @@ export class WebToolkit {
   async scrollToElement(selector: string): Promise<WebInteractionResult> {
     try {
       const result = await this.executeInTab<WebInteractionResult>(() => {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
           const element = document.querySelector(selector) as HTMLElement;
           if (element) {
-            element.scrollIntoView({ behavior: "smooth" });
+            element.scrollIntoView({ behavior: 'smooth' });
             resolve({ success: true });
           } else {
-            resolve({ success: false, error: "Element not found" });
+            resolve({ success: false, error: 'Element not found' });
           }
         });
       });
       return result;
     } catch (error) {
-      console.error("Error scrolling to element:", error);
+      console.error('Error scrolling to element:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),
@@ -608,14 +577,14 @@ export class WebToolkit {
       // 获取当前标签页
       const tab = await this.getCurrentTab();
       if (!tab?.id) {
-        throw new Error("No active tab found");
+        throw new Error('No active tab found');
       }
 
       // 记录开始时间
       const startTime = Date.now();
 
       await this.executeInTab<WebInteractionResult>(() => {
-        return new Promise((resolve) => {
+        return new Promise(resolve => {
           if (url) {
             window.location.href = url;
           } else {
@@ -630,11 +599,11 @@ export class WebToolkit {
         await new Promise<void>((resolve, reject) => {
           const timeoutId = setTimeout(() => {
             chrome.tabs.onUpdated.removeListener(listener);
-            reject(new Error("Page load timeout"));
+            reject(new Error('Page load timeout'));
           }, timeout);
 
           const listener = (tabId: number, info: chrome.tabs.TabChangeInfo) => {
-            if (tabId === tab.id && info.status === "complete") {
+            if (tabId === tab.id && info.status === 'complete') {
               clearTimeout(timeoutId);
               chrome.tabs.onUpdated.removeListener(listener);
               resolve();
@@ -667,7 +636,7 @@ export class WebToolkit {
         },
       };
     } catch (error) {
-      console.error("Error refreshing page:", error);
+      console.error('Error refreshing page:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),
@@ -678,9 +647,7 @@ export class WebToolkit {
   async listElements(selector?: string): Promise<WebInteractionResult> {
     try {
       if (!selector) {
-        throw new Error(
-          "Selector is required. Please provide a valid CSS selector."
-        );
+        throw new Error('Selector is required. Please provide a valid CSS selector.');
       }
 
       const result = await this.executeInTab<WebInteractionResult>(
@@ -689,19 +656,19 @@ export class WebToolkit {
           return {
             success: true,
             data: {
-              elements: elements.map((el) => {
+              elements: elements.map(el => {
                 const element = el as HTMLElement;
                 const rect = element.getBoundingClientRect();
                 const style = window.getComputedStyle(element);
                 const isVisible =
-                  style.visibility !== "hidden" &&
-                  style.display !== "none" &&
+                  style.visibility !== 'hidden' &&
+                  style.display !== 'none' &&
                   rect.width > 0 &&
                   rect.height > 0;
 
                 // 收集元素属性
                 const attributes: Record<string, string> = {};
-                Array.from(element.attributes).forEach((attr) => {
+                Array.from(element.attributes).forEach(attr => {
                   attributes[attr.name] = attr.value;
                 });
 
@@ -710,38 +677,38 @@ export class WebToolkit {
                 if (element.id) {
                   uniqueSelector = `#${element.id}`;
                 } else if (element.className) {
-                  uniqueSelector += `.${element.className.split(" ").join(".")}`;
+                  uniqueSelector += `.${element.className.split(' ').join('.')}`;
                 }
-                if (element.getAttribute("role")) {
-                  uniqueSelector += `[role="${element.getAttribute("role")}"]`;
+                if (element.getAttribute('role')) {
+                  uniqueSelector += `[role="${element.getAttribute('role')}"]`;
                 }
-                if (element.getAttribute("data-testid")) {
-                  uniqueSelector += `[data-testid="${element.getAttribute("data-testid")}"]`;
+                if (element.getAttribute('data-testid')) {
+                  uniqueSelector += `[data-testid="${element.getAttribute('data-testid')}"]`;
                 }
 
                 return {
                   uniqueSelector,
                   selectorPath: uniqueSelector,
-                  text: element.innerText?.trim() || "",
+                  text: element.innerText?.trim() || '',
                   type: element.tagName.toLowerCase(),
                   attributes,
                   isVisible,
                   isInteractive:
-                    (element.tagName === "BUTTON" ||
-                      element.tagName === "A" ||
-                      element.tagName === "INPUT" ||
-                      element.getAttribute("role") === "button" ||
+                    (element.tagName === 'BUTTON' ||
+                      element.tagName === 'A' ||
+                      element.tagName === 'INPUT' ||
+                      element.getAttribute('role') === 'button' ||
                       element.onclick != null ||
-                      style.cursor === "pointer") &&
-                    !element.hasAttribute("disabled"),
+                      style.cursor === 'pointer') &&
+                    !element.hasAttribute('disabled'),
                   elementState: {
-                    isEnabled: !element.hasAttribute("disabled"),
+                    isEnabled: !element.hasAttribute('disabled'),
                     tagName: element.tagName.toLowerCase(),
                     className: element.className,
                     id: element.id,
-                    role: element.getAttribute("role"),
-                    ariaLabel: element.getAttribute("aria-label"),
-                    dataTestId: element.getAttribute("data-testid"),
+                    role: element.getAttribute('role'),
+                    ariaLabel: element.getAttribute('aria-label'),
+                    dataTestId: element.getAttribute('data-testid'),
                   },
                 };
               }),

@@ -3,6 +3,7 @@
 This document outlines the structure and organization of the AI Character Builder Chrome Extension project.
 
 ## Project Overview
+
 - **Name**: AI Character Builder
 - **Type**: Chrome Extension (Manifest V3)
 - **Tech Stack**: TypeScript, Webpack
@@ -33,20 +34,24 @@ This document outlines the structure and organization of the AI Character Builde
 ## Key Components
 
 1. **Background Service Worker** (`src/background/`)
+
    - Handles extension's background processes
    - Runs as a service worker (Manifest V3 requirement)
 
 2. **Content Scripts** (`src/content/`)
+
    - Injected into web pages
    - Interacts with web page content
    - Specifically targets Twitter/X.com domains
 
 3. **Popup Interface** (`src/popup/`)
+
    - `index.html` - Main popup interface
    - `options.html` - Extension settings page
    - Associated TypeScript files for functionality
 
 4. **Twitter Integration** (`src/twitter/`)
+
    - Specialized handling for Twitter/X.com
    - Timeline and post processing
    - Common Twitter utilities
@@ -71,6 +76,7 @@ This document outlines the structure and organization of the AI Character Builde
 ## Permissions
 
 The extension requires:
+
 - Storage access
 - Active tab access
 - Scripting permissions

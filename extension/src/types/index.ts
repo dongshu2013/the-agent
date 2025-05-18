@@ -4,10 +4,10 @@
  */
 
 // Re-export all types from their respective files
-export * from "./messages";
-export * from "./conversations";
-export * from "./api";
-export * from "./settings";
+export * from './messages';
+export * from './conversations';
+export * from './api';
+export * from './settings';
 
 /**
  * Environment configuration interface
@@ -29,11 +29,11 @@ export interface DefaultConfig {
  * Chrome message types
  */
 export type ChromeMessageName =
-  | "process-request"
-  | "update-config"
-  | "selected-text"
-  | "api-key-missing"
-  | "focus-input";
+  | 'process-request'
+  | 'update-config'
+  | 'selected-text'
+  | 'api-key-missing'
+  | 'focus-input';
 
 /**
  * Process request message sent to background script
@@ -47,7 +47,7 @@ export interface ProcessRequestBody {
  * Update config message from UI to background
  */
 export interface ChromeUpdateConfigMessage {
-  name: "update-config";
+  name: 'update-config';
   body: {
     key: string;
     value: string;
@@ -58,7 +58,7 @@ export interface ChromeUpdateConfigMessage {
  * Selected text message from context menu to UI
  */
 export interface ChromeSelectedTextMessage {
-  name: "selected-text";
+  name: 'selected-text';
   text: string;
 }
 
@@ -66,7 +66,7 @@ export interface ChromeSelectedTextMessage {
  * API key missing message from background to UI
  */
 export interface ChromeApiKeyMissingMessage {
-  name: "api-key-missing";
+  name: 'api-key-missing';
   redirectUrl: string;
 }
 
@@ -74,7 +74,7 @@ export interface ChromeApiKeyMissingMessage {
  * Focus input message to UI
  */
 export interface ChromeFocusInputMessage {
-  name: "focus-input";
+  name: 'focus-input';
 }
 
 /**

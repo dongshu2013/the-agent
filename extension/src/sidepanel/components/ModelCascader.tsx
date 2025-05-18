@@ -1,6 +1,6 @@
-import React from "react";
-import { Cascader } from "antd";
-import { Settings as SettingsIcon } from "lucide-react";
+import React from 'react';
+import { Cascader } from 'antd';
+import { Settings as SettingsIcon } from 'lucide-react';
 
 export interface ProviderGroup {
   type: string;
@@ -20,48 +20,45 @@ const ModelCascader: React.FC<ModelCascaderProps> = ({
   onChange,
   onProviderSetting,
 }) => {
-  const cascaderOptions = providerGroups.map((provider) => ({
+  const cascaderOptions = providerGroups.map(provider => ({
     value: provider.type,
     label: provider.type.charAt(0).toUpperCase() + provider.type.slice(1),
-    children: provider.models.map((model) => ({
+    children: provider.models.map(model => ({
       value: model.id,
-      label: model.id === "system" ? "Mysta" : model.name,
+      label: model.id === 'system' ? 'Mysta' : model.name,
     })),
   }));
 
-  const displayRender = (labels: string[]) => labels[labels.length - 1] || "";
+  const displayRender = (labels: string[]) => labels[labels.length - 1] || '';
 
   const optionRender = (option: any, context?: { level: number }) => {
-    const isProvider =
-      Array.isArray(option.children) && option.children.length > 0;
-
-    console.log("🔥 option:🍷", option);
+    const isProvider = Array.isArray(option.children) && option.children.length > 0;
     if ((context && context.level === 0) || isProvider) {
       return (
         <div
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            width: "100%",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            width: '100%',
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span>{option.label}</span>
           </div>
-          {option.value !== "Default" && (
+          {option.value !== 'Default' && (
             <button
               style={{
-                background: "none",
-                border: "none",
+                background: 'none',
+                border: 'none',
                 padding: 0,
                 marginLeft: 8,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                color: "#aaa",
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                color: '#aaa',
               }}
-              onClick={(e) => {
+              onClick={e => {
                 e.stopPropagation();
                 onProviderSetting?.(option.value);
               }}
@@ -81,10 +78,10 @@ const ModelCascader: React.FC<ModelCascaderProps> = ({
       disabled={true}
       options={cascaderOptions}
       value={value}
-      onChange={(val) => onChange?.(val as [string, string])}
+      onChange={val => onChange?.(val as [string, string])}
       displayRender={displayRender}
       optionRender={optionRender}
-      style={{ width: "100%" }}
+      style={{ width: '100%' }}
     />
   );
 };
