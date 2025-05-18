@@ -487,11 +487,6 @@ const Sidepanel = () => {
             </div>
           ) : (
             <div style={{ paddingBottom: "32px" }}>
-              {isStreaming && (
-                <div style={{ padding: "16px 0", textAlign: "center" }}>
-                  <LoadingBrain />
-                </div>
-              )}
               {messages.map((message, index) => (
                 <Message
                   key={message.id || index}
@@ -502,6 +497,11 @@ const Sidepanel = () => {
                   }
                 />
               ))}
+              {isStreaming && (
+                <div style={{ padding: "16px 0", textAlign: "center" }}>
+                  <LoadingBrain />
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
           )}
