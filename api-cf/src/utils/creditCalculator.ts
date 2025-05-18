@@ -86,7 +86,8 @@ export function createStreamingTokenTracker() {
 export function calculateEmbeddingCredits(
   model: string,
   totalTokens: number,
-  dataSize: number
+  dataSize: number,
+  topK = 3
 ): Cost {
   const pricing = MODEL_PRICING[model];
   if (!pricing) {
@@ -95,8 +96,8 @@ export function calculateEmbeddingCredits(
   // Cost per million calls
   const apiCost = API_COST_PRICE;
 
-  // Calculate Emb cost
-  const embeddingQueryCost = EMBEDDING_QUERY_COST_PRICE;
+  // Calculate Embedding cost
+  const embeddingQueryCost = EMBEDDING_QUERY_COST_PRICE * topK;
   const embeddingTokenCost = totalTokens * pricing.inputPrice;
   const embeddingCost = embeddingQueryCost + embeddingTokenCost;
 

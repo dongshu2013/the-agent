@@ -106,7 +106,7 @@ export class AgentContext extends DurableObject<Env> {
       };
     }
     // Generate embedding
-    const embeddingResult = await generateEmbedding(this.openai, [text]);
+    const embeddingResult = await generateEmbedding(this.openai, [text], topK);
     if (embeddingResult === null) {
       return {
         success: false,

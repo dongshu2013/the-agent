@@ -12,7 +12,8 @@ export function createEmbeddingClient(env: Env): OpenAI {
 
 export async function generateEmbedding(
   openai: OpenAI,
-  texts: string[]
+  texts: string[],
+  topK = 3
 ): Promise<{ embedding: number[]; totalCost: number } | null> {
   try {
     const inputText = texts.join('\n');
@@ -29,7 +30,8 @@ export async function generateEmbedding(
     const cost = calculateEmbeddingCredits(
       EMBEDDING_MODEL,
       response.usage.total_tokens,
-      dataSize
+      dataSize,
+      topK
     );
 
     const embedding = response.data[0].embedding;
