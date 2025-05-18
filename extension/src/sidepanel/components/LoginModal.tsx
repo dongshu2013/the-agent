@@ -79,7 +79,7 @@ export default function LoginModal({
       {showSwitch ? (
         <>
           <div style={{ color: "#e11d48", fontWeight: 500, marginBottom: 16 }}>
-            Detected Mysta account change, switch?
+            New Mysta account detected
             <div style={{ fontSize: 14, color: "#333", marginTop: 8 }}>
               Current account:{" "}
               <span style={{ color: "#888" }}>
@@ -100,7 +100,7 @@ export default function LoginModal({
               height: 48,
               borderRadius: 24,
               border: "1.5px solid #d1d5db",
-              background: "#22c55e",
+              background: "#000",
               color: "#fff",
               fontSize: 18,
               fontWeight: 500,
