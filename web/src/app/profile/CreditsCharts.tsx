@@ -69,7 +69,7 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
       const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
 
       // Only process debit transactions for spend data
-      if (transaction.tx_type === TransactionType.DEBIT) {
+      if (transaction.tx_type === TransactionType.CREDIT) {
         // Add to daily spend
         if (!dailySpend[dateKey]) {
           dailySpend[dateKey] = 0;
