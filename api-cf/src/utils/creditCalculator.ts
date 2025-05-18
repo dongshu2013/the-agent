@@ -106,15 +106,15 @@ export function calculateEmbeddingCredits(
 
   const totalCost = apiCost + embeddingCost + storageCost;
 
-  console.log('---calculateEmbeddingCredits', {
-    model,
-    totalTokens,
-    dataSize,
-    apiCost,
-    embeddingCost,
-    storageCost,
-    totalCost,
-  });
+  // console.log('---calculateEmbeddingCredits', {
+  //   model,
+  //   totalTokens,
+  //   dataSize,
+  //   apiCost,
+  //   embeddingCost,
+  //   storageCost,
+  //   totalCost,
+  // });
 
   return {
     inputCost: embeddingCost,
