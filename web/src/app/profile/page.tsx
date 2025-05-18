@@ -177,7 +177,7 @@ export default function ProfilePage() {
               </div>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Use this API key to authenticate requests to the Mysta Agent API.
+              Use this API key to authenticate requests to the Mysta API.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
@@ -240,7 +240,7 @@ export default function ProfilePage() {
               Manage Your Data
             </h3>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Connect your data sources to enhance your Mysta Agent experience
+              Connect your data sources to enhance your Mysta experience
             </p>
           </div>
           <div className="border-t border-gray-200 dark:border-gray-700 px-4 py-5 sm:p-6">

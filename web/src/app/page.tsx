@@ -22,12 +22,12 @@ export default function Home() {
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center gap-2.5">
             <Image src="/mysta-logo.png" alt="Mysta Logo" width={40} height={40} />
-            <h1 className="text-[40px] font-semibold text-gray-900 dark:text-white m-0">MYSTA</h1>
+            <h1 className="text-4xl font-bold tracking-tight black">MYSTA</h1>
             <Image src="/beta.png" alt="Beta" width={50} height={20} />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mt-4">
-            Your private AI, in your browser.
-          </h2>
+          <p className="mt-6 text-lg leading-8 text-gray-600 black">
+            Ask anything. Automate everything.
+          </p>
         </div>
 
         <div className="space-y-4">
