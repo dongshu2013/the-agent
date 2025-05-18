@@ -181,28 +181,6 @@ export const CreditsTable = () => {
               htmlFor="transType"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
-              Transaction Type
-            </label>
-            <select
-              id="transType"
-              value={selectedTxType}
-              onChange={(e) => setSelectedTxType(e.target.value as TransactionType | '')}
-              className="w-full h-9 rounded-md border border-gray-300 dark:border-gray-600 px-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-            >
-              <option value="">All Types</option>
-              {filterOptions.txTypes.map((type) => (
-                <option key={type} value={type}>
-                  {formatTxType(type)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex-1">
-            <label
-              htmlFor="transType"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >
               Transaction Reason
             </label>
             <select
@@ -241,12 +219,6 @@ export const CreditsTable = () => {
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
               >
                 Date
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-              >
-                Type
               </th>
               <th
                 scope="col"
@@ -291,9 +263,6 @@ export const CreditsTable = () => {
                 <tr key={credit.id} className="hover:bg-gray-100 dark:hover:bg-gray-800">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                     {formatDate(credit.created_at)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                    {formatTxType(credit.tx_type)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                     {formatTxReason(credit.tx_reason)}
