@@ -22,7 +22,7 @@ export default function Home() {
         <div className="flex flex-col items-center mb-8">
           <div className="w-[240px] h-[96px] relative">
             <Image
-              src="/mysta-brand-logo.png"
+              src="/mysta-beta-logo.png"
               alt="Mysta Logo"
               fill
               style={{ objectFit: 'contain' }}
