@@ -1,3 +1,6 @@
+import logoIcon from "~/assets/icon64.png"
+import betaIcon from "~/assets/beta.png"
+
 const Popup = () => {
   const openSidePanel = async () => {
     try {
@@ -29,7 +32,35 @@ const Popup = () => {
         gap: "12px",
       }}
     >
-      <h2 style={{ margin: "0", fontSize: "18px" }}>Mysta Agent</h2>
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: "10px",
+        marginBottom: "12px",
+      }}>
+        <img 
+          src={logoIcon}
+          alt="Mysta Logo" 
+          style={{ 
+            height: "30px" 
+          }} 
+        />
+        <h2 style={{ 
+          margin: "0", 
+          fontSize: "30px",
+          fontWeight: "600",
+        }}>
+          MYSTA
+        </h2>
+        <img 
+          src={betaIcon}
+          alt="Beta" 
+          style={{ 
+            height: "16px",
+          }} 
+        />
+      </div>
       <button
         onClick={openSidePanel}
         style={{

@@ -22,13 +22,16 @@ export default function Home() {
         <div className="flex flex-col items-center mb-8">
           <div className="w-[240px] h-[96px] relative">
             <Image
-              src="/mysta-brand-logo.png"
+              src="/mysta-beta-logo.png"
               alt="Mysta Logo"
               fill
               style={{ objectFit: 'contain' }}
               priority
             />
           </div>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+            Your private AI, in your browser.
+          </h1>
         </div>
 
         <div className="space-y-4">
@@ -49,11 +52,11 @@ export default function Home() {
 
         <div className="mt-6 text-center text-sm text-gray-500 whitespace-nowrap">
           By signing up, you agree to our{' '}
-          <Link href="/tos" className="text-blue-500 hover:text-blue-600">
+          <Link href="/tos" target="_blank" className="text-blue-500 hover:text-blue-600">
             Terms and Conditions
           </Link>{' '}
           and{' '}
-          <Link href="/privacy" className="text-blue-500 hover:text-blue-600">
+          <Link href="/privacy" target="_blank" className="text-blue-500 hover:text-blue-600">
             Privacy Policy
           </Link>
         </div>
