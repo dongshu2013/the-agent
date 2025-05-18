@@ -83,6 +83,9 @@ export function createStreamingTokenTracker() {
 
 /**
  * Calculates the credit cost for embeddings based on token usage and data size
+ * @param model The model name
+ * @param totalTokens Total number of tokens
+ * @param dataSize Data size in bytes
  */
 export function calculateEmbeddingCredits(
   model: string,
@@ -98,8 +101,9 @@ export function calculateEmbeddingCredits(
   const tokenBasedCost =
     (totalTokens * pricing.inputPrice * TOKEN_COST_MULTIPLIER) / 1000000;
 
-  // Calculate data size-based cost
-  const dataSizeCost = dataSize * DATA_SIZE_COST_MULTIPLIER;
+  // Convert bytes to GB and calculate data size-based cost
+  const sizeInGB = dataSize / (1024 * 1024 * 1024);
+  const dataSizeCost = sizeInGB * DATA_SIZE_COST_MULTIPLIER;
 
   const totalCost = tokenBasedCost + dataSizeCost;
 
