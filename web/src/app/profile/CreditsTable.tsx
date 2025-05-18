@@ -273,11 +273,11 @@ export const CreditsTable = () => {
                   <td
                     className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
                       credit.tx_type === TransactionType.CREDIT
-                        ? 'text-green-600 dark:text-green-400'
-                        : 'text-red-600 dark:text-red-400'
+                        ? 'text-red-600 dark:text-red-400'
+                        : 'text-green-600 dark:text-green-400'
                     }`}
                   >
-                    {credit.tx_type === TransactionType.CREDIT ? '+' : '-'}
+                    {credit.tx_type === TransactionType.CREDIT ? '-' : '+'}
                     {formatCredits(credit.tx_credits, 6)}
                   </td>
                 </tr>

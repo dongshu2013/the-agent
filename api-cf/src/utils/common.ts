@@ -11,7 +11,7 @@ export const FIREBASE_PROJECT_ID = 'mysta-ai';
 export const AMOUNT_BASE = 1000000; // 10^6 = 1USDT
 
 export function getCreditFromAmount(amount: number) {
-  return amount * AMOUNT_BASE;
+  return Math.max(1, Math.ceil(amount));
 }
 
 // Cost multipliers for different types of operations
@@ -21,8 +21,9 @@ export const COST_MULTIPLIERS = {
 };
 
 // Constants for save message embedding cost calculations
-export const TOKEN_COST_MULTIPLIER = 0.01; // Cost per token
-export const DATA_SIZE_COST_MULTIPLIER = 1; // Cost per GB
+export const API_COST_PRICE = 1; // Cost per million calls
+export const EMBEDDING_QUERY_COST_PRICE = 10; // Cost per million tokens, cost 10
+export const DATA_COST_PRICE = 0.001; // Cost credits per byte, cost 0.75
 
 export interface ModelPricing {
   inputPrice: number;
@@ -41,7 +42,7 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   },
   // Embedding Models
   'intfloat/multilingual-e5-large': {
-    inputPrice: 0.02, // Price per million tokens
+    inputPrice: 0.02, // Price per million tokens, cost 0.01
     outputPrice: 0, // Embeddings don't have output tokens
   },
 };
