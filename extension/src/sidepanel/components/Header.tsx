@@ -246,12 +246,12 @@ const Header = ({
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-        <ModelCascader
+        {/* <ModelCascader
           providerGroups={providerGroups as ProviderGroup[]}
           value={cascaderValue as [string, string]}
           onChange={handleCascaderChange}
           onProviderSetting={handleProviderSetting}
-        />
+        /> */}
         <button
           onClick={createNewConversation}
           style={{

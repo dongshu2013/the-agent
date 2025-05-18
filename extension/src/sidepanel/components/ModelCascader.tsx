@@ -14,38 +14,6 @@ interface ModelCascaderProps {
   onProviderSetting?: (providerType: string) => void;
 }
 
-// const providerIcons: Record<string, React.ReactNode> = {
-//   deepseek: (
-//     <img
-//       src="/icons/deepseek.svg"
-//       style={{ width: 20, height: 20 }}
-//       alt="DeepSeek"
-//     />
-//   ),
-//   openai: (
-//     <img
-//       src="/icons/openai.svg"
-//       style={{ width: 20, height: 20 }}
-//       alt="OpenAI"
-//     />
-//   ),
-//   google: (
-//     <img
-//       src="/icons/google.svg"
-//       style={{ width: 20, height: 20 }}
-//       alt="Google"
-//     />
-//   ),
-//   anthropic: (
-//     <img
-//       src="/icons/anthropic.svg"
-//       style={{ width: 20, height: 20 }}
-//       alt="Anthropic"
-//     />
-//   ),
-//   default: null,
-// };
-
 const ModelCascader: React.FC<ModelCascaderProps> = ({
   providerGroups,
   value,
@@ -79,7 +47,6 @@ const ModelCascader: React.FC<ModelCascaderProps> = ({
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {/* {providerIcons[option.value] || providerIcons.default} */}
             <span>{option.label}</span>
           </div>
           {option.value !== "Default" && (
@@ -111,6 +78,7 @@ const ModelCascader: React.FC<ModelCascaderProps> = ({
 
   return (
     <Cascader
+      disabled={true}
       options={cascaderOptions}
       value={value}
       onChange={(val) => onChange?.(val as [string, string])}
