@@ -53,12 +53,12 @@ export default function Home() {
         <div className="mt-6 text-center text-sm text-gray-500 whitespace-nowrap">
           By signing up, you agree to our{' '}
           <Link href="/tos" target="_blank" className="text-blue-500 hover:text-blue-600">
-            User Terms
+            Terms and Conditions
           </Link>{' '}
-          {/* and{' '}
+          and{' '}
           <Link href="/privacy" target="_blank" className="text-blue-500 hover:text-blue-600">
             Privacy Policy
-          </Link> */}
+          </Link>
         </div>
       </div>
     </div>
