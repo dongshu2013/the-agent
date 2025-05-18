@@ -205,7 +205,7 @@ const Header = ({
           display: "flex",
           alignItems: "center",
           height: "44px",
-          gap: "12px",
+          gap: "4px",
         }}
       >
         <button
@@ -243,6 +243,18 @@ const Header = ({
             <MessageCircleMore size={20} />
           </div>
         </button>
+        <span style={{
+          fontSize: "13px",
+          color: "#059669",
+          fontWeight: 600,
+          background: "#ECFDF5",
+          padding: "4px 8px",
+          borderRadius: "6px",
+          border: "1px solid #D1FAE5",
+          letterSpacing: "0.02em",
+        }}>
+          BETA
+        </span>
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
