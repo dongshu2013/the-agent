@@ -29,6 +29,9 @@ export default function Home() {
               priority
             />
           </div>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+            Your private AI, in your browser.
+          </h1>
         </div>
 
         <div className="space-y-4">
