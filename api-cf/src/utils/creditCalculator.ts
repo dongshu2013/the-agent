@@ -16,6 +16,7 @@ export interface Cost {
   inputCost: number;
   outputCost: number;
   totalCost: number;
+  totalCostWithMultiplier: number;
 }
 
 export interface CreditCalculationResult {
@@ -36,15 +37,14 @@ export function calculateCredits(
   }
 
   // Calculate costs with multipliers (per 1M tokens)
-  const inputCost =
-    tokenUsage.promptTokens * pricing.inputPrice * COST_MULTIPLIERS.input;
-  const outputCost =
-    tokenUsage.completionTokens * pricing.outputPrice * COST_MULTIPLIERS.output;
-
+  const inputCost = tokenUsage.promptTokens * pricing.inputPrice;
+  const outputCost = tokenUsage.completionTokens * pricing.outputPrice;
+  const totalCost = inputCost + outputCost;
   const cost: Cost = {
     inputCost,
     outputCost,
-    totalCost: inputCost + outputCost,
+    totalCost,
+    totalCostWithMultiplier: totalCost * COST_MULTIPLIERS.inference,
   };
 
   return {
@@ -87,7 +87,7 @@ export function calculateEmbeddingCredits(
   model: string,
   totalTokens: number,
   dataSize: number,
-  topK = 3
+  topK: number
 ): Cost {
   const pricing = MODEL_PRICING[model];
   if (!pricing) {
@@ -106,19 +106,10 @@ export function calculateEmbeddingCredits(
 
   const totalCost = apiCost + embeddingCost + storageCost;
 
-  // console.log('---calculateEmbeddingCredits', {
-  //   model,
-  //   totalTokens,
-  //   dataSize,
-  //   apiCost,
-  //   embeddingCost,
-  //   storageCost,
-  //   totalCost,
-  // });
-
   return {
     inputCost: embeddingCost,
     outputCost: 0, // Embeddings don't have output costs
     totalCost: totalCost,
+    totalCostWithMultiplier: totalCost * COST_MULTIPLIERS.embedding,
   };
 }

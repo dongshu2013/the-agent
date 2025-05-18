@@ -171,17 +171,14 @@ export class ChatCompletions extends OpenAPIRoute {
 
           // Calculate and deduct credits based on actual token usage
           const tokenUsage = tokenTracker.getTokenUsage();
-          const { cost, tokenUsage: usage } = calculateCredits(
-            params.model,
-            tokenUsage
-          );
-          console.log(`Credit usage for ${userId}:`, {
-            model: params.model,
-            tokenUsage: usage,
-            cost,
-          });
+          const { cost } = calculateCredits(params.model, tokenUsage);
 
-          await deductUserCredits(env, userId, cost.totalCost, params.model);
+          await deductUserCredits(
+            env,
+            userId,
+            cost.totalCostWithMultiplier,
+            params.model
+          );
           writer.close();
           reader.releaseLock();
         }
@@ -211,18 +208,14 @@ export class ChatCompletions extends OpenAPIRoute {
         completionTokens: result.usage?.completion_tokens || 0,
       };
 
-      const { cost, tokenUsage: usage } = calculateCredits(
-        params.model,
-        tokenUsage
-      );
-      console.log(`Credit usage for ${userId}:`, {
-        model: params.model,
-        tokenUsage: usage,
-        cost,
-      });
-
+      const { cost } = calculateCredits(params.model, tokenUsage);
       // Deduct credits
-      await deductUserCredits(env, userId, cost.totalCost, params.model);
+      await deductUserCredits(
+        env,
+        userId,
+        cost.totalCostWithMultiplier,
+        params.model
+      );
 
       // Return the response
       return c.json(result as Record<string, unknown>, 200);

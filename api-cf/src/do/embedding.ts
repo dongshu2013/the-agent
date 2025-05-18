@@ -35,7 +35,7 @@ export async function generateEmbedding(
     );
 
     const embedding = response.data[0].embedding;
-    return { embedding, totalCost: cost.totalCost };
+    return { embedding, totalCost: cost.totalCostWithMultiplier };
   } catch (error) {
     console.error('Error generating embeddings:', error);
     // Continue execution even if embedding fails
