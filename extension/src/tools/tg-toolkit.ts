@@ -3,9 +3,6 @@ import { env } from '../utils/env';
 import { getApiKey } from '../services/cache';
 import { showLoginModal } from '~/utils/global-event';
 
-// Ensure Chrome types are available
-declare const chrome: any;
-
 export class TgToolkit {
   private static readonly API_ENDPOINT = '/v1/tg';
 

@@ -189,7 +189,8 @@ function parseHtmlString(html: string): DomNode {
           const attrRegex = /([\w-]+)(?:=(["'])(.*?)\2)?/g;
           let attrMatch;
           while ((attrMatch = attrRegex.exec(tagContent)) !== null) {
-            const [_, name, _quote, value] = attrMatch;
+            const name = attrMatch[1];
+            const value = attrMatch[3];
             if (name === 'id') {
               node.id = value || '';
             }

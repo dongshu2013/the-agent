@@ -40,9 +40,6 @@ const Sidepanel = () => {
   const [pendingUser, setPendingUser] = useState<UserInfo | null>(null);
   const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
 
-  let messageIdOffset = 0;
-  const generateMessageId = () => Date.now() + messageIdOffset++;
-
   // 数据查询
   const messages =
     useLiveQuery(
@@ -66,7 +63,7 @@ const Sidepanel = () => {
   const handleApiError = useCallback(
     (error: any) => {
       db.saveMessage({
-        id: generateMessageId(),
+        id: Date.now(),
         content: typeof error === 'string' ? error : 'An error occurred. Please try again.',
         conversation_id: currentConversationId || '',
         role: 'system',
@@ -130,7 +127,7 @@ const Sidepanel = () => {
         setIsLoading(false);
       }
     },
-    [currentConversationId]
+    [currentConversationId, setCurrentConversationId]
   );
 
   const handleSwitchAccount = useCallback(async () => {
@@ -142,7 +139,14 @@ const Sidepanel = () => {
     setShowSwitch(false);
     setCurrentConversationId(null);
     await initializeUserAndData(pendingApiKey);
-  }, [pendingApiKey, initializeUserAndData]);
+  }, [
+    pendingApiKey,
+    initializeUserAndData,
+    setCurrentConversationId,
+    setApiKeyState,
+    setLoginModalOpen,
+    setShowSwitch,
+  ]);
 
   useEffect(() => {
     const handler = () => {
@@ -150,7 +154,7 @@ const Sidepanel = () => {
     };
     window.addEventListener('SHOW_LOGIN_MODAL', handler);
     return () => window.removeEventListener('SHOW_LOGIN_MODAL', handler);
-  }, []);
+  }, [setLoginModalOpen]);
 
   useEffect(() => {
     const listener = async (changes: any, area: string) => {
@@ -188,7 +192,15 @@ const Sidepanel = () => {
     };
     chrome.storage.onChanged.addListener(listener);
     return () => chrome.storage.onChanged.removeListener(listener);
-  }, []);
+  }, [
+    initializeUserAndData,
+    setLoginModalOpen,
+    setShowSwitch,
+    setPendingApiKey,
+    setPendingUser,
+    setCurrentUser,
+    setApiKeyState,
+  ]);
 
   // 首次加载
   useEffect(() => {
@@ -260,8 +272,11 @@ const Sidepanel = () => {
 
   // 自动滚动到底部
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    const scrollToBottom = () => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+    scrollToBottom();
+  }, [messages.length]);
 
   // 事件处理函数
   const handleSubmit = async (e: React.FormEvent) => {
@@ -370,7 +385,7 @@ const Sidepanel = () => {
     chrome.storage.local.get('apiKey', result => {
       if (result.apiKey) setApiKeyState(result.apiKey);
     });
-  }, []);
+  }, [setApiKeyState]);
 
   return (
     <div
