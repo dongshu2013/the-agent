@@ -33,3 +33,17 @@ export const CREATE_ORDER_TABLE_QUERY = `CREATE TABLE IF NOT EXISTS orders(
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(user_id) REFERENCES users(id)
 );`;
+
+export const CREATE_COUPON_CODE_TABLE_QUERY = `CREATE TABLE IF NOT EXISTS coupon_codes(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT,
+    code TEXT NOT NULL UNIQUE,
+    credits INTEGER NOT NULL,
+    max_uses INTEGER NOT NULL DEFAULT 1,
+    used_count INTEGER NOT NULL DEFAULT 0,
+    is_active INTEGER NOT NULL DEFAULT 1 CHECK(is_active IN (0, 1)),
+    auth_user TEXT DEFAULT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    expired_at TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+);`;

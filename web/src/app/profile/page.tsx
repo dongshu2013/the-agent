@@ -8,8 +8,105 @@ import { RefreshCw } from 'lucide-react';
 import { PaymentModal } from './PaymentModal';
 import { CreditsCharts } from './CreditsCharts';
 import { CreditsTable } from './CreditsTable';
-import { getTelegramStats } from '@/lib/api_service';
+import { getTelegramStats, redeemCouponCode } from '@/lib/api_service';
 import { formatCredits } from '@/lib/utils';
+
+function CouponCodeModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const { user, refreshUserData } = useAuth();
+  const [code, setCode] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user?.idToken) return;
+
+    setIsSubmitting(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const result = await redeemCouponCode(user.idToken, code);
+      if (result.success && result.credits) {
+        const formattedCredits = new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          maximumFractionDigits: 0,
+        }).format(result.credits / 1_000_000);
+
+        setSuccess(`Successfully redeemed coupon for ${formattedCredits}!`);
+        await refreshUserData();
+        setTimeout(() => {
+          onClose();
+          setCode('');
+          setSuccess('');
+        }, 2000);
+      } else {
+        let errorMessage = result.error || 'Failed to redeem coupon';
+        if (errorMessage === 'Invalid, expired, or unauthorized coupon code') {
+          errorMessage = 'This coupon code is invalid, expired, or not available for your account';
+        } else if (errorMessage === 'Coupon code has reached maximum uses') {
+          errorMessage = 'This coupon code has already been fully redeemed';
+        }
+        setError(errorMessage);
+      }
+    } catch (err) {
+      setError('Unable to connect to the server. Please try again later.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg w-full max-w-md">
+        <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
+          Redeem Coupon Code
+        </h2>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            value={code}
+            onChange={(e) => setCode(e.target.value.trim().toUpperCase())}
+            placeholder="Enter coupon code"
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md mb-4 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            disabled={isSubmitting}
+          />
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-600 text-sm">{error}</p>
+            </div>
+          )}
+          {success && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-green-600 text-sm">{success}</p>
+            </div>
+          )}
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+              disabled={isSubmitting}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 text-sm font-medium text-white bg-black rounded-md hover:opacity-70 transition-opacity disabled:opacity-50"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Redeeming...' : 'Redeem'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 export default function ProfilePage() {
   const { user, loading, signOut, rotateApiKey, toggleApiKey, refreshUserData } = useAuth();
@@ -24,6 +121,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const [buyCreditsOpen, setBuyCreditsOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [redeemCouponOpen, setRedeemCouponOpen] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -379,6 +477,12 @@ export default function ProfilePage() {
                 >
                   Add Credits
                 </button>
+                <button
+                  onClick={() => setRedeemCouponOpen(true)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 rounded-md"
+                >
+                  Redeem Coupon
+                </button>
               </div>
             </div>
           </div>
@@ -401,6 +505,7 @@ export default function ProfilePage() {
 
       {/* Modals */}
       <PaymentModal isOpen={buyCreditsOpen} onClose={() => setBuyCreditsOpen(false)} />
+      <CouponCodeModal isOpen={redeemCouponOpen} onClose={() => setRedeemCouponOpen(false)} />
     </div>
   );
 }

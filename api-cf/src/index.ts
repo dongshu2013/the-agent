@@ -31,6 +31,7 @@ import {
   GetUserBalance,
   RotateApiKey,
   ToggleApiKeyEnabled,
+  RedeemCouponCode,
 } from './handlers/user';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -76,6 +77,7 @@ app.use('/v1/user/credit_history', jwtOrApiKeyAuthMiddleware);
 app.use('/v1/user', jwtOrApiKeyAuthMiddleware);
 app.use('/v1/user/rotate_api_key', jwtOrApiKeyAuthMiddleware);
 app.use('/v1/user/toggle_api_key_enabled', jwtOrApiKeyAuthMiddleware);
+app.use('/v1/user/redeem_coupon_code', jwtOrApiKeyAuthMiddleware);
 
 app.onError(async (err, c) => {
   if (err instanceof GatewayServiceError) {
@@ -128,6 +130,7 @@ openapi.post('/v1/stripe/webhook', StripeWebhook);
 
 openapi.post('/v1/user/rotate_api_key', RotateApiKey);
 openapi.post('/v1/user/toggle_api_key_enabled', ToggleApiKeyEnabled);
+openapi.post('/v1/user/redeem_coupon_code', RedeemCouponCode);
 
 openapi.get('/v1/user/balance', GetUserBalance);
 openapi.get('/v1/user/credit_history', GetCreditLogs);

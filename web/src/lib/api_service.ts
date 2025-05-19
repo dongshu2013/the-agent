@@ -19,10 +19,14 @@ async function postApiService(endpoint: string, token: string, body?: object) {
     },
     body: body ? JSON.stringify(body) : undefined,
   });
+
+  const data = await response.json();
+
   if (!response.ok) {
-    throw new Error('Failed to fetch data');
+    throw new Error(data.error || 'Failed to fetch data');
   }
-  return response.json();
+
+  return data;
 }
 
 async function getApiService(endpoint: string, token: string) {
@@ -92,6 +96,21 @@ export async function getCreditHistory(
   const endpoint = queryString ? `v1/user/credit_history?${queryString}` : 'v1/user/credit_history';
 
   return await getApiService(endpoint, token);
+}
+
+export async function redeemCouponCode(
+  token: string,
+  code: string,
+): Promise<{ success: boolean; credits?: number; error?: string }> {
+  try {
+    const response = await postApiService('v1/user/redeem_coupon_code', token, { code });
+    return response;
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to redeem coupon code',
+    };
+  }
 }
 
 export async function getTelegramStats(token: string): Promise<TelegramStats> {
