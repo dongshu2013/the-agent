@@ -4,6 +4,7 @@ import { saveMessageApi, sendChatCompletion } from './chat';
 import { toolExecutor } from './tool-executor';
 import { db } from '~/utils/db';
 import { getApiKey } from './cache';
+import { WebInteractionResult } from '~/types/tools';
 
 interface ChatHandlerOptions {
   apiKey: string;
@@ -220,7 +221,7 @@ Keep responses concise and focused on the current task.
                   tool_calls: [
                     {
                       ...toolCall,
-                      result: toolResult,
+                      result: toolResult as WebInteractionResult<unknown>,
                     },
                   ],
                 };

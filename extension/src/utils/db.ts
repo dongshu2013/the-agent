@@ -350,7 +350,7 @@ let dbInstance = new MystaDB();
 export async function resetDB() {
   await dbInstance.delete();
   dbInstance = new MystaDB();
-  (window as any).mystaDB = dbInstance;
+  (window as unknown as { mystaDB: MystaDB }).mystaDB = dbInstance;
   return dbInstance;
 }
 

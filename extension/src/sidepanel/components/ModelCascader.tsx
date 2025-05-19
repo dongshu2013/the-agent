@@ -14,6 +14,12 @@ interface ModelCascaderProps {
   onProviderSetting?: (providerType: string) => void;
 }
 
+interface CascaderOption {
+  value: string;
+  label: string;
+  children?: Array<CascaderOption>;
+}
+
 const ModelCascader: React.FC<ModelCascaderProps> = ({
   providerGroups,
   value,
@@ -31,7 +37,7 @@ const ModelCascader: React.FC<ModelCascaderProps> = ({
 
   const displayRender = (labels: string[]) => labels[labels.length - 1] || '';
 
-  const optionRender = (option: any, context?: { level: number }) => {
+  const optionRender = (option: CascaderOption, context?: { level: number }) => {
     const isProvider = Array.isArray(option.children) && option.children.length > 0;
     if ((context && context.level === 0) || isProvider) {
       return (

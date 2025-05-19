@@ -61,10 +61,16 @@ const Sidepanel = () => {
   }, []);
 
   const handleApiError = useCallback(
-    (error: any) => {
+    (error: unknown) => {
+      let message = 'An error occurred. Please try again.';
+      if (error instanceof Error) {
+        message = error.message;
+      } else if (typeof error === 'string') {
+        message = error;
+      }
       db.saveMessage({
         id: Date.now(),
-        content: typeof error === 'string' ? error : 'An error occurred. Please try again.',
+        content: message,
         conversation_id: currentConversationId || '',
         role: 'system',
       });
@@ -157,7 +163,10 @@ const Sidepanel = () => {
   }, [setLoginModalOpen]);
 
   useEffect(() => {
-    const listener = async (changes: any, area: string) => {
+    const listener = async (
+      changes: { [key: string]: chrome.storage.StorageChange },
+      area: string
+    ) => {
       if (area === 'local' && changes.apiKey) {
         const newApiKey = changes.apiKey.newValue;
         if (!newApiKey) return;
@@ -220,7 +229,7 @@ const Sidepanel = () => {
 
   // 消息处理
   useEffect(() => {
-    const handleMessages = (request: any) => {
+    const handleMessages = (request: { name: string; text?: string }) => {
       if (request.name === 'selected-text' && request.text) {
         setPrompt(request.text);
       }

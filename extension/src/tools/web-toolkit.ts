@@ -1,15 +1,59 @@
+import { WebInteractionResult } from '~/types/tools';
 import { parseHtml, minify } from './dom-minify';
-
-export interface WebToolkitResponse {
-  success: boolean;
-  data?: object;
-  error?: string;
-}
 
 interface DebuggerState {
   attached: boolean;
   tabId: number | null;
   targetId: string | null;
+}
+
+interface GetPageTextResult {
+  content: string;
+  url: string;
+  title: string;
+}
+
+export interface ScreenshotResult {
+  url: string;
+}
+
+interface InputElementResult {
+  text?: string;
+  value: string;
+  html: string;
+}
+
+interface ClickElementResult {
+  clicked: boolean;
+  elementStillExists: boolean;
+}
+
+interface RefreshPageResult {
+  url: string;
+  title: string;
+  loadTime: string;
+  status: string;
+}
+
+interface ListElementsResult {
+  elements: {
+    uniqueSelector: string;
+    selectorPath: string;
+    text: string;
+    type: string;
+    attributes: Record<string, string>;
+    isVisible: boolean;
+    isInteractive: boolean;
+    elementState: {
+      isEnabled: boolean;
+      tagName: string;
+      className: string;
+      id: string;
+      role?: string;
+      ariaLabel?: string;
+      dataTestId?: string;
+    };
+  }[];
 }
 
 export interface InputElementParams {
@@ -112,9 +156,9 @@ export class WebToolkit {
     }
   }
 
-  private async executeInTab<T = any>(
-    userFunc: (...args: any[]) => any,
-    args: any[] = []
+  private async executeInTab<T>(
+    userFunc: (...args: string[]) => T,
+    args: string[] = []
   ): Promise<T> {
     try {
       const tab = await this.getCurrentTab();
@@ -158,7 +202,10 @@ export class WebToolkit {
         'success' in result.result &&
         !result.result.success
       ) {
-        throw new Error(result.result.error || 'Unknown error in result');
+        if ('error' in result.result) {
+          throw new Error(result.result.error as string);
+        }
+        throw new Error('Unknown error in result');
       }
 
       return result.result as T;
@@ -174,7 +221,7 @@ export class WebToolkit {
     }
   }
 
-  async getPageText(format: string = 'text'): Promise<WebToolkitResponse> {
+  async getPageText(format: string = 'text'): Promise<WebInteractionResult<GetPageTextResult>> {
     try {
       const result = await this.executeInTab<{
         html: string;
@@ -226,7 +273,7 @@ export class WebToolkit {
     }
   }
 
-  async screenshot(): Promise<WebToolkitResponse> {
+  async screenshot(): Promise<WebInteractionResult<ScreenshotResult>> {
     try {
       // 获取当前标签页
       const tab = await this.getCurrentTab();
@@ -260,7 +307,7 @@ export class WebToolkit {
     selector,
     value,
     options,
-  }: InputElementParams): Promise<WebToolkitResponse> {
+  }: InputElementParams): Promise<WebInteractionResult<InputElementResult>> {
     try {
       const tabs = await chrome.tabs.query({
         active: true,
@@ -272,14 +319,24 @@ export class WebToolkit {
       const tabId = tabs[0].id;
 
       // 1. 获取元素信息
-      const elementInfo = await this.executeInTab<any>(
-        sel => {
+      const elementInfo = await this.executeInTab<
+        WebInteractionResult<{
+          x: number;
+          y: number;
+          visible: boolean;
+          text?: string;
+          html: string;
+        }>
+      >(
+        (sel: string) => {
           const element = document.querySelector(sel);
           if (!element) {
             return {
               success: false,
               error: `Element not found: ${sel}`,
-              visible: false,
+              data: {
+                visible: false,
+              },
             };
           }
 
@@ -290,7 +347,7 @@ export class WebToolkit {
               x: rect.left + rect.width / 2,
               y: rect.top + rect.height / 2,
               visible: rect.width > 0 && rect.height > 0,
-              text: element.textContent,
+              text: element.textContent || undefined,
               html: element.outerHTML,
             },
           };
@@ -313,7 +370,7 @@ export class WebToolkit {
         };
       }
 
-      if (!elementInfo.data.visible) {
+      if (!elementInfo.data?.visible) {
         return {
           success: false,
           error: 'Element is not visible',
@@ -382,8 +439,8 @@ export class WebToolkit {
       await new Promise(resolve => setTimeout(resolve, 100));
 
       // 8. 获取最终结果
-      const finalResult = await this.executeInTab<any>(
-        sel => {
+      const finalResult = await this.executeInTab<WebInteractionResult<InputElementResult>>(
+        (sel: string) => {
           const element = document.querySelector(sel) as HTMLInputElement;
           if (!element) {
             return {
@@ -395,7 +452,7 @@ export class WebToolkit {
             success: true,
             data: {
               value: element.value,
-              text: element.textContent,
+              text: element.textContent || undefined,
               html: element.outerHTML,
             },
           };
@@ -450,10 +507,15 @@ export class WebToolkit {
     }
   }
 
-  async clickElement(selector: string): Promise<WebToolkitResponse> {
+  async clickElement(selector: string): Promise<WebInteractionResult<ClickElementResult>> {
     try {
       // 1. 查找元素（主文档+iframe）
-      const elementInfo = await this.executeInTab<any>(
+      const elementInfo = await this.executeInTab<
+        WebInteractionResult<{
+          isVisible: boolean;
+          frame?: HTMLIFrameElement;
+        }>
+      >(
         sel => {
           function findElement(sel: string): {
             element: HTMLElement | null;
@@ -491,8 +553,8 @@ export class WebToolkit {
       if (!elementInfo.data.isVisible) return { success: false, error: 'Element is not visible' };
 
       // 2. 执行点击
-      const clickResult = await this.executeInTab<any>(
-        sel => {
+      const clickResult = await this.executeInTab<WebInteractionResult<undefined>>(
+        (sel: string) => {
           function findElement(sel: string): HTMLElement | null {
             let el = document.querySelector(sel) as HTMLElement;
             if (el) return el;
@@ -512,7 +574,7 @@ export class WebToolkit {
           if (!el) return { success: false, error: 'Element not found for click' };
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           setTimeout(() => el.click(), 50);
-          return { success: true };
+          return { success: true, data: undefined };
         },
         [selector]
       );
@@ -542,19 +604,20 @@ export class WebToolkit {
     }
   }
 
-  async scrollToElement(selector: string): Promise<WebToolkitResponse> {
+  async scrollToElement(selector: string): Promise<WebInteractionResult<undefined>> {
     try {
-      const result = await this.executeInTab<WebToolkitResponse>(() => {
-        return new Promise(resolve => {
+      const result = await this.executeInTab<WebInteractionResult<undefined>>(
+        (selector: string) => {
           const element = document.querySelector(selector) as HTMLElement;
           if (element) {
             element.scrollIntoView({ behavior: 'smooth' });
-            resolve({ success: true });
+            return { success: true, data: undefined };
           } else {
-            resolve({ success: false, error: 'Element not found' });
+            return { success: false, error: 'Element not found' };
           }
-        });
-      });
+        },
+        [selector]
+      );
       return result;
     } catch (error) {
       console.error('Error scrolling to element:', error);
@@ -569,7 +632,7 @@ export class WebToolkit {
     url?: string,
     waitForLoad: boolean = true,
     timeout: number = 5000
-  ): Promise<WebToolkitResponse> {
+  ): Promise<WebInteractionResult<RefreshPageResult>> {
     try {
       // 获取当前标签页
       const tab = await this.getCurrentTab();
@@ -580,16 +643,19 @@ export class WebToolkit {
       // 记录开始时间
       const startTime = Date.now();
 
-      await this.executeInTab<WebToolkitResponse>(() => {
-        return new Promise(resolve => {
-          if (url) {
-            window.location.href = url;
-          } else {
-            location.reload();
-          }
-          resolve({ success: true });
-        });
-      });
+      await this.executeInTab(
+        (url?: string) => {
+          return new Promise<WebInteractionResult<undefined>>(resolve => {
+            if (url) {
+              window.location.href = url;
+            } else {
+              location.reload();
+            }
+            resolve({ success: true, data: undefined });
+          });
+        },
+        url ? [url] : []
+      );
 
       // 如果需要等待页面加载完成
       if (waitForLoad) {
@@ -612,13 +678,15 @@ export class WebToolkit {
       }
 
       // 获取页面状态
-      const pageState = await this.executeInTab<any>(() => {
-        return {
-          url: window.location.href,
-          title: document.title,
-          readyState: document.readyState,
-        };
-      });
+      const pageState = await this.executeInTab<{ url: string; title: string; readyState: string }>(
+        () => {
+          return {
+            url: window.location.href,
+            title: document.title,
+            readyState: document.readyState,
+          };
+        }
+      );
 
       // 计算加载时间
       const loadTime = Date.now() - startTime;
@@ -641,13 +709,13 @@ export class WebToolkit {
     }
   }
 
-  async listElements(selector?: string): Promise<WebToolkitResponse> {
+  async listElements(selector?: string): Promise<WebInteractionResult<ListElementsResult>> {
     try {
       if (!selector) {
         throw new Error('Selector is required. Please provide a valid CSS selector.');
       }
 
-      const result = await this.executeInTab<WebToolkitResponse>(
+      const result = await this.executeInTab<WebInteractionResult<ListElementsResult>>(
         (selector: string) => {
           const elements = Array.from(document.querySelectorAll(selector));
           return {
@@ -703,9 +771,9 @@ export class WebToolkit {
                     tagName: element.tagName.toLowerCase(),
                     className: element.className,
                     id: element.id,
-                    role: element.getAttribute('role'),
-                    ariaLabel: element.getAttribute('aria-label'),
-                    dataTestId: element.getAttribute('data-testid'),
+                    role: element.getAttribute('role') || undefined,
+                    ariaLabel: element.getAttribute('aria-label') || undefined,
+                    dataTestId: element.getAttribute('data-testid') || undefined,
                   },
                 };
               }),

@@ -26,7 +26,7 @@ export default function InputArea({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault(); // 阻止默认的换行行为
       if (prompt.trim() && !isLoading) {
-        onSubmit(e as any);
+        onSubmit(e);
       }
     }
   };

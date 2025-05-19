@@ -1,18 +1,4 @@
-// Define the structure of tool descriptions
-export interface ToolDescription {
-  name: string;
-  description: string;
-  parameters?: {
-    type: string;
-    properties: Record<string, any>;
-    required?: string[];
-  };
-  returns?: {
-    type: string;
-    description: string;
-    properties?: Record<string, any>;
-  };
-}
+import { ToolDescription } from '~/types/tools';
 
 // Generate tool descriptions for AI model
 export const getToolDescriptions = (): ToolDescription[] => {
@@ -259,6 +245,7 @@ export const getToolDescriptions = (): ToolDescription[] => {
         properties: {
           items: {
             type: 'object',
+            description: 'Tab information',
             properties: {
               tabId: {
                 type: 'number',

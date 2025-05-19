@@ -12,6 +12,11 @@ interface HeaderProps {
   setShowConversationList: (value?: boolean) => void;
 }
 
+interface ModelGroup {
+  type: string;
+  models: Model[];
+}
+
 const Header = ({ createNewConversation, setShowConversationList }: HeaderProps) => {
   const [providerGroups, setProviderGroups] = useState<ProviderGroup[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<string>('');
@@ -26,7 +31,7 @@ const Header = ({ createNewConversation, setShowConversationList }: HeaderProps)
   useEffect(() => {
     const init = async () => {
       // 构建 fullProviderGroups（含完整模型信息）
-      const fullGroups: Record<string, any> = {};
+      const fullGroups: Record<string, ModelGroup> = {};
       (models ?? []).forEach(model => {
         if (!fullGroups[model.type]) {
           fullGroups[model.type] = {
@@ -38,9 +43,9 @@ const Header = ({ createNewConversation, setShowConversationList }: HeaderProps)
       });
       const fullProviderGroups = Object.values(fullGroups);
 
-      const providerGroups = fullProviderGroups.map((g: any) => ({
+      const providerGroups = fullProviderGroups.map((g: ModelGroup) => ({
         type: g.type === 'system' ? 'Default' : g.type,
-        models: g.models.map((m: any) => ({ id: m.id, name: m.name })),
+        models: g.models,
       }));
       setProviderGroups(providerGroups);
 
@@ -96,7 +101,7 @@ const Header = ({ createNewConversation, setShowConversationList }: HeaderProps)
       const user = await db.getCurrentUser();
       if (user) {
         const userModels = await db.getUserModels(user.id);
-        const modelsToUpdate = userModels.filter((m: any) => m.type === editingProvider);
+        const modelsToUpdate = userModels.filter((m: Model) => m.type === editingProvider);
         for (const model of modelsToUpdate) {
           await db.addOrUpdateModel({
             ...model,
@@ -107,7 +112,7 @@ const Header = ({ createNewConversation, setShowConversationList }: HeaderProps)
         }
         // Refresh provider groups
         const groups: Record<string, ProviderGroup> = {};
-        userModels.forEach((model: any) => {
+        userModels.forEach((model: Model) => {
           if (!groups[model.type]) {
             groups[model.type] = {
               type: model.type,

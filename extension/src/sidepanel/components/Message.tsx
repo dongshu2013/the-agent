@@ -2,6 +2,7 @@ import { Message as MessageType } from '../../types/messages';
 import { useState } from 'react';
 import { processMarkdown } from '../../utils/markdown-processor';
 import React from 'react';
+import { ScreenshotResult } from '~/tools/web-toolkit';
 
 interface Props {
   message: MessageType;
@@ -115,16 +116,10 @@ const MessageComponent = React.memo(function MessageComponent({ message }: Props
     const content = message.content || '';
     const htmlContent = processMarkdown(content);
 
-    let screenshotRaw = message.tool_calls?.find(
+    const screenshotResult = message.tool_calls?.find(
       tool => tool.function.name === 'WebToolkit_screenshot'
     )?.result;
-    if (screenshotRaw && typeof screenshotRaw === 'object' && 'data' in screenshotRaw) {
-      screenshotRaw = screenshotRaw;
-    }
-    const screenshotUrl =
-      typeof screenshotRaw === 'string' && (screenshotRaw as string).startsWith('data:image')
-        ? (screenshotRaw as string)
-        : null;
+    const screenshotUrl = (screenshotResult?.data as ScreenshotResult)?.url || null;
 
     const toolCallHint =
       message.role === 'tool' && message.tool_calls?.length ? (

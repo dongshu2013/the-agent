@@ -1,8 +1,9 @@
 import { Storage } from '@plasmohq/storage';
-import { TabToolkit, WebInteractionResult } from '../tools/tab-toolkit';
+import { TabToolkit } from '../tools/tab-toolkit';
 import { TgToolkit } from '../tools/tg-toolkit';
 import { InputElementParams, WebToolkit } from '../tools/web-toolkit';
 import { RuntimeMessage, RuntimeResponse } from '../types/messages';
+import { WebInteractionResult } from '~/types/tools';
 
 const storage = new Storage();
 const webToolkit = new WebToolkit();
@@ -83,7 +84,7 @@ chrome.runtime.onMessage.addListener(
   (
     message: RuntimeMessage,
     _sender,
-    sendResponse: (response: WebInteractionResult | RuntimeResponse) => void
+    sendResponse: (response: WebInteractionResult<unknown> | RuntimeResponse) => void
   ) => {
     if (message.name === 'ping') {
       sendResponse({ success: true, message: 'ping' });
@@ -135,7 +136,7 @@ chrome.runtime.onMessage.addListener(
                 throw new Error(`Unknown WebToolkit operation: ${toolName}`);
             }
 
-            sendResponse(result as WebInteractionResult);
+            sendResponse(result as WebInteractionResult<unknown>);
             return true;
           }
 

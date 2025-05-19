@@ -1,4 +1,4 @@
-import { WebInteractionResult } from './tab-toolkit';
+import { WebInteractionResult } from '~/types/tools';
 import { env } from '../utils/env';
 import { getApiKey } from '../services/cache';
 import { showLoginModal } from '~/utils/global-event';
@@ -27,7 +27,7 @@ export class TgToolkit {
     sortBy: string = 'updated_at',
     sortOrder: string = 'desc',
     apiKey?: string
-  ): Promise<WebInteractionResult> {
+  ): Promise<WebInteractionResult<unknown>> {
     try {
       // Build query parameters
       const params = new URLSearchParams();
@@ -119,7 +119,7 @@ export class TgToolkit {
     sortBy: string = 'message_timestamp',
     sortOrder: string = 'desc',
     apiKey?: string
-  ): Promise<WebInteractionResult> {
+  ): Promise<WebInteractionResult<unknown>> {
     try {
       // Build query parameters
       const params = new URLSearchParams();
@@ -208,7 +208,7 @@ export class TgToolkit {
     isPublic?: boolean,
     isFree?: boolean,
     apiKey?: string
-  ): Promise<WebInteractionResult> {
+  ): Promise<WebInteractionResult<unknown>> {
     try {
       // Build query parameters
       const params = new URLSearchParams();

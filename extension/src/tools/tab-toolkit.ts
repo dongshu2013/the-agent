@@ -1,7 +1,48 @@
-export interface WebInteractionResult {
-  success: boolean;
-  data?: any;
-  error?: string;
+import { WebInteractionResult } from '~/types/tools';
+
+interface LoadTabResult {
+  tabId: number;
+  url: string;
+  title: string;
+}
+
+interface SwitchTabResult {
+  tabId?: number;
+  url: string;
+  title: string;
+}
+
+interface OpenTabResult {
+  tabId: number;
+  alreadyOpened: boolean;
+  url: string;
+  title: string;
+}
+
+interface CloseTabResult {
+  tabId: number;
+}
+
+type ListTabsResult = {
+  tabId?: number;
+  url?: string;
+  title?: string;
+}[];
+
+interface GetActiveTabResult {
+  tabId?: number;
+  url?: string;
+  title?: string;
+}
+
+interface CreatePopupWindowResult {
+  windowId?: number;
+  tabId: number;
+  url?: string;
+}
+
+interface CloseWindowResult {
+  windowId: number;
 }
 
 const TAB_LOAD_TIMEOUT = 10000;
@@ -10,7 +51,7 @@ export class TabToolkit {
   /**
    * Open a new tab with a specific URL
    */
-  static async openTab(url: string): Promise<WebInteractionResult> {
+  static async openTab(url: string): Promise<WebInteractionResult<OpenTabResult>> {
     try {
       const existingTabs = await chrome.tabs.query({});
       const matchedTab = existingTabs.find(tab => tab.url === url);
@@ -90,7 +131,7 @@ export class TabToolkit {
   /**
    * Close a specific tab
    */
-  static closeTab(tabId: number): Promise<WebInteractionResult> {
+  static closeTab(tabId: number): Promise<WebInteractionResult<CloseTabResult>> {
     return new Promise(resolve => {
       chrome.tabs.remove(tabId, () => {
         if (chrome.runtime.lastError) {
@@ -111,7 +152,7 @@ export class TabToolkit {
   /**
    * Find a tab by URL or title
    */
-  static async listTabs(): Promise<WebInteractionResult> {
+  static async listTabs(): Promise<WebInteractionResult<ListTabsResult>> {
     return new Promise((resolve, reject) => {
       chrome.tabs.query({ currentWindow: true }, tabs => {
         if (chrome.runtime.lastError) {
@@ -136,7 +177,7 @@ export class TabToolkit {
   /**
    * Switch to a specific tab
    */
-  static async switchToTab(tabId: number): Promise<WebInteractionResult> {
+  static async switchToTab(tabId: number): Promise<WebInteractionResult<SwitchTabResult>> {
     return new Promise(resolve => {
       chrome.tabs.update(tabId, { active: true }, async tab => {
         if (chrome.runtime.lastError) {
@@ -154,8 +195,8 @@ export class TabToolkit {
                 success: true,
                 data: {
                   tabId: tab.id,
-                  url: loadResult.data.url,
-                  title: loadResult.data.title,
+                  url: loadResult.data!.url,
+                  title: loadResult.data!.title,
                 },
               });
             } else {
@@ -182,7 +223,7 @@ export class TabToolkit {
   static waitForTabLoad(
     tabId: number,
     timeout: number = TAB_LOAD_TIMEOUT
-  ): Promise<WebInteractionResult> {
+  ): Promise<WebInteractionResult<LoadTabResult>> {
     return new Promise(resolve => {
       const start = Date.now();
 
@@ -231,7 +272,7 @@ export class TabToolkit {
   /**
    * Get current active tab
    */
-  static getCurrentActiveTab(): Promise<WebInteractionResult> {
+  static getCurrentActiveTab(): Promise<WebInteractionResult<GetActiveTabResult>> {
     return new Promise(resolve => {
       chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
         if (tabs.length > 0 && tabs[0].id) {
@@ -263,7 +304,7 @@ export class TabToolkit {
     url: string,
     width: number = 400,
     height: number = 600
-  ): Promise<WebInteractionResult> {
+  ): Promise<WebInteractionResult<CreatePopupWindowResult>> {
     return new Promise(resolve => {
       const createData: chrome.windows.CreateData = {
         url,
@@ -301,7 +342,7 @@ export class TabToolkit {
   /**
    * Close a specific window
    */
-  static closeWindow(windowId: number): Promise<WebInteractionResult> {
+  static closeWindow(windowId: number): Promise<WebInteractionResult<CloseWindowResult>> {
     return new Promise(resolve => {
       chrome.windows.remove(windowId, () => {
         if (chrome.runtime.lastError) {

@@ -13,23 +13,6 @@ import { ChatMessage } from './messages';
 export interface ChatRequest {
   currentModel: Model | null;
   messages: ChatMessage[];
-  max_tokens?: number;
-  stream?: boolean;
-  tools?: any[];
-  top_k_related?: number;
-}
-
-/**
- * Chat response interface
- */
-export interface ChatResponse {
-  success: boolean;
-  data?: any;
-  error?: string;
-  tool_calls?: Array<{
-    name: string;
-    arguments: Record<string, any>;
-  }>;
 }
 
 /**
@@ -38,16 +21,6 @@ export interface ChatResponse {
 export interface MemoryOptions {
   strategy?: number;
   systemPrompt?: string;
-}
-
-/**
- * Tool call result interface
- */
-export interface ToolCallResult {
-  toolName: string;
-  toolInput: Record<string, string>;
-  toolOutput: any;
-  error?: string;
 }
 
 /**
