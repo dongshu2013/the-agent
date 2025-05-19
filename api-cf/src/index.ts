@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { fromHono } from 'chanfana';
 
-import { jwtOrApiKeyAuthMiddleware } from './auth';
+import { jwtAuthMiddleware, jwtOrApiKeyAuthMiddleware } from './auth';
 import { GatewayServiceError } from './types/service';
 
 import { SaveMessage } from './handlers/message';
@@ -70,14 +70,14 @@ app.use('/v1/tg/search_messages', jwtOrApiKeyAuthMiddleware);
 app.use('/v1/tg/sync_chat', jwtOrApiKeyAuthMiddleware);
 app.use('/v1/tg/sync_messages', jwtOrApiKeyAuthMiddleware);
 
-app.use('/v1/stripe/checkout', jwtOrApiKeyAuthMiddleware);
-
 app.use('/v1/user/balance', jwtOrApiKeyAuthMiddleware);
 app.use('/v1/user/credit_history', jwtOrApiKeyAuthMiddleware);
 app.use('/v1/user', jwtOrApiKeyAuthMiddleware);
-app.use('/v1/user/rotate_api_key', jwtOrApiKeyAuthMiddleware);
-app.use('/v1/user/toggle_api_key_enabled', jwtOrApiKeyAuthMiddleware);
-app.use('/v1/user/redeem_coupon_code', jwtOrApiKeyAuthMiddleware);
+// Only JWT auth
+app.use('/v1/user/rotate_api_key', jwtAuthMiddleware);
+app.use('/v1/user/toggle_api_key_enabled', jwtAuthMiddleware);
+app.use('/v1/user/redeem_coupon_code', jwtAuthMiddleware);
+app.use('/v1/stripe/checkout', jwtAuthMiddleware);
 
 app.onError(async (err, c) => {
   if (err instanceof GatewayServiceError) {
