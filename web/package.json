@@ -34,7 +34,8 @@
     "recharts": "^2.15.3",
     "remark-gfm": "^4.0.1",
     "sonner": "^2.0.3",
-    "tailwindcss": "^4.1.6"
+    "tailwindcss": "^4.1.6",
+    "@the-agent/shared": "workspace:*"
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "^15.3.2",

@@ -39,7 +39,8 @@
     "openai": "^4.98.0",
     "stripe": "^18.1.0",
     "uuid": "^11.1.0",
-    "zod": "^3.24.4"
+    "zod": "^3.24.4",
+    "@the-agent/shared": "workspace:*"
   },
   "lint-staged": {
     "*.{js,ts}": [
