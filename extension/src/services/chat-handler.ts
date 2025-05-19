@@ -34,8 +34,9 @@ export class ChatHandler {
 
     const currentPrompt = prompt.trim();
     const baseTimestamp = new Date();
+    let messageIdOffset = 0;
 
-    const generateMessageId = () => baseTimestamp.getTime();
+    const generateMessageId = () => baseTimestamp.getTime() + messageIdOffset++;
 
     const userMessage: Message = {
       id: generateMessageId(),
@@ -126,6 +127,7 @@ Keep responses concise and focused on the current task.
       const currentModel = await db.getSelectModel();
       const apiKey = await getApiKey();
       if (!apiKey) {
+        console.error('Invalid api key');
         showLoginModal();
         return;
       }
