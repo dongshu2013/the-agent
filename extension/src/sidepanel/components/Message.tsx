@@ -19,7 +19,7 @@ function areEqual(prevProps: Props, nextProps: Props) {
 
 const MessageComponent = React.memo(function MessageComponent({ message }: Props) {
   const isUser = message?.role === 'user';
-  const isError = message?.role === 'system';
+  const isError = message?.error !== undefined;
   const [copySuccess, setCopySuccess] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const isTool = message?.role === 'tool';

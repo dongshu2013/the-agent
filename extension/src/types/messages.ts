@@ -26,6 +26,7 @@ export interface ChatMessage {
  */
 export interface Message extends ChatMessage {
   id: number;
+  error?: string;
   created_at?: string;
   conversation_id: string;
   tokenUsage?: {

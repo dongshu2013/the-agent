@@ -34,9 +34,8 @@ export class ChatHandler {
 
     const currentPrompt = prompt.trim();
     const baseTimestamp = new Date();
-    let messageIdOffset = 0;
 
-    const generateMessageId = () => baseTimestamp.getTime() + messageIdOffset++;
+    const generateMessageId = () => baseTimestamp.getTime();
 
     const userMessage: Message = {
       id: generateMessageId(),
@@ -127,7 +126,6 @@ Keep responses concise and focused on the current task.
       const currentModel = await db.getSelectModel();
       const apiKey = await getApiKey();
       if (!apiKey) {
-        console.error('Invalid api key');
         showLoginModal();
         return;
       }
@@ -252,7 +250,7 @@ Keep responses concise and focused on the current task.
             await this.updateMessage({
               ...userMessage,
               content: accumulatedContent + `${accumulatedContent ? '\n\n' : ''}Stream aborted.`,
-              role: 'system',
+              error: 'Stream aborted.',
               tokenUsage: totalTokenUsage,
             });
           } else {
@@ -261,7 +259,7 @@ Keep responses concise and focused on the current task.
             this.options.onError(error);
             await this.updateMessage({
               id: generateMessageId(),
-              role: 'system',
+              error: message,
               content: message,
               conversation_id: this.options.currentConversationId,
             });
@@ -299,7 +297,7 @@ Now reply to user's message: ${currentPrompt}`,
       this.options.onError(error);
       await this.updateMessage({
         id: generateMessageId(),
-        role: 'system',
+        error: message,
         content: message,
         conversation_id: this.options.currentConversationId,
       });

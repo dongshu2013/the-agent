@@ -72,7 +72,6 @@ const Sidepanel = () => {
         id: Date.now(),
         content: message,
         conversation_id: currentConversationId || '',
-        role: 'system',
       });
     },
     [currentConversationId]
