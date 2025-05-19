@@ -137,3 +137,12 @@ function isUUID(str: string): boolean {
     /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(str);
 }
+
+// Authentication middleware for JWT only
+export async function jwtAuthMiddleware(c: GatewayServiceContext, next: Next) {
+  const token = getBearer(c);
+  const { userId, userEmail } = await verifyJWT(token);
+  c.set('userId', userId);
+  c.set('userEmail', userEmail);
+  await next();
+}

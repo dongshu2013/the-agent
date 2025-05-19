@@ -101,7 +101,7 @@ export async function getCreditHistory(
 export async function redeemCouponCode(
   token: string,
   code: string,
-): Promise<{ success: boolean; credits?: number; error?: string }> {
+): Promise<{ success: boolean; added_credits?: number; total_credits?: number; error?: string }> {
   try {
     const response = await postApiService('v1/user/redeem_coupon_code', token, { code });
     return response;
