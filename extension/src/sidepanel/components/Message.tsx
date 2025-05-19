@@ -22,7 +22,7 @@ const MessageComponent = React.memo(function MessageComponent({ message }: Props
   const [copySuccess, setCopySuccess] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const isTool = message?.role === 'tool';
-  const isToolCall = message?.toolCalls?.length || message?.tool_calls?.length;
+  const isToolCall = message?.tool_calls?.length;
 
   if (!message) {
     console.warn('Message component received null or undefined message');
@@ -47,7 +47,7 @@ const MessageComponent = React.memo(function MessageComponent({ message }: Props
     if (isError) return false;
     if (!message.content) return false;
     if (message.role === 'tool') return false;
-    if (message.toolCalls?.length || message.tool_calls?.length) return false;
+    if (message.tool_calls?.length) return false;
 
     if (!isUser) return true;
     return isHovered;
@@ -55,9 +55,9 @@ const MessageComponent = React.memo(function MessageComponent({ message }: Props
 
   const renderToolCalls = () => {
     if (message.role !== 'tool') return null;
-    if (!message.toolCalls?.length && !message.tool_calls?.length) return null;
+    if (!message.tool_calls?.length) return null;
 
-    const toolCalls = message.toolCalls || message.tool_calls;
+    const toolCalls = message.tool_calls;
     return toolCalls?.map(toolCall => (
       <div
         key={toolCall.id}
@@ -119,7 +119,7 @@ const MessageComponent = React.memo(function MessageComponent({ message }: Props
       tool => tool.function.name === 'WebToolkit_screenshot'
     )?.result;
     if (screenshotRaw && typeof screenshotRaw === 'object' && 'data' in screenshotRaw) {
-      screenshotRaw = screenshotRaw.data;
+      screenshotRaw = screenshotRaw;
     }
     const screenshotUrl =
       typeof screenshotRaw === 'string' && (screenshotRaw as string).startsWith('data:image')

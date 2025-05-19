@@ -45,7 +45,7 @@ export interface MemoryOptions {
  */
 export interface ToolCallResult {
   toolName: string;
-  toolInput: Record<string, any>;
+  toolInput: Record<string, string>;
   toolOutput: any;
   error?: string;
 }

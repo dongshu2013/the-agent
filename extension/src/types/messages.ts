@@ -6,31 +6,19 @@
 export interface ChatMessage {
   role?: 'user' | 'assistant' | 'system' | 'tool';
   content?: string;
-  toolCallId?: string; // toolcall
   tool_call_id?: string; // toolcall
   name?: string; // toolcall
-  toolCalls?: Array<{
-    id: string;
-    type: string;
-    function: {
-      name: string;
-      arguments: string;
-    };
-    result: {
-      data: any;
-      success: boolean;
-    };
-  }>;
   tool_calls?: Array<{
     id: string;
-    type: string;
+    type: 'function';
     function: {
       name: string;
       arguments: string;
     };
-    result: {
-      data: any;
+    result?: {
       success: boolean;
+      data?: object;
+      error?: string;
     };
   }>;
 }

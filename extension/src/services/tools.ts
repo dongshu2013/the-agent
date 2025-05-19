@@ -13,7 +13,7 @@ import { ToolCallResult } from '../types';
  */
 export async function executeToolCall(
   toolName: string,
-  toolInput: Record<string, any>
+  toolInput: Record<string, string>
 ): Promise<ToolCallResult> {
   try {
     // This will be expanded with actual tool implementations

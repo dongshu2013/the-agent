@@ -1,13 +1,8 @@
 import { parseHtml, minify } from './dom-minify';
 
-export interface WebInteractionResult {
+export interface WebToolkitResponse {
   success: boolean;
-  data?: any;
-  error?: string | null;
-}
-interface WebToolkitResponse {
-  success: boolean;
-  data?: any;
+  data?: object;
   error?: string;
 }
 
@@ -15,6 +10,16 @@ interface DebuggerState {
   attached: boolean;
   tabId: number | null;
   targetId: string | null;
+}
+
+export interface InputElementParams {
+  selector: string;
+  value: string;
+  options?: {
+    clearFirst?: boolean;
+    delay?: number;
+    pressEnterAfterInput?: boolean;
+  };
 }
 
 export class WebToolkit {
@@ -59,7 +64,7 @@ export class WebToolkit {
     }
   }
 
-  private async sendCommand(method: string, params: any = {}): Promise<any> {
+  private async sendCommand(method: string, params: object = {}): Promise<object> {
     if (!this.hasDebuggerSupport || !this.debuggerState.attached || !this.debuggerState.tabId) {
       throw new Error('Debugger not available');
     }
@@ -221,7 +226,7 @@ export class WebToolkit {
     }
   }
 
-  async screenshot(): Promise<WebInteractionResult> {
+  async screenshot(): Promise<WebToolkitResponse> {
     try {
       // 获取当前标签页
       const tab = await this.getCurrentTab();
@@ -241,7 +246,7 @@ export class WebToolkit {
         });
       });
 
-      return { success: true, data: dataUrl };
+      return { success: true, data: { url: dataUrl } };
     } catch (error) {
       console.error('Error taking screenshot:', error);
       return {
@@ -255,15 +260,7 @@ export class WebToolkit {
     selector,
     value,
     options,
-  }: {
-    selector: string;
-    value: string;
-    options?: {
-      clearFirst?: boolean;
-      delay?: number;
-      pressEnterAfterInput?: boolean;
-    };
-  }): Promise<WebInteractionResult> {
+  }: InputElementParams): Promise<WebToolkitResponse> {
     try {
       const tabs = await chrome.tabs.query({
         active: true,
@@ -453,7 +450,7 @@ export class WebToolkit {
     }
   }
 
-  async clickElement(selector: string): Promise<WebInteractionResult> {
+  async clickElement(selector: string): Promise<WebToolkitResponse> {
     try {
       // 1. 查找元素（主文档+iframe）
       const elementInfo = await this.executeInTab<any>(
@@ -545,9 +542,9 @@ export class WebToolkit {
     }
   }
 
-  async scrollToElement(selector: string): Promise<WebInteractionResult> {
+  async scrollToElement(selector: string): Promise<WebToolkitResponse> {
     try {
-      const result = await this.executeInTab<WebInteractionResult>(() => {
+      const result = await this.executeInTab<WebToolkitResponse>(() => {
         return new Promise(resolve => {
           const element = document.querySelector(selector) as HTMLElement;
           if (element) {
@@ -572,7 +569,7 @@ export class WebToolkit {
     url?: string,
     waitForLoad: boolean = true,
     timeout: number = 5000
-  ): Promise<WebInteractionResult> {
+  ): Promise<WebToolkitResponse> {
     try {
       // 获取当前标签页
       const tab = await this.getCurrentTab();
@@ -583,7 +580,7 @@ export class WebToolkit {
       // 记录开始时间
       const startTime = Date.now();
 
-      await this.executeInTab<WebInteractionResult>(() => {
+      await this.executeInTab<WebToolkitResponse>(() => {
         return new Promise(resolve => {
           if (url) {
             window.location.href = url;
@@ -631,7 +628,7 @@ export class WebToolkit {
         data: {
           url: pageState.url,
           title: pageState.title,
-          loadTime,
+          loadTime: loadTime.toString(),
           status: pageState.readyState,
         },
       };
@@ -644,13 +641,13 @@ export class WebToolkit {
     }
   }
 
-  async listElements(selector?: string): Promise<WebInteractionResult> {
+  async listElements(selector?: string): Promise<WebToolkitResponse> {
     try {
       if (!selector) {
         throw new Error('Selector is required. Please provide a valid CSS selector.');
       }
 
-      const result = await this.executeInTab<WebInteractionResult>(
+      const result = await this.executeInTab<WebToolkitResponse>(
         (selector: string) => {
           const elements = Array.from(document.querySelectorAll(selector));
           return {

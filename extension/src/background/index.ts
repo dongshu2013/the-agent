@@ -1,7 +1,7 @@
 import { Storage } from '@plasmohq/storage';
 import { TabToolkit, WebInteractionResult } from '../tools/tab-toolkit';
 import { TgToolkit } from '../tools/tg-toolkit';
-import { WebToolkit } from '../tools/web-toolkit';
+import { InputElementParams, WebToolkit } from '../tools/web-toolkit';
 import { RuntimeMessage, RuntimeResponse } from '../types/messages';
 
 const storage = new Storage();
@@ -34,6 +34,51 @@ if (typeof chrome !== 'undefined' && chrome.action) {
   console.error('chrome.action API is not available');
 }
 
+type TabToolKitArguments = { url: string } | { tabId: number };
+
+type WebToolKitArguments =
+  | { format: string }
+  | {
+      selector: string;
+    }
+  | { selectors: string }
+  | InputElementParams;
+
+type GetDialogsArguments = {
+  limit?: number;
+  offset?: number;
+  chatTitle?: string;
+  isPublic?: boolean;
+  isFree?: boolean;
+  status?: string;
+  sortBy?: string;
+  sortOrder?: string;
+};
+
+type GetMessagesArguments = {
+  chatId: string;
+  limit?: number;
+  offset?: number;
+  messageText?: string;
+  senderId?: string;
+  startTimestamp?: number;
+  endTimestamp?: number;
+  sortBy?: string;
+  sortOrder?: string;
+};
+
+type SearchMessagesArguments = {
+  query: string;
+  chatId?: string;
+  topK?: number;
+  messageRange?: number;
+  threshold?: number;
+  isPublic?: boolean;
+  isFree?: boolean;
+};
+
+type TgToolKitArguments = GetDialogsArguments | GetMessagesArguments | SearchMessagesArguments;
+
 chrome.runtime.onMessage.addListener(
   (
     message: RuntimeMessage,
@@ -45,7 +90,11 @@ chrome.runtime.onMessage.addListener(
     }
 
     if (message.name === 'execute-tool') {
-      const { name, arguments: params } = (message.body as { name: string; arguments: any }) || {};
+      const { name, arguments: params } =
+        (message.body as {
+          name: string;
+          arguments: TabToolKitArguments | WebToolKitArguments | TgToolKitArguments;
+        }) || {};
       if (!name || !params) {
         sendResponse({ success: false, error: 'Invalid tool execution request' });
         return true;
@@ -58,28 +107,29 @@ chrome.runtime.onMessage.addListener(
           }
           if (name.startsWith('WebToolkit_')) {
             const toolName = name.replace('WebToolkit_', '');
+            const args = params as WebToolKitArguments;
             let result;
             switch (toolName) {
               case 'getPageText':
-                result = await webToolkit.getPageText(params.format);
+                result = await webToolkit.getPageText((args as { format: string }).format);
                 break;
               case 'screenshot':
                 result = await webToolkit.screenshot();
                 break;
               case 'inputElement':
-                result = await webToolkit.inputElement(params);
+                result = await webToolkit.inputElement(args as InputElementParams);
                 break;
               case 'clickElement':
-                result = await webToolkit.clickElement(params.selector);
+                result = await webToolkit.clickElement((args as { selector: string }).selector);
                 break;
               case 'scrollToElement':
-                result = await webToolkit.scrollToElement(params.selector);
+                result = await webToolkit.scrollToElement((args as { selector: string }).selector);
                 break;
               case 'refreshPage':
                 result = await webToolkit.refreshPage();
                 break;
               case 'listElements':
-                result = await webToolkit.listElements(params.selectors);
+                result = await webToolkit.listElements((args as { selectors: string }).selectors);
                 break;
               default:
                 throw new Error(`Unknown WebToolkit operation: ${toolName}`);
@@ -91,10 +141,10 @@ chrome.runtime.onMessage.addListener(
 
           if (name.startsWith('TabToolkit_')) {
             const toolNoolName = name.replace('TabToolkit_', '');
-
+            const args = params as TabToolKitArguments;
             switch (toolNoolName) {
               case 'openTab':
-                const result = await TabToolkit.openTab(params.url);
+                const result = await TabToolkit.openTab((args as { url: string }).url);
                 sendResponse(result);
                 return true;
               case 'listTabs':
@@ -102,15 +152,19 @@ chrome.runtime.onMessage.addListener(
                 sendResponse(listResult);
                 return true;
               case 'closeTab':
-                const closeResult = await TabToolkit.closeTab(params.tabId);
+                const closeResult = await TabToolkit.closeTab((args as { tabId: number }).tabId);
                 sendResponse(closeResult);
                 return true;
               case 'switchToTab':
-                const switchResult = await TabToolkit.switchToTab(params.tabId);
+                const switchResult = await TabToolkit.switchToTab(
+                  (args as { tabId: number }).tabId
+                );
                 sendResponse(switchResult);
                 return true;
               case 'waitForTabLoad':
-                const waitForResult = await TabToolkit.waitForTabLoad(params.tabId);
+                const waitForResult = await TabToolkit.waitForTabLoad(
+                  (args as { tabId: number }).tabId
+                );
                 sendResponse(waitForResult);
                 return true;
               case 'getCurrentActiveTab':
@@ -129,42 +183,45 @@ chrome.runtime.onMessage.addListener(
           if (name.startsWith('TgToolkit_')) {
             const toolName = name.replace('TgToolkit_', '');
             let result;
-
+            let args;
             switch (toolName) {
               case 'getDialogs':
+                args = params as GetDialogsArguments;
                 result = await TgToolkit.getDialogs(
-                  params.limit,
-                  params.offset,
-                  params.chatTitle,
-                  params.isPublic,
-                  params.isFree,
-                  params.status,
-                  params.sortBy,
-                  params.sortOrder
+                  args.limit,
+                  args.offset,
+                  args.chatTitle,
+                  args.isPublic,
+                  args.isFree,
+                  args.status,
+                  args.sortBy,
+                  args.sortOrder
                 );
                 break;
               case 'getMessages':
+                args = params as GetMessagesArguments;
                 result = await TgToolkit.getMessages(
-                  params.chatId,
-                  params.limit,
-                  params.offset,
-                  params.messageText,
-                  params.senderId,
-                  params.startTimestamp,
-                  params.endTimestamp,
-                  params.sortBy,
-                  params.sortOrder
+                  args.chatId,
+                  args.limit,
+                  args.offset,
+                  args.messageText,
+                  args.senderId,
+                  args.startTimestamp,
+                  args.endTimestamp,
+                  args.sortBy,
+                  args.sortOrder
                 );
                 break;
               case 'searchMessages':
+                args = params as SearchMessagesArguments;
                 result = await TgToolkit.searchMessages(
-                  params.query,
-                  params.chatId,
-                  params.topK,
-                  params.messageRange,
-                  params.threshold,
-                  params.isPublic,
-                  params.isFree
+                  args.query,
+                  args.chatId,
+                  args.topK,
+                  args.messageRange,
+                  args.threshold,
+                  args.isPublic,
+                  args.isFree
                 );
                 break;
               default:
@@ -174,9 +231,10 @@ chrome.runtime.onMessage.addListener(
             sendResponse({ success: true, data: result });
             return true;
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.error('Error executing tool in background:', error);
-          sendResponse({ success: false, error: error.message || String(error) });
+          const message = error instanceof Error ? error.message : JSON.stringify(error);
+          sendResponse({ success: false, error: message });
         }
       })();
 
@@ -189,11 +247,12 @@ chrome.runtime.onMessage.addListener(
           const { key, value } = message.body as { key: string; value: string };
           await storage.set(key, value);
           sendResponse({ success: true });
-        } catch (error) {
+        } catch (error: unknown) {
           console.error('Error updating config:', error);
+          const message = error instanceof Error ? error.message : JSON.stringify(error);
           sendResponse({
             success: false,
-            error: error instanceof Error ? error.message : 'Unknown error',
+            error: message,
           });
         }
       })();

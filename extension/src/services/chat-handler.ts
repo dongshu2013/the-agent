@@ -1,12 +1,14 @@
+import { showLoginModal } from '~/utils/global-event';
 import { ChatMessage, Message } from '../types/messages';
 import { saveMessageApi, sendChatCompletion } from './chat';
 import { toolExecutor } from './tool-executor';
 import { db } from '~/utils/db';
+import { getApiKey } from './cache';
 
 interface ChatHandlerOptions {
   apiKey: string;
   currentConversationId: string;
-  onError: (error: any) => void;
+  onError: (error: unknown) => void;
   onStreamStart: () => void;
   onStreamEnd: () => void;
   onMessageUpdate: (message: Message) => void;
@@ -69,8 +71,8 @@ export class ChatHandler {
         contextPrompt += 'Related messages:\n';
         relatedMessages.forEach(msg => {
           contextPrompt += `${msg.role}: ${msg.content}\n`;
-          if (msg.toolCalls) {
-            msg.toolCalls.forEach(toolCall => {
+          if (msg.tool_calls) {
+            msg.tool_calls.forEach(toolCall => {
               if (toolCall.function.name !== 'WebToolkit_getPageText') {
                 contextPrompt += `Tool calls: ${toolCall.function.name}, executed result: ${JSON.stringify(toolCall?.result?.data || '')} \n`;
               }
@@ -82,8 +84,8 @@ export class ChatHandler {
         contextPrompt += 'Recent messages:\n';
         recentMessages.forEach(msg => {
           contextPrompt += `${msg.role}: ${msg.content}\n`;
-          if (msg.toolCalls) {
-            msg.toolCalls.forEach(toolCall => {
+          if (msg.tool_calls) {
+            msg.tool_calls.forEach(toolCall => {
               if (toolCall.function.name !== 'WebToolkit_getPageText') {
                 contextPrompt += `Tool calls: ${toolCall.function.name}, executed result: ${JSON.stringify(toolCall?.result?.data || '')} \n`;
               }
@@ -122,8 +124,14 @@ Keep responses concise and focused on the current task.
       const MAX_TOOL_CALLS = 20;
 
       const currentModel = await db.getSelectModel();
+      const apiKey = await getApiKey();
+      if (!apiKey) {
+        console.error('Invalid api key');
+        showLoginModal();
+        return;
+      }
 
-      const processRequest = async (inputMessages: ChatMessage[]) => {
+      const processRequest = async (apiKey: string, inputMessages: ChatMessage[]) => {
         let accumulatedContent = '';
         const totalTokenUsage = {
           promptTokens: 0,
@@ -136,6 +144,7 @@ Keep responses concise and focused on the current task.
             if (!this.isStreaming) break;
 
             const stream = await sendChatCompletion(
+              apiKey,
               {
                 messages: [systemMessage, ...inputMessages],
                 currentModel,
@@ -211,7 +220,7 @@ Keep responses concise and focused on the current task.
                   tool_calls: [
                     {
                       ...toolCall,
-                      result: JSON.stringify(toolResult.data),
+                      result: toolResult,
                     },
                   ],
                 };
@@ -237,8 +246,8 @@ Keep responses concise and focused on the current task.
             }
           }
           return { content: accumulatedContent, tokenUsage: totalTokenUsage };
-        } catch (error: any) {
-          if (error.name === 'AbortError') {
+        } catch (error: unknown) {
+          if (error instanceof Error && error.name === 'AbortError') {
             await this.updateMessage({
               ...userMessage,
               content: accumulatedContent + `${accumulatedContent ? '\n\n' : ''}Stream aborted.`,
@@ -246,11 +255,13 @@ Keep responses concise and focused on the current task.
               tokenUsage: totalTokenUsage,
             });
           } else {
+            const message =
+              error instanceof Error ? error.message : 'Network error, please try again later.';
             this.options.onError(error);
             await this.updateMessage({
               id: generateMessageId(),
               role: 'system',
-              content: error?.message || 'Network error, please try again later.',
+              content: message,
               conversation_id: this.options.currentConversationId,
             });
           }
@@ -258,7 +269,7 @@ Keep responses concise and focused on the current task.
         }
       };
 
-      const { content: finalContent, tokenUsage } = await processRequest([
+      const { content: finalContent, tokenUsage } = await processRequest(apiKey, [
         {
           role: 'user',
           content: `Given the chat history:
@@ -281,12 +292,14 @@ Now reply to user's message: ${currentPrompt}`,
       await saveMessageApi({
         message: aiMessage,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Network error, please try again later.';
       this.options.onError(error);
       await this.updateMessage({
         id: generateMessageId(),
         role: 'system',
-        content: error?.message || 'Network error, please try again later.',
+        content: message,
         conversation_id: this.options.currentConversationId,
       });
     } finally {

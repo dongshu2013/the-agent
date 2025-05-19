@@ -194,17 +194,20 @@ export const getConversations = async (): Promise<Conversation[]> => {
       throw new Error('User not found');
     }
 
-    const serverConversations: Conversation[] = response?.conversations?.map((conv: any) => ({
-      id: conv.id,
-      title: conv?.title || conv.messages[0]?.content.slice(0, 20) || 'New Chat',
-      user_id: user?.id || '',
-      messages: conv.messages.map((msg: any) => ({
-        id: msg.id,
-        role: msg.role,
-        content: msg.content,
-        timestamp: new Date(msg.timestamp),
-      })),
-    }));
+    const serverConversations: Conversation[] = response?.conversations?.map(
+      (conv: { id: string; title?: string; messages: Message[] }) => ({
+        id: conv.id,
+        title: conv?.title || conv.messages[0]?.content?.slice(0, 20) || 'New Chat',
+        user_id: user?.id || '',
+        messages: conv.messages.map((msg: Message) => ({
+          id: msg.id,
+          role: msg.role,
+          conversation_id: conv.id,
+          content: msg.content,
+          timestamp: msg.id,
+        })),
+      })
+    );
     await db.saveConversationsAndMessages(serverConversations, user.id);
 
     return serverConversations;

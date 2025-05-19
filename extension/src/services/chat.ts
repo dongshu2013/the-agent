@@ -10,18 +10,15 @@ import { getApiKey } from './cache';
 import { ChatRequest } from '../types/api';
 import { getToolDescriptions } from '../tools/tool-descriptions';
 import { showLoginModal } from '~/utils/global-event';
+import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream.mjs';
 
 // 发送聊天请求到后端
 export const sendChatCompletion = async (
+  apiKey: string,
   request: ChatRequest,
   options: { stream?: boolean; signal?: AbortSignal } = {}
-): Promise<any> => {
+): Promise<ChatCompletionStream> => {
   try {
-    const apiKey = await getApiKey();
-    if (!apiKey) {
-      showLoginModal();
-      return;
-    }
     const client = new OpenAI({
       apiKey: apiKey,
       baseURL: env.BACKEND_URL + '/v1',
@@ -52,8 +49,8 @@ export const sendChatCompletion = async (
         signal: options.signal,
       }
     );
-  } catch (error: any) {
-    throw new Error(error.message || 'Failed to send chat request');
+  } catch (error: unknown) {
+    throw new Error(error instanceof Error ? error.message : 'Failed to send chat request');
   }
 };
 

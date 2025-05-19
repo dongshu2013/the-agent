@@ -7,8 +7,14 @@ export interface ToolCall {
   type: string;
 }
 
+export interface ToolCallResponse {
+  success: boolean;
+  data?: object;
+  error?: string;
+}
+
 export class ToolExecutor {
-  async executeTool(toolCall: ToolCall): Promise<any> {
+  async executeTool(toolCall: ToolCall): Promise<ToolCallResponse> {
     try {
       if (!toolCall.function.name) {
         throw new Error('Tool name is required');
@@ -38,7 +44,7 @@ export class ToolExecutor {
     }
   }
 
-  private async executeTgToolkit(toolCall: ToolCall): Promise<any> {
+  private async executeTgToolkit(toolCall: ToolCall): Promise<ToolCallResponse> {
     const params = this.parseToolParams(toolCall);
     const message = {
       name: 'execute-tool',
@@ -72,7 +78,7 @@ export class ToolExecutor {
     });
   }
 
-  private async executeWebToolkit(toolCall: ToolCall): Promise<any> {
+  private async executeWebToolkit(toolCall: ToolCall): Promise<ToolCallResponse> {
     const params = this.parseToolParams(toolCall);
     const message = {
       name: 'execute-tool',
@@ -106,7 +112,7 @@ export class ToolExecutor {
     });
   }
 
-  private async executeTabToolkit(toolCall: ToolCall): Promise<any> {
+  private async executeTabToolkit(toolCall: ToolCall): Promise<ToolCallResponse> {
     const params = this.parseToolParams(toolCall);
     const message = {
       name: 'execute-tool',
@@ -139,7 +145,7 @@ export class ToolExecutor {
     });
   }
 
-  private parseToolParams(toolCall: ToolCall): any {
+  private parseToolParams(toolCall: ToolCall): Record<string, string> {
     try {
       return toolCall.function.arguments ? JSON.parse(toolCall.function.arguments) : {};
     } catch (error) {
@@ -148,13 +154,15 @@ export class ToolExecutor {
     }
   }
 
-  async executeToolCall(toolCall: ToolCall): Promise<{ success: boolean; data: any }> {
+  async executeToolCall(
+    toolCall: ToolCall
+  ): Promise<{ success: boolean; data?: object; error?: string }> {
     try {
       return await this.executeTool(toolCall);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error('Tool execution failed:', message);
-      return { success: false, data: message };
+      return { success: false, error: message };
     }
   }
 }
