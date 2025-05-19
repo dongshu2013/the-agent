@@ -10,7 +10,7 @@ npx wrangler d1 execute mysta-staging --file=./scripts/insert_coupons.sql --remo
 
 # Verify the insertions
 echo "Verifying local insertions..."
-npx wrangler d1 execute mysta-staging --command="SELECT code, credits, max_uses, used_count, is_active, expired_at FROM coupon_codes;" --local
+npx wrangler d1 execute mysta-staging --command="SELECT code, credits, max_uses, is_active, expired_at, user_whitelist FROM coupon_codes;" --local
 
 echo "Verifying remote insertions..."
-npx wrangler d1 execute mysta-staging --command="SELECT code, credits, max_uses, used_count, is_active, expired_at FROM coupon_codes;" --remote 
+npx wrangler d1 execute mysta-staging --command="SELECT code, credits, max_uses, is_active, expired_at, user_whitelist FROM coupon_codes;" --remote 

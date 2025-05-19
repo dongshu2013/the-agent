@@ -156,7 +156,7 @@ export const PaymentModal = ({ isOpen, onClose }: PaymentModalProps) => {
                   <input
                     type="number"
                     id="amount"
-                    placeholder="Please enter the recharge amount, at least $5"
+                    placeholder="Please enter the recharge amount"
                     value={amount === undefined ? '' : amount}
                     min={5}
                     onChange={(e) => {

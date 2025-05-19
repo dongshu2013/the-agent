@@ -104,6 +104,8 @@ export const CreditsTable = () => {
         return 'System Added';
       case 'completion':
         return 'Completion';
+      case 'coupon_redeem':
+        return 'Coupon Redeem';
       default:
         return reason;
     }

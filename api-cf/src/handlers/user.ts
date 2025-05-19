@@ -224,7 +224,8 @@ export class RedeemCouponCode extends OpenAPIRoute {
           'application/json': {
             schema: z.object({
               success: z.boolean(),
-              credits: z.number(),
+              added_credits: z.number(),
+              total_credits: z.number(),
             }),
           },
         },
@@ -237,13 +238,13 @@ export class RedeemCouponCode extends OpenAPIRoute {
     const userEmail = c.get('userEmail');
     const { code } = await c.req.json();
 
-    // Get coupon code info with auth_user check
+    // Get coupon code info with user_whitelist check
     const { results } = await c.env.DB.prepare(
       `SELECT * FROM coupon_codes 
        WHERE code = ? 
        AND is_active = 1 
        AND (expired_at IS NULL OR expired_at > datetime('now'))
-       AND (auth_user IS NULL OR auth_user LIKE ?)`
+       AND (user_whitelist IS NULL OR user_whitelist LIKE ?)`
     )
       .bind(code, `%${userEmail}%`)
       .all();
@@ -272,9 +273,9 @@ export class RedeemCouponCode extends OpenAPIRoute {
       c.env.DB.prepare(
         'UPDATE coupon_codes SET used_count = used_count + 1 WHERE code = ?'
       ).bind(code),
-      // Add credits to user
+      // Add credits to user and return new balance
       c.env.DB.prepare(
-        'UPDATE users SET balance = balance + ? WHERE id = ?'
+        'UPDATE users SET balance = balance + ? WHERE id = ? RETURNING balance'
       ).bind(coupon.credits, userId),
       // Add credit history
       c.env.DB.prepare(
@@ -284,13 +285,22 @@ export class RedeemCouponCode extends OpenAPIRoute {
         userId,
         coupon.credits,
         TransactionType.DEBIT,
-        TransactionReason.COUPON_CODE
+        TransactionReason.COUPON_REDEEM
       ),
     ]);
 
     try {
-      await tx;
-      return c.json({ success: true, credits: coupon.credits }, 200);
+      const results = await tx;
+      const newBalance = results[1].results[0].balance;
+
+      return c.json(
+        {
+          success: true,
+          added_credits: coupon.credits,
+          total_credits: newBalance,
+        },
+        200
+      );
     } catch (error) {
       console.error('Error redeeming coupon:', error);
       return c.json({ success: false, error: 'Failed to redeem coupon' }, 500);

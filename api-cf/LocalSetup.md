@@ -57,12 +57,19 @@ npx wrangler d1 execute mysta-staging --command="CREATE TABLE IF NOT EXISTS coup
     max_uses INTEGER NOT NULL DEFAULT 1,
     used_count INTEGER NOT NULL DEFAULT 0,
     is_active INTEGER NOT NULL DEFAULT 1 CHECK(is_active IN (0, 1)),
-    auth_user TEXT DEFAULT NULL,
+    user_whitelist TEXT DEFAULT NULL,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     expired_at TEXT,
     FOREIGN KEY(user_id) REFERENCES users(id)
 );" --local
 ```
+
+> use `--remote` for setup remote D1 Database
+
+## Init Coupon Code Sample Dataset
+
+add record `./scripts/insert_coupons.sql`
+run `./scripts/insert_coupons.sh`
 
 ```bash
 // insert test user
