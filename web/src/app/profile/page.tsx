@@ -10,7 +10,7 @@ import { CouponCodeModal } from './CouponCodeModal';
 import { CreditsCharts } from './CreditsCharts';
 import { CreditsTable } from './CreditsTable';
 import { getTelegramStats } from '@/lib/api_service';
-import { formatCredits } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 
 export default function ProfilePage() {
   const { user, loading, signOut, rotateApiKey, toggleApiKey, refreshUserData } = useAuth();
@@ -372,7 +372,7 @@ export default function ProfilePage() {
 
             <div className="flex items-center space-x-4">
               <div className="text-lg font-bold text-gray-900 dark:text-white">
-                ${formatCredits(user.credits, 2)}
+                {formatCurrency(user.credits, { maximumFractionDigits: 2 })}
               </div>
               <div className="flex space-x-2">
                 <button

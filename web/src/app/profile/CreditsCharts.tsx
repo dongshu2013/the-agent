@@ -4,7 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recha
 import { Expand } from 'lucide-react';
 import { getCreditHistory } from '@/lib/api_service';
 import { CreditLog, TransactionType } from '@/types';
-import { formatCredits } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 
 interface ChartData {
   name: string;
@@ -126,7 +126,10 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
                 <XAxis dataKey="name" tick={{ fontSize: 12 }} />
                 <YAxis hide />
                 <Tooltip
-                  formatter={(value: number) => [`$${formatCredits(value, 6)}`, 'Credits']}
+                  formatter={(value: number) => [
+                    formatCurrency(value, { maximumFractionDigits: 6 }),
+                    'Credits',
+                  ]}
                   cursor={{ fill: 'rgba(0, 0, 0, 0.1)' }}
                 />
                 <Bar dataKey="value" fill="#F6465D" radius={[4, 4, 0, 0]} />
@@ -142,11 +145,15 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
         <div className="flex justify-between mt-4">
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400">Last day</p>
-            <p className="text-lg font-medium">${formatCredits(lastDaySpend, 2)}</p>
+            <p className="text-lg font-medium">
+              {formatCurrency(lastDaySpend, { maximumFractionDigits: 6 })}
+            </p>
           </div>
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400">Last week</p>
-            <p className="text-lg font-medium">${formatCredits(lastWeekSpend, 2)}</p>
+            <p className="text-lg font-medium">
+              {formatCurrency(lastWeekSpend, { maximumFractionDigits: 6 })}
+            </p>
           </div>
         </div>
       </div>

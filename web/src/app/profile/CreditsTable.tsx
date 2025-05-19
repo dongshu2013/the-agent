@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { CreditLog, TransactionReason, TransactionType } from '@/types';
 import { getCreditHistory } from '@/lib/api_service';
-import { formatCredits } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 
 interface FilterOptions {
   models: string[];
@@ -280,7 +280,7 @@ export const CreditsTable = () => {
                     }`}
                   >
                     {credit.tx_type === TransactionType.CREDIT ? '-' : '+'}
-                    {formatCredits(credit.tx_credits, 6)}
+                    {formatCurrency(credit.tx_credits, { maximumFractionDigits: 6 })}
                   </td>
                 </tr>
               ))

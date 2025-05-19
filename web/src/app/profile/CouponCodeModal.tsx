@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { redeemCouponCode } from '@/lib/api_service';
-import { formatCredits } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 
 interface CouponCodeModalProps {
   isOpen: boolean;
@@ -15,14 +15,6 @@ export function CouponCodeModal({ isOpen, onClose }: CouponCodeModalProps) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const modalRef = useRef<HTMLDivElement>(null);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 2,
-    }).format(amount / 1_000_000);
-  };
 
   useEffect(() => {
     // Prevent body scrolling when modal is open
@@ -71,8 +63,8 @@ export function CouponCodeModal({ isOpen, onClose }: CouponCodeModalProps) {
     try {
       const result = await redeemCouponCode(user.idToken, code);
       if (result.success && result.added_credits) {
-        const addedAmount = formatCurrency(result.added_credits);
-        const totalAmount = formatCurrency(result.total_credits);
+        const addedAmount = formatCurrency(result.added_credits, { maximumFractionDigits: 2 });
+        const totalAmount = formatCurrency(result.total_credits, { maximumFractionDigits: 2 });
 
         setSuccess(`Added ${addedAmount} to your balance. New total: ${totalAmount}`);
         await refreshUserData();
