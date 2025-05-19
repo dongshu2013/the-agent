@@ -9,6 +9,7 @@ import {
   rotateApiKey,
   toggleApiKeyEnabled,
 } from '../d1/user';
+import { TransactionReason, TransactionType } from '../d1/types';
 
 export class GetUser extends OpenAPIRoute {
   schema = {
@@ -200,5 +201,99 @@ export class ToggleApiKeyEnabled extends OpenAPIRoute {
     const body = await c.req.json();
     await toggleApiKeyEnabled(c.env, userId, body.enabled);
     return c.json({ success: true }, 200);
+  }
+}
+
+export class RedeemCouponCode extends OpenAPIRoute {
+  schema = {
+    request: {
+      body: {
+        content: {
+          'application/json': {
+            schema: z.object({
+              code: z.string(),
+            }),
+          },
+        },
+      },
+    },
+    responses: {
+      '200': {
+        description: 'Redeem coupon code',
+        content: {
+          'application/json': {
+            schema: z.object({
+              success: z.boolean(),
+              credits: z.number(),
+            }),
+          },
+        },
+      },
+    },
+  };
+
+  async handle(c: Context) {
+    const userId = c.get('userId');
+    const userEmail = c.get('userEmail');
+    const { code } = await c.req.json();
+
+    // Get coupon code info with auth_user check
+    const { results } = await c.env.DB.prepare(
+      `SELECT * FROM coupon_codes 
+       WHERE code = ? 
+       AND is_active = 1 
+       AND (expired_at IS NULL OR expired_at > datetime('now'))
+       AND (auth_user IS NULL OR auth_user LIKE ?)`
+    )
+      .bind(code, `%${userEmail}%`)
+      .all();
+
+    if (!results || results.length === 0) {
+      return c.json(
+        {
+          success: false,
+          error: 'Invalid, expired, or unauthorized coupon code',
+        },
+        400
+      );
+    }
+
+    const coupon = results[0];
+    if (coupon.used_count >= coupon.max_uses) {
+      return c.json(
+        { success: false, error: 'Coupon code has reached maximum uses' },
+        400
+      );
+    }
+
+    // Start transaction
+    const tx = c.env.DB.batch([
+      // Update coupon used count
+      c.env.DB.prepare(
+        'UPDATE coupon_codes SET used_count = used_count + 1 WHERE code = ?'
+      ).bind(code),
+      // Add credits to user
+      c.env.DB.prepare(
+        'UPDATE users SET balance = balance + ? WHERE id = ?'
+      ).bind(coupon.credits, userId),
+      // Add credit history
+      // c.env.DB.prepare(
+      //   `INSERT INTO credit_history (user_id, tx_credits, tx_type, tx_reason)
+      //    VALUES (?, ?, ?, ?)`
+      // ).bind(
+      //   userId,
+      //   coupon.credits,
+      //   TransactionType.DEBIT,
+      //   TransactionReason.COUPON_CODE
+      // ),
+    ]);
+
+    try {
+      await tx;
+      return c.json({ success: true, credits: coupon.credits }, 200);
+    } catch (error) {
+      console.error('Error redeeming coupon:', error);
+      return c.json({ success: false, error: 'Failed to redeem coupon' }, 500);
+    }
   }
 }

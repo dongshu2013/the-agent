@@ -45,4 +45,5 @@ export enum TransactionReason {
   ORDER_PAY = 'order_pay',
   SYSTEM_ADD = 'system_add',
   COMPLETION = 'completion',
+  COUPON_CODE = 'coupon_code',
 }

@@ -1,11 +1,47 @@
 ### Variables
 @baseUrl = http://localhost:8787
-@apiKey = 429e272b-d37a-4490-a39c-b5646003458f
+@apiKey = 355c41fa-49eb-48fc-8bce-4957d624e355
 @token = 
 
 ### Health Check
 GET {{baseUrl}}/health
 Content-Type: application/json
+
+### Redeem Coupon Code - Public Coupon (MYSTA2025)
+POST {{baseUrl}}/v1/user/redeem_coupon_code
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+{
+  "code": "MYSTA2025"
+}
+
+### Redeem Coupon Code - VIP Coupon (VIP2025)
+POST {{baseUrl}}/v1/user/redeem_coupon_code
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+{
+  "code": "VIP2025"
+}
+
+### Redeem Coupon Code - Team Coupon (TEAM2025)
+POST {{baseUrl}}/v1/user/redeem_coupon_code
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+{
+  "code": "TEAM2025"
+}
+
+### Redeem Coupon Code - Invalid Code
+POST {{baseUrl}}/v1/user/redeem_coupon_code
+Content-Type: application/json
+x-api-key: {{apiKey}}
+
+{
+  "code": "INVALID_CODE"
+}
 
 ### Get User Balance
 GET {{baseUrl}}/v1/user/balance
