@@ -277,15 +277,15 @@ export class RedeemCouponCode extends OpenAPIRoute {
         'UPDATE users SET balance = balance + ? WHERE id = ?'
       ).bind(coupon.credits, userId),
       // Add credit history
-      // c.env.DB.prepare(
-      //   `INSERT INTO credit_history (user_id, tx_credits, tx_type, tx_reason)
-      //    VALUES (?, ?, ?, ?)`
-      // ).bind(
-      //   userId,
-      //   coupon.credits,
-      //   TransactionType.DEBIT,
-      //   TransactionReason.COUPON_CODE
-      // ),
+      c.env.DB.prepare(
+        `INSERT INTO credit_history (user_id, tx_credits, tx_type, tx_reason)
+         VALUES (?, ?, ?, ?)`
+      ).bind(
+        userId,
+        coupon.credits,
+        TransactionType.DEBIT,
+        TransactionReason.COUPON_CODE
+      ),
     ]);
 
     try {

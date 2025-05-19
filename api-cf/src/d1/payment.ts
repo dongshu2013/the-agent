@@ -59,22 +59,22 @@ export async function finalizeOrder(
   const stmt1 = db.prepare(
     'UPDATE orders SET status = ?, stripe_session_id = ? WHERE id = ?'
   );
-  // const stmt2 = db.prepare(
-  //   'INSERT INTO credit_history (user_id, tx_credits, tx_type, tx_reason, order_id) VALUES (?, ?, ?, ?, ?)'
-  // );
+  const stmt2 = db.prepare(
+    'INSERT INTO credit_history (user_id, tx_credits, tx_type, tx_reason, order_id) VALUES (?, ?, ?, ?, ?)'
+  );
   const stmt3 = db.prepare(
     'UPDATE users SET balance = balance + ? WHERE id = ?'
   );
 
   const [result1, result2, result3] = await db.batch([
     stmt1.bind(OrderStatus.FINALIZED, sessionId, orderId),
-    // stmt2.bind(
-    //   order.user_id,
-    //   credits,
-    //   TransactionType.DEBIT,
-    //   TransactionReason.ORDER_PAY,
-    //   orderId
-    // ),
+    stmt2.bind(
+      order.user_id,
+      credits,
+      TransactionType.DEBIT,
+      TransactionReason.ORDER_PAY,
+      orderId
+    ),
     stmt3.bind(credits, order.user_id),
   ]);
 
