@@ -17,17 +17,17 @@
     "tsc-files": "^1.1.4",
     "typescript": "^5.5.2",
     "vitest": "2.0.5",
-    "wrangler": "^4.14.4"
+    "wrangler": "^4.16.0"
   },
   "dependencies": {
+    "@the-agent/shared": "workspace:*",
     "chanfana": "^2.8.0",
     "hono": "^4.7.9",
     "jose": "^5.9.6",
     "openai": "^4.98.0",
     "stripe": "^18.1.0",
     "uuid": "^11.1.0",
-    "zod": "^3.24.4",
-    "@the-agent/shared": "workspace:*"
+    "zod": "^3.24.4"
   },
   "lint-staged": {
     "*.{js,ts}": [

@@ -234,7 +234,10 @@ function setAuthToLocalAndPostMessage({ apiKey }: { apiKey?: string }) {
     window.postMessage(
       {
         type: 'FROM_WEB_TO_EXTENSION',
-        apiKey,
+        data: {
+          host: window.location.hostname,
+          apiKey,
+        },
       },
       '*'
     );

@@ -139,7 +139,7 @@ const Sidepanel = () => {
   const handleSwitchAccount = useCallback(async () => {
     if (!pendingApiKey) return;
     await resetDB();
-    await setApiKey(pendingApiKey);
+    await setApiKey({ apiKey: pendingApiKey });
     setApiKeyState(pendingApiKey);
     setLoginModalOpen(false);
     setShowSwitch(false);
