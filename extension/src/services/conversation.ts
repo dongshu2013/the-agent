@@ -103,62 +103,50 @@ export const getCurrentConversation = async (): Promise<Conversation | null> => 
  * 创建新会话
  */
 export const createNewConversation = async (): Promise<Conversation> => {
-  try {
-    const response = await createConversationApi();
-    const user = await db.getUserByApiKey();
-    if (!response.success || !response.id || !user) {
-      throw new Error(response.error || 'Failed to create conversation');
-    }
-
-    const conversation: Conversation = {
-      id: response.id,
-      title: 'New Chat',
-      user_id: user?.id || '',
-      messages: [],
-    };
-
-    await db.saveConversation(conversation);
-
-    return conversation;
-  } catch (error) {
-    throw error;
+  const response = await createConversationApi();
+  const user = await db.getUserByApiKey();
+  if (!response.success || !response.id || !user) {
+    throw new Error(response.error || 'Failed to create conversation');
   }
+
+  const conversation: Conversation = {
+    id: response.id,
+    title: 'New Chat',
+    user_id: user?.id || '',
+    messages: [],
+  };
+
+  await db.saveConversation(conversation);
+
+  return conversation;
 };
 
 /**
  * 选择会话
  */
 export const selectConversation = async (id: number): Promise<Conversation | null> => {
-  try {
-    // 从 IndexedDB 获取会话
-    const conversation = await db.getConversation(id);
-    if (!conversation) {
-      throw new Error('Conversation not found');
-    }
-
-    // 获取会话的消息
-    const messages = await db.getMessagesByConversation(id);
-    conversation.messages = messages;
-
-    return conversation;
-  } catch (error) {
-    throw error;
+  // 从 IndexedDB 获取会话
+  const conversation = await db.getConversation(id);
+  if (!conversation) {
+    throw new Error('Conversation not found');
   }
+
+  // 获取会话的消息
+  const messages = await db.getMessagesByConversation(id);
+  conversation.messages = messages;
+
+  return conversation;
 };
 
 /**
  * 删除会话
  */
 export const deleteConversation = async (id: number): Promise<void> => {
-  try {
-    const response = await deleteConversationApi(id);
-    if (!response.success) {
-      throw new Error(response.error || 'Failed to delete conversation');
-    }
-
-    await db.deleteConversation(id);
-    await db.deleteMessagesByConversation(id);
-  } catch (error) {
-    throw error;
+  const response = await deleteConversationApi(id);
+  if (!response.success) {
+    throw new Error(response.error || 'Failed to delete conversation');
   }
+
+  await db.deleteConversation(id);
+  await db.deleteMessagesByConversation(id);
 };

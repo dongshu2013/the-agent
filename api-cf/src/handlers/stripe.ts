@@ -118,8 +118,7 @@ export class StripeWebhook extends OpenAPIRoute {
     switch (event.type) {
       case 'checkout.session.completed':
       case 'checkout.session.async_payment_succeeded':
-        const completed = event.data.object as Stripe.Checkout.Session;
-        // console.log('---completed:', completed);
+        const completed = event.data.object;
 
         if (!completed.metadata?.orderId || !completed.amount_subtotal) {
           console.log('invalid order id or payment amount');
@@ -133,7 +132,7 @@ export class StripeWebhook extends OpenAPIRoute {
         );
         break;
       case 'checkout.session.expired':
-        const expired = event.data.object as Stripe.Checkout.Session;
+        const expired = event.data.object;
         if (!expired.metadata?.orderId) {
           console.log('invalid order id');
           return;
@@ -146,7 +145,7 @@ export class StripeWebhook extends OpenAPIRoute {
         );
         break;
       case 'checkout.session.async_payment_failed':
-        const failed = event.data.object as Stripe.Checkout.Session;
+        const failed = event.data.object;
         if (!failed.metadata?.orderId) {
           console.log('invalid order id');
           return;

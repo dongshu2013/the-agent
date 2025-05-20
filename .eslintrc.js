@@ -17,6 +17,8 @@ module.exports = {
     ],
     // Disable requirement for explicit return types
     '@typescript-eslint/explicit-module-boundary-types': 'off',
+    // Allow declarations in case blocks
+    'no-case-declarations': 'off',
   },
   overrides: [
     // Extension-specific overrides

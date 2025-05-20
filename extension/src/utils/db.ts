@@ -134,11 +134,7 @@ class MystaDB extends Dexie {
       throw new Error('Message missing id');
     }
 
-    try {
-      await this.messages.put(message);
-    } catch (error) {
-      throw error;
-    }
+    await this.messages.put(message);
   }
 
   async saveMessages(messages: Message[]): Promise<void> {
