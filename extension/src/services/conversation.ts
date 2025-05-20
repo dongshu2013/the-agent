@@ -25,9 +25,9 @@ const createApiClient = async (): Promise<APIClient> => {
 /**
  * 获取所有会话
  */
-export const getConversations = async (): Promise<Conversation[]> => {
+export const getConversations = async (apiKey: string): Promise<Conversation[]> => {
   try {
-    const user = await db.getUserByApiKey();
+    const user = await db.getUserByApiKey(apiKey);
     if (!user) {
       throw new Error('User not found');
     }
@@ -52,9 +52,9 @@ export const getConversations = async (): Promise<Conversation[]> => {
 /**
  * 获取当前会话
  */
-export const getCurrentConversation = async (): Promise<Conversation | null> => {
+export const getCurrentConversation = async (apiKey: string): Promise<Conversation | null> => {
   try {
-    const conversations = await getConversations();
+    const conversations = await getConversations(apiKey);
     return conversations[0] || null; // 返回第一个会话作为当前会话
   } catch {
     return null;
@@ -64,8 +64,8 @@ export const getCurrentConversation = async (): Promise<Conversation | null> => 
 /**
  * 创建新会话
  */
-export const createNewConversation = async (): Promise<Conversation> => {
-  const user = await db.getUserByApiKey();
+export const createNewConversation = async (apiKey: string): Promise<Conversation> => {
+  const user = await db.getUserByApiKey(apiKey);
   if (!user) {
     throw new Error('Failed to create conversation');
   }

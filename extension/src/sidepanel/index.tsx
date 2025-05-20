@@ -86,14 +86,23 @@ const Sidepanel = () => {
     async (apiKeyToUse: ApiKey) => {
       try {
         setIsLoading(true);
+        if (!apiKeyToUse.enabled) {
+          throw new Error('API key is disabled');
+        }
+
+        const existingUser = await db.getUserByApiKey(apiKeyToUse.key);
+        if (existingUser) {
+          setCurrentUser(existingUser);
+          setLoginModalOpen(false);
+          return;
+        }
+
         const client = new APIClient({
           baseUrl: env.BACKEND_URL,
           apiKey: apiKeyToUse.key,
         });
         const user = await client.getUser();
         const now = new Date().toISOString();
-        await db.initModels(user.id);
-
         const userInfo = {
           id: user.id,
           email: user.email,
@@ -104,9 +113,9 @@ const Sidepanel = () => {
           updated_at: now,
           selectedModelId: 'system',
         };
+        await db.initModels(user.id);
         await db.saveOrUpdateUser(userInfo);
         setCurrentUser(userInfo);
-
         setLoginModalOpen(false);
 
         const dbConversations = await db.getAllConversations(userInfo.id);
@@ -114,7 +123,7 @@ const Sidepanel = () => {
           if (dbConversations?.length > 0) {
             setCurrentConversationId(dbConversations[0].id);
           } else {
-            const newConv = await createNewConversation();
+            const newConv = await createNewConversation(apiKeyToUse.key);
             setCurrentConversationId(newConv.id);
           }
         }
@@ -139,8 +148,6 @@ const Sidepanel = () => {
         } else {
           newApiKey = changes[API_KEY_TAG].newValue;
         }
-
-        console.log('newApiKey', newApiKey);
         setApiKeyState(newApiKey);
         if (!newApiKey) {
           setLoginModalOpen(true);
@@ -159,27 +166,6 @@ const Sidepanel = () => {
       }
     };
     chrome.storage.onChanged.addListener(listener);
-    return () => chrome.storage.onChanged.removeListener(listener);
-  }, [initializeUserAndData, setLoginModalOpen, setShowSwitch, setCurrentUser, setApiKeyState]);
-
-  // 首次加载
-  useEffect(() => {
-    const initializeApp = async () => {
-      if (isInitialized) return;
-      const storedApiKey = apiKey;
-      if (!storedApiKey) {
-        setLoginModalOpen(true);
-        return;
-      }
-      await initializeUserAndData(storedApiKey);
-      setIsInitialized(true);
-    };
-    initializeApp();
-    // eslint-disable-next-line
-  }, [isInitialized]);
-
-  // 消息处理
-  useEffect(() => {
     const handleMessages = (request: { name: string; text?: string }) => {
       if (request.name === 'selected-text' && request.text) {
         setPrompt(request.text);
@@ -192,10 +178,17 @@ const Sidepanel = () => {
         setLoginModalOpen(true);
       }
     };
-
     chrome.runtime.onMessage.addListener(handleMessages);
-    return () => chrome.runtime.onMessage.removeListener(handleMessages);
-  }, [setLoginModalOpen]);
+    const handler = () => {
+      setLoginModalOpen(true);
+    };
+    window.addEventListener('SHOW_LOGIN_MODAL', handler);
+    return () => {
+      chrome.storage.onChanged.removeListener(listener);
+      chrome.runtime.onMessage.removeListener(handleMessages);
+      window.removeEventListener('SHOW_LOGIN_MODAL', handler);
+    };
+  }, [initializeUserAndData, setLoginModalOpen, setShowSwitch, setCurrentUser, setApiKeyState]);
 
   useEffect(() => {
     if (apiKey?.enabled && currentConversationId) {
@@ -249,7 +242,7 @@ const Sidepanel = () => {
       try {
         setIsLoading(true);
         if (!conversations || conversations.length === 0) {
-          await getConversations();
+          await getConversations(apiKey?.key || '');
         }
       } catch (error) {
         handleApiError(error);
@@ -297,7 +290,7 @@ const Sidepanel = () => {
             setCurrentConversationId(remaining[0].id);
           }
         } else {
-          const newConv = await createNewConversation();
+          const newConv = await createNewConversation(apiKey?.key || '');
           setCurrentConversationId(newConv.id);
         }
       }
@@ -312,7 +305,7 @@ const Sidepanel = () => {
     if (isLoading) return;
     setIsLoading(true);
     try {
-      const newConv = await createNewConversation();
+      const newConv = await createNewConversation(apiKey?.key || '');
       setCurrentConversationId(newConv.id);
     } catch (error) {
       handleApiError(error);
@@ -322,6 +315,13 @@ const Sidepanel = () => {
   };
 
   useEffect(() => {
+    const initializeApp = async (apiKey: ApiKey) => {
+      if (isInitialized) {
+        return;
+      }
+      await initializeUserAndData(apiKey);
+      setIsInitialized(true);
+    };
     chrome.storage.local.get(API_KEY_TAG, result => {
       let apiKey: ApiKey | null = null;
       if (result[API_KEY_TAG]) {
@@ -335,15 +335,10 @@ const Sidepanel = () => {
       if (!apiKey?.enabled) {
         setLoginModalOpen(true);
       } else {
-        setLoginModalOpen(false);
+        initializeApp(apiKey);
       }
     });
-    const handler = () => {
-      setLoginModalOpen(true);
-    };
-    window.addEventListener('SHOW_LOGIN_MODAL', handler);
-    return () => window.removeEventListener('SHOW_LOGIN_MODAL', handler);
-  }, [setLoginModalOpen]);
+  }, [setLoginModalOpen, initializeUserAndData, setIsInitialized]);
 
   return (
     <div

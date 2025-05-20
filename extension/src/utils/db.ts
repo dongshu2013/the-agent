@@ -2,7 +2,6 @@ import { Conversation } from '../types/conversations';
 import Dexie, { Table } from 'dexie';
 import { env } from './env';
 import { Model } from '~/types';
-import { getApiKey } from '~/services/cache';
 import { PROVIDER_MODELS } from './models';
 import { Message } from '@the-agent/shared';
 import { SYSTEM_MODEL_ID } from './constants';
@@ -318,10 +317,8 @@ class MystaDB extends Dexie {
       );
     }
   }
-  async getUserByApiKey(): Promise<UserInfo | null> {
-    const apiKey = await getApiKey();
-    if (!apiKey?.enabled) return null;
-    const user = await this.users.where('api_key').equals(apiKey.key).first();
+  async getUserByApiKey(apiKey: string): Promise<UserInfo | null> {
+    const user = await this.users.where('api_key').equals(apiKey).first();
     return user || null;
   }
 
