@@ -487,7 +487,12 @@ const Sidepanel = () => {
         />
       )}
 
-      <LoginModal open={loginModalOpen} isSwitch={false} currentUser={currentUser} />
+      <LoginModal
+        open={loginModalOpen}
+        isSwitch={false}
+        text={apiKey && !apiKey.enabled ? 'Enable Your Mysta API Key' : 'Sign In with Mysta Web'}
+        currentUser={currentUser}
+      />
       <LoginModal
         open={showSwitch}
         isSwitch={true}

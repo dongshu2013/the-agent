@@ -8,10 +8,17 @@ interface LoginModalProps {
   open: boolean;
   isSwitch?: boolean;
   currentUser?: UserInfo | null;
+  text?: string;
   onClose?: () => void;
 }
 
-export default function LoginModal({ open, isSwitch, currentUser, onClose }: LoginModalProps) {
+export default function LoginModal({
+  open,
+  isSwitch,
+  currentUser,
+  text,
+  onClose,
+}: LoginModalProps) {
   const handleLogin = () => {
     const webUrl = env.WEB_URL;
     window.open(webUrl, '_blank');
@@ -73,7 +80,7 @@ export default function LoginModal({ open, isSwitch, currentUser, onClose }: Log
       </div>
       {isSwitch ? (
         <>
-          <div style={{ fontWeight: 500, textAlign: 'center' }}>New Mysta Account Detected</div>
+          <div style={{ fontWeight: 500, textAlign: 'center' }}>Mysta Account Detected</div>
           <div style={{ fontSize: 14, color: '#333', textAlign: 'center' }}>
             <span style={{ color: '#888' }}>{getDisplayName(currentUser)}</span>
           </div>
@@ -115,7 +122,7 @@ export default function LoginModal({ open, isSwitch, currentUser, onClose }: Log
             transition: 'background 0.2s, color 0.2s',
           }}
         >
-          <span>Sign In with Mysta Web</span>
+          <span>{text || 'Sign In with Mysta Web'}</span>
         </button>
       )}
     </Modal>
