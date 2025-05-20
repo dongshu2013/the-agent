@@ -47,28 +47,22 @@ export class GetUser extends OpenAPIRoute {
       const user = await createUser(c.env, userId, email);
       return c.json(
         {
-          success: true,
-          user: {
-            api_key: user.api_key,
-            api_key_enabled: user.api_key_enabled,
-            balance: user.balance,
-            email: user.email,
-            user_id: user.id,
-          },
+          id: user.id,
+          email: user.email,
+          api_key: user.api_key,
+          api_key_enabled: user.api_key_enabled,
+          balance: user.balance,
         },
         200
       );
     } else {
       return c.json(
         {
-          success: true,
-          user: {
-            api_key: userInfo.api_key,
-            api_key_enabled: userInfo.api_key_enabled,
-            balance: userInfo.balance,
-            email: userInfo.email,
-            user_id: userInfo.id,
-          },
+          id: userInfo.id,
+          email: userInfo.email,
+          api_key: userInfo.api_key,
+          api_key_enabled: userInfo.api_key_enabled,
+          balance: userInfo.balance,
         },
         200
       );

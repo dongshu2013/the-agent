@@ -173,12 +173,9 @@ export type GetUserResponse = z.infer<typeof GetUserResponseSchema>;
 // telegram handlers
 
 export const TelegramStatsSchema = z.object({
-  success: z.boolean(),
-  data: z.object({
-    totalDialogs: z.number(),
-    totalMessages: z.number(),
-    lastSyncTime: z.string().nullable().optional(),
-  }),
+  total_dialogs: z.number(),
+  total_messages: z.number(),
+  last_sync_time: z.string().optional(),
 });
 export type TelegramStats = z.infer<typeof TelegramStatsSchema>;
 

@@ -1,6 +1,6 @@
 ### Variables
 @baseUrl = http://localhost:8787
-@apiKey = 355c41fa-49eb-48fc-8bce-4957d624e355
+@apiKey = 1f190049-9858-49cb-8e6e-d5329052c949
 @token = 
 
 ### Health Check

@@ -46,26 +46,30 @@ export class TgContext extends DurableObject<Env> {
   }
 
   // Get stats for Telegram data
-  async getStats() {
+  async getStats(): Promise<{
+    totalDialogs: number;
+    totalMessages: number;
+    lastSyncTime?: string;
+  }> {
     const dialogsCountCursor = this.sql.exec(
       `SELECT COUNT(*) as channels_count FROM telegram_dialogs WHERE status = 'active'`
     );
-    let channelsCount = 0;
+    let totalDialogs = 0;
     for (const result of dialogsCountCursor) {
-      channelsCount = result.channels_count as number;
+      totalDialogs = result.channels_count as number;
     }
 
     const messagesCountCursor = this.sql.exec(
       `SELECT COUNT(*) as messages_count FROM telegram_messages`
     );
-    let messagesCount = 0;
+    let totalMessages = 0;
     for (const result of messagesCountCursor) {
-      messagesCount = result.messages_count as number;
+      totalMessages = result.messages_count as number;
     }
 
     return {
-      channels_count: channelsCount,
-      messages_count: messagesCount,
+      totalDialogs,
+      totalMessages,
     };
   }
 
