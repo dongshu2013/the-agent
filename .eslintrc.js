@@ -15,6 +15,8 @@ module.exports = {
         varsIgnorePattern: '^_',
       },
     ],
+    // Disable requirement for explicit return types
+    '@typescript-eslint/explicit-module-boundary-types': 'off',
   },
   overrides: [
     // Extension-specific overrides
