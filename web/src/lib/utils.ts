@@ -10,7 +10,7 @@ export const formatCurrency = (
     currency?: string;
     minimumFractionDigits?: number;
     maximumFractionDigits?: number;
-  } = {},
+  } = {}
 ): string => {
   if (amount === null || amount === undefined) return '$0.00';
 

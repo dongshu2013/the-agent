@@ -4,6 +4,11 @@ module.exports = {
   parser: '@typescript-eslint/parser',
   plugins: ['@typescript-eslint'],
   ignorePatterns: ['dist', 'build', 'node_modules', '.next'],
+  env: {
+    browser: true,
+    node: true,
+    es6: true,
+  },
   rules: {
     // Global rules for all packages
     '@typescript-eslint/no-explicit-any': 'warn',
@@ -23,8 +28,21 @@ module.exports = {
     'no-empty': ['error', { allowEmptyCatch: true }],
     // Allow while(true) loops but catch constant conditions elsewhere
     'no-constant-condition': ['error', { checkLoops: false }],
+    // Enforce consistent quote style (single quotes)
+    quotes: ['error', 'single', { avoidEscape: true, allowTemplateLiterals: true }],
   },
   overrides: [
+    // Config files overrides
+    {
+      files: ['*.js', '*.cjs'],
+      env: {
+        node: true,
+      },
+      rules: {
+        '@typescript-eslint/no-var-requires': 'off',
+        '@typescript-eslint/no-require-imports': 'off',
+      },
+    },
     // Extension-specific overrides
     {
       files: ['./extension/**/*.ts', './extension/**/*.tsx'],
