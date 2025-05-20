@@ -1,13 +1,9 @@
 import { OpenAPIRoute } from 'chanfana';
-import { z } from 'zod';
 import { Context } from 'hono';
 import { createOpenAIClient } from '../utils/openai';
 import { getUserBalance, deductUserCredits } from '../d1/user';
-import { ChatCompletionCreateParamSchema } from '../types/chat';
-import {
-  calculateCredits,
-  createStreamingTokenTracker,
-} from '../utils/creditCalculator';
+import { ChatCompletionCreateParamSchema, ChatCompletionResponseSchema } from '@the-agent/shared';
+import { calculateCredits, createStreamingTokenTracker } from '../utils/creditCalculator';
 import { DEEPSEEK_API_URL, OPENROUTER_API_URL } from '../utils/common';
 
 export class ChatCompletions extends OpenAPIRoute {
@@ -26,22 +22,7 @@ export class ChatCompletions extends OpenAPIRoute {
         description: 'Chat completion response',
         content: {
           'application/json': {
-            schema: z.object({}).passthrough(),
-          },
-        },
-      },
-      '400': {
-        description: 'Bad request',
-        content: {
-          'application/json': {
-            schema: z.object({
-              error: z.object({
-                message: z.string(),
-                type: z.string(),
-                param: z.string().nullable(),
-                code: z.string(),
-              }),
-            }),
+            schema: ChatCompletionResponseSchema,
           },
         },
       },
@@ -62,8 +43,7 @@ export class ChatCompletions extends OpenAPIRoute {
       return c.json(
         {
           error: {
-            message:
-              'Insufficient credits. Please add more credits to your account.',
+            message: 'Insufficient credits. Please add more credits to your account.',
             type: 'insufficient_credits',
             param: null,
             code: 'insufficient_credits',
@@ -108,14 +88,11 @@ export class ChatCompletions extends OpenAPIRoute {
               try {
                 const lastData = JSON.parse(lastChunk.slice(6));
                 if (lastData.usage) {
-                  tokenTracker.setPromptTokens(
-                    lastData.usage.prompt_tokens || 0
-                  );
-                  tokenTracker.setCompletionTokens(
-                    lastData.usage.completion_tokens || 0
-                  );
+                  tokenTracker.setPromptTokens(lastData.usage.prompt_tokens || 0);
+                  tokenTracker.setCompletionTokens(lastData.usage.completion_tokens || 0);
                 }
               } catch (e) {
+                console.error('Error parsing last chunk:', e);
                 // Ignore parse errors for the last chunk
               }
 
@@ -136,11 +113,10 @@ export class ChatCompletions extends OpenAPIRoute {
                   const data = JSON.parse(line.slice(6));
                   if (data.usage) {
                     tokenTracker.setPromptTokens(data.usage.prompt_tokens || 0);
-                    tokenTracker.setCompletionTokens(
-                      data.usage.completion_tokens || 0
-                    );
+                    tokenTracker.setCompletionTokens(data.usage.completion_tokens || 0);
                   }
                 } catch (e) {
+                  console.error('Error parsing chunk:', e);
                   // Ignore parse errors for non-JSON lines
                 }
               }
@@ -161,24 +137,15 @@ export class ChatCompletions extends OpenAPIRoute {
           // Get final token usage from the last response
           const finalResponse = await client.getFinalTokenUsage(params);
           if (finalResponse && finalResponse.usage) {
-            tokenTracker.setPromptTokens(
-              finalResponse.usage.prompt_tokens || 0
-            );
-            tokenTracker.setCompletionTokens(
-              finalResponse.usage.completion_tokens || 0
-            );
+            tokenTracker.setPromptTokens(finalResponse.usage.prompt_tokens || 0);
+            tokenTracker.setCompletionTokens(finalResponse.usage.completion_tokens || 0);
           }
 
           // Calculate and deduct credits based on actual token usage
           const tokenUsage = tokenTracker.getTokenUsage();
           const { cost } = calculateCredits(params.model, tokenUsage);
 
-          await deductUserCredits(
-            env,
-            userId,
-            cost.totalCostWithMultiplier,
-            params.model
-          );
+          await deductUserCredits(env, userId, cost.totalCostWithMultiplier, params.model);
           writer.close();
           reader.releaseLock();
         }
@@ -210,12 +177,7 @@ export class ChatCompletions extends OpenAPIRoute {
 
       const { cost } = calculateCredits(params.model, tokenUsage);
       // Deduct credits
-      await deductUserCredits(
-        env,
-        userId,
-        cost.totalCostWithMultiplier,
-        params.model
-      );
+      await deductUserCredits(env, userId, cost.totalCostWithMultiplier, params.model);
 
       // Return the response
       return c.json(result as Record<string, unknown>, 200);

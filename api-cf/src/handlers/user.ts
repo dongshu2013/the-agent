@@ -1,5 +1,4 @@
 import { OpenAPIRoute } from 'chanfana';
-import { z } from 'zod';
 import { Context } from 'hono';
 import {
   createUser,
@@ -9,7 +8,19 @@ import {
   rotateApiKey,
   toggleApiKeyEnabled,
 } from '../d1/user';
-import { TransactionReason, TransactionType } from '../d1/types';
+import {
+  TransactionReasonSchema,
+  TransactionTypeSchema,
+  GetUserResponseSchema,
+  RotateApiKeyResponseSchema,
+  ToggleApiKeyRequestSchema,
+  GetCreditHistoryResponseSchema,
+  RedeemCouponResponseSchema,
+  ToggleApiKeyResponseSchema,
+  RedeemCouponRequestSchema,
+  GetUserBalanceResponseSchema,
+} from '@the-agent/shared';
+import { GatewayServiceError } from '../types/service';
 
 export class GetUser extends OpenAPIRoute {
   schema = {
@@ -18,13 +29,7 @@ export class GetUser extends OpenAPIRoute {
         description: 'User info',
         content: {
           'application/json': {
-            schema: z.object({
-              api_key: z.string(),
-              api_key_enabled: z.boolean(),
-              balance: z.number(),
-              email: z.string(),
-              user_id: z.string(),
-            }),
+            schema: GetUserResponseSchema,
           },
         },
       },
@@ -43,28 +48,22 @@ export class GetUser extends OpenAPIRoute {
       const user = await createUser(c.env, userId, email);
       return c.json(
         {
-          success: true,
-          user: {
-            api_key: user.api_key,
-            api_key_enabled: user.api_key_enabled,
-            balance: user.balance,
-            email: user.email,
-            user_id: user.id,
-          },
+          id: user.id,
+          email: user.email,
+          api_key: user.api_key,
+          api_key_enabled: user.api_key_enabled,
+          balance: user.balance,
         },
         200
       );
     } else {
       return c.json(
         {
-          success: true,
-          user: {
-            api_key: userInfo.api_key,
-            api_key_enabled: userInfo.api_key_enabled,
-            balance: userInfo.balance,
-            email: userInfo.email,
-            user_id: userInfo.id,
-          },
+          id: userInfo.id,
+          email: userInfo.email,
+          api_key: userInfo.api_key,
+          api_key_enabled: userInfo.api_key_enabled,
+          balance: userInfo.balance,
         },
         200
       );
@@ -79,9 +78,7 @@ export class GetUserBalance extends OpenAPIRoute {
         description: 'User info',
         content: {
           'application/json': {
-            schema: z.object({
-              balance: z.number(),
-            }),
+            schema: GetUserBalanceResponseSchema,
           },
         },
       },
@@ -107,18 +104,7 @@ export class GetCreditLogs extends OpenAPIRoute {
         description: 'Credit logs',
         content: {
           'application/json': {
-            schema: z.object({
-              history: z.array(
-                z.object({
-                  id: z.number(),
-                  tx_credits: z.number(),
-                  tx_type: z.string(),
-                  tx_reason: z.string().optional(),
-                  model: z.string().optional(),
-                  created_at: z.string(),
-                })
-              ),
-            }),
+            schema: GetCreditHistoryResponseSchema,
           },
         },
       },
@@ -139,8 +125,6 @@ export class GetCreditLogs extends OpenAPIRoute {
       limit: query.limit ? parseInt(query.limit, 10) : undefined,
     };
 
-    // console.log('Credit history query options:', options);
-
     const creditLogs = await getCreditLogs(c.env, userId, options);
     return c.json({ history: creditLogs }, 200);
   }
@@ -153,9 +137,7 @@ export class RotateApiKey extends OpenAPIRoute {
         description: 'Rotate API key',
         content: {
           'application/json': {
-            schema: z.object({
-              newApiKey: z.string(),
-            }),
+            schema: RotateApiKeyResponseSchema,
           },
         },
       },
@@ -175,9 +157,7 @@ export class ToggleApiKeyEnabled extends OpenAPIRoute {
       body: {
         content: {
           'application/json': {
-            schema: z.object({
-              enabled: z.boolean(),
-            }),
+            schema: ToggleApiKeyRequestSchema,
           },
         },
       },
@@ -187,9 +167,7 @@ export class ToggleApiKeyEnabled extends OpenAPIRoute {
         description: 'Toggle API key enabled',
         content: {
           'application/json': {
-            schema: z.object({
-              success: z.boolean(),
-            }),
+            schema: ToggleApiKeyResponseSchema,
           },
         },
       },
@@ -200,7 +178,7 @@ export class ToggleApiKeyEnabled extends OpenAPIRoute {
     const userId = c.get('userId');
     const body = await c.req.json();
     await toggleApiKeyEnabled(c.env, userId, body.enabled);
-    return c.json({ success: true }, 200);
+    return c.json({ enabled: body.enabled }, 200);
   }
 }
 
@@ -210,9 +188,7 @@ export class RedeemCouponCode extends OpenAPIRoute {
       body: {
         content: {
           'application/json': {
-            schema: z.object({
-              code: z.string(),
-            }),
+            schema: RedeemCouponRequestSchema,
           },
         },
       },
@@ -222,11 +198,7 @@ export class RedeemCouponCode extends OpenAPIRoute {
         description: 'Redeem coupon code',
         content: {
           'application/json': {
-            schema: z.object({
-              success: z.boolean(),
-              added_credits: z.number(),
-              total_credits: z.number(),
-            }),
+            schema: RedeemCouponResponseSchema,
           },
         },
       },
@@ -250,33 +222,25 @@ export class RedeemCouponCode extends OpenAPIRoute {
       .all();
 
     if (!results || results.length === 0) {
-      return c.json(
-        {
-          success: false,
-          error: 'Invalid, expired, or unauthorized coupon code',
-        },
-        400
-      );
+      throw new GatewayServiceError(400, 'Invalid, expired, or unauthorized coupon code');
     }
 
     const coupon = results[0];
     if (coupon.used_count >= coupon.max_uses) {
-      return c.json(
-        { success: false, error: 'Coupon code has reached maximum uses' },
-        400
-      );
+      throw new GatewayServiceError(400, 'Coupon code has reached maximum uses');
     }
 
     // Start transaction
     const tx = c.env.DB.batch([
       // Update coupon used count
-      c.env.DB.prepare(
-        'UPDATE coupon_codes SET used_count = used_count + 1 WHERE code = ?'
-      ).bind(code),
-      // Add credits to user and return new balance
-      c.env.DB.prepare(
-        'UPDATE users SET balance = balance + ? WHERE id = ? RETURNING balance'
-      ).bind(coupon.credits, userId),
+      c.env.DB.prepare('UPDATE coupon_codes SET used_count = used_count + 1 WHERE code = ?').bind(
+        code
+      ),
+      // Add credits to user
+      c.env.DB.prepare('UPDATE users SET balance = balance + ? WHERE id = ?').bind(
+        coupon.credits,
+        userId
+      ),
       // Add credit history
       c.env.DB.prepare(
         `INSERT INTO credit_history (user_id, tx_credits, tx_type, tx_reason)
@@ -284,26 +248,19 @@ export class RedeemCouponCode extends OpenAPIRoute {
       ).bind(
         userId,
         coupon.credits,
-        TransactionType.DEBIT,
-        TransactionReason.COUPON_REDEEM
+        TransactionTypeSchema.enum.debit,
+        TransactionReasonSchema.enum.coupon_code
       ),
     ]);
+    await tx;
 
-    try {
-      const results = await tx;
-      const newBalance = results[1].results[0].balance;
-
-      return c.json(
-        {
-          success: true,
-          added_credits: coupon.credits,
-          total_credits: newBalance,
-        },
-        200
-      );
-    } catch (error) {
-      console.error('Error redeeming coupon:', error);
-      return c.json({ success: false, error: 'Failed to redeem coupon' }, 500);
-    }
+    const newBalance = await getUserBalance(c.env, userId);
+    return c.json(
+      {
+        added_credits: coupon.credits,
+        total_credits: newBalance,
+      },
+      200
+    );
   }
 }

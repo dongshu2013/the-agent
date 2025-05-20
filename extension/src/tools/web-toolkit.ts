@@ -531,7 +531,9 @@ export class WebToolkit {
                   el = doc.querySelector(sel) as HTMLElement;
                   if (el) return { element: el, frame };
                 }
-              } catch {}
+              } catch {
+                // ignore
+              }
             }
             return { element: null };
           }
@@ -566,7 +568,9 @@ export class WebToolkit {
                   el = doc.querySelector(sel) as HTMLElement;
                   if (el) return el;
                 }
-              } catch {}
+              } catch {
+                // ignore
+              }
             }
             return null;
           }

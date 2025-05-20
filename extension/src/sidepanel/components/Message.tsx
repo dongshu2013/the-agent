@@ -1,11 +1,12 @@
-import { Message as MessageType } from '../../types/messages';
-import { useState } from 'react';
-import { processMarkdown } from '../../utils/markdown-processor';
 import React from 'react';
+import { useState } from 'react';
+
+import { Message } from '@the-agent/shared';
+import { processMarkdown } from '../../utils/markdown-processor';
 import { ScreenshotResult } from '~/tools/web-toolkit';
 
 interface Props {
-  message: MessageType;
+  message: Message;
   isLatestResponse?: boolean;
 }
 
@@ -19,7 +20,7 @@ function areEqual(prevProps: Props, nextProps: Props) {
 
 const MessageComponent = React.memo(function MessageComponent({ message }: Props) {
   const isUser = message?.role === 'user';
-  const isError = message?.error !== undefined;
+  const isError = message?.role === 'error';
   const [copySuccess, setCopySuccess] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const isTool = message?.role === 'tool';

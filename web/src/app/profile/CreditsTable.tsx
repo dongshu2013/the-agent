@@ -3,8 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { CreditLog, TransactionReason, TransactionType } from '@/types';
-import { getCreditHistory } from '@/lib/api_service';
+import { createApiClient } from '@/lib/api_client';
+import {
+  CreditLog,
+  TransactionReason,
+  TransactionReasonSchema,
+  TransactionType,
+  TransactionTypeSchema,
+} from '@the-agent/shared';
 import { formatCurrency } from '@/lib/utils';
 
 interface FilterOptions {
@@ -32,79 +38,65 @@ export const CreditsTable = () => {
   const { user } = useAuth();
 
   useEffect(() => {
-    if (user) {
+    const fetchCreditsData = async () => {
+      setIsLoading(true);
+      try {
+        const { history } = await createApiClient(user.idToken).getCreditHistory({
+          startDate,
+          endDate,
+          model: selectedModel,
+          txType: selectedTxType as TransactionType,
+          txReason: selectedTxReason as TransactionReason,
+        });
+
+        setCredits(history || []);
+
+        // Extract unique values for filter options from the history data
+        if (history && history.length > 0) {
+          const models = Array.from(new Set(history.map(entry => entry.model).filter(Boolean)));
+          const txTypes = Array.from(
+            new Set(history.map(entry => entry.tx_type))
+          ) as TransactionType[];
+          const txReasons = Array.from(
+            new Set(history.map(entry => entry.tx_reason))
+          ) as TransactionReason[];
+
+          setFilterOptions({
+            models,
+            txTypes,
+            txReasons,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching credits data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (user && user.idToken) {
       fetchCreditsData();
     }
   }, [user, startDate, endDate, selectedModel, selectedTxType, selectedTxReason]);
 
-  const fetchCreditsData = async () => {
-    if (!user || !user.idToken) return;
-
-    setIsLoading(true);
-    try {
-      const { history } = await getCreditHistory(user.idToken, {
-        startDate,
-        endDate,
-        model: selectedModel,
-        transType: selectedTxType as TransactionType,
-        transReason: selectedTxReason as TransactionReason,
-      });
-
-      setCredits(history || []);
-
-      // Extract unique values for filter options from the history data
-      if (history && history.length > 0) {
-        const models = Array.from(new Set(history.map((entry) => entry.model).filter(Boolean)));
-        const txTypes = Array.from(
-          new Set(history.map((entry) => entry.tx_type)),
-        ) as TransactionType[];
-        const txReasons = Array.from(
-          new Set(history.map((entry) => entry.tx_reason)),
-        ) as TransactionReason[];
-
-        setFilterOptions({
-          models,
-          txTypes,
-          txReasons,
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching credits data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), 'yyyy-MM-dd HH:mm:ss');
-    } catch (e) {
+    } catch {
       return dateString;
-    }
-  };
-
-  const formatTxType = (type: TransactionType) => {
-    switch (type) {
-      case 'credit':
-        return 'Credit';
-      case 'debit':
-        return 'Debit';
-      default:
-        return type;
     }
   };
 
   const formatTxReason = (reason: TransactionReason) => {
     switch (reason) {
-      case 'new_user':
+      case TransactionReasonSchema.enum.new_user:
         return 'New User';
-      case 'order_pay':
+      case TransactionReasonSchema.enum.order_pay:
         return 'Order Payment';
-      case 'system_add':
+      case TransactionReasonSchema.enum.system_add:
         return 'System Added';
-      case 'completion':
+      case TransactionReasonSchema.enum.completion:
         return 'Completion';
-      case 'coupon_redeem':
+      case TransactionReasonSchema.enum.coupon_code:
         return 'Coupon Redeem';
       default:
         return reason;
@@ -135,7 +127,7 @@ export const CreditsTable = () => {
               type="date"
               id="startDate"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={e => setStartDate(e.target.value)}
               className="w-full h-9 rounded-md border border-gray-300 dark:border-gray-600 px-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
@@ -151,7 +143,7 @@ export const CreditsTable = () => {
               type="date"
               id="endDate"
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              onChange={e => setEndDate(e.target.value)}
               className="w-full h-9 rounded-md border border-gray-300 dark:border-gray-600 px-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
@@ -166,11 +158,11 @@ export const CreditsTable = () => {
             <select
               id="model"
               value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
+              onChange={e => setSelectedModel(e.target.value)}
               className="w-full h-9 rounded-md border border-gray-300 dark:border-gray-600 px-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               <option value="">All Models</option>
-              {filterOptions.models.map((model) => (
+              {filterOptions.models.map(model => (
                 <option key={model} value={model}>
                   {model}
                 </option>
@@ -188,11 +180,11 @@ export const CreditsTable = () => {
             <select
               id="transReason"
               value={selectedTxReason}
-              onChange={(e) => setSelectedTxReason(e.target.value as TransactionReason | '')}
+              onChange={e => setSelectedTxReason(e.target.value as TransactionReason | '')}
               className="w-full h-9 rounded-md border border-gray-300 dark:border-gray-600 px-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               <option value="">All Types</option>
-              {filterOptions.txReasons.map((reason) => (
+              {filterOptions.txReasons.map(reason => (
                 <option key={reason} value={reason}>
                   {formatTxReason(reason)}
                 </option>
@@ -261,25 +253,25 @@ export const CreditsTable = () => {
                 </td>
               </tr>
             ) : (
-              credits.map((credit) => (
+              credits.map(credit => (
                 <tr key={credit.id} className="hover:bg-gray-100 dark:hover:bg-gray-800">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                     {formatDate(credit.created_at)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                    {formatTxReason(credit.tx_reason)}
+                    {formatTxReason(credit.tx_reason as TransactionReason)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                     {credit.model || '-'}
                   </td>
                   <td
                     className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                      credit.tx_type === TransactionType.CREDIT
+                      credit.tx_type === TransactionTypeSchema.enum.credit
                         ? 'text-red-600 dark:text-red-400'
                         : 'text-green-600 dark:text-green-400'
                     }`}
                   >
-                    {credit.tx_type === TransactionType.CREDIT ? '-' : '+'}
+                    {credit.tx_type === TransactionTypeSchema.enum.credit ? '-' : '+'}
                     {formatCurrency(credit.tx_credits, { maximumFractionDigits: 6 })}
                   </td>
                 </tr>

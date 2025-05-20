@@ -24,7 +24,7 @@ const Sidepanel = () => {
   const [apiKey, setApiKeyState] = useStorage<string>('apiKey', '');
   const [isLoading, setIsLoading] = useState(false);
   const [prompt, setPrompt] = useState('');
-  const [currentConversationId, setCurrentConversationId] = useStorage<string | null>(
+  const [currentConversationId, setCurrentConversationId] = useStorage<number | null>(
     'currentConversationId',
     null
   );
@@ -71,7 +71,8 @@ const Sidepanel = () => {
       db.saveMessage({
         id: Date.now(),
         content: message,
-        conversation_id: currentConversationId || '',
+        conversation_id: currentConversationId || -1,
+        role: 'error',
       });
     },
     [currentConversationId]
@@ -319,10 +320,10 @@ const Sidepanel = () => {
     setShowConversationList(willShow);
   };
 
-  const handleSelectConversation = async (id: string) => {
+  const handleSelectConversation = async (id: number) => {
     if (isLoading) return;
 
-    if (id === 'new') {
+    if (id === -1) {
       await handleCreateNewConversation();
       return;
     }
@@ -340,7 +341,7 @@ const Sidepanel = () => {
     }
   };
 
-  const handleDeleteConversation = async (id: string, e: React.MouseEvent) => {
+  const handleDeleteConversation = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     if (isLoading) return;
 

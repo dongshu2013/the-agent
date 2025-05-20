@@ -6,11 +6,7 @@ import { jwtAuthMiddleware, jwtOrApiKeyAuthMiddleware } from './auth';
 import { GatewayServiceError } from './types/service';
 
 import { SaveMessage } from './handlers/message';
-import {
-  CreateConversation,
-  DeleteConversation,
-  ListConversations,
-} from './handlers/conversation';
+import { CreateConversation, DeleteConversation, ListConversations } from './handlers/conversation';
 import { ChatCompletions } from './handlers/chat';
 import {
   GetMyChat,
@@ -49,10 +45,8 @@ app.use(
 );
 
 // Add unauthenticated routes
-app.get('/', (c) => c.text(''));
-app.get('/health', (c) =>
-  c.json({ status: 'OK', version: '0.0.1' }, 200, corsHeaders)
-);
+app.get('/', c => c.text(''));
+app.get('/health', c => c.json({ status: 'OK', version: '0.0.1' }, 200, corsHeaders));
 
 // Authenticated routes
 app.use('/v1/conversation/create', jwtOrApiKeyAuthMiddleware);
@@ -137,13 +131,13 @@ openapi.get('/v1/user/credit_history', GetCreditLogs);
 openapi.get('/v1/user', GetUser);
 
 // OpenAPI documentation endpoints
-app.get('/docs/openapi.json', (c) => {
-  const schema =
-    (openapi as any).schema || (openapi as any).getGeneratedSchema?.() || {};
+app.get('/docs/openapi.json', c => {
+  // @ts-expect-error: openapi is not a type
+  const schema = openapi.schema || openapi.getGeneratedSchema?.() || {};
   return c.json(schema);
 });
 
-app.get('/docs', (c) => {
+app.get('/docs', c => {
   const html = `
 <!DOCTYPE html>
 <html lang="en">

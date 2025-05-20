@@ -1,11 +1,12 @@
 import { MessageCircleMore, SquarePen, User as UserIcon } from 'lucide-react';
-import { db, systemModelId } from '~/utils/db';
+import { db } from '~/utils/db';
 import { useState, useEffect } from 'react';
 import { Modal, Dropdown } from 'antd';
 import { ProviderGroup } from './ModelCascader';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Model } from '~/types';
 import { ItemType } from 'antd/es/menu/interface';
+import { SYSTEM_MODEL_ID } from '~/utils/constants';
 
 interface HeaderProps {
   createNewConversation: () => void;
@@ -51,15 +52,15 @@ const Header = ({ createNewConversation, setShowConversationList }: HeaderProps)
 
       // 默认选中 Default provider 和 systemModelId
       let defaultProvider = 'Default';
-      let defaultModelId = systemModelId;
+      let defaultModelId = SYSTEM_MODEL_ID;
 
       // 如果有 Default provider
       const defaultGroup = providerGroups.find(g => g.type === 'Default');
       if (defaultGroup) {
         defaultProvider = defaultGroup.type;
-        const systemModel = defaultGroup.models.find((m: Model) => m.id === systemModelId);
+        const systemModel = defaultGroup.models.find((m: Model) => m.id === SYSTEM_MODEL_ID);
         if (systemModel) {
-          defaultModelId = systemModelId;
+          defaultModelId = SYSTEM_MODEL_ID;
         } else if (defaultGroup.models.length > 0) {
           defaultModelId = defaultGroup.models[0].id;
         }

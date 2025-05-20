@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadStripe } from '@stripe/stripe-js';
 import { toast } from 'sonner';
-import { postCheckout } from '@/lib/api_service';
+import { createApiClient } from '@/lib/api_client';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -26,7 +26,7 @@ export const PaymentModal = ({ isOpen, onClose }: PaymentModalProps) => {
 
     setIsSubmitting(true);
     try {
-      const { session_id, public_key } = await postCheckout(user.idToken, amount);
+      const { session_id, public_key } = await createApiClient(user.idToken).createCheckout(amount);
       const stripe = await loadStripe(public_key);
       if (!stripe) {
         toast.error('checkout failed');
@@ -159,7 +159,7 @@ export const PaymentModal = ({ isOpen, onClose }: PaymentModalProps) => {
                     placeholder="Please enter the recharge amount"
                     value={amount === undefined ? '' : amount}
                     min={5}
-                    onChange={(e) => {
+                    onChange={e => {
                       const val = e.target.value === '' ? undefined : Number(e.target.value);
                       setAmount(val);
                     }}

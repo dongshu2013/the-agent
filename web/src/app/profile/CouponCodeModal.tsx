@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { redeemCouponCode } from '@/lib/api_service';
 import { formatCurrency } from '@/lib/utils';
+import { createApiClient } from '@/lib/api_client';
 
 interface CouponCodeModalProps {
   isOpen: boolean;
@@ -61,29 +61,24 @@ export function CouponCodeModal({ isOpen, onClose }: CouponCodeModalProps) {
     setSuccess('');
 
     try {
-      const result = await redeemCouponCode(user.idToken, code);
-      if (result.success && result.added_credits) {
-        const addedAmount = formatCurrency(result.added_credits, { maximumFractionDigits: 2 });
-        const totalAmount = formatCurrency(result.total_credits, { maximumFractionDigits: 2 });
-
-        setSuccess(`Added ${addedAmount} to your balance. New total: ${totalAmount}`);
-        await refreshUserData();
-        setTimeout(() => {
-          onClose();
-          setCode('');
-          setSuccess('');
-        }, 2000);
-      } else {
-        let errorMessage = result.error || 'Failed to redeem coupon';
-        if (errorMessage === 'Invalid, expired, or unauthorized coupon code') {
-          errorMessage = 'This coupon code is invalid, expired, or not available for your account';
-        } else if (errorMessage === 'Coupon code has reached maximum uses') {
-          errorMessage = 'This coupon code has already been fully redeemed';
-        }
-        setError(errorMessage);
-      }
+      const result = await createApiClient(user.idToken).redeemCoupon(code);
+      const addedAmount = formatCurrency(result.added_credits, { maximumFractionDigits: 2 });
+      const totalAmount = formatCurrency(result.total_credits, { maximumFractionDigits: 2 });
+      setSuccess(
+        `Added ${addedAmount} credits to your balance. Current Balance is ${totalAmount}.`
+      );
+      await refreshUserData();
+      setTimeout(() => {
+        onClose();
+        setCode('');
+        setSuccess('');
+      }, 2000);
     } catch (err) {
-      setError('Unable to connect to the server. Please try again later.');
+      let errorMessage = 'Failed to redeem coupon';
+      if (err instanceof Error && err.message) {
+        errorMessage = err.message;
+      }
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -128,7 +123,7 @@ export function CouponCodeModal({ isOpen, onClose }: CouponCodeModalProps) {
             <input
               type="text"
               value={code}
-              onChange={(e) => setCode(e.target.value.trim().toUpperCase())}
+              onChange={e => setCode(e.target.value.trim().toUpperCase())}
               placeholder="Enter coupon code"
               className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md mb-4 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
               disabled={isSubmitting}

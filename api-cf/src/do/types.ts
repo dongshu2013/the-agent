@@ -1,28 +1,3 @@
-export interface ToolCall {
-  id: string;
-  function: {
-    name: string;
-    arguments: string;
-  };
-  type?: string;
-  result?: string;
-}
-
-export interface Message {
-  id: number;
-  conversation_id: number;
-  role: string;
-  content?: string;
-  tool_calls?: ToolCall[];
-  tool_call_id?: string;
-  name?: string;
-}
-
-export interface Conversation {
-  id: number;
-  messages: Message[];
-}
-
 // Interface for chat sync data
 export interface TelegramChatData {
   chat_id: string;

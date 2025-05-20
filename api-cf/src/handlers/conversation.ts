@@ -1,6 +1,12 @@
 import { OpenAPIRoute } from 'chanfana';
-import { z } from 'zod';
 import { Context } from 'hono';
+import {
+  CreateConversationRequestSchema,
+  CreateConversationResponseSchema,
+  DeleteConversationRequestSchema,
+  DeleteConversationResponseSchema,
+  ListConversationsResponseSchema,
+} from '@the-agent/shared';
 
 // ===== CREATE CONVERSATION =====
 
@@ -10,9 +16,7 @@ export class CreateConversation extends OpenAPIRoute {
       body: {
         content: {
           'application/json': {
-            schema: z.object({
-              id: z.number().optional(),
-            }),
+            schema: CreateConversationRequestSchema,
           },
         },
       },
@@ -22,10 +26,7 @@ export class CreateConversation extends OpenAPIRoute {
         description: 'Conversation created successfully',
         content: {
           'application/json': {
-            schema: z.object({
-              success: z.boolean(),
-              id: z.number(),
-            }),
+            schema: CreateConversationResponseSchema,
           },
         },
       },
@@ -43,7 +44,6 @@ export class CreateConversation extends OpenAPIRoute {
 
     return c.json(
       {
-        success: true,
         id: convId,
       },
       200
@@ -59,9 +59,7 @@ export class DeleteConversation extends OpenAPIRoute {
       body: {
         content: {
           'application/json': {
-            schema: z.object({
-              id: z.number(),
-            }),
+            schema: DeleteConversationRequestSchema,
           },
         },
       },
@@ -71,9 +69,7 @@ export class DeleteConversation extends OpenAPIRoute {
         description: 'Conversation deleted successfully',
         content: {
           'application/json': {
-            schema: z.object({
-              success: z.boolean(),
-            }),
+            schema: DeleteConversationResponseSchema,
           },
         },
       },
@@ -89,12 +85,13 @@ export class DeleteConversation extends OpenAPIRoute {
     await stub.deleteConversation(id);
     return c.json(
       {
-        success: true,
+        deleted: true,
       },
       200
     );
   }
 }
+
 // ===== LIST CONVERSATIONS =====
 
 export class ListConversations extends OpenAPIRoute {
@@ -104,23 +101,7 @@ export class ListConversations extends OpenAPIRoute {
         description: 'List of user conversations',
         content: {
           'application/json': {
-            schema: z.object({
-              success: z.boolean(),
-              conversations: z.array(
-                z.object({
-                  id: z.number(),
-                  messages: z.array(
-                    z.object({
-                      id: z.number(),
-                      role: z.string(),
-                      content: z.string().optional(),
-                      tool_calls: z.any().optional(),
-                      tool_call_id: z.string().optional(),
-                    })
-                  ),
-                })
-              ),
-            }),
+            schema: ListConversationsResponseSchema,
           },
         },
       },
@@ -136,7 +117,6 @@ export class ListConversations extends OpenAPIRoute {
     const conversations = await stub.listConversations();
     return c.json(
       {
-        success: true,
         conversations,
       },
       200

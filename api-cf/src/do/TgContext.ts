@@ -1,15 +1,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import OpenAI from 'openai';
-import {
-  CREATE_TELEGRAM_DIALOGS_TABLE_QUERY,
-  CREATE_TELEGRAM_MESSAGES_TABLE_QUERY,
-} from './sql';
-import {
-  TgChatInfo,
-  TgMessageInfo,
-  TelegramChatData,
-  TelegramMessageData,
-} from './types';
+import { CREATE_TELEGRAM_DIALOGS_TABLE_QUERY, CREATE_TELEGRAM_MESSAGES_TABLE_QUERY } from './sql';
+import { TgChatInfo, TgMessageInfo, TelegramChatData, TelegramMessageData } from './types';
 import { DEEPINFRA_API_BASE_URL, EMBEDDING_MODEL } from '../utils/common';
 
 const TG_VECTOR_NAMESPACE = 'tg';
@@ -31,11 +23,11 @@ export class TgContext extends DurableObject<Env> {
   }
 
   // get my chat
-  async getMyChat() {
-    const cursor = await this.sql.exec(`SELECT * FROM telegram_dialogs`);
+  getMyChat() {
+    const cursor = this.sql.exec(`SELECT * FROM telegram_dialogs`);
     const chats = [];
 
-    for await (const row of cursor) {
+    for (const row of cursor) {
       chats.push({
         chat_id: row.chat_id,
         chat_title: row.chat_title,
@@ -54,26 +46,30 @@ export class TgContext extends DurableObject<Env> {
   }
 
   // Get stats for Telegram data
-  async getStats() {
+  async getStats(): Promise<{
+    totalDialogs: number;
+    totalMessages: number;
+    lastSyncTime?: string;
+  }> {
     const dialogsCountCursor = this.sql.exec(
       `SELECT COUNT(*) as channels_count FROM telegram_dialogs WHERE status = 'active'`
     );
-    let channelsCount = 0;
+    let totalDialogs = 0;
     for (const result of dialogsCountCursor) {
-      channelsCount = result.channels_count as number;
+      totalDialogs = result.channels_count as number;
     }
 
     const messagesCountCursor = this.sql.exec(
       `SELECT COUNT(*) as messages_count FROM telegram_messages`
     );
-    let messagesCount = 0;
+    let totalMessages = 0;
     for (const result of messagesCountCursor) {
-      messagesCount = result.messages_count as number;
+      totalMessages = result.messages_count as number;
     }
 
     return {
-      channels_count: channelsCount,
-      messages_count: messagesCount,
+      totalDialogs,
+      totalMessages,
     };
   }
 
@@ -98,7 +94,7 @@ export class TgContext extends DurableObject<Env> {
       WHERE 1=1
     `;
 
-    const params: any[] = [];
+    const params: unknown[] = [];
 
     if (chatTitle) {
       query += ` AND d.chat_title LIKE ?`;
@@ -133,18 +129,12 @@ export class TgContext extends DurableObject<Env> {
     for (const result of countResultCursor) {
       countResults.push(result);
     }
-    const totalCount =
-      countResults.length > 0
-        ? (countResults[0].total_count as number) || 0
-        : 0;
+    const totalCount = countResults.length > 0 ? (countResults[0].total_count as number) || 0 : 0;
 
     // Add sorting and pagination
     const validSortColumns = ['updated_at', 'created_at', 'chat_title']; // 添加其他合法的排序列
-    const sanitizedSortBy = validSortColumns.includes(sortBy)
-      ? sortBy
-      : 'updated_at';
-    const sanitizedSortOrder =
-      sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+    const sanitizedSortBy = validSortColumns.includes(sortBy) ? sortBy : 'updated_at';
+    const sanitizedSortOrder = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 
     query += ` ORDER BY d.${sanitizedSortBy} ${sanitizedSortOrder}`;
     query += ` LIMIT ? OFFSET ?`;
@@ -200,7 +190,7 @@ export class TgContext extends DurableObject<Env> {
       SELECT * FROM telegram_messages WHERE chat_id = ?
     `;
 
-    const params: any[] = [chatId];
+    const params: unknown[] = [chatId];
 
     if (messageText) {
       query += ` AND message_text LIKE ?`;
@@ -238,18 +228,12 @@ export class TgContext extends DurableObject<Env> {
     for (const result of countResultCursor) {
       countResults.push(result);
     }
-    const totalCount =
-      countResults.length > 0
-        ? (countResults[0].total_count as number) || 0
-        : 0;
+    const totalCount = countResults.length > 0 ? (countResults[0].total_count as number) || 0 : 0;
 
     // Add sorting and pagination
     const validSortColumns = ['message_timestamp', 'message_id']; // 添加其他合法的排序列
-    const sanitizedSortBy = validSortColumns.includes(sortBy)
-      ? sortBy
-      : 'message_timestamp';
-    const sanitizedSortOrder =
-      sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+    const sanitizedSortBy = validSortColumns.includes(sortBy) ? sortBy : 'message_timestamp';
+    const sanitizedSortOrder = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 
     query += ` ORDER BY ${sanitizedSortBy} ${sanitizedSortOrder}`;
     query += ` LIMIT ? OFFSET ?`;
@@ -305,7 +289,7 @@ export class TgContext extends DurableObject<Env> {
   ) {
     // Generate embedding for the search query
     let queryEmbeddingAvailable = false;
-    const results: any[] = [];
+    const results: unknown[] = [];
 
     try {
       const response = await this.openai.embeddings.create({
@@ -317,7 +301,7 @@ export class TgContext extends DurableObject<Env> {
       queryEmbeddingAvailable = true;
 
       // Build filter for vector search
-      const filter: any = {};
+      const filter: Record<string, { $eq?: string }> = {};
 
       if (chatId) {
         filter.chat_id = { $eq: chatId };
@@ -335,8 +319,8 @@ export class TgContext extends DurableObject<Env> {
       // Process vector search results
 
       const matchIds = vectorResults.matches
-        .filter((m) => m.score && m.score >= threshold)
-        .map((m) => m.id);
+        .filter(m => m.score && m.score >= threshold)
+        .map(m => m.id);
 
       // Get matching messages and surrounding context
       for (const matchId of matchIds) {
@@ -360,13 +344,8 @@ export class TgContext extends DurableObject<Env> {
         const matchMessage = matchMessages[0];
 
         // Apply additional filters on the database level
-        if (
-          isPublic !== undefined &&
-          matchMessage.is_public !== (isPublic ? 1 : 0)
-        )
-          continue;
-        if (isFree !== undefined && matchMessage.is_free !== (isFree ? 1 : 0))
-          continue;
+        if (isPublic !== undefined && matchMessage.is_public !== (isPublic ? 1 : 0)) continue;
+        if (isFree !== undefined && matchMessage.is_free !== (isFree ? 1 : 0)) continue;
 
         // Get surrounding context messages
         const contextQuery = `
@@ -381,13 +360,7 @@ export class TgContext extends DurableObject<Env> {
 
         const contextMessagesCursor = this.sql.exec(
           contextQuery,
-          ...[
-            matchMessage.chat_id,
-            matchId,
-            messageRange * 3600,
-            matchId,
-            messageRange * 3600,
-          ]
+          ...[matchMessage.chat_id, matchId, messageRange * 3600, matchId, messageRange * 3600]
         );
 
         const contextMessages = [];
@@ -406,30 +379,26 @@ export class TgContext extends DurableObject<Env> {
         };
 
         // Prepare message chunk with match indicators
-        const messageChunk = contextMessages.map(
-          (msg: Record<string, unknown>) => {
-            const isMatch = msg.id === matchId;
-            const matchResult = isMatch
-              ? vectorResults.matches.find(
-                  (m: any) => m.metadata?.message_id === matchId
-                )
-              : null;
+        const messageChunk = contextMessages.map((msg: Record<string, unknown>) => {
+          const isMatch = msg.id === matchId;
+          const matchResult = isMatch
+            ? vectorResults.matches.find(m => m.metadata?.message_id === matchId)
+            : null;
 
-            const result: TgMessageInfo = {
-              id: msg.id as string,
-              message_id: msg.message_id as string,
-              message_text: msg.message_text as string,
-              message_timestamp: msg.message_timestamp as number,
-              sender_id: msg.sender_id as string,
-              sender_username: msg.sender_username as string | null,
-              sender_firstname: msg.sender_firstname as string | null,
-              sender_lastname: msg.sender_lastname as string | null,
-              is_match: isMatch,
-              similarity: matchResult?.score || null,
-            };
-            return result;
-          }
-        );
+          const result: TgMessageInfo = {
+            id: msg.id as string,
+            message_id: msg.message_id as string,
+            message_text: msg.message_text as string,
+            message_timestamp: msg.message_timestamp as number,
+            sender_id: msg.sender_id as string,
+            sender_username: msg.sender_username as string | null,
+            sender_firstname: msg.sender_firstname as string | null,
+            sender_lastname: msg.sender_lastname as string | null,
+            is_match: isMatch,
+            similarity: matchResult?.score || null,
+          };
+          return result;
+        });
 
         // Add to results
         results.push({
@@ -580,8 +549,7 @@ export class TgContext extends DurableObject<Env> {
         for (const msg of existingMessageCursor) {
           existingMessages.push(msg);
         }
-        const existingMessage =
-          existingMessages.length > 0 ? existingMessages[0] : null;
+        const existingMessage = existingMessages.length > 0 ? existingMessages[0] : null;
 
         if (!existingMessage) {
           // Insert new message with optional fields

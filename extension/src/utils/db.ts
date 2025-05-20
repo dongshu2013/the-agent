@@ -1,12 +1,11 @@
-import { Message } from '../types/messages';
 import { Conversation } from '../types/conversations';
 import Dexie, { Table } from 'dexie';
 import { env } from './env';
 import { Model } from '~/types';
 import { getApiKey } from '~/services/cache';
 import { PROVIDER_MODELS } from './models';
-
-export const systemModelId = 'system';
+import { Message } from '@the-agent/shared';
+import { SYSTEM_MODEL_ID } from './constants';
 
 export interface UserInfo {
   id: string;
@@ -104,7 +103,7 @@ class MystaDB extends Dexie {
     await this.conversations.put(conversation);
   }
 
-  async getConversation(id: string): Promise<Conversation | null> {
+  async getConversation(id: number): Promise<Conversation | null> {
     const conversation = await this.conversations.get(id);
     return conversation || null;
   }
@@ -125,7 +124,7 @@ class MystaDB extends Dexie {
     );
   }
 
-  async deleteConversation(id: string): Promise<void> {
+  async deleteConversation(id: number): Promise<void> {
     await this.conversations.delete(id);
   }
 
@@ -135,18 +134,14 @@ class MystaDB extends Dexie {
       throw new Error('Message missing id');
     }
 
-    try {
-      await this.messages.put(message);
-    } catch (error) {
-      throw error;
-    }
+    await this.messages.put(message);
   }
 
   async saveMessages(messages: Message[]): Promise<void> {
     await this.messages.bulkPut(messages);
   }
 
-  async getMessagesByConversation(conversationId: string): Promise<Message[]> {
+  async getMessagesByConversation(conversationId: number): Promise<Message[]> {
     const messages = await this.messages
       .where('conversation_id')
       .equals(conversationId)
@@ -154,14 +149,14 @@ class MystaDB extends Dexie {
     return messages || [];
   }
 
-  async deleteMessagesByConversation(conversationId: string): Promise<void> {
+  async deleteMessagesByConversation(conversationId: number): Promise<void> {
     await this.messages.where('conversation_id').equals(conversationId).delete();
   }
 
   // Related messages operations
   async getRelatedMessagesWithContext(
     messageIds: number[],
-    conversationId: string
+    conversationId: number
   ): Promise<Message[]> {
     const allMessages = await this.messages
       .where('conversation_id')
@@ -183,7 +178,7 @@ class MystaDB extends Dexie {
     return contextMessages;
   }
 
-  async getRecentMessages(conversationId: string, limit: number): Promise<Message[]> {
+  async getRecentMessages(conversationId: number, limit: number): Promise<Message[]> {
     const messages = await this.messages
       .where('conversation_id')
       .equals(conversationId)
@@ -296,7 +291,7 @@ class MystaDB extends Dexie {
       const existing = await this.users.get(user.id);
 
       const systemModel = {
-        id: systemModelId,
+        id: SYSTEM_MODEL_ID,
         type: 'system',
         name: 'Mysta',
         userId: user.id,
@@ -307,7 +302,7 @@ class MystaDB extends Dexie {
       if (existing) {
         await this.users.put({
           ...user,
-          selectedModelId: systemModelId,
+          selectedModelId: SYSTEM_MODEL_ID,
           created_at: existing.created_at,
           updated_at: now,
         });

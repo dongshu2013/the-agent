@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import {
   GoogleAuthProvider,
   signInWithPopup,
@@ -10,21 +10,21 @@ import {
   getIdToken,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
-import { getUserInfo, postRotateApiKey, postToggleApiKey } from '@/lib/api_service';
+import { createApiClient } from '@/lib/api_client';
 
-interface User {
+interface AuthUser {
   id: string;
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
   apiKey: string | null;
   apiKeyEnabled: boolean;
-  credits: number;
+  balance: number;
   idToken: string | null;
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -34,27 +34,29 @@ interface AuthContextType {
   refreshUserData: () => Promise<void>;
 }
 
+// Create context with default values
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Export provider component
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Handle user data when Firebase auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async firebaseUser => {
       if (firebaseUser) {
         const idToken = await getIdToken(firebaseUser);
-        const userData = await getUserInfo(idToken);
-        setAuthToLocalAndPostMessage({ apiKey: userData.user.api_key });
+        const userData = await createApiClient(idToken).getUser();
+        setAuthToLocalAndPostMessage({ apiKey: userData.api_key });
         setUser({
           id: firebaseUser.uid,
           email: firebaseUser.email,
           displayName: firebaseUser.displayName,
           photoURL: firebaseUser.photoURL,
-          apiKey: userData.user.api_key,
-          apiKeyEnabled: userData.user.api_key_enabled,
-          credits: userData.user.balance,
+          apiKey: userData.api_key,
+          apiKeyEnabled: userData.api_key_enabled,
+          balance: userData.balance,
           idToken,
         });
       } else {
@@ -64,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return unsubscribe;
   }, []);
 
   useEffect(() => {
@@ -81,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             photoURL: user.photoURL,
             apiKey: null,
             apiKeyEnabled: false,
-            credits: 0,
+            balance: 0,
             idToken,
           });
         }
@@ -98,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const newToken = await getIdToken(auth.currentUser);
-      setUser((prev) => (prev ? { ...prev, idToken: newToken } : null));
+      setUser(prev => ({ ...prev, idToken: newToken }));
       return newToken;
     } catch (error) {
       console.error('Error refreshing token:', error);
@@ -117,31 +119,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await signInWithPopup(auth, provider);
       const idToken = await getIdToken(result.user);
 
-      // 获取用户信息
-      const userData = await getUserInfo(idToken);
+      // Get user information
+      const userData = await createApiClient(idToken).getUser();
 
-      // 这里主动 postMessage
-      setAuthToLocalAndPostMessage({ apiKey: userData.user.api_key });
+      // Post message
+      setAuthToLocalAndPostMessage({ apiKey: userData.api_key });
 
       setUser({
         id: result.user.uid,
         email: result.user.email,
         displayName: result.user.displayName,
         photoURL: result.user.photoURL,
-        apiKey: userData.user.api_key,
-        apiKeyEnabled: userData.user.api_key_enabled,
-        credits: userData.user.balance,
+        apiKey: userData.api_key,
+        apiKeyEnabled: userData.api_key_enabled,
+        balance: userData.balance,
         idToken,
       });
     } catch (error) {
       console.error('Error signing in with Google', error);
     }
   };
+
   const signOut = async () => {
     try {
       await firebaseSignOut(auth);
       setUser(null);
-      // 这里主动 postMessage 空 key
       setAuthToLocalAndPostMessage({ apiKey: '' });
     } catch (error) {
       console.error('Error signing out', error);
@@ -152,8 +154,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return null;
 
     try {
-      const { newApiKey } = await postRotateApiKey(user.idToken);
-      setUser((prev) => (prev ? { ...prev, apiKey: newApiKey } : null));
+      const { newApiKey } = await createApiClient(user.idToken).rotateApiKey();
+      setUser(prev => ({ ...prev, apiKey: newApiKey }));
       setAuthToLocalAndPostMessage({ apiKey: newApiKey });
       return newApiKey;
     } catch (error) {
@@ -166,8 +168,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return false;
 
     try {
-      await postToggleApiKey(user.idToken, enabled);
-      setUser((prev) => (prev ? { ...prev, apiKeyEnabled: enabled } : null));
+      await createApiClient(user.idToken).toggleApiKey({ enabled });
+      setUser(prev => ({ ...prev, apiKeyEnabled: enabled }));
       return enabled;
     } catch (error) {
       console.error('Error toggling API key:', error);
@@ -181,16 +183,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const token = await getIdToken(auth.currentUser);
-      const userData = await getUserInfo(token);
+      const userData = await createApiClient(token).getUser();
       setUser({
         ...user,
-        apiKey: userData.user.api_key,
-        apiKeyEnabled: userData.user.api_key_enabled,
-        credits: userData.user.balance,
+        apiKey: userData.api_key,
+        apiKeyEnabled: userData.api_key_enabled,
+        balance: userData.balance,
         idToken: token,
       });
 
-      setAuthToLocalAndPostMessage({ apiKey: userData.user.api_key });
+      setAuthToLocalAndPostMessage({ apiKey: userData.api_key });
     } catch (error) {
       console.error('Error refreshing user data:', error);
     }
@@ -220,15 +222,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// Hook to use auth context
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return useContext(AuthContext);
 }
 
-// 新增：封装设置 apiKey 并 postMessage 的函数
+// Helper function to set API key in localStorage and post message
 function setAuthToLocalAndPostMessage({ apiKey }: { apiKey?: string }) {
   if (apiKey) {
     localStorage.setItem('apiKey', apiKey);
@@ -237,7 +236,7 @@ function setAuthToLocalAndPostMessage({ apiKey }: { apiKey?: string }) {
         type: 'FROM_WEB_TO_EXTENSION',
         apiKey,
       },
-      '*',
+      '*'
     );
   }
 }

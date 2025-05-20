@@ -6,178 +6,55 @@ import { env } from '../utils/env';
 import { getApiKey } from './cache';
 import { Conversation } from '../types/conversations';
 import { db } from '../utils/db';
-import { Message } from '~/types';
 import { showLoginModal } from '~/utils/global-event';
+import { APIClient } from '@the-agent/shared';
 
-/**
- * 创建新会话（调用后端接口）
- */
-export const createConversationApi = async (
-  apiKey?: string
-): Promise<{ success: boolean; id?: string; error?: string }> => {
-  try {
-    const API_ENDPOINT = '/v1/conversation/create';
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    const keyToUse = apiKey || (await getApiKey());
-
-    if (keyToUse) {
-      headers['x-api-key'] = keyToUse;
-    } else {
-      showLoginModal();
-      return {
-        success: false,
-        error: 'Unauthorized',
-      };
-    }
-
-    const response = await fetch(`${env.BACKEND_URL}${API_ENDPOINT}`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({}),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      if (response.status === 401 || response.status === 403) {
-        showLoginModal();
-      }
-
-      throw new Error(
-        errorData.detail ||
-          errorData.error?.message ||
-          `API Error: ${response.status} - ${response.statusText}`
-      );
-    }
-
-    return await response.json();
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
-    };
+// Create API client instance
+const createApiClient = async (): Promise<APIClient> => {
+  const keyToUse = await getApiKey();
+  if (!keyToUse || !keyToUse.trim()) {
+    showLoginModal();
+    throw new Error('Authentication required');
   }
+  return new APIClient({
+    baseUrl: env.BACKEND_URL,
+    apiKey: keyToUse,
+  });
 };
 
-/**
- * 删除会话（调用后端接口）
- */
-export const deleteConversationApi = async (
-  conversationId: string,
-  apiKey?: string
-): Promise<{ success: boolean; error?: string }> => {
-  try {
-    const API_ENDPOINT = `/v1/conversation/delete`;
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    const keyToUse = apiKey || (await getApiKey());
-
-    if (keyToUse) {
-      headers['x-api-key'] = keyToUse;
-    } else {
-      showLoginModal();
-      return {
-        success: false,
-        error: 'Unauthorized',
-      };
-    }
-
-    const response = await fetch(`${env.BACKEND_URL}${API_ENDPOINT}`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ id: conversationId }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      if (response.status === 401 || response.status === 403) {
-        showLoginModal();
-      }
-      if (response.status === 404) {
-        return {
-          success: true,
-        };
-      }
-      return {
-        success: false,
-        error:
-          errorData.detail ||
-          errorData.error?.message ||
-          `API Error: ${response.status} - ${response.statusText}`,
-      };
-    }
-
-    await response.json();
-    return { success: true };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
-    };
-  }
-};
-
-/**
- * 获取用户会话列表（调用后端接口）
- */
-export const getConversationsApi = async (
-  apiKey?: string
-): Promise<{
+export const createConversationApi = async (): Promise<{
   success: boolean;
-  conversations: { id: string; messages: Message[] }[];
+  id?: number;
   error?: string;
 }> => {
   try {
-    const API_ENDPOINT = '/v1/conversation/list';
-    const keyToUse = (apiKey || (await getApiKey()))?.trim();
-    if (!keyToUse || !keyToUse.trim()) {
-      showLoginModal();
-      return {
-        success: false,
-        conversations: [],
-        error: 'Unauthorized',
-      };
-    }
-
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${keyToUse}`,
-      'x-api-key': keyToUse,
+    const client = await createApiClient();
+    const response = await client.createConversation({});
+    return {
+      success: true,
+      id: response.id,
     };
-
-    const url = `${env.BACKEND_URL}${API_ENDPOINT}`;
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      if (response.status === 401 || response.status === 403) {
-        return {
-          success: false,
-          conversations: [],
-          error: 'Unauthorized',
-        };
-      }
-      return {
-        success: false,
-        conversations: [],
-        error:
-          errorData.detail ||
-          errorData.error?.message ||
-          `API Error: ${response.status} - ${response.statusText}`,
-      };
-    }
-
-    return await response.json();
   } catch (error) {
     return {
       success: false,
-      conversations: [],
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
+  }
+};
+
+export const deleteConversationApi = async (
+  conversationId: number
+): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const client = await createApiClient();
+    const response = await client.deleteConversation({ id: conversationId });
+
+    return {
+      success: response.deleted,
+    };
+  } catch (error) {
+    return {
+      success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',
     };
   }
@@ -188,26 +65,19 @@ export const getConversationsApi = async (
  */
 export const getConversations = async (): Promise<Conversation[]> => {
   try {
-    const response = await getConversationsApi();
     const user = await db.getUserByApiKey();
     if (!user) {
       throw new Error('User not found');
     }
 
-    const serverConversations: Conversation[] = response?.conversations?.map(
-      (conv: { id: string; title?: string; messages: Message[] }) => ({
-        id: conv.id,
-        title: conv?.title || conv.messages[0]?.content?.slice(0, 20) || 'New Chat',
-        user_id: user?.id || '',
-        messages: conv.messages.map((msg: Message) => ({
-          id: msg.id,
-          role: msg.role,
-          conversation_id: conv.id,
-          content: msg.content,
-          timestamp: msg.id,
-        })),
-      })
-    );
+    const client = await createApiClient();
+    const response = await client.listConversations();
+    const serverConversations: Conversation[] = response.conversations.map(conv => ({
+      id: Number(conv.id),
+      title: conv.messages?.[0]?.content?.slice(0, 20) || 'New Chat',
+      user_id: user?.id || '',
+      messages: conv.messages,
+    }));
     await db.saveConversationsAndMessages(serverConversations, user.id);
 
     return serverConversations;
@@ -224,7 +94,7 @@ export const getCurrentConversation = async (): Promise<Conversation | null> => 
   try {
     const conversations = await getConversations();
     return conversations[0] || null; // 返回第一个会话作为当前会话
-  } catch (error) {
+  } catch {
     return null;
   }
 };
@@ -233,61 +103,50 @@ export const getCurrentConversation = async (): Promise<Conversation | null> => 
  * 创建新会话
  */
 export const createNewConversation = async (): Promise<Conversation> => {
-  try {
-    const response = await createConversationApi();
-    const user = await db.getUserByApiKey();
-    if (!response.success || !response.id || !user) {
-      throw new Error(response.error || 'Failed to create conversation');
-    }
-
-    const conversation: Conversation = {
-      id: response.id,
-      title: 'New Chat',
-      user_id: user?.id || '',
-    };
-
-    await db.saveConversation(conversation);
-
-    return conversation;
-  } catch (error) {
-    throw error;
+  const response = await createConversationApi();
+  const user = await db.getUserByApiKey();
+  if (!response.success || !response.id || !user) {
+    throw new Error(response.error || 'Failed to create conversation');
   }
+
+  const conversation: Conversation = {
+    id: response.id,
+    title: 'New Chat',
+    user_id: user?.id || '',
+    messages: [],
+  };
+
+  await db.saveConversation(conversation);
+
+  return conversation;
 };
 
 /**
  * 选择会话
  */
-export const selectConversation = async (id: string): Promise<Conversation | null> => {
-  try {
-    // 从 IndexedDB 获取会话
-    const conversation = await db.getConversation(id);
-    if (!conversation) {
-      throw new Error('Conversation not found');
-    }
-
-    // 获取会话的消息
-    const messages = await db.getMessagesByConversation(id);
-    conversation.messages = messages;
-
-    return conversation;
-  } catch (error) {
-    throw error;
+export const selectConversation = async (id: number): Promise<Conversation | null> => {
+  // 从 IndexedDB 获取会话
+  const conversation = await db.getConversation(id);
+  if (!conversation) {
+    throw new Error('Conversation not found');
   }
+
+  // 获取会话的消息
+  const messages = await db.getMessagesByConversation(id);
+  conversation.messages = messages;
+
+  return conversation;
 };
 
 /**
  * 删除会话
  */
-export const deleteConversation = async (id: string): Promise<void> => {
-  try {
-    const response = await deleteConversationApi(id);
-    if (!response.success) {
-      throw new Error(response.error || 'Failed to delete conversation');
-    }
-
-    await db.deleteConversation(id);
-    await db.deleteMessagesByConversation(id);
-  } catch (error) {
-    throw error;
+export const deleteConversation = async (id: number): Promise<void> => {
+  const response = await deleteConversationApi(id);
+  if (!response.success) {
+    throw new Error(response.error || 'Failed to delete conversation');
   }
+
+  await db.deleteConversation(id);
+  await db.deleteMessagesByConversation(id);
 };

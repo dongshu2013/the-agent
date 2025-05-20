@@ -27,10 +27,7 @@ export interface CreditCalculationResult {
 /**
  * Calculates the credit cost based on token usage and model pricing
  */
-export function calculateCredits(
-  model: string,
-  tokenUsage: TokenUsage
-): CreditCalculationResult {
+export function calculateCredits(model: string, tokenUsage: TokenUsage): CreditCalculationResult {
   const pricing = MODEL_PRICING[model];
   if (!pricing) {
     throw new GatewayServiceError(401, `${model} not found in model pricing`);

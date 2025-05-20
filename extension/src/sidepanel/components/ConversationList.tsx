@@ -3,9 +3,9 @@ import { Conversation } from '../../types/conversations';
 
 interface ConversationListProps {
   conversations: Conversation[];
-  currentConversationId: string | null;
-  selectConversation: (id: string) => void;
-  deleteConversation: (id: string, e: React.MouseEvent) => void;
+  currentConversationId: number | null;
+  selectConversation: (id: number) => void;
+  deleteConversation: (id: number, e: React.MouseEvent) => void;
   setShowConversationList: (show: boolean) => void;
 }
 
@@ -16,14 +16,14 @@ const ConversationList = ({
   deleteConversation,
   setShowConversationList,
 }: ConversationListProps) => {
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
 
-  const handleDeleteClick = (id: string, e: React.MouseEvent) => {
+  const handleDeleteClick = (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     setConfirmDelete(id);
   };
 
-  const handleConfirmDelete = (id: string, e: React.MouseEvent) => {
+  const handleConfirmDelete = (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     deleteConversation(id, e);
     setConfirmDelete(null);

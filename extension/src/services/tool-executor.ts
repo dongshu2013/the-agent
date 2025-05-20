@@ -1,11 +1,4 @@
-export interface ToolCall {
-  function: {
-    name: string;
-    arguments: string;
-  };
-  id: string;
-  type: string;
-}
+import { ToolCall } from '@the-agent/shared';
 
 export interface ToolCallResponse {
   success: boolean;

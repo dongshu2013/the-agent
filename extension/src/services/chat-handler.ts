@@ -1,14 +1,20 @@
 import { showLoginModal } from '~/utils/global-event';
-import { ChatMessage, Message } from '../types/messages';
-import { saveMessageApi, sendChatCompletion } from './chat';
+import {
+  genToolCallResult,
+  genUserPrompt,
+  saveMessageApi,
+  sendChatCompletion,
+} from '../utils/chat';
 import { toolExecutor } from './tool-executor';
 import { db } from '~/utils/db';
 import { getApiKey } from './cache';
 import { WebInteractionResult } from '~/types/tools';
+import { ChatMessage, Message, ToolCall } from '@the-agent/shared';
+import { MAX_TOOL_CALLS, SYSTEM_MESSAGE } from '~/utils/constants';
 
 interface ChatHandlerOptions {
   apiKey: string;
-  currentConversationId: string;
+  currentConversationId: number;
   onError: (error: unknown) => void;
   onStreamStart: () => void;
   onStreamEnd: () => void;
@@ -57,12 +63,8 @@ export class ChatHandler {
         top_k_related: 3,
       });
 
-      if (!saveResponse.success) {
-        throw new Error(saveResponse.error || 'Failed to save message');
-      }
-
       const relatedMessages = await db.getRelatedMessagesWithContext(
-        saveResponse.data?.top_k_messages || [],
+        saveResponse.top_k_message_ids || [],
         this.options.currentConversationId
       );
       const recentMessages = await db.getRecentMessages(this.options.currentConversationId, 10);
@@ -73,9 +75,9 @@ export class ChatHandler {
         relatedMessages.forEach(msg => {
           contextPrompt += `${msg.role}: ${msg.content}\n`;
           if (msg.tool_calls) {
-            msg.tool_calls.forEach(toolCall => {
+            msg.tool_calls.forEach((toolCall: ToolCall) => {
               if (toolCall.function.name !== 'WebToolkit_getPageText') {
-                contextPrompt += `Tool calls: ${toolCall.function.name}, executed result: ${JSON.stringify(toolCall?.result?.data || '')} \n`;
+                contextPrompt += genToolCallResult(toolCall);
               }
             });
           }
@@ -86,43 +88,16 @@ export class ChatHandler {
         recentMessages.forEach(msg => {
           contextPrompt += `${msg.role}: ${msg.content}\n`;
           if (msg.tool_calls) {
-            msg.tool_calls.forEach(toolCall => {
+            msg.tool_calls.forEach((toolCall: ToolCall) => {
               if (toolCall.function.name !== 'WebToolkit_getPageText') {
-                contextPrompt += `Tool calls: ${toolCall.function.name}, executed result: ${JSON.stringify(toolCall?.result?.data || '')} \n`;
+                contextPrompt += genToolCallResult(toolCall);
               }
             });
           }
         });
       }
 
-      const systemMessage: ChatMessage = {
-        role: 'system',
-        content: `
-You are "Manny", a chatty digital agent with a secret: you can control browsers.
-You pretend to be a friendly chatbot, but you actually have full control of a browser.  
-You can click buttons, search the web, type into fields, and complete complex user tasks on the internet.
-
-Instructions:
-1. Before each action:
-   "I will [action]"
-
-2. After each action:
-   "Result: [success/fail] - [brief explanation]"
-
-3. If an action fails:
-   - Explain why it failed
-   - What you'll try next
-   - Or suggest alternatives
-
-4. End with:
-   "Task status: [completed/failed] - [brief summary]"
-
-Keep responses concise and focused on the current task.
-`,
-      };
-
       let toolCallCount = 0;
-      const MAX_TOOL_CALLS = 20;
 
       const currentModel = await db.getSelectModel();
       const apiKey = await getApiKey();
@@ -135,9 +110,9 @@ Keep responses concise and focused on the current task.
       const processRequest = async (apiKey: string, inputMessages: ChatMessage[]) => {
         let accumulatedContent = '';
         const totalTokenUsage = {
-          promptTokens: 0,
-          completionTokens: 0,
-          totalTokens: 0,
+          prompt_tokens: 0,
+          completion_tokens: 0,
+          total_tokens: 0,
         };
 
         try {
@@ -147,7 +122,7 @@ Keep responses concise and focused on the current task.
             const stream = await sendChatCompletion(
               apiKey,
               {
-                messages: [systemMessage, ...inputMessages],
+                messages: [SYSTEM_MESSAGE, ...inputMessages],
                 currentModel,
               },
               {
@@ -169,9 +144,9 @@ Keep responses concise and focused on the current task.
             accumulatedContent = currentResponse;
 
             if (resp.usage) {
-              totalTokenUsage.promptTokens += resp.usage.prompt_tokens || 0;
-              totalTokenUsage.completionTokens += resp.usage.completion_tokens || 0;
-              totalTokenUsage.totalTokens += resp.usage.total_tokens || 0;
+              totalTokenUsage.prompt_tokens += resp.usage.prompt_tokens || 0;
+              totalTokenUsage.completion_tokens += resp.usage.completion_tokens || 0;
+              totalTokenUsage.total_tokens += resp.usage.total_tokens || 0;
             }
 
             const toolCalls = resp.choices[0].message.tool_calls;
@@ -252,8 +227,7 @@ Keep responses concise and focused on the current task.
             await this.updateMessage({
               ...userMessage,
               content: accumulatedContent + `${accumulatedContent ? '\n\n' : ''}Stream aborted.`,
-              error: 'Stream aborted.',
-              tokenUsage: totalTokenUsage,
+              token_usage: totalTokenUsage,
             });
           } else {
             const message =
@@ -261,7 +235,7 @@ Keep responses concise and focused on the current task.
             this.options.onError(error);
             await this.updateMessage({
               id: generateMessageId(),
-              error: message,
+              role: 'error',
               content: message,
               conversation_id: this.options.currentConversationId,
             });
@@ -273,11 +247,7 @@ Keep responses concise and focused on the current task.
       const { content: finalContent, tokenUsage } = await processRequest(apiKey, [
         {
           role: 'user',
-          content: `Given the chat history:
->>>>> Start of Chat History >>>>>>>>
-${contextPrompt}
->>>>>> End of Chat History >>>>>>>>
-Now reply to user's message: ${currentPrompt}`,
+          content: genUserPrompt(contextPrompt, currentPrompt),
         },
       ]);
 
@@ -286,7 +256,7 @@ Now reply to user's message: ${currentPrompt}`,
         role: 'assistant',
         content: finalContent,
         conversation_id: this.options.currentConversationId,
-        tokenUsage,
+        token_usage: tokenUsage,
       };
       await this.updateMessage(aiMessage);
 
@@ -299,7 +269,7 @@ Now reply to user's message: ${currentPrompt}`,
       this.options.onError(error);
       await this.updateMessage({
         id: generateMessageId(),
-        error: message,
+        role: 'error',
         content: message,
         conversation_id: this.options.currentConversationId,
       });

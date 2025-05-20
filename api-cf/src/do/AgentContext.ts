@@ -1,11 +1,9 @@
 import { DurableObject } from 'cloudflare:workers';
 import OpenAI from 'openai';
-import { Conversation, Message, ToolCall } from './types';
-import {
-  CREATE_CONVERSATION_TABLE_QUERY,
-  CREATE_MESSAGE_TABLE_QUERY,
-} from './sql';
+import { CREATE_CONVERSATION_TABLE_QUERY, CREATE_MESSAGE_TABLE_QUERY } from './sql';
 import { createEmbeddingClient, generateEmbedding } from './embedding';
+import { GatewayServiceError } from '../types/service';
+import { Message, Conversation, ToolCall, MessageRole } from '@the-agent/shared';
 
 const DEFAULT_VECTOR_NAMESPACE = 'default';
 
@@ -22,18 +20,12 @@ export class AgentContext extends DurableObject<Env> {
   }
 
   createConversation(conversationId: number): number {
-    this.sql.exec(
-      `INSERT INTO agent_conversations (id) VALUES (?)`,
-      conversationId
-    );
+    this.sql.exec(`INSERT INTO agent_conversations (id) VALUES (?)`, conversationId);
     return conversationId;
   }
 
   deleteConversation(conversationId: number): void {
-    this.sql.exec(
-      `UPDATE agent_conversations SET status = 'deleted' WHERE id = ?`,
-      conversationId
-    );
+    this.sql.exec(`UPDATE agent_conversations SET status = 'deleted' WHERE id = ?`, conversationId);
   }
 
   listConversations(limit = 10): Conversation[] {
@@ -55,7 +47,7 @@ export class AgentContext extends DurableObject<Env> {
         msgs.push({
           id: message.id as number,
           conversation_id: message.conversation_id as number,
-          role: message.role as string,
+          role: message.role as MessageRole,
           content: message.content as string,
           tool_calls: JSON.parse(message.tool_calls as string) as ToolCall[],
           tool_call_id: message.tool_call_id as string,
@@ -74,7 +66,6 @@ export class AgentContext extends DurableObject<Env> {
     topK = 3,
     threshold = 0.7
   ): Promise<{
-    success: boolean;
     topKMessageIds: string[];
     totalCost: number;
   }> {
@@ -100,7 +91,6 @@ export class AgentContext extends DurableObject<Env> {
     const text = collectText(message);
     if (!text) {
       return {
-        success: true,
         topKMessageIds: [],
         totalCost: 0,
       };
@@ -108,11 +98,7 @@ export class AgentContext extends DurableObject<Env> {
     // Generate embedding
     const embeddingResult = await generateEmbedding(this.openai, [text], topK);
     if (embeddingResult === null) {
-      return {
-        success: false,
-        topKMessageIds: [],
-        totalCost: 0,
-      };
+      throw new GatewayServiceError(500, 'Failed to generate embedding');
     }
     const { embedding, totalCost } = embeddingResult;
 
@@ -142,17 +128,15 @@ export class AgentContext extends DurableObject<Env> {
         this.env.MYTSTA_E5_INDEX.insert(toInsert),
       ]);
       const topKMessageIds = topKMessages.matches
-        .filter((m) => m.score && m.score >= threshold)
-        .map((m) => m.id);
+        .filter(m => m.score && m.score >= threshold)
+        .map(m => m.id);
       return {
-        success: true,
         topKMessageIds,
         totalCost,
       };
     } else {
       await this.env.MYTSTA_E5_INDEX.insert(toInsert);
       return {
-        success: true,
         topKMessageIds: [],
         totalCost,
       };
