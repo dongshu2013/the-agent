@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 import {
   type CreateConversationRequest,
   type CreateConversationResponse,
@@ -23,7 +23,7 @@ import {
   TelegramStatsSchema,
   TransactionType,
   TransactionReason,
-} from '../types/api';
+} from "../types/api";
 
 export interface APIClientConfig {
   baseUrl: string;
@@ -32,13 +32,9 @@ export interface APIClientConfig {
 }
 
 export class APIError extends Error {
-  constructor(
-    message: string,
-    public status: number,
-    public data?: unknown
-  ) {
+  constructor(message: string, public status: number, public data?: unknown) {
     super(message);
-    this.name = 'APIError';
+    this.name = "APIError";
   }
 }
 
@@ -47,16 +43,18 @@ export class APIClient {
   private headers: Record<string, string>;
 
   constructor(config: APIClientConfig) {
-    this.baseUrl = config.baseUrl.endsWith('/') ? config.baseUrl.slice(0, -1) : config.baseUrl;
+    this.baseUrl = config.baseUrl.endsWith("/")
+      ? config.baseUrl.slice(0, -1)
+      : config.baseUrl;
     this.headers = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     };
 
     if (config.apiKey) {
-      this.headers['x-api-key'] = config.apiKey;
+      this.headers["x-api-key"] = config.apiKey;
     }
     if (config.authToken) {
-      this.headers['Authorization'] = `Bearer ${config.authToken}`;
+      this.headers["Authorization"] = `Bearer ${config.authToken}`;
     }
   }
 
@@ -81,21 +79,19 @@ export class APIClient {
         errorData = await response.text();
       }
       throw new APIError(
-        errorData?.error?.message || 'API request failed',
+        errorData?.error?.message || "API request failed",
         response.status,
         errorData
       );
     }
 
     const data = await response.json();
+    console.log("---data", data);
     if (schema) {
       const result = schema.safeParse(data);
+      console.log("---result", result);
       if (!result.success) {
-        throw new APIError(
-          'Invalid response data',
-          500,
-          result.error
-        );
+        throw new APIError("Invalid response data", 500, result.error);
       }
       return result.data;
     }
@@ -103,22 +99,26 @@ export class APIClient {
   }
 
   // Conversation endpoints
-  async createConversation(data: CreateConversationRequest): Promise<CreateConversationResponse> {
+  async createConversation(
+    data: CreateConversationRequest
+  ): Promise<CreateConversationResponse> {
     return this.request(
-      '/v1/conversation/create',
+      "/v1/conversation/create",
       {
-        method: 'POST',
+        method: "POST",
         body: JSON.stringify(data),
       },
       CreateConversationResponseSchema
     );
   }
 
-  async deleteConversation(data: DeleteConversationRequest): Promise<DeleteConversationResponse> {
+  async deleteConversation(
+    data: DeleteConversationRequest
+  ): Promise<DeleteConversationResponse> {
     return this.request(
-      '/v1/conversation/delete',
+      "/v1/conversation/delete",
       {
-        method: 'POST',
+        method: "POST",
         body: JSON.stringify(data),
       },
       DeleteConversationResponseSchema
@@ -127,9 +127,9 @@ export class APIClient {
 
   async listConversations(): Promise<ListConversationsResponse> {
     return this.request(
-      '/v1/conversation/list',
+      "/v1/conversation/list",
       {
-        method: 'GET',
+        method: "GET",
       },
       ListConversationsResponseSchema
     );
@@ -137,27 +137,20 @@ export class APIClient {
 
   // User endpoints
   async getUser(): Promise<GetUserResponse> {
-    return this.request(
-      '/v1/user',
-      { method: 'GET' },
-      GetUserResponseSchema
-    );
+    return this.request("/v1/user", { method: "GET" }, GetUserResponseSchema);
   }
 
   async toggleApiKey(data: ToggleApiKeyRequest): Promise<void> {
-    await this.request(
-      '/v1/user/toggle_api_key_enabled',
-      {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }
-    );
+    await this.request("/v1/user/toggle_api_key_enabled", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
   }
 
   async rotateApiKey(): Promise<RotateApiKeyResponse> {
     return this.request(
-      '/v1/user/rotate_api_key',
-      { method: 'POST' },
+      "/v1/user/rotate_api_key",
+      { method: "POST" },
       RotateApiKeyResponseSchema
     );
   }
@@ -170,27 +163,29 @@ export class APIClient {
     txReason?: TransactionReason;
   }): Promise<GetCreditHistoryResponse> {
     const queryParams = new URLSearchParams();
-    if (params?.startDate) queryParams.append('startDate', params.startDate);
-    if (params?.endDate) queryParams.append('endDate', params.endDate);
-    if (params?.model) queryParams.append('model', params.model);
-    if (params?.txType) queryParams.append('transType', params.txType);
-    if (params?.txReason) queryParams.append('transReason', params.txReason);
+    if (params?.startDate) queryParams.append("startDate", params.startDate);
+    if (params?.endDate) queryParams.append("endDate", params.endDate);
+    if (params?.model) queryParams.append("model", params.model);
+    if (params?.txType) queryParams.append("transType", params.txType);
+    if (params?.txReason) queryParams.append("transReason", params.txReason);
 
     const queryString = queryParams.toString();
-    const endpoint = queryString ? `/v1/user/credit_history?${queryString}` : '/v1/user/credit_history';
+    const endpoint = queryString
+      ? `/v1/user/credit_history?${queryString}`
+      : "/v1/user/credit_history";
 
     return this.request(
       endpoint,
-      { method: 'GET' },
+      { method: "GET" },
       GetCreditHistoryResponseSchema
     );
   }
 
   async redeemCoupon(code: string): Promise<RedeemCouponResponse> {
     return this.request(
-      '/v1/user/redeem_coupon_code',
+      "/v1/user/redeem_coupon_code",
       {
-        method: 'POST',
+        method: "POST",
         body: JSON.stringify({ code }),
       },
       RedeemCouponResponseSchema
@@ -200,9 +195,9 @@ export class APIClient {
   // Stripe endpoints
   async createCheckout(amount: number): Promise<StripeCheckoutResponse> {
     return this.request(
-      '/v1/stripe/checkout',
+      "/v1/stripe/checkout",
       {
-        method: 'POST',
+        method: "POST",
         body: JSON.stringify({ amount }),
       },
       StripeCheckoutResponseSchema
@@ -211,10 +206,6 @@ export class APIClient {
 
   // Telegram endpoints
   async getTelegramStats(): Promise<TelegramStats> {
-    return this.request(
-      '/v1/tg/stats',
-      { method: 'GET' },
-      TelegramStatsSchema
-    );
+    return this.request("/v1/tg/stats", { method: "GET" }, TelegramStatsSchema);
   }
 }

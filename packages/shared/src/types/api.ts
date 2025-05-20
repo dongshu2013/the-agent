@@ -1,7 +1,12 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 // Common types
-export const MessageRoleSchema = z.enum(['system', 'user', 'assistant', 'tooling']);
+export const MessageRoleSchema = z.enum([
+  "system",
+  "user",
+  "assistant",
+  "tooling",
+]);
 export type MessageRole = z.infer<typeof MessageRoleSchema>;
 
 export const MessageSchema = z.object({
@@ -18,22 +23,30 @@ export type Message = z.infer<typeof MessageSchema>;
 export const CreateConversationRequestSchema = z.object({
   id: z.number().optional(),
 });
-export type CreateConversationRequest = z.infer<typeof CreateConversationRequestSchema>;
+export type CreateConversationRequest = z.infer<
+  typeof CreateConversationRequestSchema
+>;
 
 export const CreateConversationResponseSchema = z.object({
   id: z.number(),
 });
-export type CreateConversationResponse = z.infer<typeof CreateConversationResponseSchema>;
+export type CreateConversationResponse = z.infer<
+  typeof CreateConversationResponseSchema
+>;
 
 export const DeleteConversationRequestSchema = z.object({
   id: z.number(),
 });
-export type DeleteConversationRequest = z.infer<typeof DeleteConversationRequestSchema>;
+export type DeleteConversationRequest = z.infer<
+  typeof DeleteConversationRequestSchema
+>;
 
 export const DeleteConversationResponseSchema = z.object({
   deleted: z.boolean(),
 });
-export type DeleteConversationResponse = z.infer<typeof DeleteConversationResponseSchema>;
+export type DeleteConversationResponse = z.infer<
+  typeof DeleteConversationResponseSchema
+>;
 
 export const ListConversationsResponseSchema = z.object({
   conversations: z.array(
@@ -43,7 +56,9 @@ export const ListConversationsResponseSchema = z.object({
     })
   ),
 });
-export type ListConversationsResponse = z.infer<typeof ListConversationsResponseSchema>;
+export type ListConversationsResponse = z.infer<
+  typeof ListConversationsResponseSchema
+>;
 
 // message handlers
 export const SaveMessageRequestSchema = z.object({
@@ -94,16 +109,30 @@ export const ChatCompletionResponseSchema = z.object({
     total_tokens: z.number(),
   }),
 });
-export type ChatCompletionResponse = z.infer<typeof ChatCompletionResponseSchema>;
+export type ChatCompletionResponse = z.infer<
+  typeof ChatCompletionResponseSchema
+>;
 
 // payment handlers
-export const OrderStatusSchema = z.enum(['pending', 'completed', 'cancelled', 'failed', 'finalized']);
+export const OrderStatusSchema = z.enum([
+  "pending",
+  "completed",
+  "cancelled",
+  "failed",
+  "finalized",
+]);
 export type OrderStatus = z.infer<typeof OrderStatusSchema>;
 
-export const TransactionTypeSchema = z.enum(['credit', 'debit']);
+export const TransactionTypeSchema = z.enum(["credit", "debit"]);
 export type TransactionType = z.infer<typeof TransactionTypeSchema>;
 
-export const TransactionReasonSchema = z.enum(['new_user', 'order_pay', 'system_add', 'completion', 'coupon_code']);
+export const TransactionReasonSchema = z.enum([
+  "new_user",
+  "order_pay",
+  "system_add",
+  "completion",
+  "coupon_code",
+]);
 export type TransactionReason = z.infer<typeof TransactionReasonSchema>;
 
 export const CreditLogSchema = z.object({
@@ -128,12 +157,9 @@ export type GetUserResponse = z.infer<typeof GetUserResponseSchema>;
 // telegram handlers
 
 export const TelegramStatsSchema = z.object({
-  success: z.boolean(),
-  data: z.object({
-    totalDialogs: z.number(),
-    totalMessages: z.number(),
-    lastSyncTime: z.string().optional(),
-  }),
+  total_dialogs: z.number(),
+  total_messages: z.number(),
+  last_sync_time: z.string().optional(),
 });
 export type TelegramStats = z.infer<typeof TelegramStatsSchema>;
 
@@ -141,7 +167,9 @@ export type TelegramStats = z.infer<typeof TelegramStatsSchema>;
 export const GetUserBalanceResponseSchema = z.object({
   amount: z.number(),
 });
-export type GetUserBalanceResponse = z.infer<typeof GetUserBalanceResponseSchema>;
+export type GetUserBalanceResponse = z.infer<
+  typeof GetUserBalanceResponseSchema
+>;
 
 export const ToggleApiKeyRequestSchema = z.object({
   enabled: z.boolean(),
@@ -161,7 +189,9 @@ export type RotateApiKeyResponse = z.infer<typeof RotateApiKeyResponseSchema>;
 export const GetCreditHistoryResponseSchema = z.object({
   history: z.array(CreditLogSchema),
 });
-export type GetCreditHistoryResponse = z.infer<typeof GetCreditHistoryResponseSchema>;
+export type GetCreditHistoryResponse = z.infer<
+  typeof GetCreditHistoryResponseSchema
+>;
 
 export const RedeemCouponRequestSchema = z.object({
   code: z.string(),
@@ -187,4 +217,6 @@ export const StripeCheckoutResponseSchema = z.object({
   session_id: z.string(),
   public_key: z.string(),
 });
-export type StripeCheckoutResponse = z.infer<typeof StripeCheckoutResponseSchema>;
+export type StripeCheckoutResponse = z.infer<
+  typeof StripeCheckoutResponseSchema
+>;

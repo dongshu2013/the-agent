@@ -356,8 +356,8 @@ export default function ProfilePage() {
                 <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
                   {isLoadingTelegramStats
                     ? 'Loading Telegram data...'
-                    : telegramStats && telegramStats.data.totalDialogs > 0
-                    ? `${telegramStats.data.totalDialogs} chats imported, ${telegramStats.data.totalMessages} messages imported`
+                    : telegramStats && telegramStats.total_dialogs > 0
+                    ? `${telegramStats.total_dialogs} chats imported, ${telegramStats.total_messages} messages imported`
                     : 'No data has been imported yet...'}
                 </p>
                 <button

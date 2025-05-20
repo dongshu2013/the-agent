@@ -100,7 +100,13 @@ export class GetTelegramStats extends OpenAPIRoute {
       const stub = c.env.TgContext.get(id);
       const result = await stub.getStats();
 
-      return c.json(createSuccessResponse(result), 200);
+      return c.json(
+        {
+          total_dialogs: result.totalDialogs,
+          total_messages: result.totalMessages,
+        },
+        200
+      );
     } catch (error) {
       console.error('Error getting Telegram stats:', error);
 
