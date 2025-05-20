@@ -1,4 +1,4 @@
-import { ChatCompletionCreateParam } from '../types/chat';
+import { ChatCompletionCreateParam } from '@the-agent/shared';
 
 // OpenAI API client for chat completions
 export class OpenAIClient {

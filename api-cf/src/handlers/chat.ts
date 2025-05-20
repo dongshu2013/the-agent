@@ -2,7 +2,7 @@ import { OpenAPIRoute } from 'chanfana';
 import { Context } from 'hono';
 import { createOpenAIClient } from '../utils/openai';
 import { getUserBalance, deductUserCredits } from '../d1/user';
-import { ChatCompletionRequestSchema, ChatCompletionResponseSchema } from '@the-agent/shared';
+import { ChatCompletionCreateParamSchema, ChatCompletionResponseSchema } from '@the-agent/shared';
 import { calculateCredits, createStreamingTokenTracker } from '../utils/creditCalculator';
 import { DEEPSEEK_API_URL, OPENROUTER_API_URL } from '../utils/common';
 
@@ -12,7 +12,7 @@ export class ChatCompletions extends OpenAPIRoute {
       body: {
         content: {
           'application/json': {
-            schema: ChatCompletionRequestSchema,
+            schema: ChatCompletionCreateParamSchema,
           },
         },
       },
