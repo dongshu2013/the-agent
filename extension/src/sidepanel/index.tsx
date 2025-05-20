@@ -493,8 +493,38 @@ const Sidepanel = () => {
         open={showSwitch}
         isSwitch={true}
         currentUser={currentUser}
-        onClose={() => {
+        onClose={async () => {
+          // First stop streaming and hide the switch modal
+          if (chatHandler) {
+            chatHandler.stopStreaming();
+          }
           setShowSwitch(false);
+          try {
+            // Temporarily clear conversation ID to force message refresh
+            setCurrentConversationId(null);
+
+            // Force refresh user & conversations
+            if (apiKey?.enabled && currentUser) {
+              // Get fresh conversations for this user
+              const freshConversations = await db.getAllConversations(currentUser.id);
+
+              // Select first conversation or create new one
+              if (freshConversations && freshConversations.length > 0) {
+                // Small delay to ensure state updates properly
+                setTimeout(() => {
+                  setCurrentConversationId(freshConversations[0].id);
+                }, 100);
+              } else {
+                // If no conversations, create a new one
+                const newConv = await createNewConversation(apiKey.key);
+                setTimeout(() => {
+                  setCurrentConversationId(newConv.id);
+                }, 100);
+              }
+            }
+          } catch (error) {
+            handleApiError(error);
+          }
         }}
       />
     </div>
