@@ -6,6 +6,7 @@ import {
   CREATE_MESSAGE_TABLE_QUERY,
 } from './sql';
 import { createEmbeddingClient, generateEmbedding } from './embedding';
+import { GatewayServiceError } from '../types/service';
 
 const DEFAULT_VECTOR_NAMESPACE = 'default';
 
@@ -74,7 +75,6 @@ export class AgentContext extends DurableObject<Env> {
     topK = 3,
     threshold = 0.7
   ): Promise<{
-    success: boolean;
     topKMessageIds: string[];
     totalCost: number;
   }> {
@@ -100,7 +100,6 @@ export class AgentContext extends DurableObject<Env> {
     const text = collectText(message);
     if (!text) {
       return {
-        success: true,
         topKMessageIds: [],
         totalCost: 0,
       };
@@ -108,11 +107,7 @@ export class AgentContext extends DurableObject<Env> {
     // Generate embedding
     const embeddingResult = await generateEmbedding(this.openai, [text], topK);
     if (embeddingResult === null) {
-      return {
-        success: false,
-        topKMessageIds: [],
-        totalCost: 0,
-      };
+      throw new GatewayServiceError(500, 'Failed to generate embedding');
     }
     const { embedding, totalCost } = embeddingResult;
 
@@ -145,14 +140,12 @@ export class AgentContext extends DurableObject<Env> {
         .filter((m) => m.score && m.score >= threshold)
         .map((m) => m.id);
       return {
-        success: true,
         topKMessageIds,
         totalCost,
       };
     } else {
       await this.env.MYTSTA_E5_INDEX.insert(toInsert);
       return {
-        success: true,
         topKMessageIds: [],
         totalCost,
       };

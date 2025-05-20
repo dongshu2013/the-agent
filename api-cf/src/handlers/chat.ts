@@ -1,6 +1,5 @@
 import { OpenAPIRoute } from 'chanfana';
 import { Context } from 'hono';
-import { z } from 'zod';
 import { createOpenAIClient } from '../utils/openai';
 import { getUserBalance, deductUserCredits } from '../d1/user';
 import {
@@ -30,21 +29,6 @@ export class ChatCompletions extends OpenAPIRoute {
         content: {
           'application/json': {
             schema: ChatCompletionResponseSchema,
-          },
-        },
-      },
-      '400': {
-        description: 'Bad request',
-        content: {
-          'application/json': {
-            schema: z.object({
-              error: z.object({
-                message: z.string(),
-                type: z.string(),
-                param: z.string().nullable(),
-                code: z.string(),
-              }),
-            }),
           },
         },
       },

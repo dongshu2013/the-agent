@@ -1,7 +1,10 @@
 import { OpenAPIRoute } from 'chanfana';
-import { z } from 'zod';
 import { Context } from 'hono';
-import { MessageSchema } from '@the-agent/shared';
+import {
+  MessageSchema,
+  SaveMessageRequestSchema,
+  SaveMessageResponseSchema,
+} from '@the-agent/shared';
 import { GatewayServiceError } from '../types/service';
 import { Message } from '../do/types';
 import { deductUserCredits } from '../d1/user';
@@ -13,11 +16,7 @@ export class SaveMessage extends OpenAPIRoute {
       body: {
         content: {
           'application/json': {
-            schema: z.object({
-              message: MessageSchema,
-              top_k_related: z.number().default(0),
-              threshold: z.number().default(0.7),
-            }),
+            schema: SaveMessageRequestSchema,
           },
         },
       },
@@ -27,24 +26,7 @@ export class SaveMessage extends OpenAPIRoute {
         description: 'Message saved successfully',
         content: {
           'application/json': {
-            schema: z.object({
-              success: z.boolean(),
-              top_k_message_ids: z.array(z.number()),
-            }),
-          },
-        },
-      },
-      '500': {
-        description: 'Internal server error',
-        content: {
-          'application/json': {
-            schema: z.object({
-              success: z.boolean(),
-              error: z.object({
-                message: z.string(),
-                code: z.string(),
-              }),
-            }),
+            schema: SaveMessageResponseSchema,
           },
         },
       },
@@ -67,7 +49,7 @@ export class SaveMessage extends OpenAPIRoute {
     // Save the message
     const doId = c.env.AgentContext.idFromName(userId);
     const stub = c.env.AgentContext.get(doId);
-    const { success, topKMessageIds, totalCost } = await stub.saveMessage(
+    const { topKMessageIds, totalCost } = await stub.saveMessage(
       message,
       body.top_k_related,
       body.threshold
@@ -79,7 +61,6 @@ export class SaveMessage extends OpenAPIRoute {
     // Return success response with CORS headers
     return c.json(
       {
-        success,
         top_k_message_ids: topKMessageIds,
       },
       200

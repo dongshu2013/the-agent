@@ -44,7 +44,6 @@ export class CreateConversation extends OpenAPIRoute {
 
     return c.json(
       {
-        success: true,
         id: convId,
       },
       200
@@ -86,7 +85,7 @@ export class DeleteConversation extends OpenAPIRoute {
     await stub.deleteConversation(id);
     return c.json(
       {
-        success: true,
+        deleted: true,
       },
       200
     );
@@ -118,7 +117,6 @@ export class ListConversations extends OpenAPIRoute {
     const conversations = await stub.listConversations();
     return c.json(
       {
-        success: true,
         conversations,
       },
       200

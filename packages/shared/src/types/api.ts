@@ -14,14 +14,13 @@ export const MessageSchema = z.object({
 });
 export type Message = z.infer<typeof MessageSchema>;
 
-// API Request/Response types
+// conversation handlers
 export const CreateConversationRequestSchema = z.object({
   id: z.number().optional(),
 });
 export type CreateConversationRequest = z.infer<typeof CreateConversationRequestSchema>;
 
 export const CreateConversationResponseSchema = z.object({
-  success: z.boolean(),
   id: z.number(),
 });
 export type CreateConversationResponse = z.infer<typeof CreateConversationResponseSchema>;
@@ -32,12 +31,11 @@ export const DeleteConversationRequestSchema = z.object({
 export type DeleteConversationRequest = z.infer<typeof DeleteConversationRequestSchema>;
 
 export const DeleteConversationResponseSchema = z.object({
-  success: z.boolean(),
+  deleted: z.boolean(),
 });
 export type DeleteConversationResponse = z.infer<typeof DeleteConversationResponseSchema>;
 
 export const ListConversationsResponseSchema = z.object({
-  success: z.boolean(),
   conversations: z.array(
     z.object({
       id: z.number(),
@@ -47,6 +45,20 @@ export const ListConversationsResponseSchema = z.object({
 });
 export type ListConversationsResponse = z.infer<typeof ListConversationsResponseSchema>;
 
+// message handlers
+export const SaveMessageRequestSchema = z.object({
+  message: MessageSchema,
+  top_k_related: z.number().default(0),
+  threshold: z.number().default(0.7),
+});
+export type SaveMessageRequest = z.infer<typeof SaveMessageRequestSchema>;
+
+export const SaveMessageResponseSchema = z.object({
+  top_k_message_ids: z.array(z.number()),
+});
+export type SaveMessageResponse = z.infer<typeof SaveMessageResponseSchema>;
+
+// chat handler
 export const ChatCompletionRequestSchema = z.object({
   model: z.string(),
   messages: z.array(
@@ -84,7 +96,7 @@ export const ChatCompletionResponseSchema = z.object({
 });
 export type ChatCompletionResponse = z.infer<typeof ChatCompletionResponseSchema>;
 
-// User types
+// payment handlers
 export const OrderStatusSchema = z.enum(['pending', 'completed', 'cancelled', 'failed', 'finalized']);
 export type OrderStatus = z.infer<typeof OrderStatusSchema>;
 
@@ -113,6 +125,8 @@ export const GetUserResponseSchema = z.object({
 });
 export type GetUserResponse = z.infer<typeof GetUserResponseSchema>;
 
+// telegram handlers
+
 export const TelegramStatsSchema = z.object({
   success: z.boolean(),
   data: z.object({
@@ -123,19 +137,21 @@ export const TelegramStatsSchema = z.object({
 });
 export type TelegramStats = z.infer<typeof TelegramStatsSchema>;
 
-// Stripe types
-export const StripeCheckoutResponseSchema = z.object({
-  order_id: z.string(),
-  session_id: z.string(),
-  public_key: z.string(),
+// user handlers
+export const GetUserBalanceResponseSchema = z.object({
+  amount: z.number(),
 });
-export type StripeCheckoutResponse = z.infer<typeof StripeCheckoutResponseSchema>;
+export type GetUserBalanceResponse = z.infer<typeof GetUserBalanceResponseSchema>;
 
-// API request/response types
 export const ToggleApiKeyRequestSchema = z.object({
   enabled: z.boolean(),
 });
 export type ToggleApiKeyRequest = z.infer<typeof ToggleApiKeyRequestSchema>;
+
+export const ToggleApiKeyResponseSchema = z.object({
+  enabled: z.boolean(),
+});
+export type ToggleApiKeyResponse = z.infer<typeof ToggleApiKeyResponseSchema>;
 
 export const RotateApiKeyResponseSchema = z.object({
   newApiKey: z.string(),
@@ -147,9 +163,28 @@ export const GetCreditHistoryResponseSchema = z.object({
 });
 export type GetCreditHistoryResponse = z.infer<typeof GetCreditHistoryResponseSchema>;
 
+export const RedeemCouponRequestSchema = z.object({
+  code: z.string(),
+});
+export type RedeemCouponRequest = z.infer<typeof RedeemCouponRequestSchema>;
+
 export const RedeemCouponResponseSchema = z.object({
   success: z.boolean(),
   credits: z.number().optional(),
   error: z.string().optional(),
 });
 export type RedeemCouponResponse = z.infer<typeof RedeemCouponResponseSchema>;
+
+// stripe handlers
+
+export const StripeCheckoutRequestSchema = z.object({
+  amount: z.number(),
+});
+export type StripeCheckoutRequest = z.infer<typeof StripeCheckoutRequestSchema>;
+
+export const StripeCheckoutResponseSchema = z.object({
+  order_id: z.string(),
+  session_id: z.string(),
+  public_key: z.string(),
+});
+export type StripeCheckoutResponse = z.infer<typeof StripeCheckoutResponseSchema>;

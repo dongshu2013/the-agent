@@ -7,6 +7,7 @@ import { createOrder, finalizeOrder, updateOrderStatus } from '../d1/payment';
 import { GatewayServiceError } from '../types/service';
 import {
   OrderStatusSchema,
+  StripeCheckoutRequestSchema,
   StripeCheckoutResponseSchema,
 } from '@the-agent/shared';
 
@@ -26,9 +27,7 @@ export class StripeCheckout extends OpenAPIRoute {
       body: {
         content: {
           'application/json': {
-            schema: z.object({
-              amount: z.number().min(5),
-            }),
+            schema: StripeCheckoutRequestSchema,
           },
         },
       },

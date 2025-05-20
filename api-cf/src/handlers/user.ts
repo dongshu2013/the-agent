@@ -1,5 +1,4 @@
 import { OpenAPIRoute } from 'chanfana';
-import { z } from 'zod';
 import { Context } from 'hono';
 import {
   createUser,
@@ -17,6 +16,9 @@ import {
   ToggleApiKeyRequestSchema,
   GetCreditHistoryResponseSchema,
   RedeemCouponResponseSchema,
+  ToggleApiKeyResponseSchema,
+  RedeemCouponRequestSchema,
+  GetUserBalanceResponseSchema,
 } from '@the-agent/shared';
 
 export class GetUser extends OpenAPIRoute {
@@ -81,9 +83,7 @@ export class GetUserBalance extends OpenAPIRoute {
         description: 'User info',
         content: {
           'application/json': {
-            schema: z.object({
-              balance: z.number(),
-            }),
+            schema: GetUserBalanceResponseSchema,
           },
         },
       },
@@ -172,9 +172,7 @@ export class ToggleApiKeyEnabled extends OpenAPIRoute {
         description: 'Toggle API key enabled',
         content: {
           'application/json': {
-            schema: z.object({
-              success: z.boolean(),
-            }),
+            schema: ToggleApiKeyResponseSchema,
           },
         },
       },
@@ -185,7 +183,7 @@ export class ToggleApiKeyEnabled extends OpenAPIRoute {
     const userId = c.get('userId');
     const body = await c.req.json();
     await toggleApiKeyEnabled(c.env, userId, body.enabled);
-    return c.json({ success: true }, 200);
+    return c.json({ enabled: body.enabled }, 200);
   }
 }
 
@@ -195,9 +193,7 @@ export class RedeemCouponCode extends OpenAPIRoute {
       body: {
         content: {
           'application/json': {
-            schema: z.object({
-              code: z.string(),
-            }),
+            schema: RedeemCouponRequestSchema,
           },
         },
       },
