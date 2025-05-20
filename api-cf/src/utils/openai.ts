@@ -11,7 +11,7 @@ export class OpenAIClient {
   }
 
   // Helper to filter out null and undefined values
-  private filterUndefined(obj: Record<string, any>): Record<string, any> {
+  private filterUndefined(obj: Record<string, unknown>): Record<string, unknown> {
     return Object.fromEntries(
       Object.entries(obj).filter(([_, v]) => v !== null && v !== undefined)
     );
@@ -22,7 +22,7 @@ export class OpenAIClient {
     const url = `${this.baseURL}/chat/completions`;
 
     // Filter out undefined values
-    const filteredParams = this.filterUndefined(params as Record<string, any>);
+    const filteredParams = this.filterUndefined(params);
 
     const response = await fetch(url, {
       method: 'POST',

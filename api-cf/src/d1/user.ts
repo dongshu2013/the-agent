@@ -114,7 +114,7 @@ export async function getCreditLogs(
     ' FROM credit_history' +
     ' WHERE user_id = ?';
 
-  const params: any[] = [userId];
+  const params: (string | number)[] = [userId];
 
   if (startDate) {
     query += ' AND created_at >= ?';

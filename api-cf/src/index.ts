@@ -132,7 +132,8 @@ openapi.get('/v1/user', GetUser);
 
 // OpenAPI documentation endpoints
 app.get('/docs/openapi.json', c => {
-  const schema = (openapi as any).schema || (openapi as any).getGeneratedSchema?.() || {};
+  // @ts-expect-error: openapi is not a type
+  const schema = openapi.schema || openapi.getGeneratedSchema?.() || {};
   return c.json(schema);
 });
 

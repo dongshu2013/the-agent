@@ -625,6 +625,18 @@ export class SyncTelegramChat extends OpenAPIRoute {
 
 // ===== SYNC TELEGRAM MESSAGES =====
 
+const TgMessageSchema = z.object({
+  chat_id: z.string(),
+  message_id: z.string(),
+  message_text: z.string(),
+  message_timestamp: z.number(),
+  sender_id: z.string(),
+  sender_username: z.string().nullable().optional(),
+  sender_firstname: z.string().nullable().optional(),
+  sender_lastname: z.string().nullable().optional(),
+});
+type TgMessage = z.infer<typeof TgMessageSchema>;
+
 export class SyncTelegramMessages extends OpenAPIRoute {
   schema = {
     request: {
@@ -632,18 +644,7 @@ export class SyncTelegramMessages extends OpenAPIRoute {
         content: {
           'application/json': {
             schema: z.object({
-              messages: z.array(
-                z.object({
-                  chat_id: z.string(),
-                  message_id: z.string(),
-                  message_text: z.string(),
-                  message_timestamp: z.number(),
-                  sender_id: z.string(),
-                  sender_username: z.string().nullable().optional(),
-                  sender_firstname: z.string().nullable().optional(),
-                  sender_lastname: z.string().nullable().optional(),
-                })
-              ),
+              messages: z.array(TgMessageSchema),
             }),
           },
         },
@@ -681,10 +682,10 @@ export class SyncTelegramMessages extends OpenAPIRoute {
   async handle(c: Context) {
     try {
       const userId = c.get('userId');
-      const body = await c.req.json();
+      const body: { messages: TgMessage[] } = await c.req.json();
 
       // Group messages by chat_id
-      const messagesByChat = new Map<string, any[]>();
+      const messagesByChat = new Map<string, TgMessage[]>();
       for (const message of body.messages) {
         if (!messagesByChat.has(message.chat_id)) {
           messagesByChat.set(message.chat_id, []);

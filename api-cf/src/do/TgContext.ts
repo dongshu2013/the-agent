@@ -23,11 +23,11 @@ export class TgContext extends DurableObject<Env> {
   }
 
   // get my chat
-  async getMyChat() {
-    const cursor = await this.sql.exec(`SELECT * FROM telegram_dialogs`);
+  getMyChat() {
+    const cursor = this.sql.exec(`SELECT * FROM telegram_dialogs`);
     const chats = [];
 
-    for await (const row of cursor) {
+    for (const row of cursor) {
       chats.push({
         chat_id: row.chat_id,
         chat_title: row.chat_title,
@@ -90,7 +90,7 @@ export class TgContext extends DurableObject<Env> {
       WHERE 1=1
     `;
 
-    const params: any[] = [];
+    const params: unknown[] = [];
 
     if (chatTitle) {
       query += ` AND d.chat_title LIKE ?`;
@@ -186,7 +186,7 @@ export class TgContext extends DurableObject<Env> {
       SELECT * FROM telegram_messages WHERE chat_id = ?
     `;
 
-    const params: any[] = [chatId];
+    const params: unknown[] = [chatId];
 
     if (messageText) {
       query += ` AND message_text LIKE ?`;
@@ -285,7 +285,7 @@ export class TgContext extends DurableObject<Env> {
   ) {
     // Generate embedding for the search query
     let queryEmbeddingAvailable = false;
-    const results: any[] = [];
+    const results: unknown[] = [];
 
     try {
       const response = await this.openai.embeddings.create({
@@ -297,7 +297,7 @@ export class TgContext extends DurableObject<Env> {
       queryEmbeddingAvailable = true;
 
       // Build filter for vector search
-      const filter: any = {};
+      const filter: Record<string, { $eq?: string }> = {};
 
       if (chatId) {
         filter.chat_id = { $eq: chatId };
@@ -378,7 +378,7 @@ export class TgContext extends DurableObject<Env> {
         const messageChunk = contextMessages.map((msg: Record<string, unknown>) => {
           const isMatch = msg.id === matchId;
           const matchResult = isMatch
-            ? vectorResults.matches.find((m: any) => m.metadata?.message_id === matchId)
+            ? vectorResults.matches.find(m => m.metadata?.message_id === matchId)
             : null;
 
           const result: TgMessageInfo = {
