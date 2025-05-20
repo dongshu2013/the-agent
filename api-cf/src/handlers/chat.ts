@@ -92,7 +92,6 @@ export class ChatCompletions extends OpenAPIRoute {
                   tokenTracker.setCompletionTokens(lastData.usage.completion_tokens || 0);
                 }
               } catch (e) {
-                console.error('Error parsing last chunk:', e);
                 // Ignore parse errors for the last chunk
               }
 
@@ -116,7 +115,6 @@ export class ChatCompletions extends OpenAPIRoute {
                     tokenTracker.setCompletionTokens(data.usage.completion_tokens || 0);
                   }
                 } catch (e) {
-                  console.error('Error parsing chunk:', e);
                   // Ignore parse errors for non-JSON lines
                 }
               }

@@ -61,7 +61,7 @@ export class SaveMessage extends OpenAPIRoute {
     // Return success response with CORS headers
     return c.json(
       {
-        top_k_message_ids: topKMessageIds,
+        top_k_message_ids: topKMessageIds.map((id: string) => Number(id)),
       },
       200
     );
