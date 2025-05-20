@@ -81,8 +81,7 @@ export class ChatCompletions extends OpenAPIRoute {
 
         let lastChunk = '';
         try {
-          let finished = false;
-          while (!finished) {
+          while (true) {
             const { done, value } = await reader.read();
             if (done) {
               // Before sending [DONE], try to parse the last chunk for token usage
@@ -100,7 +99,6 @@ export class ChatCompletions extends OpenAPIRoute {
               // Send the [DONE] marker
               const doneMsg = new TextEncoder().encode('data: [DONE]\n\n');
               await writer.write(doneMsg);
-              finished = true;
               break;
             }
 

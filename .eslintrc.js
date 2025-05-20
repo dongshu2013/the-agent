@@ -19,6 +19,10 @@ module.exports = {
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     // Allow declarations in case blocks
     'no-case-declarations': 'off',
+    // Allow empty blocks in specific cases
+    'no-empty': ['error', { allowEmptyCatch: true }],
+    // Allow while(true) loops but catch constant conditions elsewhere
+    'no-constant-condition': ['error', { checkLoops: false }],
   },
   overrides: [
     // Extension-specific overrides
