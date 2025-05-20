@@ -119,24 +119,28 @@ export class GetTelegramDialogs extends OpenAPIRoute {
       query: z.object({
         limit: z
           .string()
+          .nullable()
           .optional()
           .transform(val => (val ? parseInt(val, 10) : 100)),
         offset: z
           .string()
+          .nullable()
           .optional()
           .transform(val => (val ? parseInt(val, 10) : 0)),
-        chat_title: z.string().optional(),
+        chat_title: z.string().nullable().optional(),
         is_public: z
           .string()
+          .nullable()
           .optional()
           .transform(val => (val === 'true' ? true : val === 'false' ? false : undefined)),
         is_free: z
           .string()
+          .nullable()
           .optional()
           .transform(val => (val === 'true' ? true : val === 'false' ? false : undefined)),
-        status: z.string().optional(),
-        sort_by: z.string().optional().default('updated_at'),
-        sort_order: z.string().optional().default('desc'),
+        status: z.string().nullable().optional(),
+        sort_by: z.string().nullable().optional().default('updated_at'),
+        sort_order: z.string().nullable().optional().default('desc'),
       }),
     },
     responses: {
@@ -236,25 +240,29 @@ export class GetTelegramMessages extends OpenAPIRoute {
         chat_id: z.string(),
         limit: z
           .string()
+          .nullable()
           .optional()
           .transform(val => (val ? parseInt(val, 10) : 100)),
         offset: z
           .string()
+          .nullable()
           .optional()
           .transform(val => (val ? parseInt(val, 10) : 0)),
-        message_text: z.string().optional(),
-        sender_id: z.string().optional(),
-        sender_username: z.string().optional(),
+        message_text: z.string().nullable().optional(),
+        sender_id: z.string().nullable().optional(),
+        sender_username: z.string().nullable().optional(),
         start_timestamp: z
           .string()
+          .nullable()
           .optional()
           .transform(val => (val ? parseInt(val, 10) : undefined)),
         end_timestamp: z
           .string()
+          .nullable()
           .optional()
           .transform(val => (val ? parseInt(val, 10) : undefined)),
-        sort_by: z.string().optional().default('message_timestamp'),
-        sort_order: z.string().optional().default('desc'),
+        sort_by: z.string().nullable().optional().default('message_timestamp'),
+        sort_order: z.string().nullable().optional().default('desc'),
       }),
     },
     responses: {
@@ -406,25 +414,30 @@ export class SearchTelegramMessages extends OpenAPIRoute {
     request: {
       query: z.object({
         query: z.string(),
-        chat_id: z.string().optional(),
+        chat_id: z.string().nullable().optional(),
         top_k: z
           .string()
+          .nullable()
           .optional()
           .transform(val => (val ? parseInt(val, 10) : 10)),
         message_range: z
           .string()
+          .nullable()
           .optional()
           .transform(val => (val ? parseInt(val, 10) : 2)),
         threshold: z
           .string()
+          .nullable()
           .optional()
           .transform(val => (val ? parseFloat(val) : 0.7)),
         is_public: z
           .string()
+          .nullable()
           .optional()
           .transform(val => (val === 'true' ? true : val === 'false' ? false : undefined)),
         is_free: z
           .string()
+          .nullable()
           .optional()
           .transform(val => (val === 'true' ? true : val === 'false' ? false : undefined)),
       }),

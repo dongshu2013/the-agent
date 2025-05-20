@@ -6,8 +6,8 @@ export type MessageRole = z.infer<typeof MessageRoleSchema>;
 
 export const ToolCallResultSchema = z.object({
   success: z.boolean(),
-  data: z.any().optional(),
-  error: z.string().optional(),
+  data: z.any().nullable().optional(),
+  error: z.string().nullable().optional(),
 });
 export type ToolCallResult = z.infer<typeof ToolCallResultSchema>;
 
@@ -18,7 +18,7 @@ export const ToolCallSchema = z.object({
     name: z.string(),
     arguments: z.string(),
   }),
-  result: ToolCallResultSchema.optional(),
+  result: ToolCallResultSchema.nullable().optional(),
 });
 export type ToolCall = z.infer<typeof ToolCallSchema>;
 
@@ -31,11 +31,11 @@ export type TokenUsage = z.infer<typeof TokenUsageSchema>;
 
 export const ChatMessageSchema = z.object({
   role: MessageRoleSchema,
-  content: z.string().optional(),
-  name: z.string().optional(),
-  tool_calls: z.array(ToolCallSchema).optional(),
-  tool_call_id: z.string().optional(),
-  token_usage: TokenUsageSchema.optional(),
+  content: z.string().nullable().optional(),
+  name: z.string().nullable().optional(),
+  tool_calls: z.array(ToolCallSchema).nullable().optional(),
+  tool_call_id: z.string().nullable().optional(),
+  token_usage: TokenUsageSchema.nullable().optional(),
 });
 
 export type ChatMessage = z.infer<typeof ChatMessageSchema>;
@@ -48,13 +48,13 @@ export type Message = z.infer<typeof MessageSchema>;
 
 export const ConversationSchema = z.object({
   id: z.number(),
-  messages: z.array(MessageSchema).optional(),
+  messages: z.array(MessageSchema).nullable().optional(),
 });
 export type Conversation = z.infer<typeof ConversationSchema>;
 
 // conversation handlers
 export const CreateConversationRequestSchema = z.object({
-  id: z.number().optional(),
+  id: z.number().nullable().optional(),
 });
 export type CreateConversationRequest = z.infer<typeof CreateConversationRequestSchema>;
 
@@ -100,9 +100,9 @@ export const ChatCompletionRequestSchema = z.object({
       content: z.string(),
     })
   ),
-  stream: z.boolean().optional(),
-  temperature: z.number().optional(),
-  max_tokens: z.number().optional(),
+  stream: z.boolean().nullable().optional(),
+  temperature: z.number().nullable().optional(),
+  max_tokens: z.number().nullable().optional(),
 });
 export type ChatCompletionRequest = z.infer<typeof ChatCompletionRequestSchema>;
 
@@ -155,15 +155,15 @@ export const CreditLogSchema = z.object({
   id: z.number(),
   tx_credits: z.number(),
   tx_type: z.string(),
-  tx_reason: z.string().optional(),
-  model: z.string().optional(),
+  tx_reason: z.string().nullable().optional(),
+  model: z.string().nullable().optional(),
   created_at: z.string(),
 });
 export type CreditLog = z.infer<typeof CreditLogSchema>;
 
 export const GetUserResponseSchema = z.object({
   id: z.string(),
-  email: z.string().optional(),
+  email: z.string().nullable().optional(),
   api_key: z.string(),
   api_key_enabled: z.boolean(),
   balance: z.number(),
@@ -177,7 +177,7 @@ export const TelegramStatsSchema = z.object({
   data: z.object({
     totalDialogs: z.number(),
     totalMessages: z.number(),
-    lastSyncTime: z.string().optional(),
+    lastSyncTime: z.string().nullable().optional(),
   }),
 });
 export type TelegramStats = z.infer<typeof TelegramStatsSchema>;
@@ -215,8 +215,8 @@ export type RedeemCouponRequest = z.infer<typeof RedeemCouponRequestSchema>;
 
 export const RedeemCouponResponseSchema = z.object({
   success: z.boolean(),
-  credits: z.number().optional(),
-  error: z.string().optional(),
+  credits: z.number().nullable().optional(),
+  error: z.string().nullable().optional(),
 });
 export type RedeemCouponResponse = z.infer<typeof RedeemCouponResponseSchema>;
 
