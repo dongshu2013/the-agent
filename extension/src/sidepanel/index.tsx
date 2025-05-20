@@ -11,7 +11,7 @@ import {
   deleteConversation as deleteConv,
   getConversations,
 } from '../services/conversation';
-import { db, resetDB, UserInfo } from '~/utils/db';
+import { db, UserInfo } from '~/utils/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { ChatHandler } from '../services/chat-handler';
 import { env } from '~/utils/env';
@@ -152,10 +152,6 @@ const Sidepanel = () => {
         if (!newApiKey) {
           setLoginModalOpen(true);
           return;
-        }
-
-        if (newApiKey.key !== apiKey?.key) {
-          await resetDB();
         }
 
         if (newApiKey.enabled) {
