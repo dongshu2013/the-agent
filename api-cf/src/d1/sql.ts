@@ -1,6 +1,6 @@
 export const CREATE_USER_TABLE_QUERY = `CREATE TABLE IF NOT EXISTS users(
     id TEXT PRIMARY KEY,
-    user_email TEXT,
+    user_email TEXT UNIQUE,
     api_key TEXT NOT NULL,
     api_key_enabled INTEGER NOT NULL DEFAULT 1 CHECK(api_key_enabled IN (0, 1)),
     balance INTEGER NOT NULL DEFAULT 0,
