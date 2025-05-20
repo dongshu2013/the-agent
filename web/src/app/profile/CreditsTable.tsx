@@ -3,9 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { CreditLog, TransactionReason, TransactionType } from '@/types';
-import { getCreditHistory } from '@/lib/api_service';
 import { formatCredits } from '@/lib/utils';
+import { createApiClient } from '@/lib/api_client';
+import {
+  CreditLog,
+  TransactionReason,
+  TransactionType,
+  TransactionTypeSchema,
+} from '@the-agent/shared';
 
 interface FilterOptions {
   models: string[];
@@ -42,12 +47,12 @@ export const CreditsTable = () => {
 
     setIsLoading(true);
     try {
-      const { history } = await getCreditHistory(user.idToken, {
+      const { history } = await createApiClient(user.idToken).getCreditHistory({
         startDate,
         endDate,
         model: selectedModel,
-        transType: selectedTxType as TransactionType,
-        transReason: selectedTxReason as TransactionReason,
+        txType: selectedTxType as TransactionType,
+        txReason: selectedTxReason as TransactionReason,
       });
 
       setCredits(history || []);
@@ -80,17 +85,6 @@ export const CreditsTable = () => {
       return format(new Date(dateString), 'yyyy-MM-dd HH:mm:ss');
     } catch (e) {
       return dateString;
-    }
-  };
-
-  const formatTxType = (type: TransactionType) => {
-    switch (type) {
-      case 'credit':
-        return 'Credit';
-      case 'debit':
-        return 'Debit';
-      default:
-        return type;
     }
   };
 
@@ -265,19 +259,19 @@ export const CreditsTable = () => {
                     {formatDate(credit.created_at)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                    {formatTxReason(credit.tx_reason)}
+                    {formatTxReason(credit.tx_reason as TransactionReason)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                     {credit.model || '-'}
                   </td>
                   <td
                     className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                      credit.tx_type === TransactionType.CREDIT
+                      credit.tx_type === TransactionTypeSchema.enum.credit
                         ? 'text-red-600 dark:text-red-400'
                         : 'text-green-600 dark:text-green-400'
                     }`}
                   >
-                    {credit.tx_type === TransactionType.CREDIT ? '-' : '+'}
+                    {credit.tx_type === TransactionTypeSchema.enum.credit ? '-' : '+'}
                     {formatCredits(credit.tx_credits, 6)}
                   </td>
                 </tr>

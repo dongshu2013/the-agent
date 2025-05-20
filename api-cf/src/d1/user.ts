@@ -1,17 +1,17 @@
-import { GatewayServiceError } from '../types/service';
-import { getCreditFromAmount } from '../utils/common';
 import {
   CreditLog,
-  TransactionReason,
-  TransactionType,
-  UserInfo,
-} from './types';
+  GetUserResponse,
+  TransactionReasonSchema,
+  TransactionTypeSchema,
+} from '@the-agent/shared';
+import { GatewayServiceError } from '../types/service';
+import { getCreditFromAmount } from '../utils/common';
 
 export async function createUser(
   env: Env,
   userId: string,
   email: string
-): Promise<UserInfo> {
+): Promise<GetUserResponse> {
   const db = env.DB;
   const apiKey = crypto.randomUUID();
   const result = await db
@@ -35,7 +35,7 @@ export async function createUser(
 export async function getUserInfo(
   env: Env,
   userId: string
-): Promise<UserInfo | null> {
+): Promise<GetUserResponse | null> {
   const db = env.DB;
   const result = await db
     .prepare(
@@ -226,8 +226,8 @@ export async function deductUserCredits(
     insertTxStmt.bind(
       userId,
       deductCredits,
-      TransactionType.CREDIT,
-      TransactionReason.COMPLETION,
+      TransactionTypeSchema.enum.debit,
+      TransactionReasonSchema.enum.completion,
       model
     ),
     updateBalanceStmt.bind(deductCredits, userId),

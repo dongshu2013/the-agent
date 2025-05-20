@@ -8,8 +8,9 @@ import { RefreshCw } from 'lucide-react';
 import { PaymentModal } from './PaymentModal';
 import { CreditsCharts } from './CreditsCharts';
 import { CreditsTable } from './CreditsTable';
-import { getTelegramStats, redeemCouponCode } from '@/lib/api_service';
 import { formatCredits } from '@/lib/utils';
+import { createApiClient } from '@/lib/api_client';
+import { TelegramStats } from '@the-agent/shared/dist/types/api';
 
 function CouponCodeModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { user, refreshUserData } = useAuth();
@@ -27,7 +28,7 @@ function CouponCodeModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
     setSuccess('');
 
     try {
-      const result = await redeemCouponCode(user.idToken, code);
+      const result = await createApiClient(user.idToken).redeemCoupon(code);
       if (result.success && result.credits) {
         const formattedCredits = new Intl.NumberFormat('en-US', {
           style: 'currency',
@@ -113,10 +114,7 @@ export default function ProfilePage() {
   const [isCopied, setIsCopied] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
-  const [telegramStats, setTelegramStats] = useState<{
-    channels_count: number;
-    messages_count: number;
-  } | null>(null);
+  const [telegramStats, setTelegramStats] = useState<TelegramStats | null>(null);
   const [isLoadingTelegramStats, setIsLoadingTelegramStats] = useState(false);
   const router = useRouter();
   const [buyCreditsOpen, setBuyCreditsOpen] = useState(false);
@@ -141,7 +139,7 @@ export default function ProfilePage() {
     if (!user || !user.idToken) return;
     setIsLoadingTelegramStats(true);
     try {
-      const data = await getTelegramStats(user.idToken);
+      const data = await createApiClient(user.idToken).getTelegramStats();
       setTelegramStats(data);
     } catch (error) {
       console.error('Error fetching Telegram stats:', error);
@@ -358,8 +356,8 @@ export default function ProfilePage() {
                 <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
                   {isLoadingTelegramStats
                     ? 'Loading Telegram data...'
-                    : telegramStats && telegramStats.channels_count > 0
-                    ? `${telegramStats.channels_count} chats imported, ${telegramStats.messages_count} messages imported`
+                    : telegramStats && telegramStats.data.totalDialogs > 0
+                    ? `${telegramStats.data.totalDialogs} chats imported, ${telegramStats.data.totalMessages} messages imported`
                     : 'No data has been imported yet...'}
                 </p>
                 <button
@@ -468,7 +466,7 @@ export default function ProfilePage() {
 
             <div className="flex items-center space-x-4">
               <div className="text-lg font-bold text-gray-900 dark:text-white">
-                ${formatCredits(user.credits, 2)}
+                ${formatCredits(user.balance, 2)}
               </div>
               <div className="flex space-x-2">
                 <button

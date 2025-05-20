@@ -9,7 +9,10 @@ import {
   rotateApiKey,
   toggleApiKeyEnabled,
 } from '../d1/user';
-import { TransactionReason, TransactionType } from '../d1/types';
+import {
+  TransactionReasonSchema,
+  TransactionTypeSchema,
+} from '@the-agent/shared';
 
 export class GetUser extends OpenAPIRoute {
   schema = {
@@ -138,8 +141,6 @@ export class GetCreditLogs extends OpenAPIRoute {
       transReason: query.transReason,
       limit: query.limit ? parseInt(query.limit, 10) : undefined,
     };
-
-    // console.log('Credit history query options:', options);
 
     const creditLogs = await getCreditLogs(c.env, userId, options);
     return c.json({ history: creditLogs }, 200);
@@ -283,8 +284,8 @@ export class RedeemCouponCode extends OpenAPIRoute {
       ).bind(
         userId,
         coupon.credits,
-        TransactionType.DEBIT,
-        TransactionReason.COUPON_CODE
+        TransactionTypeSchema.enum.debit,
+        TransactionReasonSchema.enum.coupon_code
       ),
     ]);
 

@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { Expand } from 'lucide-react';
-import { getCreditHistory } from '@/lib/api_service';
-import { CreditLog, TransactionType } from '@/types';
 import { formatCredits } from '@/lib/utils';
+import { createApiClient } from '@/lib/api_client';
+import { CreditLog } from '@the-agent/shared';
 
 interface ChartData {
   name: string;
@@ -34,7 +34,7 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
 
     setIsLoading(true);
     try {
-      const { history } = await getCreditHistory(user.idToken, {});
+      const { history } = await createApiClient(user.idToken).getCreditHistory({});
       // console.log('---history:', history);
       if (history) {
         processCreditsData(history);
@@ -69,7 +69,7 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
       const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
 
       // Only process debit transactions for spend data
-      if (transaction.tx_type === TransactionType.CREDIT) {
+      if (transaction.tx_type === 'credit') {
         // Add to daily spend
         if (!dailySpend[dateKey]) {
           dailySpend[dateKey] = 0;

@@ -6,9 +6,6 @@
     "dev": "pnpm -r dev",
     "prepare": "husky"
   },
-  "workspaces": [
-    "packages/*"
-  ],
   "devDependencies": {
     "husky": "^9.1.7"
   }

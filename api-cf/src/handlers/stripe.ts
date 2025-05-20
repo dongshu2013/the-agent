@@ -5,7 +5,7 @@ import { z } from 'zod';
 import Stripe from 'stripe';
 import { createOrder, finalizeOrder, updateOrderStatus } from '../d1/payment';
 import { GatewayServiceError } from '../types/service';
-import { OrderStatus } from '../d1/types';
+import { OrderStatusSchema } from '@the-agent/shared';
 
 export function getStripe(env: Env) {
   if (!env.STRIPE_PRIVATE_KEY) {
@@ -36,7 +36,7 @@ export class StripeCheckout extends OpenAPIRoute {
         content: {
           'application/json': {
             schema: z.object({
-              order_id: z.string(),
+              order_id: z.number(),
               session_id: z.string(),
               public_key: z.string(),
             }),
@@ -129,7 +129,7 @@ export class StripeWebhook extends OpenAPIRoute {
         }
         await finalizeOrder(
           c.env,
-          completed.metadata.orderId,
+          Number(completed.metadata.orderId),
           completed.id,
           completed.amount_subtotal
         );
@@ -142,9 +142,9 @@ export class StripeWebhook extends OpenAPIRoute {
         }
         await updateOrderStatus(
           c.env,
-          expired.metadata?.orderId,
+          Number(expired.metadata?.orderId),
           expired.id,
-          OrderStatus.CANCELLED
+          OrderStatusSchema.enum.cancelled
         );
         break;
       case 'checkout.session.async_payment_failed':
@@ -155,9 +155,9 @@ export class StripeWebhook extends OpenAPIRoute {
         }
         await updateOrderStatus(
           c.env,
-          failed.metadata?.orderId,
+          Number(failed.metadata?.orderId),
           failed.id,
-          OrderStatus.FAILED
+          OrderStatusSchema.enum.failed
         );
         break;
       default:

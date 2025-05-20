@@ -8,6 +8,21 @@ import {
   CreateConversationResponseSchema,
   DeleteConversationResponseSchema,
   ListConversationsResponseSchema,
+  type GetUserResponse,
+  type ToggleApiKeyRequest,
+  type RotateApiKeyResponse,
+  type GetCreditHistoryResponse,
+  type RedeemCouponResponse,
+  type StripeCheckoutResponse,
+  type TelegramStats,
+  GetUserResponseSchema,
+  RotateApiKeyResponseSchema,
+  GetCreditHistoryResponseSchema,
+  RedeemCouponResponseSchema,
+  StripeCheckoutResponseSchema,
+  TelegramStatsSchema,
+  TransactionType,
+  TransactionReason,
 } from '../types/api';
 
 export interface APIClientConfig {
@@ -117,6 +132,89 @@ export class APIClient {
         method: 'GET',
       },
       ListConversationsResponseSchema
+    );
+  }
+
+  // User endpoints
+  async getUser(): Promise<GetUserResponse> {
+    return this.request(
+      '/v1/user',
+      { method: 'GET' },
+      GetUserResponseSchema
+    );
+  }
+
+  async toggleApiKey(data: ToggleApiKeyRequest): Promise<void> {
+    await this.request(
+      '/v1/user/toggle_api_key_enabled',
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    );
+  }
+
+  async rotateApiKey(): Promise<RotateApiKeyResponse> {
+    return this.request(
+      '/v1/user/rotate_api_key',
+      { method: 'POST' },
+      RotateApiKeyResponseSchema
+    );
+  }
+
+  async getCreditHistory(params?: {
+    startDate?: string;
+    endDate?: string;
+    model?: string;
+    txType?: TransactionType;
+    txReason?: TransactionReason;
+  }): Promise<GetCreditHistoryResponse> {
+    const queryParams = new URLSearchParams();
+    if (params?.startDate) queryParams.append('startDate', params.startDate);
+    if (params?.endDate) queryParams.append('endDate', params.endDate);
+    if (params?.model) queryParams.append('model', params.model);
+    if (params?.txType) queryParams.append('transType', params.txType);
+    if (params?.txReason) queryParams.append('transReason', params.txReason);
+
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/v1/user/credit_history?${queryString}` : '/v1/user/credit_history';
+
+    return this.request(
+      endpoint,
+      { method: 'GET' },
+      GetCreditHistoryResponseSchema
+    );
+  }
+
+  async redeemCoupon(code: string): Promise<RedeemCouponResponse> {
+    return this.request(
+      '/v1/user/redeem_coupon_code',
+      {
+        method: 'POST',
+        body: JSON.stringify({ code }),
+      },
+      RedeemCouponResponseSchema
+    );
+  }
+
+  // Stripe endpoints
+  async createCheckout(amount: number): Promise<StripeCheckoutResponse> {
+    return this.request(
+      '/v1/stripe/checkout',
+      {
+        method: 'POST',
+        body: JSON.stringify({ amount }),
+      },
+      StripeCheckoutResponseSchema
+    );
+  }
+
+  // Telegram endpoints
+  async getTelegramStats(): Promise<TelegramStats> {
+    return this.request(
+      '/v1/tg/stats',
+      { method: 'GET' },
+      TelegramStatsSchema
     );
   }
 }
