@@ -1,14 +1,5 @@
-import { ToolCallSchema } from '@the-agent/shared';
+import { ChatMessageSchema } from '@the-agent/shared';
 import { z } from 'zod';
-
-// Chat message types
-export const ChatMessageSchema = z.object({
-  role: z.string(),
-  content: z.string(),
-  tool_call_id: z.string().nullable().optional(),
-  tool_calls: z.array(ToolCallSchema).nullable().optional(),
-  name: z.string().nullable().optional(),
-});
 
 // Chat completion parameters
 export const ChatCompletionCreateParamSchema = z.object({
