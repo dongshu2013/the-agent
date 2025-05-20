@@ -5,7 +5,7 @@ export class OpenAIClient {
   private apiKey: string;
   private baseURL: string;
 
-  constructor(apiKey: string, baseURL = 'https://api.openai.com/v1') {
+  constructor(apiKey: string, baseURL: string) {
     this.apiKey = apiKey;
     this.baseURL = baseURL;
   }
@@ -68,7 +68,7 @@ export class OpenAIClient {
 // Factory function to create an OpenAI client
 export function createOpenAIClient(
   apiKey: string,
-  baseURL?: string
+  baseURL: string
 ): OpenAIClient {
   return new OpenAIClient(apiKey, baseURL);
 }
