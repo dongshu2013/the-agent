@@ -6,12 +6,12 @@ import { UserInfo } from '~/utils/db';
 
 interface LoginModalProps {
   open: boolean;
-  showSwitch: boolean;
+  isSwitch?: boolean;
   currentUser?: UserInfo | null;
   onClose?: () => void;
 }
 
-export default function LoginModal({ open, showSwitch, currentUser, onClose }: LoginModalProps) {
+export default function LoginModal({ open, isSwitch, currentUser, onClose }: LoginModalProps) {
   const handleLogin = () => {
     const webUrl = env.WEB_URL;
     window.open(webUrl, '_blank');
@@ -71,13 +71,11 @@ export default function LoginModal({ open, showSwitch, currentUser, onClose }: L
           }}
         />
       </div>
-      {showSwitch ? (
+      {isSwitch ? (
         <>
-          <div style={{ fontWeight: 500, marginBottom: 16 }}>
-            New Mysta account detected
-            <div style={{ fontSize: 14, color: '#333', marginTop: 8 }}>
-              Account: <span style={{ color: '#888' }}>{getDisplayName(currentUser)}</span>
-            </div>
+          <div style={{ fontWeight: 500, textAlign: 'center' }}>New Mysta Account Detected</div>
+          <div style={{ fontSize: 14, color: '#333', textAlign: 'center' }}>
+            <span style={{ color: '#888' }}>{getDisplayName(currentUser)}</span>
           </div>
           <button
             onClick={onClose}
@@ -91,7 +89,7 @@ export default function LoginModal({ open, showSwitch, currentUser, onClose }: L
               color: '#222',
               fontSize: 18,
               fontWeight: 500,
-              marginBottom: 8,
+              marginTop: 16,
               cursor: 'pointer',
             }}
           >

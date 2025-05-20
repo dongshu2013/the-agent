@@ -159,6 +159,7 @@ const Sidepanel = () => {
         }
 
         if (newApiKey.enabled) {
+          setShowSwitch(true);
           await initializeUserAndData(newApiKey);
         } else {
           setLoginModalOpen(true);
@@ -486,12 +487,12 @@ const Sidepanel = () => {
         />
       )}
 
+      <LoginModal open={loginModalOpen} isSwitch={false} currentUser={currentUser} />
       <LoginModal
-        open={loginModalOpen}
-        showSwitch={showSwitch}
+        open={showSwitch}
+        isSwitch={true}
         currentUser={currentUser}
         onClose={() => {
-          setLoginModalOpen(false);
           setShowSwitch(false);
         }}
       />
