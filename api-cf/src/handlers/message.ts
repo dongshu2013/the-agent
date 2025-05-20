@@ -1,15 +1,11 @@
 import { OpenAPIRoute } from 'chanfana';
 import { z } from 'zod';
 import { Context } from 'hono';
-import { ChatMessageSchema } from '../types/chat';
+import { MessageSchema } from '@the-agent/shared';
 import { GatewayServiceError } from '../types/service';
 import { Message } from '../do/types';
 import { deductUserCredits } from '../d1/user';
 import { EMBEDDING_MODEL } from '../utils/common';
-const MessageSchema = ChatMessageSchema.extend({
-  id: z.number(),
-  conversation_id: z.number(),
-});
 
 export class SaveMessage extends OpenAPIRoute {
   schema = {

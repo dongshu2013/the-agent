@@ -1,9 +1,12 @@
 import { OpenAPIRoute } from 'chanfana';
-import { z } from 'zod';
 import { Context } from 'hono';
+import { z } from 'zod';
 import { createOpenAIClient } from '../utils/openai';
 import { getUserBalance, deductUserCredits } from '../d1/user';
-import { ChatCompletionCreateParamSchema } from '../types/chat';
+import {
+  ChatCompletionRequestSchema,
+  ChatCompletionResponseSchema,
+} from '@the-agent/shared';
 import {
   calculateCredits,
   createStreamingTokenTracker,
@@ -16,7 +19,7 @@ export class ChatCompletions extends OpenAPIRoute {
       body: {
         content: {
           'application/json': {
-            schema: ChatCompletionCreateParamSchema,
+            schema: ChatCompletionRequestSchema,
           },
         },
       },
@@ -26,7 +29,7 @@ export class ChatCompletions extends OpenAPIRoute {
         description: 'Chat completion response',
         content: {
           'application/json': {
-            schema: z.object({}).passthrough(),
+            schema: ChatCompletionResponseSchema,
           },
         },
       },

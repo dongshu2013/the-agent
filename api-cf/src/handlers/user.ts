@@ -12,6 +12,11 @@ import {
 import {
   TransactionReasonSchema,
   TransactionTypeSchema,
+  GetUserResponseSchema,
+  RotateApiKeyResponseSchema,
+  ToggleApiKeyRequestSchema,
+  GetCreditHistoryResponseSchema,
+  RedeemCouponResponseSchema,
 } from '@the-agent/shared';
 
 export class GetUser extends OpenAPIRoute {
@@ -21,13 +26,7 @@ export class GetUser extends OpenAPIRoute {
         description: 'User info',
         content: {
           'application/json': {
-            schema: z.object({
-              api_key: z.string(),
-              api_key_enabled: z.boolean(),
-              balance: z.number(),
-              email: z.string(),
-              user_id: z.string(),
-            }),
+            schema: GetUserResponseSchema,
           },
         },
       },
@@ -110,18 +109,7 @@ export class GetCreditLogs extends OpenAPIRoute {
         description: 'Credit logs',
         content: {
           'application/json': {
-            schema: z.object({
-              history: z.array(
-                z.object({
-                  id: z.number(),
-                  tx_credits: z.number(),
-                  tx_type: z.string(),
-                  tx_reason: z.string().optional(),
-                  model: z.string().optional(),
-                  created_at: z.string(),
-                })
-              ),
-            }),
+            schema: GetCreditHistoryResponseSchema,
           },
         },
       },
@@ -154,9 +142,7 @@ export class RotateApiKey extends OpenAPIRoute {
         description: 'Rotate API key',
         content: {
           'application/json': {
-            schema: z.object({
-              newApiKey: z.string(),
-            }),
+            schema: RotateApiKeyResponseSchema,
           },
         },
       },
@@ -176,9 +162,7 @@ export class ToggleApiKeyEnabled extends OpenAPIRoute {
       body: {
         content: {
           'application/json': {
-            schema: z.object({
-              enabled: z.boolean(),
-            }),
+            schema: ToggleApiKeyRequestSchema,
           },
         },
       },
@@ -223,10 +207,7 @@ export class RedeemCouponCode extends OpenAPIRoute {
         description: 'Redeem coupon code',
         content: {
           'application/json': {
-            schema: z.object({
-              success: z.boolean(),
-              credits: z.number(),
-            }),
+            schema: RedeemCouponResponseSchema,
           },
         },
       },

@@ -4,21 +4,11 @@ import { z } from 'zod';
 export const MessageRoleSchema = z.enum(['system', 'user', 'assistant', 'tooling']);
 export type MessageRole = z.infer<typeof MessageRoleSchema>;
 
-export const MessageContentSchema = z.array(
-  z.object({
-    type: z.enum(['text', 'image_url']),
-    text: z.string().optional(),
-    image_url: z.object({ url: z.string() }).optional(),
-  })
-);
-export type MessageContent = z.infer<typeof MessageContentSchema>;
-
 export const MessageSchema = z.object({
-  id: z.string(),
+  id: z.number(),
   role: MessageRoleSchema,
-  content: MessageContentSchema,
-  created_at: z.string(),
-  conversation_id: z.string(),
+  content: z.string(),
+  conversation_id: z.number(),
   tool_calls: z.any().optional(),
   tool_call_id: z.string().optional(),
 });

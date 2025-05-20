@@ -2,6 +2,7 @@ import { OpenAPIRoute } from 'chanfana';
 import { z } from 'zod';
 import { Context } from 'hono';
 import { corsHeaders } from '../utils/common';
+import { TelegramStatsSchema } from '@the-agent/shared';
 import {
   createSuccessResponse,
   createErrorResponse,
@@ -71,13 +72,7 @@ export class GetTelegramStats extends OpenAPIRoute {
         description: 'Telegram stats',
         content: {
           'application/json': {
-            schema: z.object({
-              success: z.boolean(),
-              data: z.object({
-                channels_count: z.number(),
-                messages_count: z.number(),
-              }),
-            }),
+            schema: TelegramStatsSchema,
           },
         },
       },

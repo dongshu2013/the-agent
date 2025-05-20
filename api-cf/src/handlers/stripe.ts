@@ -5,7 +5,10 @@ import { z } from 'zod';
 import Stripe from 'stripe';
 import { createOrder, finalizeOrder, updateOrderStatus } from '../d1/payment';
 import { GatewayServiceError } from '../types/service';
-import { OrderStatusSchema } from '@the-agent/shared';
+import {
+  OrderStatusSchema,
+  StripeCheckoutResponseSchema,
+} from '@the-agent/shared';
 
 export function getStripe(env: Env) {
   if (!env.STRIPE_PRIVATE_KEY) {
@@ -32,14 +35,10 @@ export class StripeCheckout extends OpenAPIRoute {
     },
     responses: {
       '200': {
-        description: 'User info',
+        description: 'Stripe checkout session',
         content: {
           'application/json': {
-            schema: z.object({
-              order_id: z.number(),
-              session_id: z.string(),
-              public_key: z.string(),
-            }),
+            schema: StripeCheckoutResponseSchema,
           },
         },
       },
