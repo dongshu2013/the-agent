@@ -71,7 +71,7 @@ function CouponCodeModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
           <input
             type="text"
             value={code}
-            onChange={(e) => setCode(e.target.value.trim().toUpperCase())}
+            onChange={e => setCode(e.target.value.trim().toUpperCase())}
             placeholder="Enter coupon code"
             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md mb-4 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             disabled={isSubmitting}
@@ -357,8 +357,8 @@ export default function ProfilePage() {
                   {isLoadingTelegramStats
                     ? 'Loading Telegram data...'
                     : telegramStats && telegramStats.data.totalDialogs > 0
-                    ? `${telegramStats.data.totalDialogs} chats imported, ${telegramStats.data.totalMessages} messages imported`
-                    : 'No data has been imported yet...'}
+                      ? `${telegramStats.data.totalDialogs} chats imported, ${telegramStats.data.totalMessages} messages imported`
+                      : 'No data has been imported yet...'}
                 </p>
                 <button
                   className="px-4 py-2 text-sm font-medium text-white bg-black rounded-md hover:opacity-70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black transition-opacity"

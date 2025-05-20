@@ -59,12 +59,12 @@ export const CreditsTable = () => {
 
       // Extract unique values for filter options from the history data
       if (history && history.length > 0) {
-        const models = Array.from(new Set(history.map((entry) => entry.model).filter(Boolean)));
+        const models = Array.from(new Set(history.map(entry => entry.model).filter(Boolean)));
         const txTypes = Array.from(
-          new Set(history.map((entry) => entry.tx_type)),
+          new Set(history.map(entry => entry.tx_type))
         ) as TransactionType[];
         const txReasons = Array.from(
-          new Set(history.map((entry) => entry.tx_reason)),
+          new Set(history.map(entry => entry.tx_reason))
         ) as TransactionReason[];
 
         setFilterOptions({
@@ -127,7 +127,7 @@ export const CreditsTable = () => {
               type="date"
               id="startDate"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={e => setStartDate(e.target.value)}
               className="w-full h-9 rounded-md border border-gray-300 dark:border-gray-600 px-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
@@ -143,7 +143,7 @@ export const CreditsTable = () => {
               type="date"
               id="endDate"
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              onChange={e => setEndDate(e.target.value)}
               className="w-full h-9 rounded-md border border-gray-300 dark:border-gray-600 px-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
@@ -158,11 +158,11 @@ export const CreditsTable = () => {
             <select
               id="model"
               value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
+              onChange={e => setSelectedModel(e.target.value)}
               className="w-full h-9 rounded-md border border-gray-300 dark:border-gray-600 px-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               <option value="">All Models</option>
-              {filterOptions.models.map((model) => (
+              {filterOptions.models.map(model => (
                 <option key={model} value={model}>
                   {model}
                 </option>
@@ -180,11 +180,11 @@ export const CreditsTable = () => {
             <select
               id="transReason"
               value={selectedTxReason}
-              onChange={(e) => setSelectedTxReason(e.target.value as TransactionReason | '')}
+              onChange={e => setSelectedTxReason(e.target.value as TransactionReason | '')}
               className="w-full h-9 rounded-md border border-gray-300 dark:border-gray-600 px-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               <option value="">All Types</option>
-              {filterOptions.txReasons.map((reason) => (
+              {filterOptions.txReasons.map(reason => (
                 <option key={reason} value={reason}>
                   {formatTxReason(reason)}
                 </option>
@@ -253,7 +253,7 @@ export const CreditsTable = () => {
                 </td>
               </tr>
             ) : (
-              credits.map((credit) => (
+              credits.map(credit => (
                 <tr key={credit.id} className="hover:bg-gray-100 dark:hover:bg-gray-800">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
                     {formatDate(credit.created_at)}

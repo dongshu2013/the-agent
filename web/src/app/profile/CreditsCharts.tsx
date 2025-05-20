@@ -51,7 +51,7 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
   const processCreditsData = (credits: CreditLog[]) => {
     // Sort by date
     const sortedCredits = [...credits].sort(
-      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
     );
 
     // Group by day for the chart
@@ -64,7 +64,7 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
     let daySpendTotal = 0;
     let weekSpendTotal = 0;
 
-    sortedCredits.forEach((transaction) => {
+    sortedCredits.forEach(transaction => {
       const date = new Date(transaction.created_at);
       const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
 

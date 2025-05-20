@@ -3,11 +3,7 @@ import { z } from 'zod';
 import { Context } from 'hono';
 import { corsHeaders } from '../utils/common';
 import { TelegramStatsSchema } from '@the-agent/shared';
-import {
-  createSuccessResponse,
-  createErrorResponse,
-  ApiErrorCode,
-} from '../types/api';
+import { createSuccessResponse, createErrorResponse, ApiErrorCode } from '../types/api';
 
 // ===== GET MY CHAT =====
 
@@ -124,24 +120,20 @@ export class GetTelegramDialogs extends OpenAPIRoute {
         limit: z
           .string()
           .optional()
-          .transform((val) => (val ? parseInt(val, 10) : 100)),
+          .transform(val => (val ? parseInt(val, 10) : 100)),
         offset: z
           .string()
           .optional()
-          .transform((val) => (val ? parseInt(val, 10) : 0)),
+          .transform(val => (val ? parseInt(val, 10) : 0)),
         chat_title: z.string().optional(),
         is_public: z
           .string()
           .optional()
-          .transform((val) =>
-            val === 'true' ? true : val === 'false' ? false : undefined
-          ),
+          .transform(val => (val === 'true' ? true : val === 'false' ? false : undefined)),
         is_free: z
           .string()
           .optional()
-          .transform((val) =>
-            val === 'true' ? true : val === 'false' ? false : undefined
-          ),
+          .transform(val => (val === 'true' ? true : val === 'false' ? false : undefined)),
         status: z.string().optional(),
         sort_by: z.string().optional().default('updated_at'),
         sort_order: z.string().optional().default('desc'),
@@ -226,10 +218,7 @@ export class GetTelegramDialogs extends OpenAPIRoute {
           success: false,
           error: {
             code: 'INTERNAL_ERROR',
-            message:
-              error instanceof Error
-                ? error.message
-                : 'An unknown error occurred',
+            message: error instanceof Error ? error.message : 'An unknown error occurred',
           },
         },
         500
@@ -248,22 +237,22 @@ export class GetTelegramMessages extends OpenAPIRoute {
         limit: z
           .string()
           .optional()
-          .transform((val) => (val ? parseInt(val, 10) : 100)),
+          .transform(val => (val ? parseInt(val, 10) : 100)),
         offset: z
           .string()
           .optional()
-          .transform((val) => (val ? parseInt(val, 10) : 0)),
+          .transform(val => (val ? parseInt(val, 10) : 0)),
         message_text: z.string().optional(),
         sender_id: z.string().optional(),
         sender_username: z.string().optional(),
         start_timestamp: z
           .string()
           .optional()
-          .transform((val) => (val ? parseInt(val, 10) : undefined)),
+          .transform(val => (val ? parseInt(val, 10) : undefined)),
         end_timestamp: z
           .string()
           .optional()
-          .transform((val) => (val ? parseInt(val, 10) : undefined)),
+          .transform(val => (val ? parseInt(val, 10) : undefined)),
         sort_by: z.string().optional().default('message_timestamp'),
         sort_order: z.string().optional().default('desc'),
       }),
@@ -348,9 +337,7 @@ export class GetTelegramMessages extends OpenAPIRoute {
       const startTimestamp = query.start_timestamp
         ? parseInt(query.start_timestamp, 10)
         : undefined;
-      const endTimestamp = query.end_timestamp
-        ? parseInt(query.end_timestamp, 10)
-        : undefined;
+      const endTimestamp = query.end_timestamp ? parseInt(query.end_timestamp, 10) : undefined;
       const sortBy = query.sort_by || 'message_timestamp';
       const sortOrder = query.sort_order || 'desc';
 
@@ -384,8 +371,7 @@ export class GetTelegramMessages extends OpenAPIRoute {
       // Handle specific error cases
       if (
         error instanceof Error &&
-        (error.message.includes('not found') ||
-          error.message.includes('permission'))
+        (error.message.includes('not found') || error.message.includes('permission'))
       ) {
         return c.json(
           {
@@ -404,10 +390,7 @@ export class GetTelegramMessages extends OpenAPIRoute {
           success: false,
           error: {
             code: 'INTERNAL_ERROR',
-            message:
-              error instanceof Error
-                ? error.message
-                : 'An unknown error occurred',
+            message: error instanceof Error ? error.message : 'An unknown error occurred',
           },
         },
         500
@@ -427,27 +410,23 @@ export class SearchTelegramMessages extends OpenAPIRoute {
         top_k: z
           .string()
           .optional()
-          .transform((val) => (val ? parseInt(val, 10) : 10)),
+          .transform(val => (val ? parseInt(val, 10) : 10)),
         message_range: z
           .string()
           .optional()
-          .transform((val) => (val ? parseInt(val, 10) : 2)),
+          .transform(val => (val ? parseInt(val, 10) : 2)),
         threshold: z
           .string()
           .optional()
-          .transform((val) => (val ? parseFloat(val) : 0.7)),
+          .transform(val => (val ? parseFloat(val) : 0.7)),
         is_public: z
           .string()
           .optional()
-          .transform((val) =>
-            val === 'true' ? true : val === 'false' ? false : undefined
-          ),
+          .transform(val => (val === 'true' ? true : val === 'false' ? false : undefined)),
         is_free: z
           .string()
           .optional()
-          .transform((val) =>
-            val === 'true' ? true : val === 'false' ? false : undefined
-          ),
+          .transform(val => (val === 'true' ? true : val === 'false' ? false : undefined)),
       }),
     },
     responses: {
@@ -548,10 +527,7 @@ export class SearchTelegramMessages extends OpenAPIRoute {
           success: false,
           error: {
             code: 'INTERNAL_ERROR',
-            message:
-              error instanceof Error
-                ? error.message
-                : 'An unknown error occurred',
+            message: error instanceof Error ? error.message : 'An unknown error occurred',
           },
         },
         500
@@ -638,10 +614,7 @@ export class SyncTelegramChat extends OpenAPIRoute {
           success: false,
           error: {
             code: 'INTERNAL_ERROR',
-            message:
-              error instanceof Error
-                ? error.message
-                : 'An unknown error occurred',
+            message: error instanceof Error ? error.message : 'An unknown error occurred',
           },
         },
         500
@@ -746,8 +719,7 @@ export class SyncTelegramMessages extends OpenAPIRoute {
       // Handle specific error cases
       if (
         error instanceof Error &&
-        (error.message.includes('not found') ||
-          error.message.includes('permission'))
+        (error.message.includes('not found') || error.message.includes('permission'))
       ) {
         return c.json(
           {
@@ -766,10 +738,7 @@ export class SyncTelegramMessages extends OpenAPIRoute {
           success: false,
           error: {
             code: 'INTERNAL_ERROR',
-            message:
-              error instanceof Error
-                ? error.message
-                : 'An unknown error occurred',
+            message: error instanceof Error ? error.message : 'An unknown error occurred',
           },
         },
         500

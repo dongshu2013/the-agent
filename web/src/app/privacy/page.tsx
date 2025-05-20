@@ -9,9 +9,9 @@ export default function TermsOfService() {
 
   useEffect(() => {
     fetch('/content/privacy.md')
-      .then((res) => res.text())
-      .then((text) => setContent(text))
-      .catch((error) => console.error('Error loading Privacy Policy:', error));
+      .then(res => res.text())
+      .then(text => setContent(text))
+      .catch(error => console.error('Error loading Privacy Policy:', error));
   }, []);
 
   return (

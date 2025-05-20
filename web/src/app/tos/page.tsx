@@ -9,9 +9,9 @@ export default function TermsOfService() {
 
   useEffect(() => {
     fetch('/content/tos.md')
-      .then((res) => res.text())
-      .then((text) => setContent(text))
-      .catch((error) => console.error('Error loading Terms of Service:', error));
+      .then(res => res.text())
+      .then(text => setContent(text))
+      .catch(error => console.error('Error loading Terms of Service:', error));
   }, []);
 
   return (

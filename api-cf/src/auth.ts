@@ -5,11 +5,7 @@ import { GatewayServiceContext, GatewayServiceError } from './types/service';
 import { getUserFromApiKey } from './d1/user';
 import { FIREBASE_PROJECT_ID } from './utils/common';
 
-async function validateApiKey(
-  c: GatewayServiceContext,
-  apiKey: string,
-  next: Next
-) {
+async function validateApiKey(c: GatewayServiceContext, apiKey: string, next: Next) {
   const user = await getUserFromApiKey(c.env, apiKey);
   c.set('userId', user.id);
   c.set('userEmail', user.email);
@@ -17,10 +13,7 @@ async function validateApiKey(
 }
 
 // Authentication middleware for JWT or API_KEY
-export async function jwtOrApiKeyAuthMiddleware(
-  c: GatewayServiceContext,
-  next: Next
-) {
+export async function jwtOrApiKeyAuthMiddleware(c: GatewayServiceContext, next: Next) {
   // Check for API Key in x-api-key header
   const apiKey = c.req.header('x-api-key');
   if (apiKey) {
@@ -49,8 +42,7 @@ async function getFirebasePublicKeys(kid: string): Promise<string> {
   const cachedResponse = await cache.match(CACHE_URL);
 
   if (cachedResponse) {
-    const cacheAge =
-      Date.now() - new Date(cachedResponse.headers.get('Date') || '').getTime();
+    const cacheAge = Date.now() - new Date(cachedResponse.headers.get('Date') || '').getTime();
     const keys = (await cachedResponse.json()) as Record<string, string>;
 
     // If cache is less than 1 hour old OR the requested key exists in cache, use cached keys
@@ -65,9 +57,7 @@ async function getFirebasePublicKeys(kid: string): Promise<string> {
 
   // Get cache expiration from Cache-Control header
   const cacheControl = response.headers.get('Cache-Control');
-  const maxAge = cacheControl
-    ? parseInt(cacheControl.split('max-age=')[1])
-    : 3600; // Default to 1 hour if no Cache-Control header
+  const maxAge = cacheControl ? parseInt(cacheControl.split('max-age=')[1]) : 3600; // Default to 1 hour if no Cache-Control header
 
   // Create a new response with the keys and cache it
   const cacheResponse = new Response(JSON.stringify(keys), {
@@ -82,9 +72,7 @@ async function getFirebasePublicKeys(kid: string): Promise<string> {
 }
 
 // JWT verification helper
-async function verifyJWT(
-  token: string
-): Promise<{ userId: string; userEmail: string }> {
+async function verifyJWT(token: string): Promise<{ userId: string; userEmail: string }> {
   try {
     const decoded = jose.decodeJwt(token);
     if (!decoded.sub || !decoded.email) {
@@ -133,7 +121,6 @@ function getBearer(c: GatewayServiceContext): string {
 }
 
 function isUUID(str: string): boolean {
-  const uuidRegex =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(str);
 }

@@ -42,6 +42,4 @@ export const ChatCompletionCreateParamSchema = z.object({
   user: z.string().optional(),
 });
 
-export type ChatCompletionCreateParam = z.infer<
-  typeof ChatCompletionCreateParamSchema
->;
+export type ChatCompletionCreateParam = z.infer<typeof ChatCompletionCreateParamSchema>;

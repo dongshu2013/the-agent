@@ -12,11 +12,7 @@ function getCreditFromAmount(amount: number) {
   return amount * BASE;
 }
 
-export async function createOrder(
-  env: Env,
-  userId: string,
-  amount: number
-): Promise<number> {
+export async function createOrder(env: Env, userId: string, amount: number): Promise<number> {
   const db = env.DB;
   const result = await db
     .prepare('INSERT INTO orders (user_id, amount) VALUES (?, ?)')
@@ -44,32 +40,20 @@ export async function updateOrderStatus(
   }
 }
 
-export async function finalizeOrder(
-  env: Env,
-  orderId: number,
-  sessionId: string,
-  amount: number
-) {
+export async function finalizeOrder(env: Env, orderId: number, sessionId: string, amount: number) {
   const db = env.DB;
-  const orders = await db
-    .prepare('SELECT user_id FROM orders WHERE id = ?')
-    .bind(orderId)
-    .all();
+  const orders = await db.prepare('SELECT user_id FROM orders WHERE id = ?').bind(orderId).all();
   if (!orders.success || orders.results.length === 0) {
     throw new GatewayServiceError(404, 'Order not found');
   }
   const order = orders.results[0];
   const credits = getCreditFromAmount(amount);
 
-  const stmt1 = db.prepare(
-    'UPDATE orders SET status = ?, stripe_session_id = ? WHERE id = ?'
-  );
+  const stmt1 = db.prepare('UPDATE orders SET status = ?, stripe_session_id = ? WHERE id = ?');
   const stmt2 = db.prepare(
     'INSERT INTO credit_history (user_id, tx_credits, tx_type, tx_reason, order_id) VALUES (?, ?, ?, ?, ?)'
   );
-  const stmt3 = db.prepare(
-    'UPDATE users SET balance = balance + ? WHERE id = ?'
-  );
+  const stmt3 = db.prepare('UPDATE users SET balance = balance + ? WHERE id = ?');
 
   const [result1, result2, result3] = await db.batch([
     stmt1.bind(OrderStatusSchema.enum.finalized, sessionId, orderId),

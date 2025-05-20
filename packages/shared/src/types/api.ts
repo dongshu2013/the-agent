@@ -8,7 +8,7 @@ export const ToolCallResultSchema = z.object({
   success: z.boolean(),
   data: z.any().optional(),
   error: z.string().optional(),
-})
+});
 export type ToolCallResult = z.infer<typeof ToolCallResultSchema>;
 
 export const ToolCallSchema = z.object({
@@ -130,13 +130,25 @@ export const ChatCompletionResponseSchema = z.object({
 export type ChatCompletionResponse = z.infer<typeof ChatCompletionResponseSchema>;
 
 // payment handlers
-export const OrderStatusSchema = z.enum(['pending', 'completed', 'cancelled', 'failed', 'finalized']);
+export const OrderStatusSchema = z.enum([
+  'pending',
+  'completed',
+  'cancelled',
+  'failed',
+  'finalized',
+]);
 export type OrderStatus = z.infer<typeof OrderStatusSchema>;
 
 export const TransactionTypeSchema = z.enum(['credit', 'debit']);
 export type TransactionType = z.infer<typeof TransactionTypeSchema>;
 
-export const TransactionReasonSchema = z.enum(['new_user', 'order_pay', 'system_add', 'completion', 'coupon_code']);
+export const TransactionReasonSchema = z.enum([
+  'new_user',
+  'order_pay',
+  'system_add',
+  'completion',
+  'coupon_code',
+]);
 export type TransactionReason = z.infer<typeof TransactionReasonSchema>;
 
 export const CreditLogSchema = z.object({

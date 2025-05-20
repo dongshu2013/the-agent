@@ -18,9 +18,7 @@ export class OpenAIClient {
   }
 
   // Create a chat completion
-  async createChatCompletion(
-    params: ChatCompletionCreateParam
-  ): Promise<Response> {
+  async createChatCompletion(params: ChatCompletionCreateParam): Promise<Response> {
     const url = `${this.baseURL}/chat/completions`;
 
     // Filter out undefined values
@@ -39,9 +37,7 @@ export class OpenAIClient {
   }
 
   // Stream a chat completion
-  async streamChatCompletion(
-    params: ChatCompletionCreateParam
-  ): Promise<Response> {
+  async streamChatCompletion(params: ChatCompletionCreateParam): Promise<Response> {
     // Ensure stream is set to true
     const streamParams = { ...params, stream: true };
 
@@ -66,9 +62,6 @@ export class OpenAIClient {
 }
 
 // Factory function to create an OpenAI client
-export function createOpenAIClient(
-  apiKey: string,
-  baseURL: string
-): OpenAIClient {
+export function createOpenAIClient(apiKey: string, baseURL: string): OpenAIClient {
   return new OpenAIClient(apiKey, baseURL);
 }

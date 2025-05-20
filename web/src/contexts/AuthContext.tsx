@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Handle user data when Firebase auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async firebaseUser => {
       if (firebaseUser) {
         const idToken = await getIdToken(firebaseUser);
         const userData = await createApiClient(idToken).getUser();
@@ -100,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const newToken = await getIdToken(auth.currentUser);
-      setUser((prev) => ({ ...prev, idToken: newToken }));
+      setUser(prev => ({ ...prev, idToken: newToken }));
       return newToken;
     } catch (error) {
       console.error('Error refreshing token:', error);
@@ -155,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const { newApiKey } = await createApiClient(user.idToken).rotateApiKey();
-      setUser((prev) => ({ ...prev, apiKey: newApiKey }));
+      setUser(prev => ({ ...prev, apiKey: newApiKey }));
       setAuthToLocalAndPostMessage({ apiKey: newApiKey });
       return newApiKey;
     } catch (error) {
@@ -169,7 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       await createApiClient(user.idToken).toggleApiKey({ enabled });
-      setUser((prev) => ({ ...prev, apiKeyEnabled: enabled }));
+      setUser(prev => ({ ...prev, apiKeyEnabled: enabled }));
       return enabled;
     } catch (error) {
       console.error('Error toggling API key:', error);
@@ -236,7 +236,7 @@ function setAuthToLocalAndPostMessage({ apiKey }: { apiKey?: string }) {
         type: 'FROM_WEB_TO_EXTENSION',
         apiKey,
       },
-      '*',
+      '*'
     );
   }
 }

@@ -94,11 +94,7 @@ export class APIClient {
     if (schema) {
       const result = schema.safeParse(data);
       if (!result.success) {
-        throw new APIError(
-          'Invalid response data',
-          500,
-          result.error
-        );
+        throw new APIError('Invalid response data', 500, result.error);
       }
       return result.data;
     }
@@ -140,29 +136,18 @@ export class APIClient {
 
   // User endpoints
   async getUser(): Promise<GetUserResponse> {
-    return this.request(
-      '/v1/user',
-      { method: 'GET' },
-      GetUserResponseSchema
-    );
+    return this.request('/v1/user', { method: 'GET' }, GetUserResponseSchema);
   }
 
   async toggleApiKey(data: ToggleApiKeyRequest): Promise<void> {
-    await this.request(
-      '/v1/user/toggle_api_key_enabled',
-      {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }
-    );
+    await this.request('/v1/user/toggle_api_key_enabled', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
   }
 
   async rotateApiKey(): Promise<RotateApiKeyResponse> {
-    return this.request(
-      '/v1/user/rotate_api_key',
-      { method: 'POST' },
-      RotateApiKeyResponseSchema
-    );
+    return this.request('/v1/user/rotate_api_key', { method: 'POST' }, RotateApiKeyResponseSchema);
   }
 
   async getCreditHistory(params?: {
@@ -180,13 +165,11 @@ export class APIClient {
     if (params?.txReason) queryParams.append('transReason', params.txReason);
 
     const queryString = queryParams.toString();
-    const endpoint = queryString ? `/v1/user/credit_history?${queryString}` : '/v1/user/credit_history';
+    const endpoint = queryString
+      ? `/v1/user/credit_history?${queryString}`
+      : '/v1/user/credit_history';
 
-    return this.request(
-      endpoint,
-      { method: 'GET' },
-      GetCreditHistoryResponseSchema
-    );
+    return this.request(endpoint, { method: 'GET' }, GetCreditHistoryResponseSchema);
   }
 
   async redeemCoupon(code: string): Promise<RedeemCouponResponse> {
@@ -214,11 +197,7 @@ export class APIClient {
 
   // Telegram endpoints
   async getTelegramStats(): Promise<TelegramStats> {
-    return this.request(
-      '/v1/tg/stats',
-      { method: 'GET' },
-      TelegramStatsSchema
-    );
+    return this.request('/v1/tg/stats', { method: 'GET' }, TelegramStatsSchema);
   }
 
   // Message endpoints

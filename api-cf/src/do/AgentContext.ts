@@ -1,17 +1,9 @@
 import { DurableObject } from 'cloudflare:workers';
 import OpenAI from 'openai';
-import {
-  CREATE_CONVERSATION_TABLE_QUERY,
-  CREATE_MESSAGE_TABLE_QUERY,
-} from './sql';
+import { CREATE_CONVERSATION_TABLE_QUERY, CREATE_MESSAGE_TABLE_QUERY } from './sql';
 import { createEmbeddingClient, generateEmbedding } from './embedding';
 import { GatewayServiceError } from '../types/service';
-import {
-  Message,
-  Conversation,
-  ToolCall,
-  MessageRole,
-} from '@the-agent/shared';
+import { Message, Conversation, ToolCall, MessageRole } from '@the-agent/shared';
 
 const DEFAULT_VECTOR_NAMESPACE = 'default';
 
@@ -28,18 +20,12 @@ export class AgentContext extends DurableObject<Env> {
   }
 
   createConversation(conversationId: number): number {
-    this.sql.exec(
-      `INSERT INTO agent_conversations (id) VALUES (?)`,
-      conversationId
-    );
+    this.sql.exec(`INSERT INTO agent_conversations (id) VALUES (?)`, conversationId);
     return conversationId;
   }
 
   deleteConversation(conversationId: number): void {
-    this.sql.exec(
-      `UPDATE agent_conversations SET status = 'deleted' WHERE id = ?`,
-      conversationId
-    );
+    this.sql.exec(`UPDATE agent_conversations SET status = 'deleted' WHERE id = ?`, conversationId);
   }
 
   listConversations(limit = 10): Conversation[] {
@@ -142,8 +128,8 @@ export class AgentContext extends DurableObject<Env> {
         this.env.MYTSTA_E5_INDEX.insert(toInsert),
       ]);
       const topKMessageIds = topKMessages.matches
-        .filter((m) => m.score && m.score >= threshold)
-        .map((m) => m.id);
+        .filter(m => m.score && m.score >= threshold)
+        .map(m => m.id);
       return {
         topKMessageIds,
         totalCost,

@@ -15,9 +15,7 @@ export async function createUser(
   const db = env.DB;
   const apiKey = crypto.randomUUID();
   const result = await db
-    .prepare(
-      'INSERT INTO users (id, user_email, api_key, api_key_enabled) VALUES (?, ?, ?, ?)'
-    )
+    .prepare('INSERT INTO users (id, user_email, api_key, api_key_enabled) VALUES (?, ?, ?, ?)')
     .bind(userId, email, apiKey, 1)
     .run();
   if (!result.success) {
@@ -32,15 +30,10 @@ export async function createUser(
   };
 }
 
-export async function getUserInfo(
-  env: Env,
-  userId: string
-): Promise<GetUserResponse | null> {
+export async function getUserInfo(env: Env, userId: string): Promise<GetUserResponse | null> {
   const db = env.DB;
   const result = await db
-    .prepare(
-      'SELECT id, user_email, api_key, api_key_enabled, balance FROM users WHERE id = ?'
-    )
+    .prepare('SELECT id, user_email, api_key, api_key_enabled, balance FROM users WHERE id = ?')
     .bind(userId)
     .all();
   if (!result.success || result.results.length === 0) {
@@ -61,10 +54,7 @@ export async function getUserFromApiKey(
 ): Promise<{ id: string; email: string }> {
   const db = env.DB;
   const result = await db
-    .prepare(
-      'SELECT id, user_email FROM users ' +
-        ' WHERE api_key = ? and api_key_enabled = 1'
-    )
+    .prepare('SELECT id, user_email FROM users ' + ' WHERE api_key = ? and api_key_enabled = 1')
     .bind(apiKey)
     .all();
   if (!result.success || result.results.length === 0) {
@@ -116,14 +106,7 @@ export async function getCreditLogs(
     transReason?: string;
   } = {}
 ): Promise<CreditLog[]> {
-  const {
-    limit = 100,
-    startDate,
-    endDate,
-    model,
-    transType,
-    transReason,
-  } = options;
+  const { limit = 100, startDate, endDate, model, transType, transReason } = options;
 
   const db = env.DB;
   let query =
@@ -170,7 +153,7 @@ export async function getCreditLogs(
     throw new GatewayServiceError(500, 'Failed to query db');
   }
 
-  return result.results.map((r) => ({
+  return result.results.map(r => ({
     id: r.id as number,
     tx_credits: r.tx_credits as number,
     tx_type: r.tx_type as string,
@@ -180,15 +163,9 @@ export async function getCreditLogs(
   }));
 }
 
-export async function getUserBalance(
-  env: Env,
-  userId: string
-): Promise<number> {
+export async function getUserBalance(env: Env, userId: string): Promise<number> {
   const db = env.DB;
-  const result = await db
-    .prepare('SELECT balance FROM users WHERE id = ?')
-    .bind(userId)
-    .all();
+  const result = await db.prepare('SELECT balance FROM users WHERE id = ?').bind(userId).all();
   if (!result.success || result.results.length === 0) {
     throw new GatewayServiceError(400, 'invalid user');
   }
@@ -218,9 +195,7 @@ export async function deductUserCredits(
       '(user_id, tx_credits, tx_type, tx_reason, model)' +
       'VALUES (?, ?, ?, ?, ?)'
   );
-  const updateBalanceStmt = db.prepare(
-    'UPDATE users SET balance = balance - ? WHERE id = ?'
-  );
+  const updateBalanceStmt = db.prepare('UPDATE users SET balance = balance - ? WHERE id = ?');
 
   const [result1, result2] = await db.batch([
     insertTxStmt.bind(
@@ -235,11 +210,6 @@ export async function deductUserCredits(
   if (!result1.success || !result2.success) {
     throw new GatewayServiceError(500, 'Failed to deduct credits');
   }
-  console.log(
-    'success deduct credits from user:',
-    userId,
-    deductCredits,
-    model
-  );
+  console.log('success deduct credits from user:', userId, deductCredits, model);
   return { success: true, remainingCredits: currentCredits - deductCredits };
 }

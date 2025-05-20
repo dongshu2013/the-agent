@@ -238,22 +238,20 @@ export class RedeemCouponCode extends OpenAPIRoute {
 
     const coupon = results[0];
     if (coupon.used_count >= coupon.max_uses) {
-      return c.json(
-        { success: false, error: 'Coupon code has reached maximum uses' },
-        400
-      );
+      return c.json({ success: false, error: 'Coupon code has reached maximum uses' }, 400);
     }
 
     // Start transaction
     const tx = c.env.DB.batch([
       // Update coupon used count
-      c.env.DB.prepare(
-        'UPDATE coupon_codes SET used_count = used_count + 1 WHERE code = ?'
-      ).bind(code),
+      c.env.DB.prepare('UPDATE coupon_codes SET used_count = used_count + 1 WHERE code = ?').bind(
+        code
+      ),
       // Add credits to user
-      c.env.DB.prepare(
-        'UPDATE users SET balance = balance + ? WHERE id = ?'
-      ).bind(coupon.credits, userId),
+      c.env.DB.prepare('UPDATE users SET balance = balance + ? WHERE id = ?').bind(
+        coupon.credits,
+        userId
+      ),
       // Add credit history
       c.env.DB.prepare(
         `INSERT INTO credit_history (user_id, tx_credits, tx_type, tx_reason)

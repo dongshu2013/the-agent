@@ -1,49 +1,21 @@
 #!/bin/sh
+. "$(dirname -- "$0")/_/husky.sh"
 
-# Check api-cf code
-echo "🔍 Checking api-cf code..."
+echo "🔍 Checking code across all packages..."
+
+echo "🧹 Running lint-staged (ESLint + Prettier)..."
+pnpm lint-staged
+
+echo "📝 Type checking api-cf..."
 cd api-cf
-
-echo "💅 Formatting code..."
-pnpm format
-
-echo "🔍 Running ESLint..."
-pnpm lint:fix
-
-echo "📝 Type checking..."
 pnpm exec tsc --noEmit
 
-echo "✨ Running lint-staged..."
-pnpm lint-staged
-
-# Check web code
-echo "\n🔍 Checking web code..."
+echo "📝 Type checking web..."
 cd ../web
-
-echo "💅 Formatting code..."
-pnpm format
-
-echo "🔍 Running ESLint..."
-pnpm lint:fix
-
-echo "📝 Type checking..."
 pnpm exec tsc --noEmit
 
-echo "✨ Running lint-staged..."
-pnpm lint-staged
-
-# Check extension code
-echo "\n🔍 Checking extension code..."
+echo "📝 Type checking extension..."
 cd ../extension
-
-echo "💅 Formatting code..."
-pnpm format
-
-echo "🔍 Running ESLint..."
-pnpm lint:fix
-
-echo "📝 Type checking..."
 pnpm exec tsc --noEmit
 
-echo "✨ Running lint-staged..."
-pnpm lint-staged
+echo "✅ Pre-commit checks completed!"
