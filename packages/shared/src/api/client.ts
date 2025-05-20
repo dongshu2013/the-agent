@@ -23,6 +23,9 @@ import {
   TelegramStatsSchema,
   TransactionType,
   TransactionReason,
+  type SaveMessageRequest,
+  type SaveMessageResponse,
+  SaveMessageResponseSchema,
 } from '../types/api';
 
 export interface APIClientConfig {
@@ -215,6 +218,18 @@ export class APIClient {
       '/v1/tg/stats',
       { method: 'GET' },
       TelegramStatsSchema
+    );
+  }
+
+  // Message endpoints
+  async saveMessage(data: SaveMessageRequest): Promise<SaveMessageResponse> {
+    return this.request(
+      '/v1/message/save',
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+      SaveMessageResponseSchema
     );
   }
 }

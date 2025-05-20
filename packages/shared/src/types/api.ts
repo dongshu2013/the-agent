@@ -1,18 +1,56 @@
 import { z } from 'zod';
 
 // Common types
-export const MessageRoleSchema = z.enum(['system', 'user', 'assistant', 'tooling']);
+export const MessageRoleSchema = z.enum(['system', 'user', 'assistant', 'tool', 'error']);
 export type MessageRole = z.infer<typeof MessageRoleSchema>;
 
-export const MessageSchema = z.object({
-  id: z.number(),
+export const ToolCallResultSchema = z.object({
+  success: z.boolean(),
+  data: z.any().optional(),
+  error: z.string().optional(),
+})
+export type ToolCallResult = z.infer<typeof ToolCallResultSchema>;
+
+export const ToolCallSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  function: z.object({
+    name: z.string(),
+    arguments: z.string(),
+  }),
+  result: ToolCallResultSchema.optional(),
+});
+export type ToolCall = z.infer<typeof ToolCallSchema>;
+
+export const TokenUsageSchema = z.object({
+  prompt_tokens: z.number(),
+  completion_tokens: z.number(),
+  total_tokens: z.number(),
+});
+export type TokenUsage = z.infer<typeof TokenUsageSchema>;
+
+export const ChatMessageSchema = z.object({
   role: MessageRoleSchema,
-  content: z.string(),
-  conversation_id: z.number(),
-  tool_calls: z.any().optional(),
+  content: z.string().optional(),
+  name: z.string().optional(),
+  tool_calls: z.array(ToolCallSchema).optional(),
   tool_call_id: z.string().optional(),
+  token_usage: TokenUsageSchema.optional(),
+});
+
+export type ChatMessage = z.infer<typeof ChatMessageSchema>;
+
+export const MessageSchema = ChatMessageSchema.extend({
+  id: z.number(),
+  conversation_id: z.number(),
 });
 export type Message = z.infer<typeof MessageSchema>;
+
+export const ConversationSchema = z.object({
+  id: z.number(),
+  messages: z.array(MessageSchema).optional(),
+});
+export type Conversation = z.infer<typeof ConversationSchema>;
 
 // conversation handlers
 export const CreateConversationRequestSchema = z.object({
@@ -36,12 +74,7 @@ export const DeleteConversationResponseSchema = z.object({
 export type DeleteConversationResponse = z.infer<typeof DeleteConversationResponseSchema>;
 
 export const ListConversationsResponseSchema = z.object({
-  conversations: z.array(
-    z.object({
-      id: z.number(),
-      messages: z.array(MessageSchema),
-    })
-  ),
+  conversations: z.array(ConversationSchema),
 });
 export type ListConversationsResponse = z.infer<typeof ListConversationsResponseSchema>;
 

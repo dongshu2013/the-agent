@@ -1,12 +1,12 @@
 import { OpenAPIRoute } from 'chanfana';
 import { Context } from 'hono';
 import {
+  Message,
   MessageSchema,
   SaveMessageRequestSchema,
   SaveMessageResponseSchema,
 } from '@the-agent/shared';
 import { GatewayServiceError } from '../types/service';
-import { Message } from '../do/types';
 import { deductUserCredits } from '../d1/user';
 import { EMBEDDING_MODEL } from '../utils/common';
 

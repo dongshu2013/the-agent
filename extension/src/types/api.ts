@@ -3,9 +3,8 @@
  * Defines all API-related interfaces used in the application
  */
 
+import { ChatMessage } from '@the-agent/shared';
 import { Model } from '.';
-import { CreateConversationResponse, SaveMessageResponse } from './conversations';
-import { ChatMessage } from './messages';
 
 /**
  * Chat request interface
@@ -22,8 +21,3 @@ export interface MemoryOptions {
   strategy?: number;
   systemPrompt?: string;
 }
-
-/**
- * API service exports
- */
-export type { CreateConversationResponse, SaveMessageResponse };

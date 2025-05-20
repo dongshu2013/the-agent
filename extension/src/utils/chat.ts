@@ -2,17 +2,16 @@
  * 聊天服务 - 处理消息和聊天功能
  */
 
-import { Message } from '../types/messages';
-import { SaveMessageResponse } from '../types/conversations';
 import OpenAI from 'openai';
-import { env } from '../utils/env';
-import { getApiKey } from './cache';
+import { env } from './env';
+import { getApiKey } from '../services/cache';
 import { ChatRequest } from '../types/api';
 import { getToolDescriptions } from '../tools/tool-descriptions';
 import { showLoginModal } from '~/utils/global-event';
 import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream.mjs';
+import { Message, SaveMessageResponse, ToolCall } from '@the-agent/shared';
+import { APIClient, APIError } from '@the-agent/shared';
 
-// 发送聊天请求到后端
 export const sendChatCompletion = async (
   apiKey: string,
   request: ChatRequest,
@@ -55,7 +54,7 @@ export const sendChatCompletion = async (
 };
 
 /**
- * 保存消息（调用后端接口）
+ * Save message to backend
  */
 export const saveMessageApi = async ({
   message,
@@ -65,60 +64,42 @@ export const saveMessageApi = async ({
   top_k_related?: number;
 }): Promise<SaveMessageResponse> => {
   try {
-    const API_ENDPOINT = '/v1/message/save';
     const apiKey = await getApiKey();
     if (!apiKey) {
-      showLoginModal();
-      return {
-        success: false,
-        error: 'Unauthorized',
-      };
+      throw new APIError('Unauthorized', 401);
     }
 
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-    };
-
-    const requestBody = {
-      message: message,
-      top_k_related: top_k_related,
-    };
-
-    const response = await fetch(`${env.BACKEND_URL}${API_ENDPOINT}`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(requestBody),
+    const client = new APIClient({
+      baseUrl: env.BACKEND_URL,
+      apiKey,
+    });
+    const response = await client.saveMessage({
+      message,
+      top_k_related,
+      threshold: 0.7, // Default threshold
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-
-      if (response.status === 401 || response.status === 403) {
-        showLoginModal();
-      }
-
-      return {
-        success: false,
-        error:
-          errorData.detail ||
-          errorData.error?.message ||
-          `API Error: ${response.status} - ${response.statusText}`,
-      };
-    }
-
-    const data = await response.json();
-
-    return {
-      success: true,
-      data: {
-        top_k_messages: data.top_k_messages,
-      },
-    };
+    return response;
   } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
-    };
+    if (error instanceof APIError && (error.status === 401 || error.status === 403)) {
+      showLoginModal();
+    }
+    throw error;
   }
+};
+
+export const genUserPrompt = (contextPrompt: string, currentPrompt: string) => {
+  return `
+Given the chat history:
+>>>>> Start of Chat History >>>>>>>>
+${contextPrompt}
+>>>>>> End of Chat History >>>>>>>>
+Now reply to user's message: ${currentPrompt}`;
+};
+
+export const genToolCallResult = (toolCall: ToolCall): string => {
+  return (
+    `Tool calls: ${toolCall.function.name}, ` +
+    `executed result: ${JSON.stringify(toolCall?.result?.data || '')} \n`
+  );
 };
