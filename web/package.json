@@ -9,7 +9,6 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:railway": "next build || next build",
     "start": "next start",
     "type-check": "tsc --noEmit"
   },
