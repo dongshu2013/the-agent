@@ -37,53 +37,50 @@ export const CreditsTable = () => {
   const { user } = useAuth();
 
   useEffect(() => {
-    if (user) {
+    const fetchCreditsData = async () => {
+      setIsLoading(true);
+      try {
+        const { history } = await createApiClient(user.idToken).getCreditHistory({
+          startDate,
+          endDate,
+          model: selectedModel,
+          txType: selectedTxType as TransactionType,
+          txReason: selectedTxReason as TransactionReason,
+        });
+
+        setCredits(history || []);
+
+        // Extract unique values for filter options from the history data
+        if (history && history.length > 0) {
+          const models = Array.from(new Set(history.map(entry => entry.model).filter(Boolean)));
+          const txTypes = Array.from(
+            new Set(history.map(entry => entry.tx_type))
+          ) as TransactionType[];
+          const txReasons = Array.from(
+            new Set(history.map(entry => entry.tx_reason))
+          ) as TransactionReason[];
+
+          setFilterOptions({
+            models,
+            txTypes,
+            txReasons,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching credits data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (user && user.idToken) {
       fetchCreditsData();
     }
   }, [user, startDate, endDate, selectedModel, selectedTxType, selectedTxReason]);
 
-  const fetchCreditsData = async () => {
-    if (!user || !user.idToken) return;
-
-    setIsLoading(true);
-    try {
-      const { history } = await createApiClient(user.idToken).getCreditHistory({
-        startDate,
-        endDate,
-        model: selectedModel,
-        txType: selectedTxType as TransactionType,
-        txReason: selectedTxReason as TransactionReason,
-      });
-
-      setCredits(history || []);
-
-      // Extract unique values for filter options from the history data
-      if (history && history.length > 0) {
-        const models = Array.from(new Set(history.map(entry => entry.model).filter(Boolean)));
-        const txTypes = Array.from(
-          new Set(history.map(entry => entry.tx_type))
-        ) as TransactionType[];
-        const txReasons = Array.from(
-          new Set(history.map(entry => entry.tx_reason))
-        ) as TransactionReason[];
-
-        setFilterOptions({
-          models,
-          txTypes,
-          txReasons,
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching credits data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), 'yyyy-MM-dd HH:mm:ss');
-    } catch (e) {
+    } catch {
       return dateString;
     }
   };

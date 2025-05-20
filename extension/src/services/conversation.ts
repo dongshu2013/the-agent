@@ -94,7 +94,7 @@ export const getCurrentConversation = async (): Promise<Conversation | null> => 
   try {
     const conversations = await getConversations();
     return conversations[0] || null; // 返回第一个会话作为当前会话
-  } catch (error) {
+  } catch {
     return null;
   }
 };

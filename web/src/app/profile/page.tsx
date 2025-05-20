@@ -52,7 +52,7 @@ function CouponCodeModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => 
         }
         setError(errorMessage);
       }
-    } catch (err) {
+    } catch {
       setError('Unable to connect to the server. Please try again later.');
     } finally {
       setIsSubmitting(false);
@@ -130,23 +130,22 @@ export default function ProfilePage() {
 
   // Fetch Telegram stats when user is loaded
   useEffect(() => {
+    const fetchTelegramStats = async () => {
+      if (!user || !user.idToken) return;
+      setIsLoadingTelegramStats(true);
+      try {
+        const data = await createApiClient(user.idToken).getTelegramStats();
+        setTelegramStats(data);
+      } catch (error) {
+        console.error('Error fetching Telegram stats:', error);
+      } finally {
+        setIsLoadingTelegramStats(false);
+      }
+    };
     if (user) {
       fetchTelegramStats();
     }
   }, [user]);
-
-  const fetchTelegramStats = async () => {
-    if (!user || !user.idToken) return;
-    setIsLoadingTelegramStats(true);
-    try {
-      const data = await createApiClient(user.idToken).getTelegramStats();
-      setTelegramStats(data);
-    } catch (error) {
-      console.error('Error fetching Telegram stats:', error);
-    } finally {
-      setIsLoadingTelegramStats(false);
-    }
-  };
 
   const handleCopyApiKey = async () => {
     if (user?.apiKey) {
