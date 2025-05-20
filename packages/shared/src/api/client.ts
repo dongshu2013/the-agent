@@ -102,7 +102,7 @@ export class APIClient {
   }
 
   // Conversation endpoints
-  async createConversation(data: CreateConversationRequest): Promise<CreateConversationResponse> {
+  async createConversation(data?: CreateConversationRequest): Promise<CreateConversationResponse> {
     return this.request(
       '/v1/conversation/create',
       {

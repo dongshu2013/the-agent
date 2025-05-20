@@ -22,44 +22,6 @@ const createApiClient = async (): Promise<APIClient> => {
   });
 };
 
-export const createConversationApi = async (): Promise<{
-  success: boolean;
-  id?: number;
-  error?: string;
-}> => {
-  try {
-    const client = await createApiClient();
-    const response = await client.createConversation({});
-    return {
-      success: true,
-      id: response.id,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
-    };
-  }
-};
-
-export const deleteConversationApi = async (
-  conversationId: number
-): Promise<{ success: boolean; error?: string }> => {
-  try {
-    const client = await createApiClient();
-    const response = await client.deleteConversation({ id: conversationId });
-
-    return {
-      success: response.deleted,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
-    };
-  }
-};
-
 /**
  * 获取所有会话
  */
@@ -72,15 +34,15 @@ export const getConversations = async (): Promise<Conversation[]> => {
 
     const client = await createApiClient();
     const response = await client.listConversations();
-    const serverConversations: Conversation[] = response.conversations.map(conv => ({
+    const conversations = response.conversations.map(conv => ({
       id: Number(conv.id),
       title: conv.messages?.[0]?.content?.slice(0, 20) || 'New Chat',
-      user_id: user?.id || '',
+      user_id: user.id,
       messages: conv.messages,
     }));
-    await db.saveConversationsAndMessages(serverConversations, user.id);
+    await db.saveConversationsAndMessages(conversations, user.id);
 
-    return serverConversations;
+    return conversations;
   } catch (error) {
     console.error('Error in getConversations:', error);
     throw error;
@@ -103,21 +65,21 @@ export const getCurrentConversation = async (): Promise<Conversation | null> => 
  * 创建新会话
  */
 export const createNewConversation = async (): Promise<Conversation> => {
-  const response = await createConversationApi();
   const user = await db.getUserByApiKey();
-  if (!response.success || !response.id || !user) {
-    throw new Error(response.error || 'Failed to create conversation');
+  if (!user) {
+    throw new Error('Failed to create conversation');
   }
 
+  const client = await createApiClient();
+  const response = await client.createConversation();
   const conversation: Conversation = {
     id: response.id,
     title: 'New Chat',
-    user_id: user?.id || '',
+    user_id: user.id,
     messages: [],
   };
 
   await db.saveConversation(conversation);
-
   return conversation;
 };
 
@@ -142,11 +104,8 @@ export const selectConversation = async (id: number): Promise<Conversation | nul
  * 删除会话
  */
 export const deleteConversation = async (id: number): Promise<void> => {
-  const response = await deleteConversationApi(id);
-  if (!response.success) {
-    throw new Error(response.error || 'Failed to delete conversation');
-  }
-
+  const client = await createApiClient();
+  await client.deleteConversation({ id });
   await db.deleteConversation(id);
   await db.deleteMessagesByConversation(id);
 };
