@@ -9,8 +9,8 @@ import { SYSTEM_MODEL_ID } from './constants';
 
 export interface UserInfo {
   id: string;
-  username: string;
-  email: string | null;
+  username?: string;
+  email?: string | null;
   api_key_enabled: boolean;
   api_key: string;
   credits: string; // Credits stored as string in IndexedDB
@@ -320,8 +320,8 @@ class MystaDB extends Dexie {
   }
   async getUserByApiKey(): Promise<UserInfo | null> {
     const apiKey = await getApiKey();
-    if (!apiKey) return null;
-    const user = await this.users.where('api_key').equals(apiKey).first();
+    if (!apiKey?.enabled) return null;
+    const user = await this.users.where('api_key').equals(apiKey.key).first();
     return user || null;
   }
 

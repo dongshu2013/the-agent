@@ -48,7 +48,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (firebaseUser) {
         const idToken = await getIdToken(firebaseUser);
         const userData = await createApiClient(idToken).getUser();
-        setAuthToLocalAndPostMessage({ apiKey: userData.api_key });
+        setAuthToLocalAndPostMessage({
+          apiKey: userData.api_key,
+          apiKeyEnabled: userData.api_key_enabled,
+        });
         setUser({
           id: firebaseUser.uid,
           email: firebaseUser.email,
@@ -61,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
       } else {
         setUser(null);
-        setAuthToLocalAndPostMessage({ apiKey: '' });
+        setAuthToLocalAndPostMessage({ apiKey: '', apiKeyEnabled: false });
       }
       setLoading(false);
     });
@@ -123,7 +126,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData = await createApiClient(idToken).getUser();
 
       // Post message
-      setAuthToLocalAndPostMessage({ apiKey: userData.api_key });
+      setAuthToLocalAndPostMessage({
+        apiKey: userData.api_key,
+        apiKeyEnabled: userData.api_key_enabled,
+      });
 
       setUser({
         id: result.user.uid,
@@ -144,7 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await firebaseSignOut(auth);
       setUser(null);
-      setAuthToLocalAndPostMessage({ apiKey: '' });
+      setAuthToLocalAndPostMessage({ apiKey: '', apiKeyEnabled: false });
     } catch (error) {
       console.error('Error signing out', error);
     }
@@ -156,7 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { newApiKey } = await createApiClient(user.idToken).rotateApiKey();
       setUser(prev => ({ ...prev, apiKey: newApiKey }));
-      setAuthToLocalAndPostMessage({ apiKey: newApiKey });
+      setAuthToLocalAndPostMessage({ apiKey: newApiKey, apiKeyEnabled: user.apiKeyEnabled });
       return newApiKey;
     } catch (error) {
       console.error('Error rotating API key:', error);
@@ -170,6 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await createApiClient(user.idToken).toggleApiKey({ enabled });
       setUser(prev => ({ ...prev, apiKeyEnabled: enabled }));
+      setAuthToLocalAndPostMessage({ apiKey: user.apiKey, apiKeyEnabled: enabled });
       return enabled;
     } catch (error) {
       console.error('Error toggling API key:', error);
@@ -192,7 +199,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         idToken: token,
       });
 
-      setAuthToLocalAndPostMessage({ apiKey: userData.api_key });
+      setAuthToLocalAndPostMessage({
+        apiKey: userData.api_key,
+        apiKeyEnabled: userData.api_key_enabled,
+      });
     } catch (error) {
       console.error('Error refreshing user data:', error);
     }
@@ -200,7 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (user?.apiKey) {
-      setAuthToLocalAndPostMessage({ apiKey: user.apiKey });
+      setAuthToLocalAndPostMessage({ apiKey: user.apiKey, apiKeyEnabled: user.apiKeyEnabled });
     }
   }, [user?.apiKey]);
 
@@ -228,15 +238,22 @@ export function useAuth() {
 }
 
 // Helper function to set API key in localStorage and post message
-function setAuthToLocalAndPostMessage({ apiKey }: { apiKey?: string }) {
+function setAuthToLocalAndPostMessage({
+  apiKey,
+  apiKeyEnabled,
+}: {
+  apiKey?: string;
+  apiKeyEnabled?: boolean;
+}) {
   if (apiKey) {
-    localStorage.setItem('apiKey', apiKey);
+    localStorage.setItem('apiKey', JSON.stringify({ apiKey, apiKeyEnabled }));
     window.postMessage(
       {
         type: 'FROM_WEB_TO_EXTENSION',
         data: {
           host: window.location.hostname,
           apiKey,
+          apiKeyEnabled,
         },
       },
       '*'

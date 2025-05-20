@@ -54,7 +54,7 @@ export type Conversation = z.infer<typeof ConversationSchema>;
 
 // conversation handlers
 export const CreateConversationRequestSchema = z.object({
-  id: z.number().nullable().optional(),
+  id: z.number(),
 });
 export type CreateConversationRequest = z.infer<typeof CreateConversationRequestSchema>;
 

@@ -78,11 +78,21 @@ export class APIClient {
 
     if (!response.ok) {
       let errorData;
-      try {
-        errorData = await response.json();
-      } catch {
-        errorData = await response.text();
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = 'Invalid JSON response';
+        }
+      } else {
+        try {
+          errorData = await response.text();
+        } catch {
+          errorData = 'Could not read error response';
+        }
       }
+
       throw new APIError(
         errorData?.error?.message || 'API request failed',
         response.status,
@@ -102,7 +112,7 @@ export class APIClient {
   }
 
   // Conversation endpoints
-  async createConversation(data?: CreateConversationRequest): Promise<CreateConversationResponse> {
+  async createConversation(data: CreateConversationRequest): Promise<CreateConversationResponse> {
     return this.request(
       '/v1/conversation/create',
       {

@@ -65,13 +65,13 @@ export const saveMessageApi = async ({
 }): Promise<SaveMessageResponse> => {
   try {
     const apiKey = await getApiKey();
-    if (!apiKey) {
+    if (!apiKey?.enabled) {
       throw new APIError('Unauthorized', 401);
     }
 
     const client = new APIClient({
       baseUrl: env.BACKEND_URL,
-      apiKey,
+      apiKey: apiKey.key,
     });
     const response = await client.saveMessage({
       message,

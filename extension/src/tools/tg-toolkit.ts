@@ -25,8 +25,7 @@ export class TgToolkit {
     isFree?: boolean,
     status?: string,
     sortBy: string = 'updated_at',
-    sortOrder: string = 'desc',
-    apiKey?: string
+    sortOrder: string = 'desc'
   ): Promise<WebInteractionResult<unknown>> {
     try {
       // Build query parameters
@@ -42,8 +41,8 @@ export class TgToolkit {
       params.append('sort_order', sortOrder);
 
       // Get API key
-      const apiKeyToUse = apiKey || (await getApiKey());
-      if (!apiKeyToUse) {
+      const apiKeyToUse = await getApiKey();
+      if (!apiKeyToUse?.enabled) {
         showLoginModal();
         return {
           success: false,
@@ -117,8 +116,7 @@ export class TgToolkit {
     startTimestamp?: number,
     endTimestamp?: number,
     sortBy: string = 'message_timestamp',
-    sortOrder: string = 'desc',
-    apiKey?: string
+    sortOrder: string = 'desc'
   ): Promise<WebInteractionResult<unknown>> {
     try {
       // Build query parameters
@@ -135,8 +133,8 @@ export class TgToolkit {
       params.append('sort_order', sortOrder);
 
       // Get API key
-      const apiKeyToUse = apiKey || (await getApiKey());
-      if (!apiKeyToUse) {
+      const apiKeyToUse = await getApiKey();
+      if (!apiKeyToUse?.enabled) {
         showLoginModal();
         return {
           success: false,
@@ -206,8 +204,7 @@ export class TgToolkit {
     messageRange: number = 2,
     threshold: number = 0.7,
     isPublic?: boolean,
-    isFree?: boolean,
-    apiKey?: string
+    isFree?: boolean
   ): Promise<WebInteractionResult<unknown>> {
     try {
       // Build query parameters
@@ -222,8 +219,8 @@ export class TgToolkit {
       if (isFree !== undefined) params.append('is_free', isFree.toString());
 
       // Get API key
-      const apiKeyToUse = apiKey || (await getApiKey());
-      if (!apiKeyToUse) {
+      const apiKeyToUse = await getApiKey();
+      if (!apiKeyToUse?.enabled) {
         showLoginModal();
         return {
           success: false,

@@ -11,9 +11,10 @@ import { getApiKey } from './cache';
 import { WebInteractionResult } from '~/types/tools';
 import { ChatMessage, Message, ToolCall } from '@the-agent/shared';
 import { MAX_TOOL_CALLS, SYSTEM_MESSAGE } from '~/utils/constants';
+import { ApiKey } from '~/types';
 
 interface ChatHandlerOptions {
-  apiKey: string;
+  apiKey: ApiKey | null;
   currentConversationId: number;
   onError: (error: unknown) => void;
   onStreamStart: () => void;
@@ -34,7 +35,7 @@ export class ChatHandler {
     if (this.isStreaming) {
       this.stopStreaming();
     }
-    if (!prompt.trim() || !this.options.apiKey || !this.options.currentConversationId) {
+    if (!prompt.trim() || !this.options.apiKey?.enabled || !this.options.currentConversationId) {
       return;
     }
 
@@ -107,7 +108,7 @@ export class ChatHandler {
         return;
       }
 
-      const processRequest = async (apiKey: string, inputMessages: ChatMessage[]) => {
+      const processRequest = async (apiKey: ApiKey, inputMessages: ChatMessage[]) => {
         let accumulatedContent = '';
         const totalTokenUsage = {
           prompt_tokens: 0,
@@ -120,7 +121,7 @@ export class ChatHandler {
             if (!this.isStreaming) break;
 
             const stream = await sendChatCompletion(
-              apiKey,
+              apiKey.key,
               {
                 messages: [SYSTEM_MESSAGE, ...inputMessages],
                 currentModel,

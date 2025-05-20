@@ -12,13 +12,13 @@ import { APIClient } from '@the-agent/shared';
 // Create API client instance
 const createApiClient = async (): Promise<APIClient> => {
   const keyToUse = await getApiKey();
-  if (!keyToUse || !keyToUse.trim()) {
+  if (!keyToUse?.enabled) {
     showLoginModal();
     throw new Error('Authentication required');
   }
   return new APIClient({
     baseUrl: env.BACKEND_URL,
-    apiKey: keyToUse,
+    apiKey: keyToUse.key,
   });
 };
 
@@ -70,10 +70,11 @@ export const createNewConversation = async (): Promise<Conversation> => {
     throw new Error('Failed to create conversation');
   }
 
+  const convId = Date.now();
   const client = await createApiClient();
-  const response = await client.createConversation();
+  await client.createConversation({ id: convId });
   const conversation: Conversation = {
-    id: response.id,
+    id: convId,
     title: 'New Chat',
     user_id: user.id,
     messages: [],

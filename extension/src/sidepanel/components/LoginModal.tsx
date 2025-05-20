@@ -7,20 +7,11 @@ import { UserInfo } from '~/utils/db';
 interface LoginModalProps {
   open: boolean;
   showSwitch: boolean;
-  pendingUser?: UserInfo | null;
   currentUser?: UserInfo | null;
-  onContinue?: () => void;
   onClose?: () => void;
 }
 
-export default function LoginModal({
-  open,
-  showSwitch,
-  pendingUser,
-  currentUser,
-  onContinue,
-  onClose,
-}: LoginModalProps) {
+export default function LoginModal({ open, showSwitch, currentUser, onClose }: LoginModalProps) {
   const handleLogin = () => {
     const webUrl = env.WEB_URL;
     window.open(webUrl, '_blank');
@@ -85,29 +76,9 @@ export default function LoginModal({
           <div style={{ fontWeight: 500, marginBottom: 16 }}>
             New Mysta account detected
             <div style={{ fontSize: 14, color: '#333', marginTop: 8 }}>
-              Current account: <span style={{ color: '#888' }}>{getDisplayName(currentUser)}</span>
-              <br />
-              New account: <span style={{ color: '#22c55e' }}>{getDisplayName(pendingUser)}</span>
+              Account: <span style={{ color: '#888' }}>{getDisplayName(currentUser)}</span>
             </div>
           </div>
-          <button
-            onClick={onContinue}
-            style={{
-              width: '100%',
-              maxWidth: 320,
-              height: 48,
-              borderRadius: 24,
-              border: '1.5px solid #d1d5db',
-              background: '#000',
-              color: '#fff',
-              fontSize: 18,
-              fontWeight: 500,
-              marginBottom: 16,
-              cursor: 'pointer',
-            }}
-          >
-            Switch Account
-          </button>
           <button
             onClick={onClose}
             style={{
@@ -124,7 +95,7 @@ export default function LoginModal({
               cursor: 'pointer',
             }}
           >
-            Cancel
+            OK
           </button>
         </>
       ) : (

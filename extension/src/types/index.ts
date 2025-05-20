@@ -18,3 +18,8 @@ export interface Model {
   apiUrl: string;
   userId: string;
 }
+
+export interface ApiKey {
+  key: string;
+  enabled: boolean;
+}
