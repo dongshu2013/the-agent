@@ -15,7 +15,7 @@ module.exports = {
         varsIgnorePattern: '^_',
       },
     ],
-    // Disable requirement for explicit return types
+    // Disable requirement for explicit return types on all functions
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     // Allow declarations in case blocks
     'no-case-declarations': 'off',
@@ -37,13 +37,6 @@ module.exports = {
         react: {
           version: 'detect',
         },
-      },
-    },
-    // API-specific overrides
-    {
-      files: ['./api-cf/**/*.ts'],
-      rules: {
-        '@typescript-eslint/explicit-module-boundary-types': 'warn',
       },
     },
     // Web-specific overrides
