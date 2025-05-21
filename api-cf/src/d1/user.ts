@@ -178,18 +178,10 @@ export async function deductUserCredits(
   userId: string,
   amount: number,
   model?: string
-): Promise<{ success: boolean; remainingCredits: number }> {
+): Promise<{ success: boolean }> {
   const db = env.DB;
 
   const deductCredits = getCreditFromAmount(amount);
-
-  // Get current credits
-  const currentCredits = await getUserBalance(env, userId);
-  if (currentCredits < deductCredits) {
-    throw new GatewayServiceError(400, 'Insufficient credits');
-  }
-
-  // Record the transaction
   const insertTxStmt = db.prepare(
     'INSERT INTO credit_history' +
       '(user_id, tx_credits, tx_type, tx_reason, model)' +
@@ -210,6 +202,5 @@ export async function deductUserCredits(
   if (!result1.success || !result2.success) {
     throw new GatewayServiceError(500, 'Failed to deduct credits');
   }
-  console.log('success deduct credits from user:', userId, deductCredits, model);
-  return { success: true, remainingCredits: currentCredits - deductCredits };
+  return { success: true };
 }

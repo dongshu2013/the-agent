@@ -3,20 +3,19 @@
  */
 
 import { ApiKey } from '~/types';
-import { env } from '~/utils/env';
-
-// Extract hostname from URL
-export const API_KEY_TAG = new URL(env.WEB_URL).hostname + '_api_key';
+import { API_KEY_STORAGE_KEY } from '~/utils/constants';
 
 const formatApiKey = (key: string): string => {
   return key.replace(/"/g, '');
 };
 
+export const API_KEY_TAG = 'api_key';
+
 export const getApiKey = async (): Promise<ApiKey | null> => {
   return new Promise(resolve => {
     chrome.storage.local.get(API_KEY_TAG, result => {
       const key = result[API_KEY_TAG]?.key;
-      const enabled = result[API_KEY_TAG]?.enabled;
+      const enabled = result[API_KEY_STORAGE_KEY]?.enabled;
       resolve(key ? { key: formatApiKey(key), enabled } : null);
     });
   });

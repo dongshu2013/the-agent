@@ -227,7 +227,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         avatar: user.photoURL,
       });
     }
-  }, [user?.apiKey, user?.apiKeyEnabled]);
+  }, [user?.apiKey, user?.apiKeyEnabled, user?.photoURL]);
 
   return (
     <AuthContext.Provider

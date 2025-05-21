@@ -7,7 +7,7 @@ import {
   SaveMessageResponseSchema,
 } from '@the-agent/shared';
 import { GatewayServiceError } from '../types/service';
-import { deductUserCredits } from '../d1/user';
+import { deductUserCredits, getUserBalance } from '../d1/user';
 import { EMBEDDING_MODEL } from '../utils/common';
 
 export class SaveMessage extends OpenAPIRoute {
@@ -37,6 +37,11 @@ export class SaveMessage extends OpenAPIRoute {
     const userId = c.get('userId');
     const body = await c.req.json();
 
+    const currentCredits = await getUserBalance(c.env, userId);
+    if (currentCredits < 0) {
+      throw new GatewayServiceError(402, 'Insufficient credits');
+    }
+
     // Validate the message
     let message: Message;
     try {
@@ -54,7 +59,6 @@ export class SaveMessage extends OpenAPIRoute {
       body.top_k_related,
       body.threshold
     );
-
     // Deduct credits from user
     await deductUserCredits(c.env, userId, totalCost, EMBEDDING_MODEL);
 

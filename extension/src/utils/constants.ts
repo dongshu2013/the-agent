@@ -31,3 +31,5 @@ export const SYSTEM_MODEL_ID = 'system';
 export const MAX_TOOL_CALLS = 20;
 
 export const DEFAULT_MODEL = 'default';
+
+export const API_KEY_STORAGE_KEY = 'api_key';

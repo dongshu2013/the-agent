@@ -34,15 +34,8 @@ export class ChatCompletions extends OpenAPIRoute {
   async handle(c: Context) {
     const env = c.env;
     const userId = c.get('userId');
-    const params = await c.req.json();
-    params.model = DEFAULT_MODEL;
-
-    // Get user credits
     const credits = await getUserBalance(env, userId);
-
-    // Set minimum required credits (we'll do proper calculation after the response)
-    const MIN_REQUIRED_CREDITS = 0.01;
-    if (credits < MIN_REQUIRED_CREDITS) {
+    if (credits < 0) {
       return c.json(
         {
           error: {
@@ -57,6 +50,8 @@ export class ChatCompletions extends OpenAPIRoute {
     }
 
     // Create OpenAI client
+    const params = await c.req.json();
+    params.model = DEFAULT_MODEL;
     const client = createOpenAIClient(env.OPENROUTER_API_KEY, OPENROUTER_API_URL);
 
     // Handle streaming response

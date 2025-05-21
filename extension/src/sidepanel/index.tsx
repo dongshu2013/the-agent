@@ -41,14 +41,9 @@ const Sidepanel = () => {
       [currentConversationId]
     ) ?? [];
 
-  console.log("currentUser ===== ", currentUser);
-
   const conversations =
     useLiveQuery(
-      () =>
-        currentUser && currentUser.id
-          ? db.getAllConversations(currentUser.id)
-          : [],
+      () => (currentUser && currentUser.id ? db.getAllConversations(currentUser.id) : []),
       [currentUser?.id]
     ) ?? [];
 
@@ -128,7 +123,6 @@ const Sidepanel = () => {
         setLoginModalOpen(false);
       } catch (error) {
         handleApiError(error);
-
       } finally {
         setIsLoading(false);
       }
@@ -340,7 +334,7 @@ const Sidepanel = () => {
     if (!isInitialized) {
       initializeFromStorage();
     }
-  }, []); // Empty dependency array - only run once
+  }); // Empty dependency array - only run once
 
   // Debounced storage updates for apiKey
   useEffect(() => {
