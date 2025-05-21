@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useStorage } from '@plasmohq/storage/hook';
 import '../style.css';
 import Header from './components/Header';
 import Message from './components/Message';
@@ -14,21 +13,18 @@ import {
 import { db, UserInfo } from '~/utils/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { ChatHandler } from '../services/chat-handler';
-import { env } from '~/utils/env';
 import LoginModal from './components/LoginModal';
 import LoadingBrain from './components/LoadingBrain';
-import { APIClient, APIError } from '@the-agent/shared';
+import { APIError } from '@the-agent/shared';
 import { ApiKey } from '~/types';
 import { API_KEY_TAG } from '~/services/cache';
+import { getUserInfo, isEqualApiKey, parseApiKey } from '~/utils/user';
 
 const Sidepanel = () => {
-  const [apiKey, setApiKeyState] = useStorage<ApiKey | null>(API_KEY_TAG, null);
+  const [apiKey, setApiKey] = useState<ApiKey | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [prompt, setPrompt] = useState('');
-  const [currentConversationId, setCurrentConversationId] = useStorage<number>(
-    'currentConversationId',
-    -1
-  );
+  const [currentConversationId, setCurrentConversationId] = useState<number>(-1);
   const [showConversationList, setShowConversationList] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -38,7 +34,6 @@ const Sidepanel = () => {
   const [showSwitch, setShowSwitch] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
 
-  // 数据查询
   const messages =
     useLiveQuery(
       () =>
@@ -56,7 +51,7 @@ const Sidepanel = () => {
     (error: unknown) => {
       if (error instanceof APIError) {
         if (error.status === 401 || error.status === 403) {
-          setApiKeyState(
+          setApiKey(
             apiKey
               ? {
                   key: apiKey.key,
@@ -80,7 +75,7 @@ const Sidepanel = () => {
         role: 'error',
       });
     },
-    [currentConversationId, apiKey, setApiKeyState]
+    [currentConversationId, apiKey, setApiKey]
   );
 
   const refreshConversations = useCallback(
@@ -120,23 +115,8 @@ const Sidepanel = () => {
           return;
         }
 
-        const client = new APIClient({
-          baseUrl: env.BACKEND_URL,
-          apiKey: apiKeyToUse.key,
-        });
-        const user = await client.getUser();
-        const now = new Date().toISOString();
-        const userInfo = {
-          id: user.id,
-          email: user.email,
-          api_key_enabled: apiKeyToUse.enabled,
-          api_key: apiKeyToUse.key,
-          credits: user.balance.toString(),
-          created_at: now,
-          updated_at: now,
-          selectedModelId: 'system',
-        };
-        await db.initModels(user.id);
+        const userInfo = await getUserInfo(apiKeyToUse);
+        await db.initModels(userInfo.id);
         await db.saveOrUpdateUser(userInfo);
         setCurrentUser(userInfo);
         refreshConversations(userInfo.id);
@@ -155,30 +135,26 @@ const Sidepanel = () => {
       changes: { [key: string]: chrome.storage.StorageChange },
       area: string
     ) => {
+      // Only respond to external changes, not our own writes
       if (area === 'local' && changes[API_KEY_TAG]) {
-        let newApiKey: ApiKey | null = null;
-        if (typeof changes[API_KEY_TAG].newValue === 'string') {
-          newApiKey = JSON.parse(changes[API_KEY_TAG].newValue);
-        } else {
-          newApiKey = changes[API_KEY_TAG].newValue;
-        }
-        setApiKeyState(newApiKey);
-        if (!newApiKey) {
-          setLoginModalOpen(true);
-          return;
-        }
+        const oldApiKey = parseApiKey(changes[API_KEY_TAG].oldValue);
+        const newApiKey = parseApiKey(changes[API_KEY_TAG].newValue);
 
-        if (newApiKey.enabled) {
-          setShowSwitch(true);
-          await initializeUserAndData(newApiKey);
-        } else {
-          setLoginModalOpen(true);
+        // Skip if no actual change
+        if (!isEqualApiKey(oldApiKey, newApiKey)) {
+          setApiKey(newApiKey);
+          if (newApiKey?.enabled) {
+            setShowSwitch(true);
+            await initializeUserAndData(newApiKey);
+          } else {
+            setLoginModalOpen(true);
+          }
         }
       }
     };
     chrome.storage.onChanged.addListener(listener);
     return () => chrome.storage.onChanged.removeListener(listener);
-  }, [setApiKeyState, setShowSwitch, initializeUserAndData, setLoginModalOpen]);
+  }, [setApiKey, setShowSwitch, initializeUserAndData, setLoginModalOpen]);
 
   useEffect(() => {
     const handleMessages = (request: { name: string; text?: string }) => {
@@ -333,31 +309,54 @@ const Sidepanel = () => {
     }
   };
 
+  // Initialize state from storage - run only once on mount
   useEffect(() => {
-    const initializeApp = async (apiKey: ApiKey) => {
-      if (isInitialized) {
-        return;
-      }
-      await initializeUserAndData(apiKey);
-      setIsInitialized(true);
-    };
-    chrome.storage.local.get(API_KEY_TAG, result => {
-      let apiKey: ApiKey | null = null;
-      if (result[API_KEY_TAG]) {
-        if (typeof result[API_KEY_TAG] === 'string') {
-          apiKey = JSON.parse(result[API_KEY_TAG]);
-        } else {
-          apiKey = result[API_KEY_TAG];
+    const initializeFromStorage = async () => {
+      chrome.storage.local.get([API_KEY_TAG, 'currentConversationId'], result => {
+        const convId = result['currentConversationId'] || -1;
+        setCurrentConversationId(convId);
+
+        const storedApiKey = parseApiKey(result[API_KEY_TAG]);
+        if (storedApiKey) {
+          setApiKey(storedApiKey);
         }
-        setApiKeyState(apiKey);
-      }
-      if (!apiKey?.enabled) {
-        setLoginModalOpen(true);
-      } else {
-        initializeApp(apiKey);
-      }
-    });
-  }, [setLoginModalOpen, initializeUserAndData, setIsInitialized, isInitialized, setApiKeyState]);
+
+        if (!storedApiKey?.enabled) {
+          setLoginModalOpen(true);
+        } else {
+          initializeUserAndData(storedApiKey);
+          setIsInitialized(true);
+        }
+      });
+    };
+
+    // Only run this effect once on mount
+    if (!isInitialized) {
+      initializeFromStorage();
+    }
+  }, []); // Empty dependency array - only run once
+
+  // Debounced storage updates for apiKey
+  useEffect(() => {
+    if (!apiKey) return;
+
+    const timer = setTimeout(() => {
+      chrome.storage.local.set({ [API_KEY_TAG]: apiKey });
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [apiKey]);
+
+  // Debounced storage updates for currentConversationId
+  useEffect(() => {
+    if (currentConversationId === -1) return;
+
+    const timer = setTimeout(() => {
+      chrome.storage.local.set({ currentConversationId });
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [currentConversationId]);
 
   return (
     <div
