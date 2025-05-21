@@ -1,3 +1,4 @@
+import { TokenUsage } from '@the-agent/shared';
 import { GatewayServiceError } from '../types/service';
 import {
   MODEL_PRICING,
@@ -6,11 +7,6 @@ import {
   API_COST_PRICE,
   EMBEDDING_QUERY_COST_PRICE,
 } from './common';
-
-export interface TokenUsage {
-  promptTokens: number;
-  completionTokens: number;
-}
 
 export interface Cost {
   inputCost: number;
@@ -34,8 +30,8 @@ export function calculateCredits(model: string, tokenUsage: TokenUsage): CreditC
   }
 
   // Calculate costs with multipliers (per 1M tokens)
-  const inputCost = tokenUsage.promptTokens * pricing.inputPrice;
-  const outputCost = tokenUsage.completionTokens * pricing.outputPrice;
+  const inputCost = tokenUsage.prompt_tokens * pricing.inputPrice;
+  const outputCost = tokenUsage.completion_tokens * pricing.outputPrice;
   const totalCost = inputCost + outputCost;
   const cost: Cost = {
     inputCost,
@@ -47,30 +43,6 @@ export function calculateCredits(model: string, tokenUsage: TokenUsage): CreditC
   return {
     cost,
     tokenUsage,
-  };
-}
-
-/**
- * Creates a token usage tracker for streaming responses
- */
-export function createStreamingTokenTracker() {
-  let promptTokens = 0;
-  let completionTokens = 0;
-
-  return {
-    setPromptTokens: (tokens: number) => {
-      promptTokens = tokens;
-    },
-    setCompletionTokens: (tokens: number) => {
-      completionTokens = tokens;
-    },
-    addCompletionTokens: (tokens: number) => {
-      completionTokens += tokens;
-    },
-    getTokenUsage: (): TokenUsage => ({
-      promptTokens,
-      completionTokens,
-    }),
   };
 }
 
