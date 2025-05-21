@@ -9,7 +9,6 @@ if (!process.env.PLASMO_PUBLIC_WEB_URL) {
 }
 
 export const env: Env = {
-  DEFAULT_MODEL: process.env.PLASMO_PUBLIC_DEFAULT_MODEL || 'deepseek-chat',
   BACKEND_URL: process.env.PLASMO_PUBLIC_BACKEND_URL,
   WEB_URL: process.env.PLASMO_PUBLIC_WEB_URL,
 };

@@ -29,3 +29,5 @@ Keep responses concise and focused on the current task.
 export const SYSTEM_MODEL_ID = 'system';
 
 export const MAX_TOOL_CALLS = 20;
+
+export const DEFAULT_MODEL = 'default';

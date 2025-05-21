@@ -25,22 +25,17 @@ const createApiClient = async (): Promise<APIClient> => {
 /**
  * 获取所有会话
  */
-export const getConversations = async (apiKey: string): Promise<Conversation[]> => {
+export const getConversations = async (userId: string): Promise<Conversation[]> => {
   try {
-    const user = await db.getUserByApiKey(apiKey);
-    if (!user) {
-      throw new Error('User not found');
-    }
-
     const client = await createApiClient();
     const response = await client.listConversations();
     const conversations = response.conversations.map(conv => ({
       id: Number(conv.id),
       title: conv.messages?.[0]?.content?.slice(0, 20) || 'New Chat',
-      user_id: user.id,
+      user_id: userId,
       messages: conv.messages,
     }));
-    await db.saveConversationsAndMessages(conversations, user.id);
+    await db.saveConversationsAndMessages(conversations, userId);
 
     return conversations;
   } catch (error) {
@@ -49,30 +44,7 @@ export const getConversations = async (apiKey: string): Promise<Conversation[]> 
   }
 };
 
-/**
- * 获取当前会话
- */
-export const getCurrentConversation = async (apiKey: string): Promise<Conversation | null> => {
-  try {
-    const conversations = await getConversations(apiKey);
-    return conversations[0] || null; // 返回第一个会话作为当前会话
-  } catch {
-    return null;
-  }
-};
-
-/**
- * 创建新会话
- */
-export const createNewConversation = async (apiKey: string): Promise<Conversation> => {
-  const user = await db.getUserByApiKey(apiKey);
-  if (!user) {
-    throw new Error('Failed to create conversation');
-  }
-  return createNewConversationByUserId(user.id);
-};
-
-export const createNewConversationByUserId = async (userId: string): Promise<Conversation> => {
+export const createNewConversation = async (userId: string): Promise<Conversation> => {
   const convId = Date.now();
   const client = await createApiClient();
   await client.createConversation({ id: convId });

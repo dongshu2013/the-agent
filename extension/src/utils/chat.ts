@@ -1,7 +1,3 @@
-/**
- * 聊天服务 - 处理消息和聊天功能
- */
-
 import OpenAI from 'openai';
 import { env } from './env';
 import { getApiKey } from '../services/cache';
@@ -11,6 +7,7 @@ import { showLoginModal } from '~/utils/global-event';
 import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream.mjs';
 import { Message, SaveMessageResponse, ToolCall } from '@the-agent/shared';
 import { APIClient, APIError } from '@the-agent/shared';
+import { DEFAULT_MODEL } from './constants';
 
 export const sendChatCompletion = async (
   apiKey: string,
@@ -37,9 +34,7 @@ export const sendChatCompletion = async (
     return client.beta.chat.completions.stream(
       {
         model:
-          request.currentModel?.id === 'system'
-            ? env.DEFAULT_MODEL
-            : request.currentModel?.name || '',
+          request.currentModel?.id === 'system' ? DEFAULT_MODEL : request.currentModel?.name || '',
         messages: request.messages as OpenAI.Chat.ChatCompletionMessageParam[],
         tools: tools,
         tool_choice: 'auto',
@@ -53,9 +48,6 @@ export const sendChatCompletion = async (
   }
 };
 
-/**
- * Save message to backend
- */
 export const saveMessageApi = async ({
   message,
   top_k_related = 3,

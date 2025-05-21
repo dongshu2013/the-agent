@@ -4,7 +4,9 @@ import { createOpenAIClient } from '../utils/openai';
 import { getUserBalance, deductUserCredits } from '../d1/user';
 import { ChatCompletionCreateParamSchema, ChatCompletionResponseSchema } from '@the-agent/shared';
 import { calculateCredits, createStreamingTokenTracker } from '../utils/creditCalculator';
-import { DEEPSEEK_API_URL, OPENROUTER_API_URL } from '../utils/common';
+import { OPENROUTER_API_URL } from '../utils/common';
+
+const DEFAULT_MODEL = 'deepseek/deepseek-chat-v3-0324';
 
 export class ChatCompletions extends OpenAPIRoute {
   schema = {
@@ -33,6 +35,7 @@ export class ChatCompletions extends OpenAPIRoute {
     const env = c.env;
     const userId = c.get('userId');
     const params = await c.req.json();
+    params.model = DEFAULT_MODEL;
 
     // Get user credits
     const credits = await getUserBalance(env, userId);
@@ -54,13 +57,7 @@ export class ChatCompletions extends OpenAPIRoute {
     }
 
     // Create OpenAI client
-    let llmApiUrl = OPENROUTER_API_URL;
-    let llmApiKey = env.OPENROUTER_API_KEY;
-    if (params.model === 'deepseek-chat') {
-      llmApiUrl = DEEPSEEK_API_URL;
-      llmApiKey = env.DEEPSEEK_API_KEY;
-    }
-    const client = createOpenAIClient(llmApiKey, llmApiUrl);
+    const client = createOpenAIClient(env.OPENROUTER_API_KEY, OPENROUTER_API_URL);
 
     // Handle streaming response
     if (params.stream) {

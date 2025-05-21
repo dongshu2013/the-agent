@@ -5,7 +5,6 @@ export * from './api';
 export * from './settings';
 
 export interface Env {
-  DEFAULT_MODEL: string;
   BACKEND_URL: string;
   WEB_URL: string;
 }

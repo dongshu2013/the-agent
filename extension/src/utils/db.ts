@@ -1,10 +1,9 @@
 import { Conversation } from '../types/conversations';
 import Dexie, { Table } from 'dexie';
-import { env } from './env';
 import { Model } from '~/types';
 import { PROVIDER_MODELS } from './models';
 import { Message } from '@the-agent/shared';
-import { SYSTEM_MODEL_ID } from './constants';
+import { DEFAULT_MODEL, SYSTEM_MODEL_ID } from './constants';
 
 export interface UserInfo {
   id: string;
@@ -327,7 +326,7 @@ class MystaDB extends Dexie {
       provider.models.map(model => ({
         ...model,
         userId,
-        name: model.id === 'system' ? env.DEFAULT_MODEL : model.name,
+        name: model.id === 'system' ? DEFAULT_MODEL : model.name,
         type: model.id === 'system' ? 'Default' : provider.type,
         apiKey: model.id === 'system' ? '' : '',
         apiUrl: model.id === 'system' ? '' : model.apiUrl,
