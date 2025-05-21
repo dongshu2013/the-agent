@@ -18,6 +18,16 @@ const ConversationList = ({
 }: ConversationListProps) => {
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
 
+  const sortedConversations = conversations.sort((a, b) => {
+    const aMessages = a.messages || [];
+    const bMessages = b.messages || [];
+
+    const aId = aMessages.length > 0 ? aMessages[aMessages.length - 1].id : a.id;
+    const bId = bMessages.length > 0 ? bMessages[bMessages.length - 1].id : b.id;
+
+    return bId - aId;
+  });
+
   const handleDeleteClick = (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     setConfirmDelete(id);
@@ -102,9 +112,9 @@ const ConversationList = ({
             height: 'calc(100vh - 44px)',
           }}
         >
-          {conversations && conversations.length > 0 ? (
+          {sortedConversations && sortedConversations.length > 0 ? (
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              {conversations.map((conversation, index) => (
+              {sortedConversations.map((conversation, index) => (
                 <div
                   key={conversation.id}
                   style={{
