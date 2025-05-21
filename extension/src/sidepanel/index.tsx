@@ -80,7 +80,7 @@ const Sidepanel = () => {
         role: 'error',
       });
     },
-    [currentConversationId]
+    [currentConversationId, apiKey, setApiKeyState]
   );
 
   // Function to refresh and initialize conversations
@@ -156,7 +156,7 @@ const Sidepanel = () => {
         setIsLoading(false);
       }
     },
-    [currentConversationId, setCurrentConversationId]
+    [currentConversationId, setCurrentConversationId, handleApiError, refreshConversations]
   );
 
   useEffect(() => {
@@ -231,7 +231,7 @@ const Sidepanel = () => {
         })
       );
     }
-  }, [apiKey, currentConversationId, setLoginModalOpen]);
+  }, [apiKey, currentConversationId, setLoginModalOpen, handleApiError]);
 
   // 自动滚动到底部
   useEffect(() => {
@@ -358,7 +358,7 @@ const Sidepanel = () => {
         initializeApp(apiKey);
       }
     });
-  }, [setLoginModalOpen, initializeUserAndData, setIsInitialized]);
+  }, [setLoginModalOpen, initializeUserAndData, setIsInitialized, isInitialized, setApiKeyState]);
 
   return (
     <div

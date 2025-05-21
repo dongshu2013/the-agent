@@ -212,7 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user?.apiKey) {
       setAuthToLocalAndPostMessage({ apiKey: user.apiKey, apiKeyEnabled: user.apiKeyEnabled });
     }
-  }, [user?.apiKey]);
+  }, [user?.apiKey, user?.apiKeyEnabled]);
 
   return (
     <AuthContext.Provider

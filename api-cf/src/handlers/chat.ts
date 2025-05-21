@@ -91,7 +91,7 @@ export class ChatCompletions extends OpenAPIRoute {
                   tokenTracker.setPromptTokens(lastData.usage.prompt_tokens || 0);
                   tokenTracker.setCompletionTokens(lastData.usage.completion_tokens || 0);
                 }
-              } catch (e) {
+              } catch {
                 // Ignore parse errors for the last chunk
               }
 
@@ -114,7 +114,7 @@ export class ChatCompletions extends OpenAPIRoute {
                     tokenTracker.setPromptTokens(data.usage.prompt_tokens || 0);
                     tokenTracker.setCompletionTokens(data.usage.completion_tokens || 0);
                   }
-                } catch (e) {
+                } catch {
                   // Ignore parse errors for non-JSON lines
                 }
               }

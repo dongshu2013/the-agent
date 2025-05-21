@@ -12,6 +12,15 @@
     "build:web": "pnpm --filter @the-agent/shared build && pnpm --filter web build",
     "start:web": "pnpm --filter web start"
   },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,jsx,json,md}": [
+      "prettier --write"
+    ]
+  },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.32.1",
     "@typescript-eslint/parser": "^8.32.1",
