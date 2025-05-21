@@ -1,18 +1,11 @@
-/**
- * Conversation Types
- * Defines all conversation-related interfaces used in the application
- */
-
-import { Message } from "./messages";
+import { Conversation as C } from '@the-agent/shared';
 
 /**
  * Conversation model
  */
-export interface Conversation {
-  id: string;
+export interface Conversation extends C {
   title: string;
   user_id: string;
-  messages?: Message[];
 }
 
 /**
@@ -21,33 +14,7 @@ export interface Conversation {
 export interface ConversationListProps {
   conversations: Conversation[];
   currentConversationId: string | null;
-  selectConversation: (id: string) => void;
-  deleteConversation: (id: string, e: React.MouseEvent) => void;
+  selectConversation: (id: number) => void;
+  deleteConversation: (id: number, e: React.MouseEvent) => void;
   setShowConversationList: (show: boolean) => void;
-}
-
-/**
- * Create conversation response from API
- */
-export interface CreateConversationResponse {
-  success: boolean;
-  error?: string;
-  data?: {
-    id: string;
-    user_id: string;
-    created_at: string;
-    status: string;
-    title?: string;
-  };
-}
-
-/**
- * Save message response from API
- */
-export interface SaveMessageResponse {
-  success: boolean;
-  data?: {
-    top_k_messages: number[];
-  };
-  error?: string;
 }

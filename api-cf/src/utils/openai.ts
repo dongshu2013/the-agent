@@ -1,30 +1,28 @@
-import { ChatCompletionCreateParam } from '../types/chat';
+import { ChatCompletionCreateParam } from '@the-agent/shared';
 
 // OpenAI API client for chat completions
 export class OpenAIClient {
   private apiKey: string;
   private baseURL: string;
 
-  constructor(apiKey: string, baseURL = 'https://api.openai.com/v1') {
+  constructor(apiKey: string, baseURL: string) {
     this.apiKey = apiKey;
     this.baseURL = baseURL;
   }
 
   // Helper to filter out null and undefined values
-  private filterUndefined(obj: Record<string, any>): Record<string, any> {
+  private filterUndefined(obj: Record<string, unknown>): Record<string, unknown> {
     return Object.fromEntries(
       Object.entries(obj).filter(([_, v]) => v !== null && v !== undefined)
     );
   }
 
   // Create a chat completion
-  async createChatCompletion(
-    params: ChatCompletionCreateParam
-  ): Promise<Response> {
+  async createChatCompletion(params: ChatCompletionCreateParam): Promise<Response> {
     const url = `${this.baseURL}/chat/completions`;
 
     // Filter out undefined values
-    const filteredParams = this.filterUndefined(params as Record<string, any>);
+    const filteredParams = this.filterUndefined(params);
 
     const response = await fetch(url, {
       method: 'POST',
@@ -39,9 +37,7 @@ export class OpenAIClient {
   }
 
   // Stream a chat completion
-  async streamChatCompletion(
-    params: ChatCompletionCreateParam
-  ): Promise<Response> {
+  async streamChatCompletion(params: ChatCompletionCreateParam): Promise<Response> {
     // Ensure stream is set to true
     const streamParams = { ...params, stream: true };
 
@@ -66,9 +62,6 @@ export class OpenAIClient {
 }
 
 // Factory function to create an OpenAI client
-export function createOpenAIClient(
-  apiKey: string,
-  baseURL?: string
-): OpenAIClient {
+export function createOpenAIClient(apiKey: string, baseURL: string): OpenAIClient {
   return new OpenAIClient(apiKey, baseURL);
 }

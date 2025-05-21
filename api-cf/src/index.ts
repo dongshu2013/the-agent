@@ -2,15 +2,11 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { fromHono } from 'chanfana';
 
-import { jwtOrApiKeyAuthMiddleware } from './auth';
+import { jwtAuthMiddleware, jwtOrApiKeyAuthMiddleware } from './auth';
 import { GatewayServiceError } from './types/service';
 
 import { SaveMessage } from './handlers/message';
-import {
-  CreateConversation,
-  DeleteConversation,
-  ListConversations,
-} from './handlers/conversation';
+import { CreateConversation, DeleteConversation, ListConversations } from './handlers/conversation';
 import { ChatCompletions } from './handlers/chat';
 import {
   GetMyChat,
@@ -31,6 +27,7 @@ import {
   GetUserBalance,
   RotateApiKey,
   ToggleApiKeyEnabled,
+  RedeemCouponCode,
 } from './handlers/user';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -48,10 +45,8 @@ app.use(
 );
 
 // Add unauthenticated routes
-app.get('/', (c) => c.text(''));
-app.get('/health', (c) =>
-  c.json({ status: 'OK', version: '0.0.1' }, 200, corsHeaders)
-);
+app.get('/', c => c.text(''));
+app.get('/health', c => c.json({ status: 'OK', version: '0.0.1' }, 200, corsHeaders));
 
 // Authenticated routes
 app.use('/v1/conversation/create', jwtOrApiKeyAuthMiddleware);
@@ -69,13 +64,14 @@ app.use('/v1/tg/search_messages', jwtOrApiKeyAuthMiddleware);
 app.use('/v1/tg/sync_chat', jwtOrApiKeyAuthMiddleware);
 app.use('/v1/tg/sync_messages', jwtOrApiKeyAuthMiddleware);
 
-app.use('/v1/stripe/checkout', jwtOrApiKeyAuthMiddleware);
-
 app.use('/v1/user/balance', jwtOrApiKeyAuthMiddleware);
 app.use('/v1/user/credit_history', jwtOrApiKeyAuthMiddleware);
 app.use('/v1/user', jwtOrApiKeyAuthMiddleware);
-app.use('/v1/user/rotate_api_key', jwtOrApiKeyAuthMiddleware);
-app.use('/v1/user/toggle_api_key_enabled', jwtOrApiKeyAuthMiddleware);
+// Only JWT auth
+app.use('/v1/user/rotate_api_key', jwtAuthMiddleware);
+app.use('/v1/user/toggle_api_key_enabled', jwtAuthMiddleware);
+app.use('/v1/user/redeem_coupon_code', jwtAuthMiddleware);
+app.use('/v1/stripe/checkout', jwtAuthMiddleware);
 
 app.onError(async (err, c) => {
   if (err instanceof GatewayServiceError) {
@@ -128,19 +124,20 @@ openapi.post('/v1/stripe/webhook', StripeWebhook);
 
 openapi.post('/v1/user/rotate_api_key', RotateApiKey);
 openapi.post('/v1/user/toggle_api_key_enabled', ToggleApiKeyEnabled);
+openapi.post('/v1/user/redeem_coupon_code', RedeemCouponCode);
 
 openapi.get('/v1/user/balance', GetUserBalance);
 openapi.get('/v1/user/credit_history', GetCreditLogs);
 openapi.get('/v1/user', GetUser);
 
 // OpenAPI documentation endpoints
-app.get('/docs/openapi.json', (c) => {
-  const schema =
-    (openapi as any).schema || (openapi as any).getGeneratedSchema?.() || {};
+app.get('/docs/openapi.json', c => {
+  // @ts-expect-error: openapi is not a type
+  const schema = openapi.schema || openapi.getGeneratedSchema?.() || {};
   return c.json(schema);
 });
 
-app.get('/docs', (c) => {
+app.get('/docs', c => {
   const html = `
 <!DOCTYPE html>
 <html lang="en">

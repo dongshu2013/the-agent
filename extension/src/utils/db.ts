@@ -1,17 +1,14 @@
-import { Message } from "../types/messages";
-import { Conversation } from "../types/conversations";
-import Dexie, { Table } from "dexie";
-import { env } from "./env";
-import { Model } from "~/types";
-import { getApiKey } from "~/services/cache";
-import { PROVIDER_MODELS } from "./models";
-
-export const systemModelId = "system";
+import { Conversation } from '../types/conversations';
+import Dexie, { Table } from 'dexie';
+import { Model } from '~/types';
+import { PROVIDER_MODELS } from './models';
+import { Message } from '@the-agent/shared';
+import { DEFAULT_MODEL, SYSTEM_MODEL_ID } from './constants';
 
 export interface UserInfo {
   id: string;
-  username: string;
-  email: string | null;
+  username?: string;
+  email?: string | null;
   api_key_enabled: boolean;
   api_key: string;
   credits: string; // Credits stored as string in IndexedDB
@@ -28,18 +25,18 @@ class MystaDB extends Dexie {
   models!: Table<Model>;
 
   constructor() {
-    super("mysta-agent");
+    super('mysta-agent');
 
     this.version(6).stores({
-      conversations: "id, *messages, user_id",
-      messages: "id, conversation_id",
+      conversations: 'id, *messages, user_id',
+      messages: 'id, conversation_id',
       users:
-        "id, api_key, api_key_enabled, credits, created_at, email, username, photoURL, updated_at",
-      models: "id, userId, type, [userId+id]",
+        'id, api_key, api_key_enabled, credits, created_at, email, username, photoURL, updated_at',
+      models: 'id, userId, type, [userId+id]',
     });
 
     // Add index definitions
-    this.messages.hook("creating", function (primKey, obj) {
+    this.messages.hook('creating', function (_, obj) {
       if (!obj.id) {
         obj.id = Date.now();
       }
@@ -63,14 +60,14 @@ class MystaDB extends Dexie {
   // Model operations
   async getUserModels(userId: string) {
     if (!userId) {
-      throw new Error("User ID is required to get models");
+      throw new Error('User ID is required to get models');
     }
     try {
-      return await this.models.where("userId").equals(userId).toArray();
+      return await this.models.where('userId').equals(userId).toArray();
     } catch (error) {
-      console.error("Error getting user models:", error);
+      console.error('Error getting user models:', error);
       throw new Error(
-        `Failed to get user models: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to get user models: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -84,9 +81,9 @@ class MystaDB extends Dexie {
     apiUrl: string;
   }) {
     const existingModel = await this.models
-      .where("id")
+      .where('id')
       .equals(model.id)
-      .and((m) => m.userId === "")
+      .and(m => m.userId === '')
       .first();
     if (existingModel) {
       await this.models.put({ ...existingModel, ...model });
@@ -104,16 +101,13 @@ class MystaDB extends Dexie {
     await this.conversations.put(conversation);
   }
 
-  async getConversation(id: string): Promise<Conversation | null> {
+  async getConversation(id: number): Promise<Conversation | null> {
     const conversation = await this.conversations.get(id);
     return conversation || null;
   }
 
   async getAllConversations(userId: string): Promise<Conversation[]> {
-    const conversations = await this.conversations
-      .where("user_id")
-      .equals(userId)
-      .toArray();
+    const conversations = await this.conversations.where('user_id').equals(userId).toArray();
 
     return await Promise.all(
       conversations
@@ -121,65 +115,56 @@ class MystaDB extends Dexie {
         .map(async (conversation: Conversation) => ({
           ...conversation,
           messages: await this.messages
-            .where("conversation_id")
+            .where('conversation_id')
             .equals(conversation.id)
-            .sortBy("id"),
+            .sortBy('id'),
         })) || []
     );
   }
 
-  async deleteConversation(id: string): Promise<void> {
+  async deleteConversation(id: number): Promise<void> {
     await this.conversations.delete(id);
   }
 
   // Message operations
   async saveMessage(message: Message): Promise<void> {
     if (!message.id) {
-      throw new Error("Message missing id");
+      throw new Error('Message missing id');
     }
 
-    try {
-      await this.messages.put(message);
-    } catch (error) {
-      throw error;
-    }
+    await this.messages.put(message);
   }
 
   async saveMessages(messages: Message[]): Promise<void> {
     await this.messages.bulkPut(messages);
   }
 
-  async getMessagesByConversation(conversationId: string): Promise<Message[]> {
+  async getMessagesByConversation(conversationId: number): Promise<Message[]> {
     const messages = await this.messages
-      .where("conversation_id")
+      .where('conversation_id')
       .equals(conversationId)
-      .sortBy("id");
+      .sortBy('id');
     return messages || [];
   }
 
-  async deleteMessagesByConversation(conversationId: string): Promise<void> {
-    await this.messages
-      .where("conversation_id")
-      .equals(conversationId)
-      .delete();
+  async deleteMessagesByConversation(conversationId: number): Promise<void> {
+    await this.messages.where('conversation_id').equals(conversationId).delete();
   }
 
   // Related messages operations
   async getRelatedMessagesWithContext(
     messageIds: number[],
-    conversationId: string
+    conversationId: number
   ): Promise<Message[]> {
     const allMessages = await this.messages
-      .where("conversation_id")
+      .where('conversation_id')
       .equals(conversationId)
-      .sortBy("id");
+      .sortBy('id');
 
     const contextMessages: Message[] = [];
 
     for (const messageId of messageIds) {
-      const targetIndex = allMessages.findIndex(
-        (m: Message) => m.id === messageId
-      );
+      const targetIndex = allMessages.findIndex((m: Message) => m.id === messageId);
       if (targetIndex === -1) continue;
 
       // Get 2 messages before and after the target message
@@ -191,110 +176,83 @@ class MystaDB extends Dexie {
     return contextMessages;
   }
 
-  async getRecentMessages(
-    conversationId: string,
-    limit: number
-  ): Promise<Message[]> {
+  async getRecentMessages(conversationId: number, limit: number): Promise<Message[]> {
     const messages = await this.messages
-      .where("conversation_id")
+      .where('conversation_id')
       .equals(conversationId)
       .reverse()
-      .sortBy("id");
+      .sortBy('id');
 
     return messages.slice(0, limit);
   }
 
   // Conversation and Messages operations
-  async saveConversationsAndMessages(
-    conversations: Conversation[],
-    userId: string
-  ): Promise<void> {
+  async saveConversationsAndMessages(conversations: Conversation[], userId: string): Promise<void> {
     try {
-      await this.transaction(
-        "rw",
-        [this.conversations, this.messages],
-        async () => {
-          const userConversations = await this.conversations
-            .where("user_id")
-            .equals(userId)
-            .toArray();
-          const conversationIds = userConversations.map((conv) => conv.id);
-          await this.messages
-            .where("conversation_id")
-            .anyOf(conversationIds)
-            .delete();
-          await this.conversations.where("user_id").equals(userId).delete();
+      await this.transaction('rw', [this.conversations, this.messages], async () => {
+        const userConversations = await this.conversations
+          .where('user_id')
+          .equals(userId)
+          .toArray();
+        const conversationIds = userConversations.map(conv => conv.id);
+        await this.messages.where('conversation_id').anyOf(conversationIds).delete();
+        await this.conversations.where('user_id').equals(userId).delete();
 
-          for (const conversation of conversations) {
-            const { messages, ...rest } = conversation;
-            await this.conversations.put(rest);
+        for (const conversation of conversations) {
+          const { messages, ...rest } = conversation;
+          await this.conversations.put(rest);
 
-            if (messages && messages.length > 0) {
-              const validMessages = messages.filter((msg) => {
-                if (msg && msg.id) {
-                  return {
-                    ...msg,
-                    conversation_id: conversation.id,
-                  };
-                }
-              });
-              await this.messages.bulkPut(validMessages);
-            }
+          if (messages && messages.length > 0) {
+            const validMessages = messages.filter(msg => {
+              if (msg && msg.id) {
+                return {
+                  ...msg,
+                  conversation_id: conversation.id,
+                };
+              }
+            });
+            await this.messages.bulkPut(validMessages);
           }
         }
-      );
+      });
     } catch (error) {
       throw new Error(
-        `Failed to save conversations and messages: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to save conversations and messages: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
 
   async clearAllConversations() {
-    await this.transaction(
-      "rw",
-      [this.conversations, this.messages],
-      async () => {
-        await this.messages.clear();
-        await this.conversations.clear();
-      }
-    );
+    await this.transaction('rw', [this.conversations, this.messages], async () => {
+      await this.messages.clear();
+      await this.conversations.clear();
+    });
   }
 
   async clearUserData(userId: string) {
-    await this.transaction(
-      "rw",
-      [this.conversations, this.messages],
-      async () => {
-        // Delete all messages from conversations belonging to this user
-        const userConversations = await this.conversations
-          .where("user_id")
-          .equals(userId)
-          .toArray();
+    await this.transaction('rw', [this.conversations, this.messages], async () => {
+      // Delete all messages from conversations belonging to this user
+      const userConversations = await this.conversations.where('user_id').equals(userId).toArray();
 
-        const conversationIds = userConversations.map((conv) => conv.id);
+      const conversationIds = userConversations.map(conv => conv.id);
 
-        // Delete all messages from these conversations
-        await this.messages
-          .where("conversation_id")
-          .anyOf(conversationIds)
-          .delete();
+      // Delete all messages from these conversations
+      await this.messages.where('conversation_id').anyOf(conversationIds).delete();
 
-        // Delete all conversations for this user
-        await this.conversations.where("user_id").equals(userId).delete();
-      }
-    );
+      // Delete all conversations for this user
+      await this.conversations.where('user_id').equals(userId).delete();
+    });
   }
 
   // 新增：获取当前用户（取 updated_at 最新的用户）
   async getCurrentUser(): Promise<UserInfo | null> {
     try {
-      const users = await this.users.orderBy("updated_at").reverse().toArray();
+      const users = await this.users.orderBy('updated_at').reverse().toArray();
       return users[0] || null;
     } catch (error) {
-      console.error("Error getting current user:", error);
+      console.error('Error getting current user:', error);
       throw new Error(
-        `Failed to get current user: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to get current user: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -304,10 +262,7 @@ class MystaDB extends Dexie {
       const user = await this.getCurrentUser();
       if (!user) return null;
 
-      const selectedModel = await this.models
-        .where("id")
-        .equals(user.selectedModelId)
-        .first();
+      const selectedModel = await this.models.where('id').equals(user.selectedModelId).first();
       if (!selectedModel) return null;
 
       return {
@@ -319,15 +274,14 @@ class MystaDB extends Dexie {
         userId: selectedModel.userId,
       };
     } catch (error) {
-      console.error("Error getting selected model:", error);
+      console.error('Error getting selected model:', error);
       return null;
     }
   }
 
   async saveOrUpdateUser(user: UserInfo): Promise<void> {
-    console.log("saveOrUpdateUser = ", user);
     if (!user || !user.id) {
-      throw new Error("Invalid user data: user ID is required");
+      throw new Error('Invalid user data: user ID is required');
     }
 
     try {
@@ -335,18 +289,18 @@ class MystaDB extends Dexie {
       const existing = await this.users.get(user.id);
 
       const systemModel = {
-        id: systemModelId,
-        type: "system",
-        name: "Mysta",
+        id: SYSTEM_MODEL_ID,
+        type: 'system',
+        name: 'Mysta',
         userId: user.id,
-        apiKey: "",
-        apiUrl: "",
+        apiKey: '',
+        apiUrl: '',
       };
 
       if (existing) {
         await this.users.put({
           ...user,
-          selectedModelId: systemModelId,
+          selectedModelId: SYSTEM_MODEL_ID,
           created_at: existing.created_at,
           updated_at: now,
         });
@@ -356,28 +310,26 @@ class MystaDB extends Dexie {
 
       await this.models.put(systemModel);
     } catch (error) {
-      console.error("Error saving/updating user:", error);
+      console.error('Error saving/updating user:', error);
       throw new Error(
-        `Failed to save/update user: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to save/update user: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
-  async getUserByApiKey(): Promise<UserInfo | null> {
-    const apiKey = await getApiKey();
-    if (!apiKey) return null;
-    const user = await this.users.where("api_key").equals(apiKey).first();
+  async getUserByApiKey(apiKey: string): Promise<UserInfo | null> {
+    const user = await this.users.where('api_key').equals(apiKey).first();
     return user || null;
   }
 
   async initModels(userId: string): Promise<void> {
-    const allModels = PROVIDER_MODELS.flatMap((provider) =>
-      provider.models.map((model) => ({
+    const allModels = PROVIDER_MODELS.flatMap(provider =>
+      provider.models.map(model => ({
         ...model,
         userId,
-        name: model.id === "system" ? env.DEFAULT_MODEL : model.name,
-        type: model.id === "system" ? "Default" : provider.type,
-        apiKey: model.id === "system" ? "" : "",
-        apiUrl: model.id === "system" ? "" : model.apiUrl,
+        name: model.id === 'system' ? DEFAULT_MODEL : model.name,
+        type: model.id === 'system' ? 'Default' : provider.type,
+        apiKey: model.id === 'system' ? '' : '',
+        apiUrl: model.id === 'system' ? '' : model.apiUrl,
       }))
     );
     await this.models.bulkPut(allModels);
@@ -389,14 +341,14 @@ let dbInstance = new MystaDB();
 export async function resetDB() {
   await dbInstance.delete();
   dbInstance = new MystaDB();
-  (window as any).mystaDB = dbInstance;
+  (window as unknown as { mystaDB: MystaDB }).mystaDB = dbInstance;
   return dbInstance;
 }
 
 const dbProxy = new Proxy(
   {},
   {
-    get(target, prop) {
+    get(_, prop) {
       return dbInstance[prop as keyof MystaDB];
     },
   }

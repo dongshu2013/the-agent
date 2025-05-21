@@ -38,17 +38,16 @@
     "dotenv": "^16.0.3",
     "lucide-react": "^0.509.0",
     "openai": "^4.93.0",
-    "playwright": "^1.52.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-markdown": "7.1.2",
     "remark-gfm": "3.0.1",
     "turndown": "^7.2.0",
     "uuid": "^9.0.1",
-    "webextension-polyfill": "^0.10.0"
+    "webextension-polyfill": "^0.10.0",
+    "@the-agent/shared": "workspace:*"
   },
   "devDependencies": {
-    "@plasmohq/prettier-plugin-sort-imports": "^4.0.1",
     "@types/chrome": "^0.0.248",
     "@types/node": "^20.11.0",
     "@types/uuid": "^9.0.7",

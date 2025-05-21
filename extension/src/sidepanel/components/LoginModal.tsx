@@ -1,34 +1,32 @@
-import { Modal } from "antd";
-import { env } from "~/utils/env";
-import logoIcon from "~/assets/icon64.png";
-import betaIcon from "~/assets/beta.png";
-import { UserInfo } from "~/utils/db";
+import { Modal } from 'antd';
+import { env } from '~/utils/env';
+import logoIcon from '~/assets/icon64.png';
+import betaIcon from '~/assets/beta.png';
+import { UserInfo } from '~/utils/db';
 
 interface LoginModalProps {
   open: boolean;
-  showSwitch: boolean;
-  pendingUser?: UserInfo | null;
+  isSwitch?: boolean;
   currentUser?: UserInfo | null;
-  onContinue?: () => void;
+  text?: string;
   onClose?: () => void;
 }
 
 export default function LoginModal({
   open,
-  showSwitch,
-  pendingUser,
+  isSwitch,
   currentUser,
-  onContinue,
+  text,
   onClose,
 }: LoginModalProps) {
   const handleLogin = () => {
     const webUrl = env.WEB_URL;
-    window.open(webUrl, "_blank");
+    window.open(webUrl, '_blank');
   };
 
   const getDisplayName = (user?: UserInfo | null) => {
-    if (!user) return "None";
-    return user.username || user.email || "unknown";
+    if (!user) return 'None';
+    return user.username || user.email || 'unknown';
   };
 
   return (
@@ -40,34 +38,34 @@ export default function LoginModal({
       width={400}
       styles={{
         body: {
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
           borderRadius: 24,
         },
       }}
     >
       <div
         style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "10px",
-          marginBottom: "24px",
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '10px',
+          marginBottom: '24px',
         }}
       >
         <img
           src={logoIcon}
           alt="Mysta Logo"
           style={{
-            height: "40px",
+            height: '40px',
           }}
         />
         <h2
           style={{
-            margin: "0",
-            fontSize: "40px",
-            fontWeight: "600",
+            margin: '0',
+            fontSize: '40px',
+            fontWeight: '600',
           }}
         >
           MYSTA
@@ -76,83 +74,55 @@ export default function LoginModal({
           src={betaIcon}
           alt="Beta"
           style={{
-            height: "20px",
+            height: '20px',
           }}
         />
       </div>
-      {showSwitch ? (
+      {isSwitch ? (
         <>
-          <div style={{ fontWeight: 500, marginBottom: 16 }}>
-            New Mysta account detected
-            <div style={{ fontSize: 14, color: "#333", marginTop: 8 }}>
-              Current account:{" "}
-              <span style={{ color: "#888" }}>
-                {getDisplayName(currentUser)}
-              </span>
-              <br />
-              New account:{" "}
-              <span style={{ color: "#22c55e" }}>
-                {getDisplayName(pendingUser)}
-              </span>
-            </div>
+          <div style={{ fontWeight: 500, textAlign: 'center' }}>Mysta Account Detected</div>
+          <div style={{ fontSize: 14, color: '#333', textAlign: 'center' }}>
+            <span style={{ color: '#888' }}>{getDisplayName(currentUser)}</span>
           </div>
-          <button
-            onClick={onContinue}
-            style={{
-              width: "100%",
-              maxWidth: 320,
-              height: 48,
-              borderRadius: 24,
-              border: "1.5px solid #d1d5db",
-              background: "#000",
-              color: "#fff",
-              fontSize: 18,
-              fontWeight: 500,
-              marginBottom: 16,
-              cursor: "pointer",
-            }}
-          >
-            Switch Account
-          </button>
           <button
             onClick={onClose}
             style={{
-              width: "100%",
+              width: '100%',
               maxWidth: 320,
               height: 48,
               borderRadius: 24,
-              border: "1.5px solid #d1d5db",
-              background: "#fff",
-              color: "#222",
+              border: '1.5px solid #d1d5db',
+              background: '#fff',
+              color: '#222',
               fontSize: 18,
               fontWeight: 500,
-              marginBottom: 8,
-              cursor: "pointer",
+              marginTop: 16,
+              cursor: 'pointer',
             }}
           >
-            Cancel
+            OK
           </button>
         </>
       ) : (
         <button
           onClick={handleLogin}
           style={{
-            width: "100%",
+            width: '100%',
             maxWidth: 320,
             height: 48,
             borderRadius: 24,
-            border: "1.5px solid #d1d5db",
-            background: "#000",
+            border: '1.5px solid #d1d5db',
+            background: '#000',
             fontSize: 18,
             fontWeight: 500,
-            color: "#fff",
+            color: '#fff',
             marginBottom: 24,
-            boxShadow: "0 1px 4px 0 rgba(0,0,0,0.04)",
-            cursor: "pointer",
-            transition: "background 0.2s, color 0.2s",
+            boxShadow: '0 1px 4px 0 rgba(0,0,0,0.04)',
+            cursor: 'pointer',
+            transition: 'background 0.2s, color 0.2s',
           }}
         >
-          <span>Sign In with Mysta Web</span>
+          <span>{text || 'Sign In with Mysta Web'}</span>
         </button>
       )}
     </Modal>

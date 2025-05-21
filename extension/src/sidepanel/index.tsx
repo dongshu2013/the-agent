@@ -1,54 +1,43 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { useStorage } from "@plasmohq/storage/hook";
-import "../style.css";
-import Header from "./components/Header";
-import Message from "./components/Message";
-import InputArea from "./components/InputArea";
-import ConversationList from "./components/ConversationList";
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import '../style.css';
+import Header from './components/Header';
+import Message from './components/Message';
+import InputArea from './components/InputArea';
+import ConversationList from './components/ConversationList';
 import {
-  createNewConversation,
   selectConversation as selectConv,
   deleteConversation as deleteConv,
   getConversations,
-} from "../services/conversation";
-import { getApiKey, setApiKey } from "~/services/cache";
-import { db, resetDB, UserInfo } from "~/utils/db";
-import { useLiveQuery } from "dexie-react-hooks";
-import { ChatHandler } from "../services/chat-handler";
-import { env } from "~/utils/env";
-import LoginModal from "./components/LoginModal";
-import { showLoginModal } from "~/utils/global-event";
-import LoadingBrain from "./components/LoadingBrain";
+  createNewConversation,
+} from '../services/conversation';
+import { db, UserInfo } from '~/utils/db';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { ChatHandler } from '../services/chat-handler';
+import LoginModal from './components/LoginModal';
+import LoadingBrain from './components/LoadingBrain';
+import { APIError } from '@the-agent/shared';
+import { ApiKey } from '~/types';
+import { API_KEY_TAG } from '~/services/cache';
+import { getUserInfo, isEqualApiKey, parseApiKey } from '~/utils/user';
 
 const Sidepanel = () => {
-  const [apiKey, setApiKeyState] = useStorage<string>("apiKey", "");
+  const [apiKey, setApiKey] = useState<ApiKey | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [prompt, setPrompt] = useState("");
-  const [currentConversationId, setCurrentConversationId] = useStorage<
-    string | null
-  >("currentConversationId", null);
+  const [prompt, setPrompt] = useState('');
+  const [currentConversationId, setCurrentConversationId] = useState<number>(-1);
   const [showConversationList, setShowConversationList] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [chatHandler, setChatHandler] = useState<ChatHandler | null>(null);
-  const didRedirect = useRef(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [showSwitch, setShowSwitch] = useState(false);
-  const [pendingApiKey, setPendingApiKey] = useState<string | null>(null);
-  const [pendingUser, setPendingUser] = useState<UserInfo | null>(null);
   const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
 
-  let messageIdOffset = 0;
-  const generateMessageId = () => Date.now() + messageIdOffset++;
-
-  // 数据查询
   const messages =
     useLiveQuery(
       () =>
-        currentConversationId
-          ? db.getMessagesByConversation(currentConversationId)
-          : [],
+        currentConversationId !== -1 ? db.getMessagesByConversation(currentConversationId) : [],
       [currentConversationId]
     ) ?? [];
 
@@ -56,212 +45,151 @@ const Sidepanel = () => {
 
   const conversations =
     useLiveQuery(
-      () =>
-        currentUser && currentUser.id
-          ? db.getAllConversations(currentUser.id)
-          : [],
+      () => (currentUser && currentUser.id ? db.getAllConversations(currentUser.id) : []),
       [currentUser?.id]
     ) ?? [];
 
-  const redirectToLogin = useCallback(() => {
-    if (!didRedirect.current) {
-      window.open(`${env.WEB_URL}`, "_blank");
-      didRedirect.current = true;
-    }
-  }, []);
-
   const handleApiError = useCallback(
-    (error: any) => {
+    (error: unknown) => {
+      if (error instanceof APIError) {
+        if (error.status === 401 || error.status === 403) {
+          setApiKey(
+            apiKey
+              ? {
+                  key: apiKey.key,
+                  enabled: false,
+                }
+              : null
+          );
+          return;
+        }
+      }
+      let message = 'An error occurred. Please try again.';
+      if (error instanceof Error) {
+        message = error.message;
+      } else if (typeof error === 'string') {
+        message = error;
+      }
       db.saveMessage({
-        id: generateMessageId(),
-        content:
-          typeof error === "string"
-            ? error
-            : "An error occurred. Please try again.",
-        conversation_id: currentConversationId || "",
-        role: "system",
+        id: Date.now(),
+        content: message,
+        conversation_id: currentConversationId || -1,
+        role: 'error',
       });
     },
-    [currentConversationId]
+    [currentConversationId, apiKey, setApiKey]
+  );
+
+  const refreshConversations = useCallback(
+    async (userId: string) => {
+      try {
+        const freshConversations = await db.getAllConversations(userId);
+        if (freshConversations && freshConversations.length > 0) {
+          setTimeout(() => {
+            setCurrentConversationId(freshConversations[0].id);
+          }, 100);
+        } else {
+          const newConv = await createNewConversation(userId);
+          setTimeout(() => {
+            setCurrentConversationId(newConv.id);
+          }, 100);
+        }
+      } catch (error) {
+        handleApiError(error);
+      }
+    },
+    [handleApiError, setCurrentConversationId]
   );
 
   const initializeUserAndData = useCallback(
-    async (apiKeyToUse: string) => {
+    async (apiKeyToUse: ApiKey) => {
       try {
         setIsLoading(true);
-        const verifyResponse = await fetch(`${env.BACKEND_URL}/v1/user`, {
-          method: "GET",
-          headers: {
-            "x-api-key": apiKeyToUse,
-            "Content-Type": "application/json",
-          },
-        });
+        if (!apiKeyToUse.enabled) {
+          throw new Error('API key is disabled');
+        }
 
-        if (!verifyResponse.ok) {
-          setLoginModalOpen(true);
+        const existingUser = await db.getUserByApiKey(apiKeyToUse.key);
+        if (existingUser) {
+          refreshConversations(existingUser.id);
+          setCurrentUser(existingUser);
+          setLoginModalOpen(false);
           return;
         }
 
-        const verifyData = await verifyResponse.json();
-
-        if (verifyData.success && verifyData.user) {
-          await db.initModels(verifyData.user.user_id);
-
-          const now = new Date().toISOString();
-          const userInfo = {
-            id: verifyData.user.user_id,
-            username:
-              verifyData.user.displayName || verifyData.user.email || "unknown",
-            email: verifyData.user.email,
-            api_key_enabled: true,
-            api_key: apiKeyToUse,
-            credits: verifyData.user.credits || "0",
-            created_at: now,
-            updated_at: now,
-            selectedModelId: "system",
-            photo_url: verifyData.user.photoURL,
-          };
-
-          await db.saveOrUpdateUser(userInfo);
-          setCurrentUser(userInfo);
-
-          setLoginModalOpen(false);
-
-          const dbConversations = await db.getAllConversations(
-            verifyData.user.user_id
-          );
-          if (
-            !currentConversationId ||
-            !(await db.getConversation(currentConversationId))
-          ) {
-            if (dbConversations?.length > 0) {
-              setCurrentConversationId(dbConversations[0].id);
-            } else {
-              const newConv = await createNewConversation();
-              setCurrentConversationId(newConv.id);
-            }
-          }
-        }
+        const userInfo = await getUserInfo(apiKeyToUse);
+        await db.initModels(userInfo.id);
+        await db.saveOrUpdateUser(userInfo);
+        setCurrentUser(userInfo);
+        refreshConversations(userInfo.id);
+        setLoginModalOpen(false);
+      } catch (error) {
+        handleApiError(error);
       } finally {
         setIsLoading(false);
       }
     },
-    [currentConversationId]
+    [handleApiError, refreshConversations]
   );
 
-  const handleSwitchAccount = useCallback(async () => {
-    if (!pendingApiKey) return;
-    await resetDB();
-    await setApiKey(pendingApiKey);
-    setApiKeyState(pendingApiKey);
-    setLoginModalOpen(false);
-    setShowSwitch(false);
-    setCurrentConversationId(null);
-    await initializeUserAndData(pendingApiKey);
-  }, [pendingApiKey, initializeUserAndData]);
-
   useEffect(() => {
-    const handler = () => {
-      console.log("SHOW_LOGIN_MODAL event triggered");
-      setLoginModalOpen(true);
-    };
-    window.addEventListener("SHOW_LOGIN_MODAL", handler);
-    return () => window.removeEventListener("SHOW_LOGIN_MODAL", handler);
-  }, []);
+    const listener = async (
+      changes: { [key: string]: chrome.storage.StorageChange },
+      area: string
+    ) => {
+      // Only respond to external changes, not our own writes
+      if (area === 'local' && changes[API_KEY_TAG]) {
+        const oldApiKey = parseApiKey(changes[API_KEY_TAG].oldValue);
+        const newApiKey = parseApiKey(changes[API_KEY_TAG].newValue);
 
-  useEffect(() => {
-    const listener = async (changes: any, area: string) => {
-      if (area === "local" && changes.apiKey) {
-        const newApiKey = changes.apiKey.newValue;
-        if (!newApiKey) return;
-
-        // 用新 apiKey 获取新 userId
-        const res = await fetch(`${env.BACKEND_URL}/v1/user`, {
-          method: "GET",
-          headers: {
-            "x-api-key": newApiKey,
-            "Content-Type": "application/json",
-          },
-        });
-        const data = await res.json();
-        const newUserId = data?.user?.user_id;
-
-        // 这里一定要用 getCurrentUser 拿到"切换前"的 userId
-        const user = await db.getCurrentUser();
-        const oldUserId = user?.id;
-
-        console.log("API Key changed:", newApiKey);
-        console.log("oldUserId:", oldUserId, "newUserId:", newUserId);
-
-        if (oldUserId && newUserId && oldUserId !== newUserId) {
-          // 只要 userId 变了，先弹窗，不要立刻初始化新账号
-          setPendingApiKey(newApiKey);
-          setPendingUser(data.user);
-          setCurrentUser(user);
-          setShowSwitch(true);
-          setLoginModalOpen(true);
-        } else {
-          setApiKeyState(newApiKey);
-          await initializeUserAndData(newApiKey);
+        // Skip if no actual change
+        if (!isEqualApiKey(oldApiKey, newApiKey)) {
+          setApiKey(newApiKey);
+          if (newApiKey?.enabled) {
+            setShowSwitch(true);
+            await initializeUserAndData(newApiKey);
+          } else {
+            setLoginModalOpen(true);
+          }
         }
       }
     };
     chrome.storage.onChanged.addListener(listener);
     return () => chrome.storage.onChanged.removeListener(listener);
-  }, []);
+  }, [setApiKey, setShowSwitch, initializeUserAndData, setLoginModalOpen]);
 
-  // 首次加载
   useEffect(() => {
-    const initializeApp = async () => {
-      if (isInitialized) return;
-      let storedApiKey = await getApiKey();
-      if (!storedApiKey) {
-        setLoginModalOpen(true);
-        return;
-      }
-      await initializeUserAndData(storedApiKey);
-      setIsInitialized(true);
-    };
-    initializeApp();
-    // eslint-disable-next-line
-  }, [isInitialized]);
-
-  // 消息处理
-  useEffect(() => {
-    const handleMessages = (request: any) => {
-      if (request.name === "selected-text" && request.text) {
+    const handleMessages = (request: { name: string; text?: string }) => {
+      if (request.name === 'selected-text' && request.text) {
         setPrompt(request.text);
       }
-      if (request.name === "focus-input") {
-        const inputElement = document.querySelector("textarea");
+      if (request.name === 'focus-input') {
+        const inputElement = document.querySelector('textarea');
         inputElement?.focus();
       }
-      if (request.name === "api-key-missing") {
-        redirectToLogin();
+      if (request.name === 'api-key-missing') {
+        setLoginModalOpen(true);
       }
     };
-
     chrome.runtime.onMessage.addListener(handleMessages);
     return () => chrome.runtime.onMessage.removeListener(handleMessages);
-  }, [redirectToLogin]);
+  }, [setPrompt, setLoginModalOpen]);
 
   useEffect(() => {
-    if (apiKey && currentConversationId) {
+    const handler = () => {
+      setLoginModalOpen(true);
+    };
+    window.addEventListener('SHOW_LOGIN_MODAL', handler);
+    return () => window.removeEventListener('SHOW_LOGIN_MODAL', handler);
+  }, [setLoginModalOpen]);
+
+  useEffect(() => {
+    if (apiKey?.enabled && currentConversationId) {
       setChatHandler(
         new ChatHandler({
-          apiKey: apiKey as string,
+          apiKey: apiKey,
           currentConversationId,
-          onError: (error) => {
-            if (
-              typeof error === "string" &&
-              (error.includes("Authentication failed") ||
-                error.includes("API key") ||
-                error.includes("403") ||
-                error.includes("401"))
-            ) {
-              redirectToLogin();
-            }
-          },
+          onError: handleApiError,
           onStreamStart: () => {
             setIsLoading(true);
             setIsStreaming(true);
@@ -270,18 +198,21 @@ const Sidepanel = () => {
             setIsLoading(false);
             setIsStreaming(false);
           },
-          onMessageUpdate: async (message) => {
+          onMessageUpdate: async message => {
             await db.saveMessage(message);
           },
         })
       );
     }
-  }, [apiKey, currentConversationId, redirectToLogin]);
+  }, [apiKey, currentConversationId, setLoginModalOpen, handleApiError]);
 
   // 自动滚动到底部
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    const scrollToBottom = () => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+    scrollToBottom();
+  }, [messages.length]);
 
   // 事件处理函数
   const handleSubmit = async (e: React.FormEvent) => {
@@ -289,7 +220,7 @@ const Sidepanel = () => {
     if (!prompt.trim() || !chatHandler) return;
 
     const currentPrompt = prompt.trim();
-    setPrompt("");
+    setPrompt('');
     await chatHandler.handleSubmit(currentPrompt);
   };
 
@@ -303,8 +234,8 @@ const Sidepanel = () => {
     if (willShow) {
       try {
         setIsLoading(true);
-        if (!conversations || conversations.length === 0) {
-          await getConversations();
+        if (currentUser?.id && (!conversations || conversations.length === 0)) {
+          await getConversations(currentUser.id);
         }
       } catch (error) {
         handleApiError(error);
@@ -316,10 +247,10 @@ const Sidepanel = () => {
     setShowConversationList(willShow);
   };
 
-  const handleSelectConversation = async (id: string) => {
+  const handleSelectConversation = async (id: number) => {
     if (isLoading) return;
 
-    if (id === "new") {
+    if (id === -1) {
       await handleCreateNewConversation();
       return;
     }
@@ -337,7 +268,7 @@ const Sidepanel = () => {
     }
   };
 
-  const handleDeleteConversation = async (id: string, e: React.MouseEvent) => {
+  const handleDeleteConversation = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     if (isLoading) return;
 
@@ -345,15 +276,17 @@ const Sidepanel = () => {
     try {
       await deleteConv(id);
       if (id === currentConversationId) {
-        const remaining = conversations?.filter((c) => c.id !== id);
+        const remaining = conversations?.filter(c => c.id !== id);
         if (remaining?.length > 0) {
           const conversation = await selectConv(remaining[0].id);
           if (conversation) {
             setCurrentConversationId(remaining[0].id);
           }
         } else {
-          const newConv = await createNewConversation();
-          setCurrentConversationId(newConv.id);
+          if (currentUser?.id) {
+            const newConv = await createNewConversation(currentUser.id);
+            setCurrentConversationId(newConv.id);
+          }
         }
       }
     } catch (error) {
@@ -367,8 +300,10 @@ const Sidepanel = () => {
     if (isLoading) return;
     setIsLoading(true);
     try {
-      const newConv = await createNewConversation();
-      setCurrentConversationId(newConv.id);
+      if (currentUser?.id) {
+        const newConv = await createNewConversation(currentUser.id);
+        setCurrentConversationId(newConv.id);
+      }
     } catch (error) {
       handleApiError(error);
     } finally {
@@ -376,40 +311,73 @@ const Sidepanel = () => {
     }
   };
 
+  // Initialize state from storage - run only once on mount
   useEffect(() => {
-    const checkLogin = async () => {
-      const key = await getApiKey();
-      if (!key) {
-        showLoginModal();
-      }
-    };
-    checkLogin();
-  }, []);
+    const initializeFromStorage = async () => {
+      chrome.storage.local.get([API_KEY_TAG, 'currentConversationId'], result => {
+        const convId = result['currentConversationId'] || -1;
+        setCurrentConversationId(convId);
 
+        const storedApiKey = parseApiKey(result[API_KEY_TAG]);
+        if (storedApiKey) {
+          setApiKey(storedApiKey);
+        }
+
+        if (!storedApiKey?.enabled) {
+          setLoginModalOpen(true);
+        } else {
+          initializeUserAndData(storedApiKey);
+          setIsInitialized(true);
+        }
+      });
+    };
+
+    // Only run this effect once on mount
+    if (!isInitialized) {
+      initializeFromStorage();
+    }
+  }, []); // Empty dependency array - only run once
+
+  // Debounced storage updates for apiKey
   useEffect(() => {
-    chrome.storage.local.get("apiKey", (result) => {
-      if (result.apiKey) setApiKeyState(result.apiKey);
-    });
-  }, []);
+    if (!apiKey) return;
+
+    const timer = setTimeout(() => {
+      chrome.storage.local.set({ [API_KEY_TAG]: apiKey });
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [apiKey]);
+
+  // Debounced storage updates for currentConversationId
+  useEffect(() => {
+    if (currentConversationId === -1) return;
+
+    const timer = setTimeout(() => {
+      chrome.storage.local.set({ currentConversationId });
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [currentConversationId]);
 
   return (
     <div
       style={{
-        height: "100vh",
-        width: "100%",
-        position: "relative",
-        overflow: "hidden",
+        height: '100vh',
+        width: '100%',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
       {/* Header */}
       <div
         style={{
-          position: "absolute",
+          position: 'absolute',
           top: 0,
           left: 0,
           right: 0,
-          backgroundColor: "white",
-          borderBottom: "1px solid #f0f0f0",
+          backgroundColor: 'white',
+          borderBottom: '1px solid #f0f0f0',
           zIndex: 10,
         }}
       >
@@ -422,51 +390,51 @@ const Sidepanel = () => {
       {/* Messages Area */}
       <div
         style={{
-          position: "absolute",
-          top: "44px",
-          bottom: "90px",
+          position: 'absolute',
+          top: '44px',
+          bottom: '90px',
           left: 0,
           right: 0,
-          overflowY: "auto",
-          overflowX: "hidden",
-          backgroundColor: "#FFFFFF",
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          backgroundColor: '#FFFFFF',
         }}
       >
         <div className="max-w-3xl mx-auto p-4">
           {messages.length === 0 ? (
             <div
               style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: "120px 24px",
-                minHeight: "100%",
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '120px 24px',
+                minHeight: '100%',
               }}
             >
               <div
                 style={{
-                  maxWidth: "480px",
-                  textAlign: "center",
+                  maxWidth: '480px',
+                  textAlign: 'center',
                 }}
               >
                 <h3
                   style={{
-                    fontSize: "28px",
-                    fontWeight: "600",
-                    color: "#374151",
-                    marginBottom: "16px",
-                    lineHeight: "1.3",
+                    fontSize: '28px',
+                    fontWeight: '600',
+                    color: '#374151',
+                    marginBottom: '16px',
+                    lineHeight: '1.3',
                   }}
                 >
                   Ask anything. Automate everything.
                 </h3>
                 <p
                   style={{
-                    fontSize: "16px",
-                    color: "#6b7280",
-                    lineHeight: "1.6",
-                    marginBottom: !apiKey ? "32px" : "0",
+                    fontSize: '16px',
+                    color: '#6b7280',
+                    lineHeight: '1.6',
+                    marginBottom: !apiKey ? '32px' : '0',
                   }}
                 >
                   Start typing — your AI agent is here to help.
@@ -474,32 +442,29 @@ const Sidepanel = () => {
                 {!apiKey && (
                   <p
                     style={{
-                      fontSize: "14px",
-                      color: "#9ca3af",
-                      maxWidth: "400px",
-                      lineHeight: "1.5",
+                      fontSize: '14px',
+                      color: '#9ca3af',
+                      maxWidth: '400px',
+                      lineHeight: '1.5',
                     }}
                   >
-                    You haven't set up your API key yet. Please login to your
-                    web account to get started.
+                    You haven&apos;t set up your API key yet. Please login to your web account to
+                    get started.
                   </p>
                 )}
               </div>
             </div>
           ) : (
-            <div style={{ paddingBottom: "32px" }}>
+            <div style={{ paddingBottom: '32px' }}>
               {messages.map((message, index) => (
                 <Message
                   key={message.id || index}
                   message={message}
-                  isLatestResponse={
-                    index === messages.length - 1 &&
-                    message.role === "assistant"
-                  }
+                  isLatestResponse={index === messages.length - 1 && message.role === 'assistant'}
                 />
               ))}
               {isStreaming && (
-                <div style={{ padding: "16px 0", textAlign: "center" }}>
+                <div style={{ padding: '16px 0', textAlign: 'center' }}>
                   <LoadingBrain />
                 </div>
               )}
@@ -512,11 +477,11 @@ const Sidepanel = () => {
       {/* Input Area */}
       <div
         style={{
-          position: "absolute",
+          position: 'absolute',
           bottom: 0,
           left: 0,
           right: 0,
-          backgroundColor: "white",
+          backgroundColor: 'white',
           zIndex: 10,
         }}
       >
@@ -537,20 +502,25 @@ const Sidepanel = () => {
           currentConversationId={currentConversationId}
           selectConversation={handleSelectConversation}
           deleteConversation={handleDeleteConversation}
-          setShowConversationList={(show: boolean) =>
-            toggleConversationList(show)
-          }
+          setShowConversationList={(show: boolean) => toggleConversationList(show)}
         />
       )}
 
       <LoginModal
         open={loginModalOpen}
-        showSwitch={showSwitch}
-        pendingUser={pendingUser}
+        isSwitch={false}
+        text={apiKey && !apiKey.enabled ? 'Enable Your Mysta API Key' : 'Sign In with Mysta Web'}
         currentUser={currentUser}
-        onContinue={handleSwitchAccount}
-        onClose={() => {
-          setLoginModalOpen(false);
+      />
+      <LoginModal
+        open={showSwitch}
+        isSwitch={true}
+        currentUser={currentUser}
+        onClose={async () => {
+          // First stop streaming and hide the switch modal
+          if (chatHandler) {
+            chatHandler.stopStreaming();
+          }
           setShowSwitch(false);
         }}
       />

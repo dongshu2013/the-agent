@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 const LoadingBrain: React.FC = () => {
   return (
@@ -20,13 +20,13 @@ const LoadingBrain: React.FC = () => {
       <div className="text-sm font-medium text-gray-600">
         thinking
         <span className="inline-flex ml-3">
-          <span className="loading-dot" style={{ animationDelay: "0s" }}>
+          <span className="loading-dot" style={{ animationDelay: '0s' }}>
             .
           </span>
-          <span className="loading-dot" style={{ animationDelay: "0.3s" }}>
+          <span className="loading-dot" style={{ animationDelay: '0.3s' }}>
             .
           </span>
-          <span className="loading-dot" style={{ animationDelay: "0.6s" }}>
+          <span className="loading-dot" style={{ animationDelay: '0.6s' }}>
             .
           </span>
         </span>

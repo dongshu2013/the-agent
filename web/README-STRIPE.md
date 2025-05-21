@@ -28,6 +28,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 ## Testing
 
 1. Use Stripe's test cards for testing payments:
+
    - Card number: `4242 4242 4242 4242`
    - Expiration date: Any future date
    - CVC: Any 3 digits

@@ -1,34 +1,32 @@
-export interface ToolCall {
-  function: {
-    name: string;
-    arguments: string;
-  };
-  id: string;
-  type: string;
+import { ToolCall } from '@the-agent/shared';
+
+export interface ToolCallResponse {
+  success: boolean;
+  data?: object;
+  error?: string;
 }
 
 export class ToolExecutor {
-  async executeTool(toolCall: ToolCall): Promise<any> {
+  async executeTool(toolCall: ToolCall): Promise<ToolCallResponse> {
     try {
       if (!toolCall.function.name) {
-        throw new Error("Tool name is required");
+        throw new Error('Tool name is required');
       }
 
       const toolName = toolCall.function.name;
-      console.log(`Executing tool: ${toolName}`);
 
       // 处理 TabToolkit 调用
-      if (toolName.startsWith("TabToolkit_")) {
+      if (toolName.startsWith('TabToolkit_')) {
         return await this.executeTabToolkit(toolCall);
       }
 
       // 处理 WebToolkit 调用
-      if (toolName.startsWith("WebToolkit_")) {
+      if (toolName.startsWith('WebToolkit_')) {
         return await this.executeWebToolkit(toolCall);
       }
 
       // 处理 TgToolkit 调用
-      if (toolName.startsWith("TgToolkit_")) {
+      if (toolName.startsWith('TgToolkit_')) {
         return await this.executeTgToolkit(toolCall);
       }
 
@@ -39,37 +37,31 @@ export class ToolExecutor {
     }
   }
 
-  private async executeTgToolkit(toolCall: ToolCall): Promise<any> {
+  private async executeTgToolkit(toolCall: ToolCall): Promise<ToolCallResponse> {
     const params = this.parseToolParams(toolCall);
     const message = {
-      name: "execute-tool",
+      name: 'execute-tool',
       body: { name: toolCall.function.name, arguments: params },
     };
 
-    console.log("Sending TgToolkit message to background:", message);
-
     return new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage(message, (response) => {
+      chrome.runtime.sendMessage(message, response => {
         if (chrome.runtime.lastError) {
-          console.error("TgToolkit error:", chrome.runtime.lastError);
+          console.error('TgToolkit error:', chrome.runtime.lastError);
           reject(chrome.runtime.lastError);
           return;
         }
 
         if (!response) {
-          const error = new Error(
-            "No response received from background script"
-          );
+          const error = new Error('No response received from background script');
           console.error(error);
           reject(error);
           return;
         }
 
-        console.log("TgToolkit response:", response);
-
         if (!response.success) {
-          const error = new Error(response.error || "Unknown error");
-          console.error("TgToolkit failed:", error);
+          const error = new Error(response.error || 'Unknown error');
+          console.error('TgToolkit failed:', error);
           reject(error);
           return;
         }
@@ -79,37 +71,31 @@ export class ToolExecutor {
     });
   }
 
-  private async executeWebToolkit(toolCall: ToolCall): Promise<any> {
+  private async executeWebToolkit(toolCall: ToolCall): Promise<ToolCallResponse> {
     const params = this.parseToolParams(toolCall);
     const message = {
-      name: "execute-tool",
+      name: 'execute-tool',
       body: { name: toolCall.function.name, arguments: params },
     };
 
-    console.log("Sending WebToolkit message to background:", message);
-
     return new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage(message, (response) => {
+      chrome.runtime.sendMessage(message, response => {
         if (chrome.runtime.lastError) {
-          console.error("WebToolkit error:", chrome.runtime.lastError);
+          console.error('WebToolkit error:', chrome.runtime.lastError);
           reject(chrome.runtime.lastError);
           return;
         }
 
         if (!response) {
-          const error = new Error(
-            "No response received from background script"
-          );
+          const error = new Error('No response received from background script');
           console.error(error);
           reject(error);
           return;
         }
 
-        console.log("WebToolkit response:", response);
-
         if (!response.success) {
-          const error = new Error(response.error || "Unknown error");
-          console.error("WebToolkit failed:", error);
+          const error = new Error(response.error || 'Unknown error');
+          console.error('WebToolkit failed:', error);
           reject(error);
           return;
         }
@@ -119,36 +105,30 @@ export class ToolExecutor {
     });
   }
 
-  private async executeTabToolkit(toolCall: ToolCall): Promise<any> {
+  private async executeTabToolkit(toolCall: ToolCall): Promise<ToolCallResponse> {
     const params = this.parseToolParams(toolCall);
     const message = {
-      name: "execute-tool",
+      name: 'execute-tool',
       body: { name: toolCall.function.name, arguments: params },
     };
 
-    console.log("Sending TabToolkit message to background:", message);
-
     return new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage(message, (response) => {
+      chrome.runtime.sendMessage(message, response => {
         if (chrome.runtime.lastError) {
           reject(chrome.runtime.lastError);
           return;
         }
 
         if (!response) {
-          const error = new Error(
-            "No response received from background script"
-          );
+          const error = new Error('No response received from background script');
           console.error(error);
           reject(error);
           return;
         }
 
-        console.log("TabToolkit response:", response);
-
         if (!response.success) {
-          const error = new Error(response.error || "Unknown error");
-          console.error("TabToolkit failed:", error);
+          const error = new Error(response.error || 'Unknown error');
+          console.error('TabToolkit failed:', error);
           reject(error);
           return;
         }
@@ -158,26 +138,24 @@ export class ToolExecutor {
     });
   }
 
-  private parseToolParams(toolCall: ToolCall): any {
+  private parseToolParams(toolCall: ToolCall): Record<string, string> {
     try {
-      return toolCall.function.arguments
-        ? JSON.parse(toolCall.function.arguments)
-        : {};
+      return toolCall.function.arguments ? JSON.parse(toolCall.function.arguments) : {};
     } catch (error) {
-      console.error("Error parsing tool arguments:", error);
+      console.error('Error parsing tool arguments:', error);
       return {};
     }
   }
 
   async executeToolCall(
     toolCall: ToolCall
-  ): Promise<{ success: boolean; data: any }> {
+  ): Promise<{ success: boolean; data?: object; error?: string }> {
     try {
       return await this.executeTool(toolCall);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      console.error("Tool execution failed:", message);
-      return { success: false, data: message };
+      console.error('Tool execution failed:', message);
+      return { success: false, error: message };
     }
   }
 }

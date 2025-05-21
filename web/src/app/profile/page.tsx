@@ -6,24 +6,24 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { RefreshCw } from 'lucide-react';
 import { PaymentModal } from './PaymentModal';
+import { CouponCodeModal } from './CouponCodeModal';
 import { CreditsCharts } from './CreditsCharts';
 import { CreditsTable } from './CreditsTable';
-import { getTelegramStats } from '@/lib/api_service';
-import { formatCredits } from '@/lib/utils';
+import { TelegramStats } from '@the-agent/shared';
+import { createApiClient } from '@/lib/api_client';
+import { formatCurrency } from '@/lib/utils';
 
 export default function ProfilePage() {
   const { user, loading, signOut, rotateApiKey, toggleApiKey, refreshUserData } = useAuth();
   const [isCopied, setIsCopied] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
-  const [telegramStats, setTelegramStats] = useState<{
-    channels_count: number;
-    messages_count: number;
-  } | null>(null);
+  const [telegramStats, setTelegramStats] = useState<TelegramStats | null>(null);
   const [isLoadingTelegramStats, setIsLoadingTelegramStats] = useState(false);
   const router = useRouter();
   const [buyCreditsOpen, setBuyCreditsOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [redeemCouponOpen, setRedeemCouponOpen] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -34,23 +34,22 @@ export default function ProfilePage() {
 
   // Fetch Telegram stats when user is loaded
   useEffect(() => {
+    const fetchTelegramStats = async () => {
+      if (!user || !user.idToken) return;
+      setIsLoadingTelegramStats(true);
+      try {
+        const data = await createApiClient(user.idToken).getTelegramStats();
+        setTelegramStats(data);
+      } catch (error) {
+        console.error('Error fetching Telegram stats:', error);
+      } finally {
+        setIsLoadingTelegramStats(false);
+      }
+    };
     if (user) {
       fetchTelegramStats();
     }
   }, [user]);
-
-  const fetchTelegramStats = async () => {
-    if (!user || !user.idToken) return;
-    setIsLoadingTelegramStats(true);
-    try {
-      const data = await getTelegramStats(user.idToken);
-      setTelegramStats(data);
-    } catch (error) {
-      console.error('Error fetching Telegram stats:', error);
-    } finally {
-      setIsLoadingTelegramStats(false);
-    }
-  };
 
   const handleCopyApiKey = async () => {
     if (user?.apiKey) {
@@ -260,9 +259,9 @@ export default function ProfilePage() {
                 <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-4">
                   {isLoadingTelegramStats
                     ? 'Loading Telegram data...'
-                    : telegramStats && telegramStats.channels_count > 0
-                    ? `${telegramStats.channels_count} chats imported, ${telegramStats.messages_count} messages imported`
-                    : 'No data has been imported yet...'}
+                    : telegramStats && telegramStats.total_dialogs > 0
+                      ? `${telegramStats.total_dialogs} chats imported, ${telegramStats.total_messages} messages imported`
+                      : 'No data has been imported yet...'}
                 </p>
                 <button
                   className="px-4 py-2 text-sm font-medium text-white bg-black rounded-md hover:opacity-70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black transition-opacity"
@@ -370,7 +369,7 @@ export default function ProfilePage() {
 
             <div className="flex items-center space-x-4">
               <div className="text-lg font-bold text-gray-900 dark:text-white">
-                ${formatCredits(user.credits, 2)}
+                {formatCurrency(user.balance, { maximumFractionDigits: 2 })}
               </div>
               <div className="flex space-x-2">
                 <button
@@ -378,6 +377,12 @@ export default function ProfilePage() {
                   className="px-4 py-2 text-sm font-medium text-white bg-black rounded-md hover:opacity-70 transition-opacity"
                 >
                   Add Credits
+                </button>
+                <button
+                  onClick={() => setRedeemCouponOpen(true)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 rounded-md"
+                >
+                  Redeem Coupon
                 </button>
               </div>
             </div>
@@ -401,6 +406,7 @@ export default function ProfilePage() {
 
       {/* Modals */}
       <PaymentModal isOpen={buyCreditsOpen} onClose={() => setBuyCreditsOpen(false)} />
+      <CouponCodeModal isOpen={redeemCouponOpen} onClose={() => setRedeemCouponOpen(false)} />
     </div>
   );
 }

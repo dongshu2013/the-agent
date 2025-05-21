@@ -1,11 +1,11 @@
 export const PROVIDER_MODELS = [
   {
-    type: "system",
+    type: 'system',
     models: [
       {
-        id: "system",
-        name: "Mysta",
-        apiUrl: "",
+        id: 'system',
+        name: 'Mysta',
+        apiUrl: '',
       },
     ],
   },

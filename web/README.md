@@ -1,8 +1,8 @@
-## Prisma 
+## Prisma
 
-1. edit `prisma/schema.prisma` 
+1. edit `prisma/schema.prisma`
 2. run `pnpm prisma migrate dev --name <migration_name>` to update local database, `pnpm prisma generate` to generate client code
-3. git push will auto trigger railway start command `pnpm prisma migrate deploy & pnpm start` to update remote database 
+3. git push will auto trigger railway start command `pnpm prisma migrate deploy & pnpm start` to update remote database
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
@@ -41,12 +41,13 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-
 ## Database Operations Guidelines
 
 ### Environment Setup
+
 1. Ensure PostgreSQL client is installed
 2. Configure `.env` file with database connection info:
+
 ```bash
 DATABASE_URL="postgresql://username:password@host:port/dbname"
 ```
@@ -54,20 +55,24 @@ DATABASE_URL="postgresql://username:password@host:port/dbname"
 ### Database Schema Change Workflow
 
 1. Create Migration File
+
    - Create new migration folder in `prisma/migrations/`
    - Naming format: `YYYYMMDDHHMMSS_description`
    - Create `migration.sql` in the folder
 
 2. Write SQL Migration Script
+
    - Write change SQL in `migration.sql`
    - Include rollback plan in `rollback.sql`
    - Example:
+
    ```sql
    -- Add new column
    ALTER TABLE table_name ADD COLUMN column_name data_type [constraints];
    ```
 
 3. Execute Migration
+
    ```bash
    # Execute migration file
    psql -h <host> -p <port> -U <username> -d <dbname> -f prisma/migrations/YYYYMMDDHHMMSS_description/migration.sql
@@ -80,24 +85,31 @@ DATABASE_URL="postgresql://username:password@host:port/dbname"
    ```
 
 ### Important Notes
+
 - ⚠️ Do not modify schema.prisma file directly
 - ✅ All schema changes must be done via SQL migration files
 - 📝 Migration files must have clear change descriptions
 - 🔄 Large changes should be executed in batches
 
 ### Production Deployment
+
 - Code push to main branch triggers deployment
 - Railway automatically executes database migrations
 - Test migration scripts in staging environment first
 
 ### Troubleshooting
+
 - Migration failure: Check SQL syntax and database connection
 - Rollback: Execute corresponding rollback.sql
 - Data inconsistency: Use `prisma db pull` to sync latest structure
 
 ### Best Practices
+
 - One major change per migration file
 - Maintain backward compatibility
 - Consider performance impact for large table changes
 - Regular cleanup of unused indexes and columns
+
+```
+
 ```

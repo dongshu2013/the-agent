@@ -3,12 +3,8 @@
  * Defines all API-related interfaces used in the application
  */
 
-import { Model } from ".";
-import {
-  CreateConversationResponse,
-  SaveMessageResponse,
-} from "./conversations";
-import { ChatMessage } from "./messages";
+import { ChatMessage } from '@the-agent/shared';
+import { Model } from '.';
 
 /**
  * Chat request interface
@@ -16,23 +12,6 @@ import { ChatMessage } from "./messages";
 export interface ChatRequest {
   currentModel: Model | null;
   messages: ChatMessage[];
-  max_tokens?: number;
-  stream?: boolean;
-  tools?: any[];
-  top_k_related?: number;
-}
-
-/**
- * Chat response interface
- */
-export interface ChatResponse {
-  success: boolean;
-  data?: any;
-  error?: string;
-  tool_calls?: Array<{
-    name: string;
-    arguments: Record<string, any>;
-  }>;
 }
 
 /**
@@ -42,18 +21,3 @@ export interface MemoryOptions {
   strategy?: number;
   systemPrompt?: string;
 }
-
-/**
- * Tool call result interface
- */
-export interface ToolCallResult {
-  toolName: string;
-  toolInput: Record<string, any>;
-  toolOutput: any;
-  error?: string;
-}
-
-/**
- * API service exports
- */
-export type { CreateConversationResponse, SaveMessageResponse };

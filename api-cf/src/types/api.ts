@@ -3,7 +3,7 @@
  */
 
 // Base API Response interface
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T> {
   success: boolean;
   data?: T;
   error?: {
@@ -30,10 +30,7 @@ export function createSuccessResponse<T>(data: T): ApiResponse<T> {
 }
 
 // Helper function to create error response
-export function createErrorResponse(
-  code: string,
-  message: string
-): ApiResponse {
+export function createErrorResponse(code: string, message: string): ApiResponse<undefined> {
   return {
     success: false,
     error: {

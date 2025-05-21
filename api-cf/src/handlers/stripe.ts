@@ -5,7 +5,11 @@ import { z } from 'zod';
 import Stripe from 'stripe';
 import { createOrder, finalizeOrder, updateOrderStatus } from '../d1/payment';
 import { GatewayServiceError } from '../types/service';
-import { OrderStatus } from '../d1/types';
+import {
+  OrderStatusSchema,
+  StripeCheckoutRequestSchema,
+  StripeCheckoutResponseSchema,
+} from '@the-agent/shared';
 
 export function getStripe(env: Env) {
   if (!env.STRIPE_PRIVATE_KEY) {
@@ -23,23 +27,17 @@ export class StripeCheckout extends OpenAPIRoute {
       body: {
         content: {
           'application/json': {
-            schema: z.object({
-              amount: z.number().min(5),
-            }),
+            schema: StripeCheckoutRequestSchema,
           },
         },
       },
     },
     responses: {
       '200': {
-        description: 'User info',
+        description: 'Stripe checkout session',
         content: {
           'application/json': {
-            schema: z.object({
-              order_id: z.string(),
-              session_id: z.string(),
-              public_key: z.string(),
-            }),
+            schema: StripeCheckoutResponseSchema,
           },
         },
       },
@@ -120,8 +118,7 @@ export class StripeWebhook extends OpenAPIRoute {
     switch (event.type) {
       case 'checkout.session.completed':
       case 'checkout.session.async_payment_succeeded':
-        const completed = event.data.object as Stripe.Checkout.Session;
-        // console.log('---completed:', completed);
+        const completed = event.data.object;
 
         if (!completed.metadata?.orderId || !completed.amount_subtotal) {
           console.log('invalid order id or payment amount');
@@ -129,35 +126,35 @@ export class StripeWebhook extends OpenAPIRoute {
         }
         await finalizeOrder(
           c.env,
-          completed.metadata.orderId,
+          Number(completed.metadata.orderId),
           completed.id,
           completed.amount_subtotal
         );
         break;
       case 'checkout.session.expired':
-        const expired = event.data.object as Stripe.Checkout.Session;
+        const expired = event.data.object;
         if (!expired.metadata?.orderId) {
           console.log('invalid order id');
           return;
         }
         await updateOrderStatus(
           c.env,
-          expired.metadata?.orderId,
+          Number(expired.metadata?.orderId),
           expired.id,
-          OrderStatus.CANCELLED
+          OrderStatusSchema.enum.cancelled
         );
         break;
       case 'checkout.session.async_payment_failed':
-        const failed = event.data.object as Stripe.Checkout.Session;
+        const failed = event.data.object;
         if (!failed.metadata?.orderId) {
           console.log('invalid order id');
           return;
         }
         await updateOrderStatus(
           c.env,
-          failed.metadata?.orderId,
+          Number(failed.metadata?.orderId),
           failed.id,
-          OrderStatus.FAILED
+          OrderStatusSchema.enum.failed
         );
         break;
       default:

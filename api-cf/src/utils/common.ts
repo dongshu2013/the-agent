@@ -32,13 +32,9 @@ export interface ModelPricing {
 
 // credit cost per token for the prompt.
 export const MODEL_PRICING: Record<string, ModelPricing> = {
-  'deepseek/deepseek-chat': {
-    inputPrice: 0.28,
-    outputPrice: 1.11,
-  },
-  'deepseek-chat': {
-    inputPrice: 0.28,
-    outputPrice: 1.11,
+  'deepseek/deepseek-chat-v3-0324': {
+    inputPrice: 1.0,
+    outputPrice: 2.0,
   },
   // Embedding Models
   'intfloat/multilingual-e5-large': {

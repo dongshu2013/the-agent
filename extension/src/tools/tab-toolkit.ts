@@ -1,7 +1,48 @@
-export interface WebInteractionResult {
-  success: boolean;
-  data?: any;
-  error?: string;
+import { WebInteractionResult } from '~/types/tools';
+
+interface LoadTabResult {
+  tabId: number;
+  url: string;
+  title: string;
+}
+
+interface SwitchTabResult {
+  tabId?: number;
+  url: string;
+  title: string;
+}
+
+interface OpenTabResult {
+  tabId: number;
+  alreadyOpened: boolean;
+  url: string;
+  title: string;
+}
+
+interface CloseTabResult {
+  tabId: number;
+}
+
+type ListTabsResult = {
+  tabId?: number;
+  url?: string;
+  title?: string;
+}[];
+
+interface GetActiveTabResult {
+  tabId?: number;
+  url?: string;
+  title?: string;
+}
+
+interface CreatePopupWindowResult {
+  windowId?: number;
+  tabId: number;
+  url?: string;
+}
+
+interface CloseWindowResult {
+  windowId: number;
 }
 
 const TAB_LOAD_TIMEOUT = 10000;
@@ -10,10 +51,10 @@ export class TabToolkit {
   /**
    * Open a new tab with a specific URL
    */
-  static async openTab(url: string): Promise<WebInteractionResult> {
+  static async openTab(url: string): Promise<WebInteractionResult<OpenTabResult>> {
     try {
       const existingTabs = await chrome.tabs.query({});
-      const matchedTab = existingTabs.find((tab) => tab.url === url);
+      const matchedTab = existingTabs.find(tab => tab.url === url);
 
       if (matchedTab && matchedTab.id !== undefined) {
         // 只调用 switchToTab，让它负责等待
@@ -31,7 +72,7 @@ export class TabToolkit {
         } else {
           return {
             success: false,
-            error: switchResult.error || "Failed to switch to existing tab",
+            error: switchResult.error || 'Failed to switch to existing tab',
             data: {
               tabId: matchedTab.id,
               alreadyOpened: true,
@@ -41,8 +82,8 @@ export class TabToolkit {
       }
 
       // 新建 tab 并等待加载完成
-      return new Promise((resolve) => {
-        chrome.tabs.create({ url }, async (newTab) => {
+      return new Promise(resolve => {
+        chrome.tabs.create({ url }, async newTab => {
           if (chrome.runtime.lastError) {
             resolve({
               success: false,
@@ -56,10 +97,7 @@ export class TabToolkit {
           }
 
           // 等待新 tab 加载完成
-          const loadResult = await TabToolkit.waitForTabLoad(
-            newTab.id!,
-            TAB_LOAD_TIMEOUT
-          );
+          const loadResult = await TabToolkit.waitForTabLoad(newTab.id!, TAB_LOAD_TIMEOUT);
           if (loadResult.success) {
             resolve({
               success: true,
@@ -73,7 +111,7 @@ export class TabToolkit {
           } else {
             resolve({
               success: false,
-              error: loadResult.error || "Failed to load new tab",
+              error: loadResult.error || 'Failed to load new tab',
               data: {
                 tabId: newTab.id!,
                 alreadyOpened: false,
@@ -93,8 +131,8 @@ export class TabToolkit {
   /**
    * Close a specific tab
    */
-  static closeTab(tabId: number): Promise<WebInteractionResult> {
-    return new Promise((resolve) => {
+  static closeTab(tabId: number): Promise<WebInteractionResult<CloseTabResult>> {
+    return new Promise(resolve => {
       chrome.tabs.remove(tabId, () => {
         if (chrome.runtime.lastError) {
           resolve({
@@ -114,10 +152,9 @@ export class TabToolkit {
   /**
    * Find a tab by URL or title
    */
-  static async listTabs(): Promise<WebInteractionResult> {
+  static async listTabs(): Promise<WebInteractionResult<ListTabsResult>> {
     return new Promise((resolve, reject) => {
-      chrome.tabs.query({ currentWindow: true }, (tabs) => {
-        console.log("listTabs 🍒", tabs);
+      chrome.tabs.query({ currentWindow: true }, tabs => {
         if (chrome.runtime.lastError) {
           reject({
             success: false,
@@ -126,7 +163,7 @@ export class TabToolkit {
         } else {
           resolve({
             success: true,
-            data: tabs.map((tab) => ({
+            data: tabs.map(tab => ({
               tabId: tab.id,
               url: tab.url,
               title: tab.title,
@@ -140,10 +177,9 @@ export class TabToolkit {
   /**
    * Switch to a specific tab
    */
-  static async switchToTab(tabId: number): Promise<WebInteractionResult> {
-    console.log("switchToTab 🍒", tabId);
-    return new Promise((resolve) => {
-      chrome.tabs.update(tabId, { active: true }, async (tab) => {
+  static async switchToTab(tabId: number): Promise<WebInteractionResult<SwitchTabResult>> {
+    return new Promise(resolve => {
+      chrome.tabs.update(tabId, { active: true }, async tab => {
         if (chrome.runtime.lastError) {
           resolve({
             success: false,
@@ -153,31 +189,28 @@ export class TabToolkit {
           // Focus the window containing the tab
           chrome.windows.update(tab.windowId, { focused: true }, async () => {
             // 等待页面加载完成
-            const loadResult = await TabToolkit.waitForTabLoad(
-              tabId,
-              TAB_LOAD_TIMEOUT
-            );
+            const loadResult = await TabToolkit.waitForTabLoad(tabId, TAB_LOAD_TIMEOUT);
             if (loadResult.success) {
               resolve({
                 success: true,
                 data: {
                   tabId: tab.id,
-                  url: loadResult.data.url,
-                  title: loadResult.data.title,
+                  url: loadResult.data!.url,
+                  title: loadResult.data!.title,
                 },
               });
             } else {
               resolve({
                 success: false,
-                error: loadResult.error || "Failed to load tab",
+                error: loadResult.error || 'Failed to load tab',
               });
             }
           });
         } else {
-          console.log("Failed to switch to tab");
+          console.error('Failed to switch to tab');
           resolve({
             success: false,
-            error: "Failed to switch to tab",
+            error: 'Failed to switch to tab',
           });
         }
       });
@@ -190,12 +223,12 @@ export class TabToolkit {
   static waitForTabLoad(
     tabId: number,
     timeout: number = TAB_LOAD_TIMEOUT
-  ): Promise<WebInteractionResult> {
-    return new Promise((resolve) => {
+  ): Promise<WebInteractionResult<LoadTabResult>> {
+    return new Promise(resolve => {
       const start = Date.now();
 
       const check = () => {
-        chrome.tabs.get(tabId, (tab) => {
+        chrome.tabs.get(tabId, tab => {
           if (chrome.runtime.lastError) {
             return resolve({
               success: false,
@@ -206,17 +239,17 @@ export class TabToolkit {
           if (!tab) {
             return resolve({
               success: false,
-              error: "Tab not found",
+              error: 'Tab not found',
             });
           }
 
-          if (tab.status === "complete" || tab.status === "interactive") {
+          if (tab.status === 'complete' || tab.status === 'interactive') {
             return resolve({
               success: true,
               data: {
                 tabId: tab.id!,
                 url: tab.url!,
-                title: tab.title ?? "",
+                title: tab.title ?? '',
               },
             });
           }
@@ -224,7 +257,7 @@ export class TabToolkit {
           if (Date.now() - start > timeout) {
             return resolve({
               success: false,
-              error: "Tab load timeout",
+              error: 'Tab load timeout',
             });
           }
 
@@ -239,10 +272,9 @@ export class TabToolkit {
   /**
    * Get current active tab
    */
-  static getCurrentActiveTab(): Promise<WebInteractionResult> {
-    return new Promise((resolve) => {
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        console.log("getCurrentActiveTab 🍒", tabs);
+  static getCurrentActiveTab(): Promise<WebInteractionResult<GetActiveTabResult>> {
+    return new Promise(resolve => {
+      chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
         if (tabs.length > 0 && tabs[0].id) {
           resolve({
             success: true,
@@ -255,7 +287,7 @@ export class TabToolkit {
         } else {
           resolve({
             success: false,
-            error: "No active tab found",
+            error: 'No active tab found',
           });
         }
       });
@@ -272,17 +304,17 @@ export class TabToolkit {
     url: string,
     width: number = 400,
     height: number = 600
-  ): Promise<WebInteractionResult> {
-    return new Promise((resolve) => {
+  ): Promise<WebInteractionResult<CreatePopupWindowResult>> {
+    return new Promise(resolve => {
       const createData: chrome.windows.CreateData = {
         url,
-        type: "popup",
+        type: 'popup',
         width,
         height,
         focused: true,
       };
 
-      chrome.windows.create(createData, (window) => {
+      chrome.windows.create(createData, window => {
         if (chrome.runtime.lastError) {
           resolve({
             success: false,
@@ -300,7 +332,7 @@ export class TabToolkit {
         } else {
           resolve({
             success: false,
-            error: "Failed to create popup window",
+            error: 'Failed to create popup window',
           });
         }
       });
@@ -310,8 +342,8 @@ export class TabToolkit {
   /**
    * Close a specific window
    */
-  static closeWindow(windowId: number): Promise<WebInteractionResult> {
-    return new Promise((resolve) => {
+  static closeWindow(windowId: number): Promise<WebInteractionResult<CloseWindowResult>> {
+    return new Promise(resolve => {
       chrome.windows.remove(windowId, () => {
         if (chrome.runtime.lastError) {
           resolve({

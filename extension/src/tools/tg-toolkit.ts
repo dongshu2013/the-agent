@@ -1,13 +1,10 @@
-import { WebInteractionResult } from "./tab-toolkit";
-import { env } from "../utils/env";
-import { getApiKey } from "../services/cache";
-import { showLoginModal } from "~/utils/global-event";
-
-// Ensure Chrome types are available
-declare const chrome: any;
+import { WebInteractionResult } from '~/types/tools';
+import { env } from '../utils/env';
+import { getApiKey } from '../services/cache';
+import { showLoginModal } from '~/utils/global-event';
 
 export class TgToolkit {
-  private static readonly API_ENDPOINT = "/v1/tg";
+  private static readonly API_ENDPOINT = '/v1/tg';
 
   /**
    * Get a list of user's Telegram dialogs
@@ -27,45 +24,43 @@ export class TgToolkit {
     isPublic?: boolean,
     isFree?: boolean,
     status?: string,
-    sortBy: string = "updated_at",
-    sortOrder: string = "desc",
-    apiKey?: string
-  ): Promise<WebInteractionResult> {
+    sortBy: string = 'updated_at',
+    sortOrder: string = 'desc'
+  ): Promise<WebInteractionResult<unknown>> {
     try {
       // Build query parameters
       const params = new URLSearchParams();
-      params.append("limit", limit.toString());
-      params.append("offset", offset.toString());
+      params.append('limit', limit.toString());
+      params.append('offset', offset.toString());
 
-      if (chatTitle) params.append("chat_title", chatTitle);
-      if (isPublic !== undefined)
-        params.append("is_public", isPublic.toString());
-      if (isFree !== undefined) params.append("is_free", isFree.toString());
-      if (status) params.append("status", status);
-      params.append("sort_by", sortBy);
-      params.append("sort_order", sortOrder);
+      if (chatTitle) params.append('chat_title', chatTitle);
+      if (isPublic !== undefined) params.append('is_public', isPublic.toString());
+      if (isFree !== undefined) params.append('is_free', isFree.toString());
+      if (status) params.append('status', status);
+      params.append('sort_by', sortBy);
+      params.append('sort_order', sortOrder);
 
       // Get API key
-      const apiKeyToUse = apiKey || (await getApiKey());
-      if (!apiKeyToUse) {
+      const apiKeyToUse = await getApiKey();
+      if (!apiKeyToUse?.enabled) {
         showLoginModal();
         return {
           success: false,
-          error: "Unauthorized",
+          error: 'Unauthorized',
         };
       }
 
       const headers: Record<string, string> = {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       };
 
-      headers["Authorization"] = `Bearer ${apiKeyToUse}`;
+      headers['Authorization'] = `Bearer ${apiKeyToUse}`;
 
       // Make API request
       const response = await fetch(
         `${env.BACKEND_URL}${this.API_ENDPOINT}/get_dialogs?${params.toString()}`,
         {
-          method: "GET",
+          method: 'GET',
           headers,
         }
       );
@@ -120,46 +115,44 @@ export class TgToolkit {
     senderId?: string,
     startTimestamp?: number,
     endTimestamp?: number,
-    sortBy: string = "message_timestamp",
-    sortOrder: string = "desc",
-    apiKey?: string
-  ): Promise<WebInteractionResult> {
+    sortBy: string = 'message_timestamp',
+    sortOrder: string = 'desc'
+  ): Promise<WebInteractionResult<unknown>> {
     try {
       // Build query parameters
       const params = new URLSearchParams();
-      params.append("chat_id", chatId);
-      params.append("limit", limit.toString());
-      params.append("offset", offset.toString());
+      params.append('chat_id', chatId);
+      params.append('limit', limit.toString());
+      params.append('offset', offset.toString());
 
-      if (messageText) params.append("message_text", messageText);
-      if (senderId) params.append("sender_id", senderId);
-      if (startTimestamp)
-        params.append("start_timestamp", startTimestamp.toString());
-      if (endTimestamp) params.append("end_timestamp", endTimestamp.toString());
-      params.append("sort_by", sortBy);
-      params.append("sort_order", sortOrder);
+      if (messageText) params.append('message_text', messageText);
+      if (senderId) params.append('sender_id', senderId);
+      if (startTimestamp) params.append('start_timestamp', startTimestamp.toString());
+      if (endTimestamp) params.append('end_timestamp', endTimestamp.toString());
+      params.append('sort_by', sortBy);
+      params.append('sort_order', sortOrder);
 
       // Get API key
-      const apiKeyToUse = apiKey || (await getApiKey());
-      if (!apiKeyToUse) {
+      const apiKeyToUse = await getApiKey();
+      if (!apiKeyToUse?.enabled) {
         showLoginModal();
         return {
           success: false,
-          error: "Unauthorized",
+          error: 'Unauthorized',
         };
       }
 
       const headers: Record<string, string> = {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       };
 
-      headers["Authorization"] = `Bearer ${apiKeyToUse}`;
+      headers['Authorization'] = `Bearer ${apiKeyToUse}`;
 
       // Make API request
       const response = await fetch(
         `${env.BACKEND_URL}${this.API_ENDPOINT}/get_messages?${params.toString()}`,
         {
-          method: "GET",
+          method: 'GET',
           headers,
         }
       );
@@ -211,43 +204,41 @@ export class TgToolkit {
     messageRange: number = 2,
     threshold: number = 0.7,
     isPublic?: boolean,
-    isFree?: boolean,
-    apiKey?: string
-  ): Promise<WebInteractionResult> {
+    isFree?: boolean
+  ): Promise<WebInteractionResult<unknown>> {
     try {
       // Build query parameters
       const params = new URLSearchParams();
-      params.append("query", query);
+      params.append('query', query);
 
-      if (chatId) params.append("chat_id", chatId);
-      params.append("top_k", topK.toString());
-      params.append("message_range", messageRange.toString());
-      params.append("threshold", threshold.toString());
-      if (isPublic !== undefined)
-        params.append("is_public", isPublic.toString());
-      if (isFree !== undefined) params.append("is_free", isFree.toString());
+      if (chatId) params.append('chat_id', chatId);
+      params.append('top_k', topK.toString());
+      params.append('message_range', messageRange.toString());
+      params.append('threshold', threshold.toString());
+      if (isPublic !== undefined) params.append('is_public', isPublic.toString());
+      if (isFree !== undefined) params.append('is_free', isFree.toString());
 
       // Get API key
-      const apiKeyToUse = apiKey || (await getApiKey());
-      if (!apiKeyToUse) {
+      const apiKeyToUse = await getApiKey();
+      if (!apiKeyToUse?.enabled) {
         showLoginModal();
         return {
           success: false,
-          error: "Unauthorized",
+          error: 'Unauthorized',
         };
       }
 
       const headers: Record<string, string> = {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       };
 
-      headers["Authorization"] = `Bearer ${apiKeyToUse}`;
+      headers['Authorization'] = `Bearer ${apiKeyToUse}`;
 
       // Make API request
       const response = await fetch(
         `${env.BACKEND_URL}${this.API_ENDPOINT}/search_messages?${params.toString()}`,
         {
-          method: "GET",
+          method: 'GET',
           headers,
         }
       );

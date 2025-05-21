@@ -1,12 +1,22 @@
-import { ChatMessage, Message } from "../types/messages";
-import { saveMessageApi, sendChatCompletion } from "./chat";
-import { toolExecutor } from "./tool-executor";
-import { db } from "~/utils/db";
+import { showLoginModal } from '~/utils/global-event';
+import {
+  genToolCallResult,
+  genUserPrompt,
+  saveMessageApi,
+  sendChatCompletion,
+} from '../utils/chat';
+import { toolExecutor } from './tool-executor';
+import { db } from '~/utils/db';
+import { getApiKey } from './cache';
+import { WebInteractionResult } from '~/types/tools';
+import { ChatMessage, Message, ToolCall } from '@the-agent/shared';
+import { MAX_TOOL_CALLS, SYSTEM_MESSAGE } from '~/utils/constants';
+import { ApiKey } from '~/types';
 
 interface ChatHandlerOptions {
-  apiKey: string;
-  currentConversationId: string;
-  onError: (error: any) => void;
+  apiKey: ApiKey | null;
+  currentConversationId: number;
+  onError: (error: unknown) => void;
   onStreamStart: () => void;
   onStreamEnd: () => void;
   onMessageUpdate: (message: Message) => void;
@@ -25,11 +35,7 @@ export class ChatHandler {
     if (this.isStreaming) {
       this.stopStreaming();
     }
-    if (
-      !prompt.trim() ||
-      !this.options.apiKey ||
-      !this.options.currentConversationId
-    ) {
+    if (!prompt.trim() || !this.options.apiKey?.enabled || !this.options.currentConversationId) {
       return;
     }
 
@@ -41,7 +47,7 @@ export class ChatHandler {
 
     const userMessage: Message = {
       id: generateMessageId(),
-      role: "user",
+      role: 'user',
       content: currentPrompt,
       conversation_id: this.options.currentConversationId,
     };
@@ -58,84 +64,56 @@ export class ChatHandler {
         top_k_related: 3,
       });
 
-      if (!saveResponse.success) {
-        throw new Error(saveResponse.error || "Failed to save message");
-      }
-
       const relatedMessages = await db.getRelatedMessagesWithContext(
-        saveResponse.data?.top_k_messages || [],
+        saveResponse.top_k_message_ids || [],
         this.options.currentConversationId
       );
-      const recentMessages = await db.getRecentMessages(
-        this.options.currentConversationId,
-        10
-      );
+      const recentMessages = await db.getRecentMessages(this.options.currentConversationId, 10);
 
-      let contextPrompt = "";
+      let contextPrompt = '';
       if (relatedMessages.length > 0) {
-        contextPrompt += "Related messages:\n";
-        relatedMessages.forEach((msg) => {
+        contextPrompt += 'Related messages:\n';
+        relatedMessages.forEach(msg => {
           contextPrompt += `${msg.role}: ${msg.content}\n`;
-          if (msg.toolCalls) {
-            msg.toolCalls.forEach((toolCall) => {
-              if (toolCall.function.name !== "WebToolkit_getPageText") {
-                contextPrompt += `Tool calls: ${toolCall.function.name}, executed result: ${JSON.stringify(toolCall?.result?.data || "")} \n`;
+          if (msg.tool_calls) {
+            msg.tool_calls.forEach((toolCall: ToolCall) => {
+              if (toolCall.function.name !== 'WebToolkit_getPageText') {
+                contextPrompt += genToolCallResult(toolCall);
               }
             });
           }
         });
       }
       if (recentMessages.length > 0) {
-        contextPrompt += "Recent messages:\n";
-        recentMessages.forEach((msg) => {
+        contextPrompt += 'Recent messages:\n';
+        recentMessages.forEach(msg => {
           contextPrompt += `${msg.role}: ${msg.content}\n`;
-          if (msg.toolCalls) {
-            msg.toolCalls.forEach((toolCall) => {
-              if (toolCall.function.name !== "WebToolkit_getPageText") {
-                contextPrompt += `Tool calls: ${toolCall.function.name}, executed result: ${JSON.stringify(toolCall?.result?.data || "")} \n`;
+          if (msg.tool_calls) {
+            msg.tool_calls.forEach((toolCall: ToolCall) => {
+              if (toolCall.function.name !== 'WebToolkit_getPageText') {
+                contextPrompt += genToolCallResult(toolCall);
               }
             });
           }
         });
       }
 
-      const systemMessage: ChatMessage = {
-        role: "system",
-        content: `
-You are "Manny", a chatty digital agent with a secret: you can control browsers.
-You pretend to be a friendly chatbot, but you actually have full control of a browser.  
-You can click buttons, search the web, type into fields, and complete complex user tasks on the internet.
-
-Instructions:
-1. Before each action:
-   "I will [action]"
-
-2. After each action:
-   "Result: [success/fail] - [brief explanation]"
-
-3. If an action fails:
-   - Explain why it failed
-   - What you'll try next
-   - Or suggest alternatives
-
-4. End with:
-   "Task status: [completed/failed] - [brief summary]"
-
-Keep responses concise and focused on the current task.
-`,
-      };
-
       let toolCallCount = 0;
-      const MAX_TOOL_CALLS = 20;
 
       const currentModel = await db.getSelectModel();
+      const apiKey = await getApiKey();
+      if (!apiKey) {
+        console.error('Invalid api key');
+        showLoginModal();
+        return;
+      }
 
-      const processRequest = async (inputMessages: ChatMessage[]) => {
-        let accumulatedContent = "";
-        let totalTokenUsage = {
-          promptTokens: 0,
-          completionTokens: 0,
-          totalTokens: 0,
+      const processRequest = async (apiKey: ApiKey, inputMessages: ChatMessage[]) => {
+        let accumulatedContent = '';
+        const totalTokenUsage = {
+          prompt_tokens: 0,
+          completion_tokens: 0,
+          total_tokens: 0,
         };
 
         try {
@@ -143,8 +121,9 @@ Keep responses concise and focused on the current task.
             if (!this.isStreaming) break;
 
             const stream = await sendChatCompletion(
+              apiKey.key,
               {
-                messages: [systemMessage, ...inputMessages],
+                messages: [SYSTEM_MESSAGE, ...inputMessages],
                 currentModel,
               },
               {
@@ -152,7 +131,7 @@ Keep responses concise and focused on the current task.
               }
             );
 
-            let currentResponse = "";
+            let currentResponse = '';
             for await (const chunk of stream) {
               if (!this.isStreaming) break;
 
@@ -166,10 +145,9 @@ Keep responses concise and focused on the current task.
             accumulatedContent = currentResponse;
 
             if (resp.usage) {
-              totalTokenUsage.promptTokens += resp.usage.prompt_tokens || 0;
-              totalTokenUsage.completionTokens +=
-                resp.usage.completion_tokens || 0;
-              totalTokenUsage.totalTokens += resp.usage.total_tokens || 0;
+              totalTokenUsage.prompt_tokens += resp.usage.prompt_tokens || 0;
+              totalTokenUsage.completion_tokens += resp.usage.completion_tokens || 0;
+              totalTokenUsage.total_tokens += resp.usage.total_tokens || 0;
             }
 
             const toolCalls = resp.choices[0].message.tool_calls;
@@ -184,7 +162,7 @@ Keep responses concise and focused on the current task.
               toolCallCount += toolCalls.length;
 
               const assistantMessage: Message = {
-                role: "assistant",
+                role: 'assistant',
                 content: currentResponse,
                 id: generateMessageId(),
                 conversation_id: this.options.currentConversationId,
@@ -197,7 +175,7 @@ Keep responses concise and focused on the current task.
               });
 
               inputMessages.push({
-                role: "assistant",
+                role: 'assistant',
                 content: currentResponse,
                 tool_calls: toolCalls,
               });
@@ -205,13 +183,13 @@ Keep responses concise and focused on the current task.
               for (const toolCall of toolCalls) {
                 const toolResult = await toolExecutor.executeToolCall(toolCall);
                 const simplifiedName = toolCall.function.name
-                  .replace("TabToolkit_", "")
-                  .replace("WebToolkit_", "");
+                  .replace('TabToolkit_', '')
+                  .replace('WebToolkit_', '');
 
                 const toolMessageId = generateMessageId();
                 const toolMessage: Message = {
                   id: toolMessageId,
-                  role: "tool",
+                  role: 'tool',
                   name: toolCall.function.name,
                   content: `I will ${simplifiedName}.\n`,
                   conversation_id: this.options.currentConversationId,
@@ -219,7 +197,7 @@ Keep responses concise and focused on the current task.
                   tool_calls: [
                     {
                       ...toolCall,
-                      result: JSON.stringify(toolResult.data),
+                      result: toolResult as WebInteractionResult<unknown>,
                     },
                   ],
                 };
@@ -231,11 +209,11 @@ Keep responses concise and focused on the current task.
                 });
 
                 inputMessages.push({
-                  role: "tool",
+                  role: 'tool',
                   name: toolCall.function.name,
                   content:
-                    toolCall.function.name === "WebToolkit_screenshot"
-                      ? `${toolResult.success ? "success" : "failed"}`
+                    toolCall.function.name === 'WebToolkit_screenshot'
+                      ? `${toolResult.success ? 'success' : 'failed'}`
                       : `${JSON.stringify(toolResult.data)}`,
                   tool_call_id: toolCall.id,
                 });
@@ -245,23 +223,21 @@ Keep responses concise and focused on the current task.
             }
           }
           return { content: accumulatedContent, tokenUsage: totalTokenUsage };
-        } catch (error: any) {
-          if (error.name === "AbortError") {
+        } catch (error: unknown) {
+          if (error instanceof Error && error.name === 'AbortError') {
             await this.updateMessage({
               ...userMessage,
-              content:
-                accumulatedContent +
-                `${accumulatedContent ? "\n\n" : ""}Stream aborted.`,
-              role: "system",
-              tokenUsage: totalTokenUsage,
+              content: accumulatedContent + `${accumulatedContent ? '\n\n' : ''}Stream aborted.`,
+              token_usage: totalTokenUsage,
             });
           } else {
+            const message =
+              error instanceof Error ? error.message : 'Network error, please try again later.';
             this.options.onError(error);
             await this.updateMessage({
               id: generateMessageId(),
-              role: "system",
-              content:
-                error?.message || "Network error, please try again later.",
+              role: 'error',
+              content: message,
               conversation_id: this.options.currentConversationId,
             });
           }
@@ -269,35 +245,33 @@ Keep responses concise and focused on the current task.
         }
       };
 
-      const { content: finalContent, tokenUsage } = await processRequest([
+      const { content: finalContent, tokenUsage } = await processRequest(apiKey, [
         {
-          role: "user",
-          content: `Given the chat history:
->>>>> Start of Chat History >>>>>>>>
-${contextPrompt}
->>>>>> End of Chat History >>>>>>>>
-Now reply to user's message: ${currentPrompt}`,
+          role: 'user',
+          content: genUserPrompt(contextPrompt, currentPrompt),
         },
       ]);
 
       const aiMessage: Message = {
         id: generateMessageId(),
-        role: "assistant",
+        role: 'assistant',
         content: finalContent,
         conversation_id: this.options.currentConversationId,
-        tokenUsage,
+        token_usage: tokenUsage,
       };
       await this.updateMessage(aiMessage);
 
       await saveMessageApi({
         message: aiMessage,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Network error, please try again later.';
       this.options.onError(error);
       await this.updateMessage({
         id: generateMessageId(),
-        role: "system",
-        content: error?.message || "Network error, please try again later.",
+        role: 'error',
+        content: message,
         conversation_id: this.options.currentConversationId,
       });
     } finally {

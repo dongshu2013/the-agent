@@ -1,5 +1,5 @@
-import React from "react";
-import ReactMarkdown from "react-markdown";
+import React from 'react';
+import ReactMarkdown from 'react-markdown';
 
 interface MarkdownRendererProps {
   content: string;
@@ -11,7 +11,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
   }
 
   return (
-    <div style={{ width: "100%" }}>
+    <div style={{ width: '100%' }}>
       <ReactMarkdown>{content}</ReactMarkdown>
     </div>
   );
