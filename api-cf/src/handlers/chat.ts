@@ -35,7 +35,7 @@ export class ChatCompletions extends OpenAPIRoute {
     const env = c.env;
     const userId = c.get('userId');
     const credits = await getUserBalance(env, userId);
-    if (credits < 0) {
+    if (credits <= 0) {
       return c.json(
         {
           error: {

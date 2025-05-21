@@ -59,6 +59,20 @@ const Sidepanel = () => {
                 }
               : null
           );
+          db.saveMessage({
+            id: Date.now(),
+            content: 'API key is disabled',
+            conversation_id: currentConversationId || -1,
+            role: 'error',
+          });
+          return;
+        } else if (error.status === 402) {
+          db.saveMessage({
+            id: Date.now(),
+            content: 'Insufficient credits. Please add more credits to your account.',
+            conversation_id: currentConversationId || -1,
+            role: 'error',
+          });
           return;
         }
       }

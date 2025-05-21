@@ -38,7 +38,7 @@ export class SaveMessage extends OpenAPIRoute {
     const body = await c.req.json();
 
     const currentCredits = await getUserBalance(c.env, userId);
-    if (currentCredits < 0) {
+    if (currentCredits <= 0) {
       throw new GatewayServiceError(402, 'Insufficient credits');
     }
 

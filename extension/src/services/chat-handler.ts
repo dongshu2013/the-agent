@@ -231,15 +231,7 @@ export class ChatHandler {
               token_usage: totalTokenUsage,
             });
           } else {
-            const message =
-              error instanceof Error ? error.message : 'Network error, please try again later.';
             this.options.onError(error);
-            await this.updateMessage({
-              id: generateMessageId(),
-              role: 'error',
-              content: message,
-              conversation_id: this.options.currentConversationId,
-            });
           }
           return { content: accumulatedContent, tokenUsage: totalTokenUsage };
         }
@@ -265,15 +257,7 @@ export class ChatHandler {
         message: aiMessage,
       });
     } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : 'Network error, please try again later.';
       this.options.onError(error);
-      await this.updateMessage({
-        id: generateMessageId(),
-        role: 'error',
-        content: message,
-        conversation_id: this.options.currentConversationId,
-      });
     } finally {
       this.stopStreaming();
     }
