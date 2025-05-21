@@ -12,7 +12,7 @@ import {
 import { calculateCredits } from '../utils/creditCalculator';
 import { OPENROUTER_API_URL } from '../utils/common';
 
-const DEFAULT_MODEL = 'deepseek/deepseek-chat-v3-0324';
+const DEFAULT_MODEL = 'google/gemini-2.5-pro-preview';
 
 export class ChatCompletions extends OpenAPIRoute {
   schema = {

@@ -36,6 +36,10 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
     inputPrice: 1.0,
     outputPrice: 2.0,
   },
+  'google/gemini-2.5-pro-preview': {
+    inputPrice: 1.25,
+    outputPrice: 10,
+  },
   // Embedding Models
   'intfloat/multilingual-e5-large': {
     inputPrice: 0.02,
