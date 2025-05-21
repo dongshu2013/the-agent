@@ -69,14 +69,17 @@ export const createNewConversation = async (apiKey: string): Promise<Conversatio
   if (!user) {
     throw new Error('Failed to create conversation');
   }
+  return createNewConversationByUserId(user.id);
+};
 
+export const createNewConversationByUserId = async (userId: string): Promise<Conversation> => {
   const convId = Date.now();
   const client = await createApiClient();
   await client.createConversation({ id: convId });
   const conversation: Conversation = {
     id: convId,
     title: 'New Chat',
-    user_id: user.id,
+    user_id: userId,
     messages: [],
   };
 

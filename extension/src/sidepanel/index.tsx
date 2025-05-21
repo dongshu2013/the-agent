@@ -10,6 +10,7 @@ import {
   selectConversation as selectConv,
   deleteConversation as deleteConv,
   getConversations,
+  createNewConversationByUserId,
 } from '../services/conversation';
 import { db, UserInfo } from '~/utils/db';
 import { useLiveQuery } from 'dexie-react-hooks';
@@ -82,6 +83,36 @@ const Sidepanel = () => {
     [currentConversationId]
   );
 
+  // Function to refresh and initialize conversations
+  const refreshConversations = useCallback(
+    async (userId: string) => {
+      try {
+        // Temporarily clear conversation ID to force message refresh
+        setCurrentConversationId(null);
+
+        // Get fresh conversations for this user
+        const freshConversations = await db.getAllConversations(userId);
+
+        // Select first conversation or create new one
+        if (freshConversations && freshConversations.length > 0) {
+          // Small delay to ensure state updates properly
+          setTimeout(() => {
+            setCurrentConversationId(freshConversations[0].id);
+          }, 100);
+        } else {
+          // If no conversations, create a new one
+          const newConv = await createNewConversationByUserId(userId);
+          setTimeout(() => {
+            setCurrentConversationId(newConv.id);
+          }, 100);
+        }
+      } catch (error) {
+        handleApiError(error);
+      }
+    },
+    [handleApiError, setCurrentConversationId]
+  );
+
   const initializeUserAndData = useCallback(
     async (apiKeyToUse: ApiKey) => {
       try {
@@ -92,6 +123,7 @@ const Sidepanel = () => {
 
         const existingUser = await db.getUserByApiKey(apiKeyToUse.key);
         if (existingUser) {
+          refreshConversations(existingUser.id);
           setCurrentUser(existingUser);
           setLoginModalOpen(false);
           return;
@@ -116,17 +148,8 @@ const Sidepanel = () => {
         await db.initModels(user.id);
         await db.saveOrUpdateUser(userInfo);
         setCurrentUser(userInfo);
+        refreshConversations(userInfo.id);
         setLoginModalOpen(false);
-
-        const dbConversations = await db.getAllConversations(userInfo.id);
-        if (!currentConversationId || !(await db.getConversation(currentConversationId))) {
-          if (dbConversations?.length > 0) {
-            setCurrentConversationId(dbConversations[0].id);
-          } else {
-            const newConv = await createNewConversation(apiKeyToUse.key);
-            setCurrentConversationId(newConv.id);
-          }
-        }
       } catch (error) {
         handleApiError(error);
       } finally {
@@ -499,32 +522,6 @@ const Sidepanel = () => {
             chatHandler.stopStreaming();
           }
           setShowSwitch(false);
-          try {
-            // Temporarily clear conversation ID to force message refresh
-            setCurrentConversationId(null);
-
-            // Force refresh user & conversations
-            if (apiKey?.enabled && currentUser) {
-              // Get fresh conversations for this user
-              const freshConversations = await db.getAllConversations(currentUser.id);
-
-              // Select first conversation or create new one
-              if (freshConversations && freshConversations.length > 0) {
-                // Small delay to ensure state updates properly
-                setTimeout(() => {
-                  setCurrentConversationId(freshConversations[0].id);
-                }, 100);
-              } else {
-                // If no conversations, create a new one
-                const newConv = await createNewConversation(apiKey.key);
-                setTimeout(() => {
-                  setCurrentConversationId(newConv.id);
-                }, 100);
-              }
-            }
-          } catch (error) {
-            handleApiError(error);
-          }
         }}
       />
     </div>
