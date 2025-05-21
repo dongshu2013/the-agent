@@ -156,7 +156,7 @@ const Sidepanel = () => {
         setIsLoading(false);
       }
     },
-    [currentConversationId, setCurrentConversationId, handleApiError, refreshConversations]
+    [handleApiError, refreshConversations]
   );
 
   useEffect(() => {
