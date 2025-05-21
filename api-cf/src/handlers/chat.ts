@@ -153,7 +153,7 @@ async function processChatCompletionStream(
     }
 
     try {
-      writer.close();
+      await writer.close();
       reader?.releaseLock();
     } catch (error) {
       console.error('Error closing stream: ', error);
