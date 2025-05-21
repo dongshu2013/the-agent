@@ -10,7 +10,9 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "build:web": "pnpm --filter @the-agent/shared build && pnpm --filter web build",
-    "start:web": "pnpm --filter web start"
+    "start:web": "pnpm --filter web start",
+    "build:landing": "pnpm --filter landing build",
+    "start:landing": "pnpm --filter landing start"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
