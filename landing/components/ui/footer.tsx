@@ -49,7 +49,7 @@ export default function Footer({ border = false }: { border?: boolean }) {
                 </Link>
               </li>
             </ul>
-            <p className="text-sm text-gray-500">&copy; 2025 MYSTA - All rights reserved.</p>
+            <p className="text-sm text-gray-500">&copy; 2025 Mysta. All rights reserved.</p>
           </div>
 
           {/* Right side blocks container */}

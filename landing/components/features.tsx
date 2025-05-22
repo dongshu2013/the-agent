@@ -112,7 +112,7 @@ export default function Features() {
             <Sparkles className="w-4 h-4 text-gray-400" />
             <span className="text-gray-600">Deliver More Value, Effortlessly</span>
           </div>
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+          <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-4">
             One-Click to Done: Let AI
             <br />
             Run the Web for You
@@ -136,7 +136,9 @@ export default function Features() {
               <BrainCog className="w-4 h-4 text-gray-400" />
               <span className="text-gray-600">Let AI Drive the Value</span>
             </div>
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Work Smarter. Grow Faster.</h2>
+            <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-4">
+              Work Smarter. Grow Faster.
+            </h2>
             <p className="text-md text-gray-600">
               Unlock AI features that eliminate tedious tasks, cut labor costs, and supercharge your
               <br />

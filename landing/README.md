@@ -1,4 +1,4 @@
-# MYSTA Landing Page
+# Mysta Landing Page
 
 A modern landing page built with Next.js, React, and Tailwind CSS.
 
