@@ -15,8 +15,8 @@ function areEqual(prevProps: Props, nextProps: Props) {
     prevProps.message.id === nextProps.message.id &&
     prevProps.message.content === nextProps.message.content &&
     prevProps.message.role === nextProps.message.role &&
-    prevProps.message.version === nextProps.message.version
-    // prevProps.message.reasoning === nextProps.message.reasoning
+    prevProps.message.version === nextProps.message.version &&
+    prevProps.message.reasoning === nextProps.message.reasoning
   );
 }
 

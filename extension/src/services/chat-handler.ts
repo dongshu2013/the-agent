@@ -121,7 +121,7 @@ export class ChatHandler {
           conversation_id: this.options.currentConversationId,
           role: 'assistant',
           content: '',
-          // reasoning: '',
+          reasoning: '',
         };
         for await (const chunk of stream) {
           if (!this.isStreaming) {
@@ -129,7 +129,7 @@ export class ChatHandler {
           }
           const delta = chunk.choices[0]?.delta as { reasoning?: string; content?: string };
           if (delta) {
-            // message.reasoning += delta.reasoning || '';
+            message.reasoning += delta.reasoning || '';
             message.content += delta.content || '';
             if (delta.content || delta.reasoning) {
               await this.updateMessage(message);
