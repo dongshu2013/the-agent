@@ -3,14 +3,14 @@ import Logo01 from '@/public/images/logo-01-mysta.svg'; // MYSTA
 import Logo02 from '@/public/images/logo-02-x.svg'; // X
 import Logo03 from '@/public/images/logo-03-tg.svg'; // TG
 import Logo04 from '@/public/images/logo-04-chrome.svg'; // chrome
-import Logo05 from '@/public/images/logo-05.svg';
-import Logo06 from '@/public/images/logo-06.svg';
-import Logo07 from '@/public/images/logo-07.svg';
+import Logo05 from '@/public/images/logo-05-amazon.svg'; // amazon
+import Logo06 from '@/public/images/logo-06-instagram.svg'; // instagram
+import Logo07 from '@/public/images/logo-07-youtube.svg'; // youtube
 
 export default function BusinessCategories() {
   return (
     <section>
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="pb-12 md:pb-20">
           {/* Tab panels */}
           <div className="relative flex h-[324px] items-center justify-center">

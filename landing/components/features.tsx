@@ -1,4 +1,4 @@
-import { MousePointerClick, Target, Globe2, Sparkles, Settings2 } from 'lucide-react';
+import { MousePointerClick, Globe, Sparkles, BrainCog, BookLock } from 'lucide-react';
 import Image from 'next/image';
 
 interface FeatureCardProps {
@@ -14,7 +14,7 @@ const FeatureCard = ({ icon, title, description }: FeatureCardProps) => {
         {icon}
       </div>
       <h3 className="mb-2 text-xl font-semibold text-gray-900">{title}</h3>
-      <p className="text-gray-600">{description}</p>
+      <p className="text-gray-500 whitespace-pre-line">{description}</p>
     </div>
   );
 };
@@ -86,40 +86,41 @@ export default function Features() {
   const features = [
     {
       icon: <MousePointerClick className="w-6 h-6 text-gray-600" />,
-      title: 'AI-Powered One-Click Actions',
+      title: 'Effortless Web Automation',
       description:
-        'Automate clicks, forms, and navigation without coding, boosting efficiency by 90%.',
+        'On-click navigation through websites — automate flows without writing a single line.',
     },
     {
-      icon: <Target className="w-6 h-6 text-gray-600" />,
-      title: 'Accurate Element Targeting',
+      icon: <BookLock className="w-6 h-6 text-gray-600" />,
+      title: 'Private AI, Fully Yours',
       description:
-        'AI dynamically parses web pages to identify buttons, forms, and more, minimizing errors.',
+        'Deploy your own AI agent locally or in the cloud — no third-party lock-in, full control.',
     },
     {
-      icon: <Globe2 className="w-6 h-6 text-gray-600" />,
-      title: 'Chrome Browsers & Languages Supported',
-      description: 'Works on Chrome browsers with multilingual support, fitting global user needs',
+      icon: <Globe className="w-6 h-6 text-gray-600" />,
+      title: 'Browser-Native Intelligence',
+      description:
+        'Your AI lives inside the web — treating any page as its native interface for action.',
     },
   ];
 
   return (
     <section className="py-16">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="text-center mb-12">
           <div className="inline-flex items-center gap-2 mb-4">
             <Sparkles className="w-4 h-4 text-gray-400" />
-            <span className="text-gray-600">Smart AI Tips for Effortless Results</span>
+            <span className="text-gray-600">Deliver More Value, Effortlessly</span>
           </div>
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
-            Automate your web tasks in
+            One-Click to Done: Let AI
             <br />
-            one click: Order → Done.
+            Run the Web for You
           </h2>
           <p className="text-md text-gray-600">
-            AI-generated management provides actionable insights and guidance,
+            From insight to execution, AI navigates the web
             <br />
-            enabling users to achieve efficient results effortlessly.
+            for you with precision and speed.
           </p>
         </div>
         <div className="grid md:grid-cols-3 gap-8">
@@ -132,18 +133,14 @@ export default function Features() {
         <div className="mt-24">
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 mb-4">
-              <Settings2 className="w-4 h-4 text-gray-400" />
-              <span className="text-gray-600">AI-Powered Solutions</span>
+              <BrainCog className="w-4 h-4 text-gray-400" />
+              <span className="text-gray-600">Let AI Drive the Value</span>
             </div>
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              Revolutionize Your Process
-              <br />
-              with AI Features
-            </h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Work Smarter. Grow Faster.</h2>
             <p className="text-md text-gray-600">
-              Explore AI features that streamline workflows, boost productivity, and simplify
+              Unlock AI features that eliminate tedious tasks, cut labor costs, and supercharge your
               <br />
-              decision-making for better results.
+              workflows — so you can focus on what really moves the needle.
             </p>
           </div>
           <ShowcaseGrid />

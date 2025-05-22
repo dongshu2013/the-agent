@@ -10,7 +10,7 @@ export default function HeroHome() {
   return (
     <section className="relative">
       <PageIllustration />
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
         {/* Hero content */}
         <div className="pb-12 pt-32 md:pb-20 md:pt-40">
           {/* Section header */}
@@ -20,14 +20,11 @@ export default function HeroHome() {
               data-aos="zoom-y-out"
               data-aos-delay={150}
             >
-              Ask anything. <br className="max-lg:hidden" />
-              Automate everything.
+              Your browser, now smarter.
             </h1>
             <div className="mx-auto max-w-3xl">
               <p className="mb-8 text-lg text-gray-700" data-aos="zoom-y-out" data-aos-delay={300}>
-                Start a new conversation to explore the AI's capabilities.
-                <br className="max-lg:hidden" />
-                Ask a question, get help, or brainstorm ideas.
+                Ask anything. Automate everything.
               </p>
               <div className="relative before:absolute before:inset-0 before:border-y before:[border-image:linear-gradient(to_right,transparent,--theme(--color-slate-300/.8),transparent)1]">
                 <div
@@ -83,7 +80,7 @@ export default function HeroHome() {
           </div>
           {/* Hero image */}
           <div
-            className="mx-auto max-w-6xl px-4 sm:px-6"
+            className="mx-auto max-w-7xl px-4 sm:px-6"
             data-aos="zoom-y-out"
             data-aos-delay={600}
           >
