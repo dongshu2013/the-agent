@@ -16,6 +16,14 @@ export default function Home() {
     }
   }, [user, loading, router]);
 
+  if (user || loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-black"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-blue-50 to-green-50">
       <div className="w-full max-w-[560px] bg-white rounded-[20px] p-12 shadow-lg">
