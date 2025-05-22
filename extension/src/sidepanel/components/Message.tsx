@@ -20,13 +20,16 @@ function areEqual(prevProps: Props, nextProps: Props) {
   );
 }
 
-const MessageComponent = React.memo(function MessageComponent({ message }: Props) {
+const MessageComponent = React.memo(function MessageComponent({
+  message,
+  isLatestResponse,
+}: Props) {
   const isUser = message?.role === 'user';
   const isError = message?.role === 'error';
+  const isTool = message?.role === 'tool';
+
   const [copySuccess, setCopySuccess] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const isTool = message?.role === 'tool';
-  const isToolCall = message?.tool_calls?.length;
 
   if (!message) {
     console.warn('Message component received null or undefined message');
@@ -51,20 +54,16 @@ const MessageComponent = React.memo(function MessageComponent({ message }: Props
     if (isError) return false;
     if (!message.content) return false;
     if (message.role === 'tool') return false;
-    if (message.tool_calls?.length) return false;
 
-    if (!isUser) return true;
-    return isHovered;
+    return isLatestResponse || isHovered;
   };
 
-  const renderToolCalls = () => {
+  const renderToolMessage = () => {
     if (message.role !== 'tool') return null;
-    if (!message.tool_calls?.length) return null;
 
-    const toolCalls = message.tool_calls;
-    return toolCalls?.map(toolCall => (
+    return (
       <div
-        key={toolCall.id}
+        key={message.id}
         style={{
           border: '1px solid #ccc',
           borderRadius: '6px',
@@ -105,10 +104,10 @@ const MessageComponent = React.memo(function MessageComponent({ message }: Props
             fontSize: '11px',
           }}
         >
-          {toolCall.function.name.replace('TabToolkit_', '').replace('WebToolkit_', '')}
+          {message.name?.replace('TabToolkit_', '').replace('WebToolkit_', '')}
         </span>
       </div>
-    ));
+    );
   };
 
   const renderContent = () => {
@@ -125,9 +124,7 @@ const MessageComponent = React.memo(function MessageComponent({ message }: Props
     const screenshotUrl = (screenshotResult?.data as ScreenshotResult)?.url || null;
 
     const toolCallHint =
-      message.role === 'tool' && message.tool_calls?.length ? (
-        <div style={{ marginTop: 8 }}>{renderToolCalls()}</div>
-      ) : null;
+      message.role === 'tool' ? <div style={{ marginTop: 8 }}>{renderToolMessage()}</div> : null;
 
     return (
       <>
@@ -158,7 +155,7 @@ const MessageComponent = React.memo(function MessageComponent({ message }: Props
 
   return (
     <div
-      style={{ marginBottom: isToolCall ? '0' : '32px' }}
+      style={{ marginBottom: shouldShowCopyButton() ? '20px' : '0' }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -194,7 +191,7 @@ const MessageComponent = React.memo(function MessageComponent({ message }: Props
               wordBreak: 'break-word',
             }}
           >
-            {renderContent()}
+            {message.role === 'tool' ? renderToolMessage() : renderContent()}
           </div>
 
           {shouldShowCopyButton() && (
