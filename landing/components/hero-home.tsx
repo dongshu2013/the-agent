@@ -10,7 +10,7 @@ export default function HeroHome() {
   return (
     <section className="relative">
       <PageIllustration />
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
         {/* Hero content */}
         <div className="pb-12 pt-32 md:pb-20 md:pt-40">
           {/* Section header */}
@@ -20,14 +20,11 @@ export default function HeroHome() {
               data-aos="zoom-y-out"
               data-aos-delay={150}
             >
-              Ask anything. <br className="max-lg:hidden" />
-              Automate everything.
+              Your browser, now smarter.
             </h1>
             <div className="mx-auto max-w-3xl">
               <p className="mb-8 text-lg text-gray-700" data-aos="zoom-y-out" data-aos-delay={300}>
-                Start a new conversation to explore the AI's capabilities.
-                <br className="max-lg:hidden" />
-                Ask a question, get help, or brainstorm ideas.
+                Ask anything. Automate everything.
               </p>
               <div className="relative before:absolute before:inset-0 before:border-y before:[border-image:linear-gradient(to_right,transparent,--theme(--color-slate-300/.8),transparent)1]">
                 <div
@@ -83,20 +80,14 @@ export default function HeroHome() {
           </div>
           {/* Hero image */}
           <div
-            className="mx-auto max-w-6xl px-4 sm:px-6"
+            className="mx-auto max-w-7xl px-4 sm:px-6"
             data-aos="zoom-y-out"
             data-aos-delay={600}
           >
             <div className="relative">
-              {/* Background gradient */}
-              <div
-                className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-t from-gray-100 to-transparent"
-                aria-hidden="true"
-              ></div>
-
               {/* Hero image */}
               <div className="relative mx-auto max-w-[1200px]">
-                <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+                <div className="relative overflow-hidden">
                   <Image
                     src="/images/hero.png"
                     alt="Hero screenshot"
@@ -105,12 +96,6 @@ export default function HeroHome() {
                     className="w-full"
                     priority
                   />
-
-                  {/* Decorative elements */}
-                  <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute inset-0 border-[0.5px] border-white/10 rounded-2xl"></div>
-                    <div className="absolute -inset-[1px] border border-gradient-to-r from-transparent via-white/20 to-transparent rounded-2xl"></div>
-                  </div>
                 </div>
               </div>
             </div>
