@@ -24,7 +24,7 @@ name = "TgContext"
 class_name = "TgContext"
 
 [vars]
-MYSTA_PUBLIC_DOMAIN = "https://staging.mysta.ai"
+MYSTA_PUBLIC_DOMAIN = "https://my-staging.mysta.ai"
 
 [[migrations]]
 tag = "<v1>"
