@@ -35,21 +35,28 @@ export const CreditsTable = () => {
   const [selectedTxType, setSelectedTxType] = useState<TransactionType | ''>('');
   const [selectedTxReason, setSelectedTxReason] = useState<TransactionReason | ''>('');
 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [total, setTotal] = useState(0);
+
   const { user } = useAuth();
 
   useEffect(() => {
     const fetchCreditsData = async () => {
       setIsLoading(true);
       try {
-        const { history } = await createApiClient(user.idToken).getCreditHistory({
+        const { history, total } = await createApiClient(user.idToken).getCreditHistory({
           startDate,
           endDate,
           model: selectedModel,
           txType: selectedTxType as TransactionType,
           txReason: selectedTxReason as TransactionReason,
+          limit: pageSize,
+          offset: (page - 1) * pageSize,
         });
 
         setCredits(history || []);
+        setTotal(total || 0);
 
         // Extract unique values for filter options from the history data
         if (history && history.length > 0) {
@@ -76,7 +83,7 @@ export const CreditsTable = () => {
     if (user && user.idToken) {
       fetchCreditsData();
     }
-  }, [user, startDate, endDate, selectedModel, selectedTxType, selectedTxReason]);
+  }, [user, startDate, endDate, selectedModel, selectedTxType, selectedTxReason, page, pageSize]);
 
   const formatDate = (dateString: string) => {
     try {
@@ -109,6 +116,7 @@ export const CreditsTable = () => {
     setSelectedModel('');
     setSelectedTxType('');
     setSelectedTxReason('');
+    setPage(1);
   };
 
   return (
@@ -281,7 +289,48 @@ export const CreditsTable = () => {
         </table>
       </div>
 
-      {/* Pagination could be added here in the future */}
+      {/* Pagination */}
+      <div className="flex justify-between items-center p-4 border-t border-gray-200 dark:border-gray-700">
+        <div>
+          Page {page} of {Math.max(1, Math.ceil(total / pageSize))}
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className={
+              `px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 rounded-md disabled:opacity-50 ` +
+              (page === 1 ? 'cursor-not-allowed' : 'cursor-pointer')
+            }
+          >
+            Prev
+          </button>
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={page * pageSize >= total}
+            className={
+              `px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 rounded-md disabled:opacity-50 ` +
+              (page * pageSize >= total ? 'cursor-not-allowed' : 'cursor-pointer')
+            }
+          >
+            Next
+          </button>
+        </div>
+        <select
+          value={pageSize}
+          onChange={e => {
+            setPageSize(Number(e.target.value));
+            setPage(1);
+          }}
+          className="w-28 h-9 rounded-md border border-gray-300 dark:border-gray-600 px-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 ml-4"
+        >
+          {[10, 20, 50, 100].map(size => (
+            <option key={size} value={size}>
+              {size} / page
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
   );
 };

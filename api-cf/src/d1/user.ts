@@ -99,68 +99,72 @@ export async function getCreditLogs(
   userId: string,
   options: {
     limit?: number;
+    offset?: number;
     startDate?: string;
     endDate?: string;
     model?: string;
     transType?: string;
     transReason?: string;
   } = {}
-): Promise<CreditLog[]> {
-  const { limit = 100, startDate, endDate, model, transType, transReason } = options;
+): Promise<{ history: CreditLog[]; total: number }> {
+  const { limit = 100, offset = 0, startDate, endDate, model, transType, transReason } = options;
 
   const db = env.DB;
-  let query =
-    'SELECT id, tx_credits, tx_type, tx_reason, model, created_at' +
-    ' FROM credit_history' +
-    ' WHERE user_id = ?';
-
+  let baseQuery = ' FROM credit_history WHERE user_id = ?';
   const params: (string | number)[] = [userId];
 
   if (startDate) {
-    query += ' AND created_at >= ?';
+    baseQuery += ' AND created_at >= ?';
     params.push(startDate);
   }
-
   if (endDate) {
-    query += ' AND created_at <= ?';
+    baseQuery += ' AND created_at <= ?';
     params.push(endDate);
   }
-
   if (model) {
-    query += ' AND model = ?';
+    baseQuery += ' AND model = ?';
     params.push(model);
   }
-
   if (transType) {
-    query += ' AND tx_type = ?';
+    baseQuery += ' AND tx_type = ?';
     params.push(transType);
   }
-
   if (transReason) {
-    query += ' AND tx_reason = ?';
+    baseQuery += ' AND tx_reason = ?';
     params.push(transReason);
   }
 
-  query += ' ORDER BY created_at DESC LIMIT ?';
-  params.push(limit);
-
-  const result = await db
-    .prepare(query)
+  // 查询总数
+  const totalResult = await db
+    .prepare('SELECT COUNT(*) as total' + baseQuery)
     .bind(...params)
     .all();
+  const total = totalResult.success ? (totalResult.results[0].total as number) : 0;
 
-  if (!result.success) {
-    throw new GatewayServiceError(500, 'Failed to query db');
-  }
+  // 查询分页数据
+  const query =
+    'SELECT id, tx_credits, tx_type, tx_reason, model, created_at' +
+    baseQuery +
+    ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
+  const pageParams = [...params, limit, offset];
+  const result = await db
+    .prepare(query)
+    .bind(...pageParams)
+    .all();
 
-  return result.results.map(r => ({
-    id: r.id as number,
-    tx_credits: r.tx_credits as number,
-    tx_type: r.tx_type as string,
-    tx_reason: r.tx_reason as string,
-    model: r.model as string,
-    created_at: r.created_at as string,
-  }));
+  if (!result.success) throw new GatewayServiceError(500, 'Failed to query db');
+
+  return {
+    history: result.results.map(r => ({
+      id: r.id as number,
+      tx_credits: r.tx_credits as number,
+      tx_type: r.tx_type as string,
+      tx_reason: r.tx_reason as string,
+      model: r.model as string,
+      created_at: r.created_at as string,
+    })),
+    total,
+  };
 }
 
 export async function getUserBalance(env: Env, userId: string): Promise<number> {

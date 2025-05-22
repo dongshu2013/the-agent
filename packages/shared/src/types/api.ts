@@ -216,6 +216,7 @@ export type RotateApiKeyResponse = z.infer<typeof RotateApiKeyResponseSchema>;
 
 export const GetCreditHistoryResponseSchema = z.object({
   history: z.array(CreditLogSchema),
+  total: z.number(),
 });
 export type GetCreditHistoryResponse = z.infer<typeof GetCreditHistoryResponseSchema>;
 

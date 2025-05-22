@@ -166,6 +166,8 @@ export class APIClient {
     model?: string;
     txType?: TransactionType;
     txReason?: TransactionReason;
+    limit?: number;
+    offset?: number;
   }): Promise<GetCreditHistoryResponse> {
     const queryParams = new URLSearchParams();
     if (params?.startDate) queryParams.append('startDate', params.startDate);
@@ -173,6 +175,8 @@ export class APIClient {
     if (params?.model) queryParams.append('model', params.model);
     if (params?.txType) queryParams.append('transType', params.txType);
     if (params?.txReason) queryParams.append('transReason', params.txReason);
+    if (params?.limit !== undefined) queryParams.append('limit', params.limit.toString());
+    if (params?.offset !== undefined) queryParams.append('offset', params.offset.toString());
 
     const queryString = queryParams.toString();
     const endpoint = queryString

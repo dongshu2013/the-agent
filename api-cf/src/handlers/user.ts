@@ -123,10 +123,11 @@ export class GetCreditLogs extends OpenAPIRoute {
       transType: query.transType,
       transReason: query.transReason,
       limit: query.limit ? parseInt(query.limit, 10) : undefined,
+      offset: query.offset ? parseInt(query.offset, 10) : undefined,
     };
 
-    const creditLogs = await getCreditLogs(c.env, userId, options);
-    return c.json({ history: creditLogs }, 200);
+    const { history, total } = await getCreditLogs(c.env, userId, options);
+    return c.json({ history, total }, 200);
   }
 }
 
