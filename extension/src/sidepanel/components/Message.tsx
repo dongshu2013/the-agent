@@ -1,12 +1,12 @@
 import React from 'react';
 import { useState } from 'react';
 
-import { Message } from '@the-agent/shared';
 import { processMarkdown } from '../../utils/markdown-processor';
 import { ScreenshotResult } from '~/tools/web-toolkit';
+import { VersionedMessage } from '~/utils/db';
 
 interface Props {
-  message: Message;
+  message: VersionedMessage;
   isLatestResponse?: boolean;
 }
 
@@ -14,7 +14,9 @@ function areEqual(prevProps: Props, nextProps: Props) {
   return (
     prevProps.message.id === nextProps.message.id &&
     prevProps.message.content === nextProps.message.content &&
-    prevProps.message.role === nextProps.message.role
+    prevProps.message.role === nextProps.message.role &&
+    prevProps.message.version === nextProps.message.version &&
+    prevProps.message.reasoning === nextProps.message.reasoning
   );
 }
 

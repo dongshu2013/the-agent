@@ -131,7 +131,7 @@ export class ChatHandler {
           if (delta) {
             message.reasoning += delta.reasoning || '';
             message.content += delta.content || '';
-            if (delta.content || delta.reasoning) {
+            if (delta.content) {
               await this.updateMessage(message);
             }
           }

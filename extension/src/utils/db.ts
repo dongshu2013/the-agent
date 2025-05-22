@@ -20,12 +20,16 @@ export interface UserInfo {
   photoURL?: string;
 }
 
+export interface VersionedMessage extends Message {
+  version: number;
+}
+
 class MystaDB extends Dexie {
   getCurrentModel() {
     throw new Error('Method not implemented.');
   }
   conversations!: Table<Conversation>;
-  messages!: Table<Message>;
+  messages!: Table<VersionedMessage>;
   users!: Table<UserInfo>;
   models!: Table<Model>;
 
@@ -137,14 +141,24 @@ class MystaDB extends Dexie {
       throw new Error('Message missing id');
     }
 
-    await this.messages.put(message);
+    // Check if message already exists in the database
+    const existingMessage = await this.messages.get(message.id);
+    const versionedMessage = {
+      ...message,
+      version: 1,
+    };
+    if (existingMessage) {
+      // Use the existing version and increment it
+      versionedMessage.version = existingMessage.version + 1;
+    }
+    await this.messages.put(versionedMessage);
   }
 
   async saveMessages(messages: Message[]): Promise<void> {
-    await this.messages.bulkPut(messages);
+    await this.messages.bulkPut(messages.map(msg => ({ ...msg, version: 1 })));
   }
 
-  async getMessagesByConversation(conversationId: number): Promise<Message[]> {
+  async getMessagesByConversation(conversationId: number): Promise<VersionedMessage[]> {
     const messages = await this.messages
       .where('conversation_id')
       .equals(conversationId)
@@ -216,7 +230,7 @@ class MystaDB extends Dexie {
                 };
               }
             });
-            await this.messages.bulkPut(validMessages);
+            await this.messages.bulkPut(validMessages.map(msg => ({ ...msg, version: 1 })));
           }
         }
       });
