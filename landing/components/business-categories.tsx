@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import Logo01 from '@/public/images/logo-01-mysta.svg'; // MYSTA
+import Logo01 from '@/public/images/logo-01-mysta.svg'; // Mysta
 import Logo02 from '@/public/images/logo-02-x.svg'; // X
 import Logo03 from '@/public/images/logo-03-tg.svg'; // TG
 import Logo04 from '@/public/images/logo-04-chrome.svg'; // chrome

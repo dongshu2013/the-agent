@@ -1,5 +1,5 @@
 export const metadata = {
-  title: 'MYSTA',
+  title: 'Mysta',
   description: 'Ask anything. Automate everything.',
 };
 
