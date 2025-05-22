@@ -127,11 +127,13 @@ export class ChatHandler {
           if (!this.isStreaming) {
             break;
           }
-          const delta = chunk.choices[0]?.delta;
+          const delta = chunk.choices[0]?.delta as { reasoning?: string; content?: string };
           if (delta) {
-            message.reasoning += (delta as { reasoning?: string }).reasoning || '';
+            message.reasoning += delta.reasoning || '';
             message.content += delta.content || '';
-            await this.updateMessage(message);
+            if (delta.content || delta.reasoning) {
+              await this.updateMessage(message);
+            }
           }
         }
 
@@ -142,8 +144,8 @@ export class ChatHandler {
         if (toolCallCount >= MAX_TOOL_CALLS) {
           message.content +=
             '\n\n' + 'We are hitting the limit of tool calls. Let me know if you want to continue.';
+          await this.updateMessage(message);
         }
-        await this.updateMessage(message);
         await saveMessageApi({ message });
         inputMessages.push(message);
 
