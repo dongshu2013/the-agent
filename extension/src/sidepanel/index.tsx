@@ -395,7 +395,6 @@ const Sidepanel = () => {
           left: 0,
           right: 0,
           backgroundColor: 'white',
-          borderBottom: '1px solid #f0f0f0',
           zIndex: 10,
         }}
       >

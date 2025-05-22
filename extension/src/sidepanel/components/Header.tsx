@@ -1,12 +1,13 @@
-import { MessageCircleMore, SquarePen, User as UserIcon } from 'lucide-react';
+import { AlignLeft, SquarePen, User as UserIcon } from 'lucide-react';
 import { db } from '~/utils/db';
 import { useState, useEffect } from 'react';
-import { Modal, Dropdown } from 'antd';
+import { Modal, Dropdown, Tooltip } from 'antd';
 import { ProviderGroup } from './ModelCascader';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Model } from '~/types';
 import { ItemType } from 'antd/es/menu/interface';
 import { SYSTEM_MODEL_ID } from '~/utils/constants';
+import betaImg from '~/assets/beta.png';
 
 interface HeaderProps {
   createNewConversation: () => void;
@@ -179,89 +180,103 @@ const Header = ({ createNewConversation, setShowConversationList }: HeaderProps)
           gap: '4px',
         }}
       >
-        <button
-          style={buttonStyle}
-          onClick={() => setShowConversationList(true)}
-          onMouseOver={e => {
-            e.currentTarget.style.color = '#374151';
-            e.currentTarget.style.backgroundColor = '#E5E7EB';
-          }}
-          onMouseOut={e => {
-            e.currentTarget.style.color = '#6b7280';
-            e.currentTarget.style.backgroundColor = '#f3f4f6';
-          }}
-        >
-          <MessageCircleMore color="#374151" />
-        </button>
-        <span
+        <Tooltip title="Conversations" placement="bottom">
+          <button
+            style={{
+              ...buttonStyle,
+              width: 32,
+              height: 32,
+              backgroundColor: 'transparent',
+              transition: 'background 0.2s',
+            }}
+            onClick={() => setShowConversationList(true)}
+            onMouseOver={e => {
+              e.currentTarget.style.backgroundColor = '#E5E7EB';
+            }}
+            onMouseOut={e => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+          >
+            <AlignLeft color="#374151" size={18} />
+          </button>
+        </Tooltip>
+        <img
+          src={betaImg}
+          alt="BETA"
           style={{
-            fontSize: '13px',
-            color: '#059669',
-            fontWeight: 600,
-            background: '#ECFDF5',
-            padding: '4px 8px',
-            borderRadius: '6px',
-            border: '1px solid #D1FAE5',
-            letterSpacing: '0.02em',
+            height: '14px',
+            width: 'auto',
+            display: 'inline-block',
+            verticalAlign: 'middle',
           }}
-        >
-          BETA
-        </span>
+        />
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
         {/* <ModelCascader
           providerGroups={providerGroups as ProviderGroup[]}
           value={cascaderValue as [string, string]}
           onChange={handleCascaderChange}
           onProviderSetting={handleProviderSetting}
         /> */}
-        <button
-          style={buttonStyle}
-          onClick={createNewConversation}
-          onMouseOver={e => {
-            e.currentTarget.style.color = '#374151';
-            e.currentTarget.style.backgroundColor = '#E5E7EB';
-          }}
-          onMouseOut={e => {
-            e.currentTarget.style.color = '#6b7280';
-            e.currentTarget.style.backgroundColor = '#f3f4f6';
-          }}
-        >
-          <SquarePen color="#374151" />
-        </button>
+        <Tooltip title="New chat" placement="bottom">
+          <button
+            style={{
+              ...buttonStyle,
+              width: 32,
+              height: 32,
+              backgroundColor: 'transparent',
+              transition: 'background 0.2s',
+            }}
+            onClick={createNewConversation}
+            onMouseOver={e => {
+              e.currentTarget.style.backgroundColor = '#E5E7EB';
+            }}
+            onMouseOut={e => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+          >
+            <SquarePen color="#374151" size={18} />
+          </button>
+        </Tooltip>
         <Dropdown
           menu={{ items: menuItems as ItemType[] }}
           trigger={['click']}
           placement="bottomRight"
         >
-          <button
-            style={buttonStyle}
-            onMouseOver={e => {
-              e.currentTarget.style.color = '#374151';
-              e.currentTarget.style.backgroundColor = '#E5E7EB';
-            }}
-            onMouseOut={e => {
-              e.currentTarget.style.color = '#6b7280';
-              e.currentTarget.style.backgroundColor = '#f3f4f6';
-            }}
-          >
-            {user?.photoURL ? (
-              <img
-                src={user.photoURL}
-                alt={user.username || 'User'}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  borderRadius: '50%',
-                  display: 'block',
-                }}
-              />
-            ) : (
-              <UserIcon color="#374151" />
-            )}
-          </button>
+          <Tooltip title="User" placement="bottom">
+            <button
+              style={{
+                ...buttonStyle,
+                width: 32,
+                height: 32,
+                backgroundColor: 'transparent',
+                transition: 'background 0.2s',
+              }}
+              onMouseOver={e => {
+                e.currentTarget.style.backgroundColor = '#E5E7EB';
+              }}
+              onMouseOut={e => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }}
+            >
+              {user?.photoURL ? (
+                <img
+                  src={user.photoURL}
+                  alt={user.username || 'User'}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    borderRadius: '50%',
+                    display: 'block',
+                  }}
+                />
+              ) : (
+                <UserIcon color="#374151" size={18} />
+              )}
+            </button>
+          </Tooltip>
         </Dropdown>
       </div>
 
