@@ -16,11 +16,12 @@ export default function HeroHome() {
           {/* Section header */}
           <div className="pb-12 text-center md:pb-16">
             <h1
-              className="mb-6 border-y text-5xl font-bold [border-image:linear-gradient(to_right,transparent,--theme(--color-slate-300/.8),transparent)1] md:text-6xl"
+              className="mb-6 border-y text-3xl md:text-5xl font-bold [border-image:linear-gradient(to_right,transparent,--theme(--color-slate-300/.8),transparent)1]"
               data-aos="zoom-y-out"
               data-aos-delay={150}
             >
-              Your browser, now smarter.
+              Your browser, <br className="block md:hidden" />
+              now smarter.
             </h1>
             <div className="mx-auto max-w-3xl">
               <p className="mb-8 text-lg text-gray-700" data-aos="zoom-y-out" data-aos-delay={300}>

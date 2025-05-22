@@ -29,8 +29,9 @@ export default function Cta() {
             <Image className="max-w-none" src={Stripes} width={768} height={432} alt="Stripes" />
           </div>
           <div className="px-4 py-12 md:px-12 md:py-20">
-            <h2 className="mb-6 border-y text-3xl font-bold text-gray-200 [border-image:linear-gradient(to_right,transparent,--theme(--color-slate-700/.7),transparent)1] md:mb-12 md:text-4xl">
-              Your browser, now smarter.
+            <h2 className="mb-6 border-y text-3xl md:text-5xl font-bold text-gray-200 [border-image:linear-gradient(to_right,transparent,--theme(--color-slate-700/.7),transparent)1] md:mb-12">
+              Your browser, <br className="block md:hidden" />
+              now smarter.
             </h2>
             <div className="mx-auto max-w-xs sm:flex sm:max-w-none sm:justify-center">
               <a
