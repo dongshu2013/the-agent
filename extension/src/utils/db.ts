@@ -4,6 +4,8 @@ import { Model } from '~/types';
 import { PROVIDER_MODELS } from './models';
 import { Message } from '@the-agent/shared';
 import { DEFAULT_MODEL, SYSTEM_MODEL_ID } from './constants';
+import { env } from './env';
+import { getApiKey } from '~/services/cache';
 
 export interface UserInfo {
   id: string;
@@ -19,6 +21,9 @@ export interface UserInfo {
 }
 
 class MystaDB extends Dexie {
+  getCurrentModel() {
+    throw new Error('Method not implemented.');
+  }
   conversations!: Table<Conversation>;
   messages!: Table<Message>;
   users!: Table<UserInfo>;
@@ -257,26 +262,25 @@ class MystaDB extends Dexie {
     }
   }
 
-  async getSelectModel(): Promise<Model | null> {
-    try {
-      const user = await this.getCurrentUser();
-      if (!user) return null;
-
-      const selectedModel = await this.models.where('id').equals(user.selectedModelId).first();
-      if (!selectedModel) return null;
-
-      return {
-        id: selectedModel.id,
-        name: selectedModel.name,
-        type: selectedModel.type,
-        apiKey: selectedModel.apiKey,
-        apiUrl: selectedModel.apiUrl,
-        userId: selectedModel.userId,
-      };
-    } catch (error) {
-      console.error('Error getting selected model:', error);
-      return null;
+  async getSelectModel(): Promise<Model> {
+    const user = await this.getCurrentUser();
+    if (!user) {
+      throw new Error('User not found');
     }
+
+    const selectedModel = await this.models.where('id').equals(user.selectedModelId).first();
+    if (!selectedModel) {
+      throw new Error('Model not found');
+    }
+    if (selectedModel.id === 'system') {
+      const apiKey = await getApiKey();
+      if (!apiKey?.enabled) {
+        throw new Error('API key not found or not enabled');
+      }
+      selectedModel.apiKey = apiKey.key;
+      selectedModel.apiUrl = env.BACKEND_URL;
+    }
+    return selectedModel;
   }
 
   async saveOrUpdateUser(user: UserInfo): Promise<void> {

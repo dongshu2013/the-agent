@@ -1,4 +1,3 @@
-import { showLoginModal } from '~/utils/global-event';
 import {
   genToolCallResult,
   genUserPrompt,
@@ -7,11 +6,9 @@ import {
 } from '../utils/chat';
 import { toolExecutor } from './tool-executor';
 import { db } from '~/utils/db';
-import { getApiKey } from './cache';
-import { WebInteractionResult } from '~/types/tools';
 import { ChatMessage, Message, ToolCall } from '@the-agent/shared';
 import { MAX_TOOL_CALLS, SYSTEM_MESSAGE } from '~/utils/constants';
-import { ApiKey } from '~/types';
+import { ApiKey, Model } from '~/types';
 
 interface ChatHandlerOptions {
   apiKey: ApiKey | null;
@@ -35,20 +32,14 @@ export class ChatHandler {
     if (this.isStreaming) {
       this.stopStreaming();
     }
-    if (!prompt.trim() || !this.options.apiKey?.enabled || !this.options.currentConversationId) {
+    if (!prompt || !this.options.apiKey?.enabled || !this.options.currentConversationId) {
       return;
     }
 
-    const currentPrompt = prompt.trim();
-    const baseTimestamp = new Date();
-    let messageIdOffset = 0;
-
-    const generateMessageId = () => baseTimestamp.getTime() + messageIdOffset++;
-
     const userMessage: Message = {
-      id: generateMessageId(),
+      id: Date.now(),
       role: 'user',
-      content: currentPrompt,
+      content: prompt,
       conversation_id: this.options.currentConversationId,
     };
 
@@ -98,168 +89,95 @@ export class ChatHandler {
         });
       }
 
-      let toolCallCount = 0;
-
-      const currentModel = await db.getSelectModel();
-      const apiKey = await getApiKey();
-      if (!apiKey) {
-        console.error('Invalid api key');
-        showLoginModal();
-        return;
-      }
-
-      const processRequest = async (apiKey: ApiKey, inputMessages: ChatMessage[]) => {
-        let accumulatedContent = '';
-        const totalTokenUsage = {
-          prompt_tokens: 0,
-          completion_tokens: 0,
-          total_tokens: 0,
-        };
-
-        try {
-          while (true) {
-            if (!this.isStreaming) break;
-
-            const stream = await sendChatCompletion(
-              apiKey.key,
-              {
-                messages: [SYSTEM_MESSAGE, ...inputMessages],
-                currentModel,
-              },
-              {
-                signal: this.abortController?.signal,
-              }
-            );
-
-            let currentResponse = '';
-            for await (const chunk of stream) {
-              if (!this.isStreaming) break;
-
-              const content = chunk.choices[0]?.delta?.content;
-              if (content) {
-                currentResponse += content;
-              }
-            }
-
-            const resp = await stream.finalChatCompletion();
-            accumulatedContent = currentResponse;
-
-            if (resp.usage) {
-              totalTokenUsage.prompt_tokens += resp.usage.prompt_tokens || 0;
-              totalTokenUsage.completion_tokens += resp.usage.completion_tokens || 0;
-              totalTokenUsage.total_tokens += resp.usage.total_tokens || 0;
-            }
-
-            const toolCalls = resp.choices[0].message.tool_calls;
-            if (toolCalls) {
-              if (toolCallCount >= MAX_TOOL_CALLS) {
-                return {
-                  content: accumulatedContent,
-                  tokenUsage: totalTokenUsage,
-                };
-              }
-
-              toolCallCount += toolCalls.length;
-
-              const assistantMessage: Message = {
-                role: 'assistant',
-                content: currentResponse,
-                id: generateMessageId(),
-                conversation_id: this.options.currentConversationId,
-                tool_calls: toolCalls,
-              };
-
-              await this.updateMessage(assistantMessage);
-              await saveMessageApi({
-                message: assistantMessage,
-              });
-
-              inputMessages.push({
-                role: 'assistant',
-                content: currentResponse,
-                tool_calls: toolCalls,
-              });
-
-              for (const toolCall of toolCalls) {
-                const toolResult = await toolExecutor.executeToolCall(toolCall);
-                const simplifiedName = toolCall.function.name
-                  .replace('TabToolkit_', '')
-                  .replace('WebToolkit_', '');
-
-                const toolMessageId = generateMessageId();
-                const toolMessage: Message = {
-                  id: toolMessageId,
-                  role: 'tool',
-                  name: toolCall.function.name,
-                  content: `I will ${simplifiedName}.\n`,
-                  conversation_id: this.options.currentConversationId,
-                  tool_call_id: toolCall.id,
-                  tool_calls: [
-                    {
-                      ...toolCall,
-                      result: toolResult as WebInteractionResult<unknown>,
-                    },
-                  ],
-                };
-
-                await this.updateMessage(toolMessage);
-
-                await saveMessageApi({
-                  message: toolMessage,
-                });
-
-                inputMessages.push({
-                  role: 'tool',
-                  name: toolCall.function.name,
-                  content:
-                    toolCall.function.name === 'WebToolkit_screenshot'
-                      ? `${toolResult.success ? 'success' : 'failed'}`
-                      : `${JSON.stringify(toolResult.data)}`,
-                  tool_call_id: toolCall.id,
-                });
-              }
-            } else {
-              break;
-            }
-          }
-          return { content: accumulatedContent, tokenUsage: totalTokenUsage };
-        } catch (error: unknown) {
-          if (error instanceof Error && error.name === 'AbortError') {
-            await this.updateMessage({
-              ...userMessage,
-              content: accumulatedContent + `${accumulatedContent ? '\n\n' : ''}Stream aborted.`,
-              token_usage: totalTokenUsage,
-            });
-          } else {
-            this.options.onError(error);
-          }
-          return { content: accumulatedContent, tokenUsage: totalTokenUsage };
-        }
+      const model = await db.getSelectModel();
+      const uMessageToSent: ChatMessage = {
+        role: 'user',
+        content: genUserPrompt(contextPrompt, prompt),
       };
-
-      const { content: finalContent, tokenUsage } = await processRequest(apiKey, [
-        {
-          role: 'user',
-          content: genUserPrompt(contextPrompt, currentPrompt),
-        },
-      ]);
-
-      const aiMessage: Message = {
-        id: generateMessageId(),
-        role: 'assistant',
-        content: finalContent,
-        conversation_id: this.options.currentConversationId,
-        token_usage: tokenUsage,
-      };
-      await this.updateMessage(aiMessage);
-
-      await saveMessageApi({
-        message: aiMessage,
-      });
+      await this.processRequest(model, [uMessageToSent]);
     } catch (error: unknown) {
       this.options.onError(error);
     } finally {
       this.stopStreaming();
+    }
+  }
+
+  private async processRequest(model: Model, inputMessages: ChatMessage[]) {
+    const message: Message = {
+      id: Date.now(),
+      role: 'assistant',
+      content: '',
+      reasoning: '',
+      conversation_id: this.options.currentConversationId,
+    };
+    let toolCallCount = 0;
+    try {
+      while (true) {
+        if (!this.isStreaming) break;
+
+        const stream = await sendChatCompletion(
+          {
+            messages: [SYSTEM_MESSAGE, ...inputMessages],
+            model,
+          },
+          {
+            signal: this.abortController?.signal,
+          }
+        );
+
+        for await (const chunk of stream) {
+          if (!this.isStreaming) break;
+          const delta = chunk.choices[0]?.delta;
+          if (delta) {
+            message.reasoning += (delta as { reasoning?: string }).reasoning || '';
+            message.content += delta.content || '';
+            await this.updateMessage(message);
+          }
+        }
+
+        const resp = await stream.finalChatCompletion();
+        message.token_usage = resp.usage;
+        message.tool_calls = resp.choices[0].message.tool_calls;
+        toolCallCount += message.tool_calls?.length || 0;
+        if (toolCallCount >= MAX_TOOL_CALLS) {
+          message.content +=
+            '\n\n' + 'We are hitting the limit of tool calls. Let me know if you want to continue.';
+        }
+        await this.updateMessage(message);
+        await saveMessageApi({ message });
+        inputMessages.push(message);
+
+        if (!message.tool_calls || toolCallCount >= MAX_TOOL_CALLS) {
+          break;
+        }
+
+        for (const toolCall of message.tool_calls) {
+          const toolMessage: Message = {
+            id: Date.now(),
+            conversation_id: this.options.currentConversationId,
+            role: 'tool',
+            name: toolCall.function.name,
+            tool_call_id: toolCall.id,
+          };
+          await this.updateMessage(toolMessage);
+
+          const toolResult = await toolExecutor.executeToolCall(toolCall);
+          toolCall.result = toolResult;
+          toolMessage.content = JSON.stringify(toolResult);
+          await this.updateMessage(toolMessage);
+          await saveMessageApi({ message: toolMessage });
+          inputMessages.push(toolMessage);
+        }
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        message.content += `${message.content ? '\n\n' : ''}Stream aborted.`;
+        await this.updateMessage(message);
+        await saveMessageApi({ message });
+        inputMessages.push(message);
+      } else {
+        this.options.onError(error);
+      }
     }
   }
 

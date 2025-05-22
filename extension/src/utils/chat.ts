@@ -10,13 +10,12 @@ import { APIClient, APIError } from '@the-agent/shared';
 import { DEFAULT_MODEL } from './constants';
 
 export const sendChatCompletion = async (
-  apiKey: string,
   request: ChatRequest,
   options: { stream?: boolean; signal?: AbortSignal } = {}
 ): Promise<ChatCompletionStream> => {
   try {
     const client = new OpenAI({
-      apiKey: apiKey,
+      apiKey: request.model?.apiKey,
       baseURL: env.BACKEND_URL + '/v1',
       dangerouslyAllowBrowser: true,
     });
@@ -33,8 +32,7 @@ export const sendChatCompletion = async (
 
     return client.beta.chat.completions.stream(
       {
-        model:
-          request.currentModel?.id === 'system' ? DEFAULT_MODEL : request.currentModel?.name || '',
+        model: request.model?.id === 'system' ? DEFAULT_MODEL : request.model?.name || '',
         messages: request.messages as OpenAI.Chat.ChatCompletionMessageParam[],
         tools: tools,
         tool_choice: 'auto',

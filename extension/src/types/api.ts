@@ -10,7 +10,7 @@ import { Model } from '.';
  * Chat request interface
  */
 export interface ChatRequest {
-  currentModel: Model | null;
+  model: Model | null;
   messages: ChatMessage[];
 }
 

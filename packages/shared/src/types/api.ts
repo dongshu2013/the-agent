@@ -32,6 +32,7 @@ export type TokenUsage = z.infer<typeof TokenUsageSchema>;
 export const ChatMessageSchema = z.object({
   role: MessageRoleSchema,
   content: z.string().nullable().optional(),
+  reasoning: z.string().nullable().optional(),
   name: z.string().nullable().optional(),
   tool_calls: z.array(ToolCallSchema).nullable().optional(),
   tool_call_id: z.string().nullable().optional(),
