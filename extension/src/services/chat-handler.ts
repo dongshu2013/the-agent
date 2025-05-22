@@ -103,18 +103,9 @@ export class ChatHandler {
   }
 
   private async processRequest(model: Model, inputMessages: ChatMessage[]) {
-    const message: Message = {
-      id: Date.now(),
-      role: 'assistant',
-      content: '',
-      reasoning: '',
-      conversation_id: this.options.currentConversationId,
-    };
     let toolCallCount = 0;
     try {
-      while (true) {
-        if (!this.isStreaming) break;
-
+      while (this.isStreaming) {
         const stream = await sendChatCompletion(
           {
             messages: [SYSTEM_MESSAGE, ...inputMessages],
@@ -125,8 +116,17 @@ export class ChatHandler {
           }
         );
 
+        const message: Message = {
+          id: Date.now(),
+          conversation_id: this.options.currentConversationId,
+          role: 'assistant',
+          content: '',
+          reasoning: '',
+        };
         for await (const chunk of stream) {
-          if (!this.isStreaming) break;
+          if (!this.isStreaming) {
+            break;
+          }
           const delta = chunk.choices[0]?.delta;
           if (delta) {
             message.reasoning += (delta as { reasoning?: string }).reasoning || '';
@@ -170,14 +170,9 @@ export class ChatHandler {
         }
       }
     } catch (error: unknown) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        message.content += `${message.content ? '\n\n' : ''}Stream aborted.`;
-        await this.updateMessage(message);
-        await saveMessageApi({ message });
-        inputMessages.push(message);
-      } else {
-        this.options.onError(error);
-      }
+      this.options.onError(error);
+    } finally {
+      this.stopStreaming();
     }
   }
 
