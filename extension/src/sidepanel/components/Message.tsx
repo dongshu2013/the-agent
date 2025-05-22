@@ -1,5 +1,5 @@
 import React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { processMarkdown } from '../../utils/markdown-processor';
 import { ScreenshotResult } from '~/tools/web-toolkit';
@@ -30,6 +30,11 @@ const MessageComponent = React.memo(function MessageComponent({
 
   const [copySuccess, setCopySuccess] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isLatest, setIsLatest] = useState(isLatestResponse);
+
+  useEffect(() => {
+    setIsLatest(isLatestResponse);
+  }, [isLatestResponse]);
 
   if (!message) {
     console.warn('Message component received null or undefined message');
@@ -55,7 +60,7 @@ const MessageComponent = React.memo(function MessageComponent({
     if (!message.content) return false;
     if (message.role === 'tool') return false;
 
-    return isLatestResponse || isHovered;
+    return isLatest || (isHovered && isUser);
   };
 
   const renderToolMessage = () => {
@@ -155,7 +160,10 @@ const MessageComponent = React.memo(function MessageComponent({
 
   return (
     <div
-      style={{ marginBottom: shouldShowCopyButton() ? '20px' : '0' }}
+      style={{
+        marginBottom: isUser || isLatest ? '30px' : '0',
+        marginTop: isUser || isError ? '30px' : '0',
+      }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -180,7 +188,7 @@ const MessageComponent = React.memo(function MessageComponent({
             style={{
               display: 'inline-block',
               maxWidth: '100%',
-              padding: isUser || isError ? '10px 16px' : '10px 16px 10px 0',
+              padding: isUser || isError ? '10px 16px' : '3px 16px 3px 0',
               textAlign: 'left',
               fontSize: '14px',
               lineHeight: '1.5',
