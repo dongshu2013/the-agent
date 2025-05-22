@@ -166,6 +166,18 @@ class MystaDB extends Dexie {
     return messages || [];
   }
 
+  async getLastMessageVersion(conversationId: number): Promise<number> {
+    // Get the last message in the conversation
+    const messages = await this.messages
+      .where('conversation_id')
+      .equals(conversationId)
+      .reverse()
+      .limit(1)
+      .toArray();
+
+    return messages.length > 0 ? messages[0].version || 0 : 0;
+  }
+
   async deleteMessagesByConversation(conversationId: number): Promise<void> {
     await this.messages.where('conversation_id').equals(conversationId).delete();
   }

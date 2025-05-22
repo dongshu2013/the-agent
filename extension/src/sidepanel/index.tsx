@@ -41,6 +41,12 @@ const Sidepanel = () => {
       [currentConversationId]
     ) ?? [];
 
+  const lastMessageVersion =
+    useLiveQuery(() => {
+      if (currentConversationId === -1) return 0;
+      return db.getLastMessageVersion(currentConversationId);
+    }, [currentConversationId]) ?? 0;
+
   const conversations =
     useLiveQuery(
       () => (currentUser && currentUser.id ? db.getAllConversations(currentUser.id) : []),
@@ -224,7 +230,7 @@ const Sidepanel = () => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
     scrollToBottom();
-  }, [messages.length]);
+  }, [messages.length, lastMessageVersion]);
 
   // 事件处理函数
   const handleSubmit = async (e: React.FormEvent) => {
