@@ -1,5 +1,4 @@
-import logoIcon from '~/assets/icon64.png';
-import betaIcon from '~/assets/beta.png';
+import logoIcon from '~/assets/mysta-logo-brand-beta.png';
 
 const Popup = () => {
   const openSidePanel = async () => {
@@ -45,23 +44,7 @@ const Popup = () => {
           src={logoIcon}
           alt="Mysta Logo"
           style={{
-            height: '30px',
-          }}
-        />
-        <h2
-          style={{
-            margin: '0',
-            fontSize: '30px',
-            fontWeight: '600',
-          }}
-        >
-          MYSTA
-        </h2>
-        <img
-          src={betaIcon}
-          alt="Beta"
-          style={{
-            height: '16px',
+            height: '40px',
           }}
         />
       </div>

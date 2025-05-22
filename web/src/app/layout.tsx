@@ -14,8 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Mysta',
-  description: 'Mysta Dashboard',
+  title: 'Mysta Dashboard',
 };
 
 export default function RootLayout({

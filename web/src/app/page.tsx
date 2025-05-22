@@ -21,9 +21,7 @@ export default function Home() {
       <div className="w-full max-w-[560px] bg-white rounded-[20px] p-12 shadow-lg">
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center gap-2.5">
-            <Image src="/mysta-logo.png" alt="Mysta Logo" width={40} height={40} />
-            <h1 className="text-4xl font-bold tracking-tight black">MYSTA</h1>
-            <Image src="/beta.png" alt="Beta" width={50} height={20} />
+            <Image src="/mysta-logo-brand-beta.png" alt="Mysta Logo" width={256} height={64} />
           </div>
           <p className="mt-6 text-lg leading-8 text-gray-600 black">
             Ask anything. Automate everything.

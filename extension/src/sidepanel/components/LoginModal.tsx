@@ -1,7 +1,6 @@
 import { Modal } from 'antd';
 import { env } from '~/utils/env';
-import logoIcon from '~/assets/icon64.png';
-import betaIcon from '~/assets/beta.png';
+import logoIcon from '~/assets/mysta-logo-brand-beta.png';
 import { UserInfo } from '~/utils/db';
 
 interface LoginModalProps {
@@ -59,22 +58,6 @@ export default function LoginModal({
           alt="Mysta Logo"
           style={{
             height: '40px',
-          }}
-        />
-        <h2
-          style={{
-            margin: '0',
-            fontSize: '40px',
-            fontWeight: '600',
-          }}
-        >
-          MYSTA
-        </h2>
-        <img
-          src={betaIcon}
-          alt="Beta"
-          style={{
-            height: '20px',
           }}
         />
       </div>
