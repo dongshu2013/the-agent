@@ -88,15 +88,9 @@ export default function HeroHome() {
             data-aos-delay={600}
           >
             <div className="relative">
-              {/* Background gradient */}
-              <div
-                className="absolute bottom-0 left-0 right-0 h-96 bg-gradient-to-t from-gray-100 to-transparent"
-                aria-hidden="true"
-              ></div>
-
               {/* Hero image */}
               <div className="relative mx-auto max-w-[1200px]">
-                <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+                <div className="relative overflow-hidden">
                   <Image
                     src="/images/hero.png"
                     alt="Hero screenshot"
@@ -105,12 +99,6 @@ export default function HeroHome() {
                     className="w-full"
                     priority
                   />
-
-                  {/* Decorative elements */}
-                  <div className="absolute inset-0 pointer-events-none">
-                    <div className="absolute inset-0 border-[0.5px] border-white/10 rounded-2xl"></div>
-                    <div className="absolute -inset-[1px] border border-gradient-to-r from-transparent via-white/20 to-transparent rounded-2xl"></div>
-                  </div>
                 </div>
               </div>
             </div>
