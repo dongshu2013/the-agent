@@ -473,16 +473,18 @@ const Sidepanel = () => {
             </div>
           ) : (
             <div style={{ paddingBottom: '32px' }}>
-              {messages.map((message, index) => (
-                <Message
-                  key={`${message.id}-${message.version}`}
-                  message={message}
-                  isLatestResponse={
-                    index === messages.length - 1 &&
-                    (message.role === 'assistant' || message.role === 'error')
-                  }
-                />
-              ))}
+              {messages.map((message, index) => {
+                const isLast =
+                  index === messages.length - 1 &&
+                  (message.role === 'assistant' || message.role === 'error');
+                return (
+                  <Message
+                    key={`${message.id}-${message.version}-${isLast}`}
+                    message={message}
+                    isLatestResponse={isLast}
+                  />
+                );
+              })}
               {isStreaming && (
                 <div style={{ padding: '16px 0', textAlign: 'center' }}>
                   <LoadingBrain />
