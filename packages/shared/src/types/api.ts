@@ -239,7 +239,7 @@ export const StripeCheckoutRequestSchema = z.object({
 export type StripeCheckoutRequest = z.infer<typeof StripeCheckoutRequestSchema>;
 
 export const StripeCheckoutResponseSchema = z.object({
-  order_id: z.string(),
+  order_id: z.number(),
   session_id: z.string(),
   public_key: z.string(),
 });
