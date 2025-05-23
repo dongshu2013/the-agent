@@ -19,6 +19,7 @@ import { APIError } from '@the-agent/shared';
 import { ApiKey } from '~/types';
 import { API_KEY_TAG } from '~/services/cache';
 import { getUserInfo, isEqualApiKey, parseApiKey } from '~/utils/user';
+import Home from './Home';
 
 const Sidepanel = () => {
   const [apiKey, setApiKey] = useState<ApiKey | null>(null);
@@ -377,6 +378,10 @@ const Sidepanel = () => {
 
     return () => clearTimeout(timer);
   }, [currentConversationId]);
+
+  if (!currentUser) {
+    return <Home />;
+  }
 
   return (
     <div
