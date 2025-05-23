@@ -100,7 +100,7 @@ const ConversationList = ({
                   e.currentTarget.style.backgroundColor = 'transparent';
                 }}
               >
-                <img src={newchatIcon} alt="New Chat" style={{ width: 18, height: 18 }} />
+                <img src={newchatIcon} alt="New Chat" style={{ width: 20, height: 20 }} />
               </button>
             </Tooltip>
             <Tooltip title="Close" placement="bottom">
@@ -127,7 +127,7 @@ const ConversationList = ({
                   e.currentTarget.style.color = '#6b7280';
                 }}
               >
-                <X color="#374151" size={18} />
+                <X color="#374151" size={20} />
               </button>
             </Tooltip>
           </div>

@@ -117,7 +117,7 @@ const MessageComponent = React.memo(function MessageComponent({
               style={{
                 border,
                 borderRadius: '6px',
-                padding: '7px 10px',
+                padding: '5px 10px',
                 fontSize: '13px',
                 lineHeight: '1.5',
                 display: 'flex',

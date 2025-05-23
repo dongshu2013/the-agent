@@ -229,7 +229,7 @@ const Header = ({ createNewConversation, setShowConversationList, user }: Header
               e.currentTarget.style.backgroundColor = 'transparent';
             }}
           >
-            <AlignLeft color="#374151" size={18} />
+            <AlignLeft color="#374151" size={20} />
           </button>
         </Tooltip>
         <img
@@ -268,7 +268,7 @@ const Header = ({ createNewConversation, setShowConversationList, user }: Header
               e.currentTarget.style.backgroundColor = 'transparent';
             }}
           >
-            <img src={newchatIcon} alt="New Chat" style={{ width: 18, height: 18 }} />
+            <img src={newchatIcon} alt="New Chat" style={{ width: 20, height: 20 }} />
           </button>
         </Tooltip>
         <Dropdown dropdownRender={() => dropdownMenu} trigger={['click']} placement="bottomRight">
@@ -301,7 +301,7 @@ const Header = ({ createNewConversation, setShowConversationList, user }: Header
                   }}
                 />
               ) : (
-                <UserIcon color="#374151" size={18} />
+                <UserIcon color="#374151" size={20} />
               )}
             </button>
           </Tooltip>
