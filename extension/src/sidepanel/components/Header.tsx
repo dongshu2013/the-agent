@@ -1,5 +1,5 @@
 import { AlignLeft, SquarePen, User as UserIcon } from 'lucide-react';
-import { db } from '~/utils/db';
+import { db, UserInfo } from '~/utils/db';
 import { useState, useEffect } from 'react';
 import { Modal, Dropdown, Tooltip } from 'antd';
 import { ProviderGroup } from './ModelCascader';
@@ -12,6 +12,7 @@ import betaImg from '~/assets/beta.png';
 interface HeaderProps {
   createNewConversation: () => void;
   setShowConversationList: (value?: boolean) => void;
+  user: UserInfo | null;
 }
 
 interface ModelGroup {
@@ -19,7 +20,7 @@ interface ModelGroup {
   models: Model[];
 }
 
-const Header = ({ createNewConversation, setShowConversationList }: HeaderProps) => {
+const Header = ({ createNewConversation, setShowConversationList, user }: HeaderProps) => {
   const [providerGroups, setProviderGroups] = useState<ProviderGroup[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<string>('');
   const [, setSelectedModelId] = useState<string>('');
@@ -27,7 +28,6 @@ const Header = ({ createNewConversation, setShowConversationList }: HeaderProps)
   const [editingProvider] = useState<string | null>(null);
   const [apiModalOpen, setApiModalOpen] = useState(false);
 
-  const user = useLiveQuery(() => db.getCurrentUser(), []);
   const models = useLiveQuery(() => (user?.id ? db.getUserModels(user.id) : []), [user?.id]);
 
   useEffect(() => {

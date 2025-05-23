@@ -277,15 +277,11 @@ class MystaDB extends Dexie {
 
   // 新增：获取当前用户（取 updated_at 最新的用户）
   async getCurrentUser(): Promise<UserInfo | null> {
-    try {
-      const users = await this.users.orderBy('updated_at').reverse().toArray();
-      return users[0] || null;
-    } catch (error) {
-      console.error('Error getting current user:', error);
-      throw new Error(
-        `Failed to get current user: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
+    const apiKey = await getApiKey();
+    if (!apiKey) {
+      return null;
     }
+    return this.getUserByApiKey(apiKey.key);
   }
 
   async getSelectModel(): Promise<Model> {
