@@ -160,6 +160,7 @@ export class ChatHandler {
             role: 'tool',
             name: toolCall.function.name,
             tool_call_id: toolCall.id,
+            tool_calls: [toolCall],
           };
           await this.updateMessage(toolMessage);
 

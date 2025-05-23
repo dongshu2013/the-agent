@@ -4,6 +4,9 @@ import { useState } from 'react';
 import { processMarkdown } from '../../utils/markdown-processor';
 import { ScreenshotResult } from '~/tools/web-toolkit';
 import { VersionedMessage } from '~/utils/db';
+import RunIcon from '~/assets/icons/run.svg';
+import DoneIcon from '~/assets/icons/done.svg';
+import ErrorIcon from '~/assets/icons/error.svg';
 
 interface Props {
   message: VersionedMessage;
@@ -59,53 +62,99 @@ const MessageComponent = React.memo(function MessageComponent({
   };
 
   const renderToolMessage = () => {
-    if (message.role !== 'tool') return null;
+    if (message.role !== 'tool' || !message.tool_calls?.length) return null;
 
     return (
-      <div
-        key={message.id}
-        style={{
-          border: '1px solid #ccc',
-          borderRadius: '6px',
-          padding: '6px 8px',
-          margin: '4px 0',
-          fontSize: '12px',
-          lineHeight: '1.4',
-          display: 'flex',
-          alignItems: 'center',
-        }}
-      >
-        <svg
-          style={{ marginRight: '6px' }}
-          xmlns="http://www.w3.org/2000/svg"
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="m15 12-8.5 8.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0a2.12 2.12 0 0 1 0-3L12 9" />
-          <path d="M17.64 15 22 10.64" />
-          <path d="m20.91 11.7-1.25-1.25c-.6-.6-.93-1.4-.93-2.25v-.86L16.01 4.6a5.56 5.56 0 0 0-3.94-1.64H9l.92.82A6.18 6.18 0 0 1 12 8.4v1.56l2 2h2.47l2.26 1.91" />
-        </svg>
-        Executed tool call{' '}
-        <span
-          style={{
-            display: 'inline-block',
-            backgroundColor: '#f7f7f7',
-            color: '#999',
-            border: '1px solid #ccc',
-            padding: '1px 6px',
-            borderRadius: '4px',
-            marginLeft: '6px',
-            fontSize: '11px',
-          }}
-        >
-          {message.name?.replace('TabToolkit_', '').replace('WebToolkit_', '')}
-        </span>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', margin: '4px 0' }}>
+        {message.tool_calls.map((toolCall, idx) => {
+          const result = toolCall.result;
+          let status: 'running' | 'success' | 'error' = 'running';
+          if (result) {
+            status = result.success ? 'success' : 'error';
+          }
+          let icon = (
+            <img
+              src={RunIcon}
+              alt="running"
+              style={{
+                marginRight: 8,
+                width: 18,
+                height: 18,
+                verticalAlign: 'middle',
+                animation: 'spin 1s linear infinite',
+              }}
+            />
+          );
+          let tip = 'Executing';
+          let border = '1px solid #ccc';
+          let bg = '#fff';
+          if (status === 'success') {
+            icon = (
+              <img
+                src={DoneIcon}
+                alt="done"
+                style={{ marginRight: 8, width: 18, height: 18, verticalAlign: 'middle' }}
+              />
+            );
+            tip = 'Executed';
+            border = '1.5px solid #55B610';
+            bg = '#f3faed';
+          } else if (status === 'error') {
+            icon = (
+              <img
+                src={ErrorIcon}
+                alt="error"
+                style={{ marginRight: 8, width: 18, height: 18, verticalAlign: 'middle' }}
+              />
+            );
+            tip = 'Error';
+            border = '1.5px solid #D20D0D';
+            bg = '#fef2f2';
+          }
+          return (
+            <div
+              key={toolCall.id || idx}
+              style={{
+                border,
+                borderRadius: '6px',
+                padding: '7px 10px',
+                fontSize: '13px',
+                lineHeight: '1.5',
+                display: 'flex',
+                alignItems: 'center',
+                background: bg,
+                fontWeight: 500,
+                minWidth: 0,
+                maxWidth: 320,
+              }}
+            >
+              {icon}
+              <span style={{ fontWeight: 500 }}>{tip}</span>
+              <span
+                style={{
+                  display: 'inline-block',
+                  backgroundColor: '#fff',
+                  color: '#999',
+                  border: '1px solid #ccc',
+                  padding: '1px 6px',
+                  borderRadius: '4px',
+                  marginLeft: '10px',
+                  fontSize: '12px',
+                  maxWidth: 120,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {message.name?.replace('TabToolkit_', '').replace('WebToolkit_', '') ||
+                  toolCall.function.name}
+              </span>
+              <style>{`
+                @keyframes spin { 100% { transform: rotate(360deg); } }
+              `}</style>
+            </div>
+          );
+        })}
       </div>
     );
   };
