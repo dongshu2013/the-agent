@@ -8,6 +8,7 @@ import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream.mjs';
 import { Message, SaveMessageResponse, ToolCall } from '@the-agent/shared';
 import { APIClient, APIError } from '@the-agent/shared';
 import { DEFAULT_MODEL } from './constants';
+import { Conversation } from '~/types/conversations';
 
 export const sendChatCompletion = async (
   request: ChatRequest,
@@ -92,4 +93,22 @@ export const genToolCallResult = (toolCall: ToolCall): string => {
     `Tool calls: ${toolCall.function.name}, ` +
     `executed result: ${JSON.stringify(toolCall?.result?.data || '')} \n`
   );
+};
+
+export const sortConversations = (conversations: Conversation[]) => {
+  const getTimestamp = (conversation: Conversation) => {
+    if (conversation.last_selected_at) {
+      return conversation.last_selected_at;
+    }
+    const messages = conversation.messages || [];
+    if (messages.length > 0) {
+      return messages[messages.length - 1].id;
+    }
+    return conversation.id;
+  };
+  return conversations.sort((a, b) => {
+    const aTimestamp = getTimestamp(a);
+    const bTimestamp = getTimestamp(b);
+    return bTimestamp - aTimestamp;
+  });
 };
