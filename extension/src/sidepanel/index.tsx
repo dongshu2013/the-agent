@@ -401,6 +401,7 @@ const Sidepanel = () => {
         <Header
           createNewConversation={handleCreateNewConversation}
           setShowConversationList={() => toggleConversationList()}
+          user={currentUser}
         />
       </div>
 
