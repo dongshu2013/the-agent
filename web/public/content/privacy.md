@@ -4,7 +4,7 @@
 
 Effective Date: May 18, 2025
 
-Last Updated: May 18, 2025
+Last Updated: May 22, 2025
 
 Mysta Technologies, Inc. (“Mysta”) respects your privacy. This Privacy Policy (“Policy”) describes our current data handling practices for the Mysta browser extension (the “Service”).
 
