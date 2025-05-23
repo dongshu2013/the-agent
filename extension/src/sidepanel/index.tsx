@@ -480,25 +480,24 @@ const Sidepanel = () => {
           ) : (
             <div style={{ paddingBottom: '32px' }}>
               {messages.map((message, index) => {
-                const isLastAssistant =
-                  index === messages.length - 1 && message.role === 'assistant';
+                const isLast =
+                  (index === messages.length - 1 && message.role === 'assistant') ||
+                  message.role === 'error';
                 const showLoadingBrain = !!message.reasoning;
                 return (
                   <React.Fragment key={`${message.id}-${message.version}`}>
                     {showLoadingBrain && (
                       <div style={{ padding: '16px 0', textAlign: 'center' }}>
                         <LoadingBrain
-                          isStreaming={isLastAssistant && isStreaming}
+                          isStreaming={isLast && isStreaming}
                           reasoning={message.reasoning || ''}
                         />
                       </div>
                     )}
                     <Message
+                      key={`${message.id}-${message.version}-${isLast}`}
                       message={message}
-                      isLatestResponse={
-                        index === messages.length - 1 &&
-                        (message.role === 'assistant' || message.role === 'error')
-                      }
+                      isLatestResponse={isLast}
                     />
                   </React.Fragment>
                 );
