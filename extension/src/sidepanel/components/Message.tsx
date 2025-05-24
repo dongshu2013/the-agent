@@ -13,6 +13,12 @@ interface Props {
   isLatestResponse?: boolean;
 }
 
+interface ToolMessageContent {
+  success: boolean;
+  data?: unknown;
+  error?: string;
+}
+
 function areEqual(prevProps: Props, nextProps: Props) {
   return (
     prevProps.message.id === nextProps.message.id &&
@@ -62,99 +68,101 @@ const MessageComponent = React.memo(function MessageComponent({
   };
 
   const renderToolMessage = () => {
-    if (message.role !== 'tool' || !message.tool_calls?.length) return null;
+    if (message.role !== 'tool' || !message.content) return null;
+
+    let status: 'running' | 'success' | 'error' = 'running';
+    let parsedContent: ToolMessageContent | null = null;
+    try {
+      parsedContent = JSON.parse(message.content ?? '') as ToolMessageContent;
+      if (typeof parsedContent.success === 'boolean') {
+        status = parsedContent.success ? 'success' : 'error';
+      }
+    } catch (e) {
+      status = 'error';
+      console.warn('Failed to parse message.content as JSON:', e);
+    }
+
+    let icon = (
+      <img
+        src={RunIcon}
+        alt="running"
+        style={{
+          marginRight: 8,
+          width: 18,
+          height: 18,
+          verticalAlign: 'middle',
+          animation: 'spin 1s linear infinite',
+        }}
+      />
+    );
+    let tip = 'Executing';
+    let border = '1px solid #ccc';
+    let bg = '#fff';
+    if (status === 'success') {
+      icon = (
+        <img
+          src={DoneIcon}
+          alt="done"
+          style={{ marginRight: 8, width: 18, height: 18, verticalAlign: 'middle' }}
+        />
+      );
+      tip = 'Executed';
+      border = '1.5px solid #55B610';
+      bg = '#f3faed';
+    } else if (status === 'error') {
+      icon = (
+        <img
+          src={ErrorIcon}
+          alt="error"
+          style={{ marginRight: 8, width: 18, height: 18, verticalAlign: 'middle' }}
+        />
+      );
+      tip = 'Error';
+      border = '1.5px solid #D20D0D';
+      bg = '#fef2f2';
+    }
 
     return (
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', margin: '4px 0' }}>
-        {message.tool_calls.map((toolCall, idx) => {
-          const result = toolCall.result;
-          let status: 'running' | 'success' | 'error' = 'running';
-          if (result) {
-            status = result.success ? 'success' : 'error';
-          }
-          let icon = (
-            <img
-              src={RunIcon}
-              alt="running"
-              style={{
-                marginRight: 8,
-                width: 18,
-                height: 18,
-                verticalAlign: 'middle',
-                animation: 'spin 1s linear infinite',
-              }}
-            />
-          );
-          let tip = 'Executing';
-          let border = '1px solid #ccc';
-          let bg = '#fff';
-          if (status === 'success') {
-            icon = (
-              <img
-                src={DoneIcon}
-                alt="done"
-                style={{ marginRight: 8, width: 18, height: 18, verticalAlign: 'middle' }}
-              />
-            );
-            tip = 'Executed';
-            border = '1.5px solid #55B610';
-            bg = '#f3faed';
-          } else if (status === 'error') {
-            icon = (
-              <img
-                src={ErrorIcon}
-                alt="error"
-                style={{ marginRight: 8, width: 18, height: 18, verticalAlign: 'middle' }}
-              />
-            );
-            tip = 'Error';
-            border = '1.5px solid #D20D0D';
-            bg = '#fef2f2';
-          }
-          return (
-            <div
-              key={toolCall.id || idx}
-              style={{
-                border,
-                borderRadius: '6px',
-                padding: '5px 10px',
-                fontSize: '13px',
-                lineHeight: '1.5',
-                display: 'flex',
-                alignItems: 'center',
-                background: bg,
-                fontWeight: 500,
-                minWidth: 0,
-                maxWidth: 320,
-              }}
-            >
-              {icon}
-              <span style={{ fontWeight: 500 }}>{tip}</span>
-              <span
-                style={{
-                  display: 'inline-block',
-                  backgroundColor: '#fff',
-                  color: '#999',
-                  border: '1px solid #ccc',
-                  padding: '1px 6px',
-                  borderRadius: '4px',
-                  marginLeft: '10px',
-                  fontSize: '12px',
-                  maxWidth: 120,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {message.name?.replace('TabToolkit_', '').replace('WebToolkit_', '') ||
-                  toolCall.function.name}
-              </span>
-              <style>{`
-                @keyframes spin { 100% { transform: rotate(360deg); } }
-              `}</style>
-            </div>
-          );
-        })}
+        <div
+          style={{
+            border,
+            borderRadius: '6px',
+            padding: '5px 10px',
+            fontSize: '13px',
+            lineHeight: '1.5',
+            display: 'flex',
+            alignItems: 'center',
+            background: bg,
+            fontWeight: 500,
+            minWidth: 0,
+            maxWidth: 320,
+          }}
+        >
+          {icon}
+          <span style={{ fontWeight: 500 }}>{tip}</span>
+          <span
+            style={{
+              display: 'inline-block',
+              backgroundColor: '#fff',
+              color: '#999',
+              border: '1px solid #ccc',
+              padding: '1px 6px',
+              borderRadius: '4px',
+              marginLeft: '10px',
+              fontSize: '12px',
+              maxWidth: 120,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {message.name?.replace('TabToolkit_', '').replace('WebToolkit_', '') || ''}
+          </span>
+          <style>{`
+            @keyframes spin { 100% { transform: rotate(360deg); } }
+          `}</style>
+        </div>
       </div>
     );
   };

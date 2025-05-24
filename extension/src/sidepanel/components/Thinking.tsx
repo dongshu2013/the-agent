@@ -18,7 +18,6 @@ const Thinking: React.FC = () => {
 
       {/* 加载文字 */}
       <div className="text-sm font-medium text-gray-600">
-        thinking
         <span className="inline-flex ml-3">
           <span className="loading-dot" style={{ animationDelay: '0s' }}>
             .
