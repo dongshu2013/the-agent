@@ -14,11 +14,12 @@ import { db, UserInfo } from '~/utils/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { ChatHandler } from '../services/chat-handler';
 import LoginModal from './components/LoginModal';
-import LoadingBrain from './components/LoadingBrain';
+import Thinking from './components/Thinking';
 import { APIError } from '@the-agent/shared';
 import { ApiKey } from '~/types';
 import { API_KEY_TAG } from '~/services/cache';
 import { getUserInfo, isEqualApiKey, parseApiKey } from '~/utils/user';
+import Home from './Home';
 
 const Sidepanel = () => {
   const [apiKey, setApiKey] = useState<ApiKey | null>(null);
@@ -381,6 +382,10 @@ const Sidepanel = () => {
     return () => clearTimeout(timer);
   }, [currentConversationId]);
 
+  if (!currentUser) {
+    return <Home />;
+  }
+
   return (
     <div
       style={{
@@ -479,8 +484,8 @@ const Sidepanel = () => {
             <div style={{ paddingBottom: '32px' }}>
               {messages.map((message, index) => {
                 const isLast =
-                  index === messages.length - 1 &&
-                  (message.role === 'assistant' || message.role === 'error');
+                  (index === messages.length - 1 && message.role === 'assistant') ||
+                  message.role === 'error';
                 return (
                   <Message
                     key={`${message.id}-${message.version}-${isLast}`}
@@ -491,7 +496,7 @@ const Sidepanel = () => {
               })}
               {isStreaming && (
                 <div style={{ padding: '16px 0', textAlign: 'center' }}>
-                  <LoadingBrain />
+                  <Thinking />
                 </div>
               )}
               <div ref={messagesEndRef} />

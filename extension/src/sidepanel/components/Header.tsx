@@ -1,13 +1,13 @@
-import { AlignLeft, SquarePen, User as UserIcon } from 'lucide-react';
+import { AlignLeft, User as UserIcon } from 'lucide-react';
 import { db, UserInfo } from '~/utils/db';
 import { useState, useEffect } from 'react';
 import { Modal, Dropdown, Tooltip } from 'antd';
 import { ProviderGroup } from './ModelCascader';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Model } from '~/types';
-import { ItemType } from 'antd/es/menu/interface';
 import { SYSTEM_MODEL_ID } from '~/utils/constants';
 import betaImg from '~/assets/beta.png';
+import newchatIcon from '~/assets/icons/newchat.svg';
 
 interface HeaderProps {
   createNewConversation: () => void;
@@ -131,24 +131,56 @@ const Header = ({ createNewConversation, setShowConversationList, user }: Header
     }
   };
 
-  const menuItems = [
-    {
-      key: 'profile',
-      label: user?.email || user?.username || 'User',
-      disabled: true,
-    },
-    {
-      type: 'divider',
-    },
-    // Add more items as needed
-    {
-      key: 'view-profile',
-      label: 'View Profile',
-      onClick: () => {
-        window.open(process.env.PLASMO_PUBLIC_WEB_URL || '', '_blank');
-      },
-    },
-  ];
+  // 自定义 Dropdown 菜单渲染
+  const dropdownMenu = (
+    <div
+      style={{
+        minWidth: 180,
+        background: '#fff',
+        borderRadius: 18,
+        boxShadow: '0 2px 12px 0 rgba(0,0,0,0.30)',
+        padding: '18px 18px 12px 18px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 10,
+      }}
+    >
+      <div
+        style={{
+          color: '#bdbdbd',
+          fontSize: 14,
+          marginBottom: 8,
+          textAlign: 'center',
+          wordBreak: 'break-all',
+        }}
+      >
+        {user?.email || user?.username || 'User'}
+      </div>
+      <button
+        style={{
+          width: '100%',
+          background: '#232323',
+          color: '#fff',
+          border: '2px solid #232323',
+          borderRadius: 12,
+          fontSize: 14,
+          padding: '8px 0',
+          marginTop: 2,
+          marginBottom: 2,
+          cursor: 'pointer',
+          boxShadow: '0 1px 2px 0 rgba(0,0,0,0.04)',
+          transition: 'background 0.18s, color 0.18s',
+          textAlign: 'center',
+        }}
+        onClick={() => {
+          window.open(process.env.PLASMO_PUBLIC_WEB_URL || '', '_blank');
+        }}
+      >
+        View Profile
+      </button>
+    </div>
+  );
 
   const buttonStyle = {
     display: 'flex',
@@ -197,7 +229,7 @@ const Header = ({ createNewConversation, setShowConversationList, user }: Header
               e.currentTarget.style.backgroundColor = 'transparent';
             }}
           >
-            <AlignLeft color="#374151" size={18} />
+            <AlignLeft color="#374151" size={20} />
           </button>
         </Tooltip>
         <img
@@ -236,14 +268,10 @@ const Header = ({ createNewConversation, setShowConversationList, user }: Header
               e.currentTarget.style.backgroundColor = 'transparent';
             }}
           >
-            <SquarePen color="#374151" size={18} />
+            <img src={newchatIcon} alt="New Chat" style={{ width: 20, height: 20 }} />
           </button>
         </Tooltip>
-        <Dropdown
-          menu={{ items: menuItems as ItemType[] }}
-          trigger={['click']}
-          placement="bottomRight"
-        >
+        <Dropdown dropdownRender={() => dropdownMenu} trigger={['click']} placement="bottomRight">
           <Tooltip title="User" placement="bottom">
             <button
               style={{
@@ -273,7 +301,7 @@ const Header = ({ createNewConversation, setShowConversationList, user }: Header
                   }}
                 />
               ) : (
-                <UserIcon color="#374151" size={18} />
+                <UserIcon color="#374151" size={20} />
               )}
             </button>
           </Tooltip>

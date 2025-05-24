@@ -1,6 +1,6 @@
 import React from 'react';
 
-const LoadingBrain: React.FC = () => {
+const Thinking: React.FC = () => {
   return (
     <div className="flex items-center text-gray-500 py-1">
       <style>
@@ -18,7 +18,6 @@ const LoadingBrain: React.FC = () => {
 
       {/* 加载文字 */}
       <div className="text-sm font-medium text-gray-600">
-        thinking
         <span className="inline-flex ml-3">
           <span className="loading-dot" style={{ animationDelay: '0s' }}>
             .
@@ -35,4 +34,4 @@ const LoadingBrain: React.FC = () => {
   );
 };
 
-export default LoadingBrain;
+export default Thinking;

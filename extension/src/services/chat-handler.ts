@@ -144,8 +144,8 @@ export class ChatHandler {
         if (toolCallCount >= MAX_TOOL_CALLS) {
           message.content +=
             '\n\n' + 'We are hitting the limit of tool calls. Let me know if you want to continue.';
-          await this.updateMessage(message);
         }
+        await this.updateMessage(message);
         await saveMessageApi({ message });
         inputMessages.push(message);
 
@@ -160,6 +160,7 @@ export class ChatHandler {
             role: 'tool',
             name: toolCall.function.name,
             tool_call_id: toolCall.id,
+            tool_calls: [toolCall],
           };
           await this.updateMessage(toolMessage);
 
