@@ -22,3 +22,5 @@ export interface ApiKey {
   key: string;
   enabled: boolean;
 }
+
+export type ChatStatus = 'uninitialized' | 'idle' | 'waiting' | 'streaming' | 'calling_tool';
