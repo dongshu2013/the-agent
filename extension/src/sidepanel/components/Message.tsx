@@ -8,10 +8,12 @@ import RunIcon from '~/assets/icons/run.svg';
 import DoneIcon from '~/assets/icons/done.svg';
 import ErrorIcon from '~/assets/icons/error.svg';
 import Reasoning from './Reasoning';
+import { ChatStatus } from '~/types';
 
 interface Props {
   message: VersionedMessage;
   isLatestResponse?: boolean;
+  status?: ChatStatus;
 }
 
 interface ToolMessageContent {
@@ -33,6 +35,7 @@ function areEqual(prevProps: Props, nextProps: Props) {
 const MessageComponent = React.memo(function MessageComponent({
   message,
   isLatestResponse,
+  status,
 }: Props) {
   const isUser = message?.role === 'user';
   const isError = message?.role === 'error';
@@ -65,7 +68,7 @@ const MessageComponent = React.memo(function MessageComponent({
     if (!message.content) return false;
     if (message.role === 'tool') return false;
 
-    return isLatestResponse || (isHovered && isUser);
+    return (isLatestResponse && status === 'idle') || (isHovered && isUser);
   };
 
   const renderToolMessage = () => {

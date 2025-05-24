@@ -16,13 +16,13 @@ const Thinking: React.FC = () => {
         `}
       </style>
 
-      {/* 加载文字 */}
       <div className="text-sm font-medium text-gray-600">
         <span className="inline-flex ml-3">
-          <span className="loading-dot" style={{ animationDelay: '0s' }}>
+          <span>Generating</span>
+          <span className="loading-dot" style={{ animationDelay: '0.3s' }}>
             .
           </span>
-          <span className="loading-dot" style={{ animationDelay: '0.3s' }}>
+          <span className="loading-dot" style={{ animationDelay: '0.6s' }}>
             .
           </span>
           <span className="loading-dot" style={{ animationDelay: '0.6s' }}>

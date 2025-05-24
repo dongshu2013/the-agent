@@ -461,9 +461,10 @@ const Sidepanel = () => {
                   message.role === 'error';
                 return (
                   <Message
-                    key={`${message.id}-${message.version}-${isLast}`}
+                    key={`${message.id}-${message.version}-${isLast}-${status}`}
                     message={message}
                     isLatestResponse={isLast}
+                    status={status}
                   />
                 );
               })}

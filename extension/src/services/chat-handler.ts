@@ -93,7 +93,6 @@ export class ChatHandler {
       this.options.onError(error);
     } finally {
       this.abort();
-      this.options.onStatusChange('idle');
     }
   }
 
@@ -181,9 +180,10 @@ export class ChatHandler {
   }
 
   abort() {
-    if (this.abortController) {
+    if (this.abortController && !this.abortController.signal.aborted) {
       this.abortController.abort();
       this.abortController = null;
     }
+    this.options.onStatusChange('idle');
   }
 }
