@@ -34,7 +34,7 @@ export default function Footer({ border = false }: { border?: boolean }) {
               <li>
                 <Link
                   className="flex items-center justify-center text-gray-500 transition hover:text-gray-900"
-                  href="https://github.com/dongshu2013"
+                  href="https://github.com/mysta-ai"
                   aria-label="Github"
                   target="_blank"
                   rel="noopener noreferrer"
