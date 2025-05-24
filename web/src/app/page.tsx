@@ -31,9 +31,7 @@ export default function Home() {
           <div className="flex items-center gap-2.5">
             <Image src="/mysta-logo-brand-beta.png" alt="Mysta Logo" width={256} height={64} />
           </div>
-          <p className="mt-6 text-lg leading-8 text-gray-600 black">
-            Ask anything. Automate everything.
-          </p>
+          <p className="mt-6 text-lg leading-8 text-gray-600 black">Let AI Run the Web for You</p>
         </div>
 
         <div className="space-y-4">
