@@ -16,19 +16,17 @@ import { ChatHandler } from '../services/chat-handler';
 import LoginModal from './components/LoginModal';
 import Thinking from './components/Thinking';
 import { APIError } from '@the-agent/shared';
-import { ApiKey } from '~/types';
+import { ApiKey, ChatStatus } from '~/types';
 import { API_KEY_TAG } from '~/services/cache';
 import { getUserInfo, isEqualApiKey, parseApiKey } from '~/utils/user';
 import Home from './Home';
 
 const Sidepanel = () => {
   const [apiKey, setApiKey] = useState<ApiKey | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [currentConversationId, setCurrentConversationId] = useState<number>(-1);
   const [showConversationList, setShowConversationList] = useState(false);
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
+  const [status, setStatus] = useState<ChatStatus>('uninitialized');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [chatHandler, setChatHandler] = useState<ChatHandler | null>(null);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -126,7 +124,6 @@ const Sidepanel = () => {
   const initializeUserAndData = useCallback(
     async (apiKeyToUse: ApiKey) => {
       try {
-        setIsLoading(true);
         if (!apiKeyToUse.enabled) {
           throw new Error('API key is disabled');
         }
@@ -147,8 +144,6 @@ const Sidepanel = () => {
         setLoginModalOpen(false);
       } catch (error) {
         handleApiError(error);
-      } finally {
-        setIsLoading(false);
       }
     },
     [handleApiError, refreshConversations]
@@ -212,13 +207,8 @@ const Sidepanel = () => {
           apiKey: apiKey,
           currentConversationId,
           onError: handleApiError,
-          onStreamStart: () => {
-            setIsLoading(true);
-            setIsStreaming(true);
-          },
-          onStreamEnd: () => {
-            setIsLoading(false);
-            setIsStreaming(false);
+          onStatusChange: status => {
+            setStatus(status);
           },
           onMessageUpdate: async message => {
             await db.saveMessage(message);
@@ -246,8 +236,8 @@ const Sidepanel = () => {
     await chatHandler.handleSubmit(currentPrompt);
   };
 
-  const handlePauseStream = useCallback(() => {
-    chatHandler?.stopStreaming();
+  const abort = useCallback(() => {
+    chatHandler?.abort();
   }, [chatHandler]);
 
   const toggleConversationList = async (value?: boolean) => {
@@ -255,14 +245,11 @@ const Sidepanel = () => {
 
     if (willShow) {
       try {
-        setIsLoading(true);
         if (currentUser?.id && (!conversations || conversations.length === 0)) {
           await getConversations(currentUser.id);
         }
       } catch (error) {
         handleApiError(error);
-      } finally {
-        setIsLoading(false);
       }
     }
 
@@ -270,14 +257,11 @@ const Sidepanel = () => {
   };
 
   const handleSelectConversation = async (id: number) => {
-    if (isLoading) return;
-
     if (id === -1) {
       await handleCreateNewConversation();
       return;
     }
 
-    setIsLoading(true);
     try {
       const conversation = await selectConv(id);
       if (conversation) {
@@ -285,16 +269,11 @@ const Sidepanel = () => {
       }
     } catch (error) {
       handleApiError(error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleDeleteConversation = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isLoading) return;
-
-    setIsLoading(true);
     try {
       await deleteConv(id);
       if (id === currentConversationId) {
@@ -313,14 +292,10 @@ const Sidepanel = () => {
       }
     } catch (error) {
       handleApiError(error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleCreateNewConversation = async () => {
-    if (isLoading) return;
-    setIsLoading(true);
     try {
       if (currentUser?.id) {
         const newConv = await createNewConversation(currentUser.id);
@@ -328,8 +303,6 @@ const Sidepanel = () => {
       }
     } catch (error) {
       handleApiError(error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -349,13 +322,13 @@ const Sidepanel = () => {
           setLoginModalOpen(true);
         } else {
           initializeUserAndData(storedApiKey);
-          setIsInitialized(true);
+          setStatus('idle');
         }
       });
     };
 
     // Only run this effect once on mount
-    if (!isInitialized) {
+    if (status === 'uninitialized') {
       initializeFromStorage();
     }
   }); // Empty dependency array - only run once
@@ -488,13 +461,14 @@ const Sidepanel = () => {
                   message.role === 'error';
                 return (
                   <Message
-                    key={`${message.id}-${message.version}-${isLast}`}
+                    key={`${message.id}-${message.version}-${isLast}-${status}`}
                     message={message}
                     isLatestResponse={isLast}
+                    status={status}
                   />
                 );
               })}
-              {isStreaming && (
+              {status === 'waiting' && (
                 <div style={{ padding: '16px 0', textAlign: 'center' }}>
                   <Thinking />
                 </div>
@@ -520,9 +494,8 @@ const Sidepanel = () => {
           prompt={prompt}
           setPrompt={setPrompt}
           onSubmit={handleSubmit}
-          isLoading={isLoading}
-          isStreaming={isStreaming}
-          onPauseStream={handlePauseStream}
+          status={status}
+          abort={abort}
         />
       </div>
 
@@ -550,7 +523,7 @@ const Sidepanel = () => {
         onClose={async () => {
           // First stop streaming and hide the switch modal
           if (chatHandler) {
-            chatHandler.stopStreaming();
+            chatHandler.abort();
           }
           setShowSwitch(false);
         }}

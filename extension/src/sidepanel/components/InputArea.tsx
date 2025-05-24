@@ -1,31 +1,24 @@
 import React, { useRef, useState } from 'react';
+import { ChatStatus } from '../../types';
 
 interface InputAreaProps {
   prompt: string;
   setPrompt: (prompt: string) => void;
   onSubmit: (e: React.FormEvent) => void;
-  isLoading: boolean;
-  isStreaming: boolean;
-  onPauseStream: () => void;
+  status: ChatStatus;
+  abort: () => void;
   onAttachFile?: () => void;
   onRecordAudio?: () => void;
 }
 
-export default function InputArea({
-  prompt,
-  setPrompt,
-  onSubmit,
-  isLoading,
-  isStreaming,
-  onPauseStream,
-}: InputAreaProps) {
+export default function InputArea({ prompt, setPrompt, onSubmit, status, abort }: InputAreaProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault(); // 阻止默认的换行行为
-      if (prompt.trim() && !isLoading) {
+      if (prompt.trim() && status === 'idle') {
         onSubmit(e);
       }
     }
@@ -68,7 +61,7 @@ export default function InputArea({
               onKeyDown={handleKeyDown}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
-              disabled={isLoading && !isStreaming}
+              disabled={status !== 'idle'}
               placeholder="Send message..."
               rows={1}
               style={{
@@ -178,10 +171,10 @@ export default function InputArea({
             </button>
 
             <div style={{ marginRight: '2px' }}>
-              {isStreaming ? (
+              {status !== 'idle' ? (
                 <button
                   type="button"
-                  onClick={onPauseStream}
+                  onClick={abort}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -219,7 +212,7 @@ export default function InputArea({
                 <button
                   type="submit"
                   onClick={onSubmit}
-                  disabled={!prompt.trim() || isLoading}
+                  disabled={!prompt.trim()}
                   aria-label="Send message"
                   style={{
                     display: 'flex',

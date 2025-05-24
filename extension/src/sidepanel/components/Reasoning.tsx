@@ -5,20 +5,19 @@ import MarkdownRenderer from './MarkdownRenderer';
 
 interface ReasoningProps {
   reasoning?: string;
-  isStreaming: boolean;
+  finished: boolean;
 }
 
-const Reasoning: React.FC<ReasoningProps> = ({ reasoning = '', isStreaming }) => {
+const Reasoning: React.FC<ReasoningProps> = ({ reasoning = '', finished }) => {
   const hasReasoning = !!reasoning;
   // 默认展开
   const [collapsed, setCollapsed] = useState(false);
 
-  // 当 isStreaming 从 true 变为 false 时，自动收起
   useEffect(() => {
-    if (!isStreaming) {
+    if (finished) {
       setCollapsed(true);
     }
-  }, [isStreaming]);
+  }, [finished]);
 
   return (
     <div>
@@ -45,7 +44,7 @@ const Reasoning: React.FC<ReasoningProps> = ({ reasoning = '', isStreaming }) =>
           style={{ width: 18, height: 18, marginRight: 7, opacity: 0.8 }}
         />
         <span style={{ fontWeight: 500, fontSize: 13, color: '#333' }}>
-          {isStreaming ? 'In thinking...' : 'Have thought'}
+          {finished ? 'Have thought' : 'In thinking...'}
         </span>
         <div style={{ flex: 1 }} />
         {hasReasoning && (
