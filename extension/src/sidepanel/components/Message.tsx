@@ -181,7 +181,7 @@ const MessageComponent = React.memo(function MessageComponent({
     if (!message.reasoning) return null;
     return (
       <div style={{ marginBottom: 8 }}>
-        <Reasoning reasoning={message.reasoning} isStreaming={!!isLatestResponse} />
+        <Reasoning reasoning={message.reasoning} finished={!!message.content} />
       </div>
     );
   };
