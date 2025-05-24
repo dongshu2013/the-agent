@@ -20,13 +20,10 @@ export default function HeroHome() {
               data-aos="zoom-y-out"
               data-aos-delay={150}
             >
-              Your browser, <br className="block md:hidden" />
-              now smarter.
+              Let AI Run the Web <br className="block md:hidden" />
+              for You
             </h1>
             <div className="mx-auto max-w-3xl">
-              <p className="mb-8 text-lg text-gray-700" data-aos="zoom-y-out" data-aos-delay={300}>
-                Ask anything. Automate everything.
-              </p>
               <div className="relative before:absolute before:inset-0 before:border-y before:[border-image:linear-gradient(to_right,transparent,--theme(--color-slate-300/.8),transparent)1]">
                 <div
                   className="mx-auto max-w-xs sm:flex sm:max-w-none sm:justify-center"
@@ -66,13 +63,13 @@ export default function HeroHome() {
                   >
                     <span className="relative inline-flex items-center">
                       <Image
-                        src="/images/logo-play.svg"
-                        alt="Play logo"
+                        src="/images/logo-install.svg"
+                        alt="Install logo"
                         width={24}
                         height={24}
                         className="mr-2"
                       />
-                      Watch video
+                      How to Install
                     </span>
                   </a>
                 </div>
