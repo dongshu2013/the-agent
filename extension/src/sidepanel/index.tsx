@@ -14,7 +14,6 @@ import { db, UserInfo } from '~/utils/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { ChatHandler } from '../services/chat-handler';
 import LoginModal from './components/LoginModal';
-import Reasoning from './components/Reasoning';
 import Thinking from './components/Thinking';
 import { APIError } from '@the-agent/shared';
 import { ApiKey } from '~/types';
@@ -484,22 +483,12 @@ const Sidepanel = () => {
                 const isLast =
                   (index === messages.length - 1 && message.role === 'assistant') ||
                   message.role === 'error';
-                const showReasoning = !!message.reasoning;
                 return (
-                  <React.Fragment key={`${message.id}-${message.version}`}>
-                    {showReasoning ? (
-                      <Reasoning
-                        isStreaming={isLast && isStreaming}
-                        reasoning={message.reasoning || ''}
-                      />
-                    ) : (
-                      <Message
-                        key={`${message.id}-${message.version}-${isLast}`}
-                        message={message}
-                        isLatestResponse={isLast}
-                      />
-                    )}
-                  </React.Fragment>
+                  <Message
+                    key={`${message.id}-${message.version}-${isLast}`}
+                    message={message}
+                    isLatestResponse={isLast}
+                  />
                 );
               })}
               {isStreaming && (

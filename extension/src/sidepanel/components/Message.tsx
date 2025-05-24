@@ -7,6 +7,7 @@ import { VersionedMessage } from '~/utils/db';
 import RunIcon from '~/assets/icons/run.svg';
 import DoneIcon from '~/assets/icons/done.svg';
 import ErrorIcon from '~/assets/icons/error.svg';
+import Reasoning from './Reasoning';
 
 interface Props {
   message: VersionedMessage;
@@ -68,18 +69,23 @@ const MessageComponent = React.memo(function MessageComponent({
   };
 
   const renderToolMessage = () => {
-    if (message.role !== 'tool' || !message.content) return null;
+    if (message.role !== 'tool') return null;
 
     let status: 'running' | 'success' | 'error' = 'running';
     let parsedContent: ToolMessageContent | null = null;
-    try {
-      parsedContent = JSON.parse(message.content ?? '') as ToolMessageContent;
-      if (typeof parsedContent.success === 'boolean') {
-        status = parsedContent.success ? 'success' : 'error';
+
+    if (!message.content) {
+      status = 'running';
+    } else {
+      try {
+        parsedContent = JSON.parse(message.content) as ToolMessageContent;
+        if (typeof parsedContent.success === 'boolean') {
+          status = parsedContent.success ? 'success' : 'error';
+        }
+      } catch (e) {
+        status = 'error';
+        console.warn('Failed to parse message.content as JSON:', e);
       }
-    } catch (e) {
-      status = 'error';
-      console.warn('Failed to parse message.content as JSON:', e);
     }
 
     let icon = (
@@ -98,6 +104,7 @@ const MessageComponent = React.memo(function MessageComponent({
     let tip = 'Executing';
     let border = '1px solid #ccc';
     let bg = '#fff';
+
     if (status === 'success') {
       icon = (
         <img
@@ -167,6 +174,15 @@ const MessageComponent = React.memo(function MessageComponent({
     );
   };
 
+  const renderReasoning = () => {
+    if (!message.reasoning) return null;
+    return (
+      <div style={{ marginBottom: 8 }}>
+        <Reasoning reasoning={message.reasoning} isStreaming={!!isLatestResponse} />
+      </div>
+    );
+  };
+
   const renderContent = () => {
     if (isUser || isError) {
       return <div style={{ whiteSpace: 'pre-wrap' }}>{message.content || ''}</div>;
@@ -185,6 +201,7 @@ const MessageComponent = React.memo(function MessageComponent({
 
     return (
       <>
+        {renderReasoning()}
         <div
           style={{ width: '100%', overflow: 'auto' }}
           dangerouslySetInnerHTML={{
