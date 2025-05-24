@@ -44,7 +44,7 @@ const Reasoning: React.FC<ReasoningProps> = ({ reasoning = '', finished }) => {
           style={{ width: 18, height: 18, marginRight: 7, opacity: 0.8 }}
         />
         <span style={{ fontWeight: 500, fontSize: 13, color: '#333' }}>
-          {finished ? 'Have thought' : 'In thinking...'}
+          {finished ? 'Thought Process' : 'Thinking...'}
         </span>
         <div style={{ flex: 1 }} />
         {hasReasoning && (
