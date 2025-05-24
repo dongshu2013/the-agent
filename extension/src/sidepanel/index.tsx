@@ -102,6 +102,9 @@ const Sidepanel = () => {
   const refreshConversations = useCallback(
     async (userId: string) => {
       try {
+        if (currentConversationId !== -1) {
+          return;
+        }
         const freshConversations = await db.getAllConversations(userId);
         if (freshConversations && freshConversations.length > 0) {
           setTimeout(() => {

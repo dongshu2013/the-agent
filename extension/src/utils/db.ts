@@ -6,6 +6,7 @@ import { Message } from '@the-agent/shared';
 import { DEFAULT_MODEL, SYSTEM_MODEL_ID } from './constants';
 import { env } from './env';
 import { getApiKey } from '~/services/cache';
+import { sortConversations } from './chat';
 
 export interface UserInfo {
   id: string;
@@ -115,20 +116,28 @@ class MystaDB extends Dexie {
     return conversation || null;
   }
 
+  async updateConversation(conversation: Conversation): Promise<void> {
+    await this.conversations.put(conversation);
+  }
+
   async getAllConversations(userId: string): Promise<Conversation[]> {
     const conversations = await this.conversations.where('user_id').equals(userId).toArray();
 
-    return await Promise.all(
+    const conversationsWithMessages = await Promise.all(
       conversations
         .sort((a, b) => Number(b.id) - Number(a.id))
-        .map(async (conversation: Conversation) => ({
-          ...conversation,
-          messages: await this.messages
-            .where('conversation_id')
-            .equals(conversation.id)
-            .sortBy('id'),
-        })) || []
+        .map(
+          async (conversation: Conversation) =>
+            ({
+              ...conversation,
+              messages: await this.messages
+                .where('conversation_id')
+                .equals(conversation.id)
+                .sortBy('id'),
+            }) as Conversation
+        ) || []
     );
+    return sortConversations(conversationsWithMessages);
   }
 
   async deleteConversation(id: number): Promise<void> {

@@ -6,6 +6,7 @@ import { Conversation as C } from '@the-agent/shared';
 export interface Conversation extends C {
   title: string;
   user_id: string;
+  last_selected_at?: number;
 }
 
 /**

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Conversation } from '../../types/conversations';
+import { sortConversations } from '~/utils/chat';
 import { Modal, Tooltip } from 'antd';
 import newchatIcon from '~/assets/icons/newchat.svg';
 import { X, Trash2 } from 'lucide-react';
@@ -21,15 +22,7 @@ const ConversationList = ({
 }: ConversationListProps) => {
   const [confirmDelete, setConfirmDelete] = useState<number | null>(null);
 
-  const sortedConversations = conversations.sort((a, b) => {
-    const aMessages = a.messages || [];
-    const bMessages = b.messages || [];
-
-    const aId = aMessages.length > 0 ? aMessages[aMessages.length - 1].id : a.id;
-    const bId = bMessages.length > 0 ? bMessages[bMessages.length - 1].id : b.id;
-
-    return bId - aId;
-  });
+  const sortedConversations = sortConversations(conversations);
 
   const handleDeleteClick = (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
