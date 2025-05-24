@@ -43,9 +43,7 @@ const Home = () => (
           lineHeight: 1.2,
         }}
       >
-        Your browser,
-        <br />
-        now smarter.
+        Let AI Run the Web for You
       </div>
       <div
         style={{
