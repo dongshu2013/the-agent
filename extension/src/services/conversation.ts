@@ -53,6 +53,7 @@ export const createNewConversation = async (userId: string): Promise<Conversatio
     title: 'New Chat',
     user_id: userId,
     messages: [],
+    last_selected_at: Date.now(),
   };
 
   await db.saveConversation(conversation);
@@ -68,6 +69,8 @@ export const selectConversation = async (id: number): Promise<Conversation | nul
   if (!conversation) {
     throw new Error('Conversation not found');
   }
+  conversation.last_selected_at = Date.now();
+  await db.updateConversation(conversation);
 
   // 获取会话的消息
   const messages = await db.getMessagesByConversation(id);
