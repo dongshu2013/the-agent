@@ -14,7 +14,8 @@ import { db, UserInfo } from '~/utils/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { ChatHandler } from '../services/chat-handler';
 import LoginModal from './components/LoginModal';
-import LoadingBrain from './components/LoadingBrain';
+import Reasoning from './components/Reasoning';
+import Thinking from './components/Thinking';
 import { APIError } from '@the-agent/shared';
 import { ApiKey } from '~/types';
 import { API_KEY_TAG } from '~/services/cache';
@@ -483,25 +484,29 @@ const Sidepanel = () => {
                 const isLast =
                   (index === messages.length - 1 && message.role === 'assistant') ||
                   message.role === 'error';
-                const showLoadingBrain = !!message.reasoning;
+                const showReasoning = !!message.reasoning;
                 return (
                   <React.Fragment key={`${message.id}-${message.version}`}>
-                    {showLoadingBrain && (
-                      <div style={{ padding: '16px 0', textAlign: 'center' }}>
-                        <LoadingBrain
-                          isStreaming={isLast && isStreaming}
-                          reasoning={message.reasoning || ''}
-                        />
-                      </div>
+                    {showReasoning ? (
+                      <Reasoning
+                        isStreaming={isLast && isStreaming}
+                        reasoning={message.reasoning || ''}
+                      />
+                    ) : (
+                      <Message
+                        key={`${message.id}-${message.version}-${isLast}`}
+                        message={message}
+                        isLatestResponse={isLast}
+                      />
                     )}
-                    <Message
-                      key={`${message.id}-${message.version}-${isLast}`}
-                      message={message}
-                      isLatestResponse={isLast}
-                    />
                   </React.Fragment>
                 );
               })}
+              {isStreaming && (
+                <div style={{ padding: '16px 0', textAlign: 'center' }}>
+                  <Thinking />
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
           )}

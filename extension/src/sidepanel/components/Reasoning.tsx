@@ -1,17 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ThinkIcon from '~/assets/icons/think.svg';
 import ArrowIcon from '~/assets/icons/arrow.svg';
 import MarkdownRenderer from './MarkdownRenderer';
 
-interface LoadingBrainProps {
+interface ReasoningProps {
   reasoning?: string;
   isStreaming: boolean;
 }
 
-const LoadingBrain: React.FC<LoadingBrainProps> = ({ reasoning = '', isStreaming }) => {
+const Reasoning: React.FC<ReasoningProps> = ({ reasoning = '', isStreaming }) => {
   const hasReasoning = !!reasoning;
-  // 默认折叠收起
-  const [collapsed, setCollapsed] = useState(hasReasoning);
+  // 默认展开
+  const [collapsed, setCollapsed] = useState(false);
+
+  // 当 isStreaming 从 true 变为 false 时，自动收起
+  useEffect(() => {
+    if (!isStreaming) {
+      setCollapsed(true);
+    }
+  }, [isStreaming]);
 
   return (
     <div>
@@ -89,4 +96,4 @@ const LoadingBrain: React.FC<LoadingBrainProps> = ({ reasoning = '', isStreaming
   );
 };
 
-export default LoadingBrain;
+export default Reasoning;
