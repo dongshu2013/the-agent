@@ -74,6 +74,11 @@ export const DeleteConversationResponseSchema = z.object({
 });
 export type DeleteConversationResponse = z.infer<typeof DeleteConversationResponseSchema>;
 
+export const ListConversationsRequestSchema = z.object({
+  startFrom: z.number().default(0),
+});
+export type ListConversationsRequest = z.infer<typeof ListConversationsRequestSchema>;
+
 export const ListConversationsResponseSchema = z.object({
   conversations: z.array(ConversationSchema),
 });

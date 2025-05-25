@@ -3,7 +3,13 @@ import OpenAI from 'openai';
 import { CREATE_CONVERSATION_TABLE_QUERY, CREATE_MESSAGE_TABLE_QUERY } from './sql';
 import { createEmbeddingClient, generateEmbedding } from './embedding';
 import { GatewayServiceError } from '../types/service';
-import { Message, Conversation, ToolCall, MessageRole } from '@the-agent/shared';
+import {
+  Message,
+  Conversation,
+  ListConversationsRequest,
+  MessageRole,
+  ToolCall,
+} from '@the-agent/shared';
 
 const DEFAULT_VECTOR_NAMESPACE = 'default';
 
@@ -28,37 +34,39 @@ export class AgentContext extends DurableObject<Env> {
     this.sql.exec(`UPDATE agent_conversations SET status = 'deleted' WHERE id = ?`, conversationId);
   }
 
-  listConversations(limit = 10): Conversation[] {
-    const results: Conversation[] = [];
-    const conversations = this.sql.exec(
-      `SELECT c.id
+  listConversations(params: ListConversationsRequest): Conversation[] {
+    const startFrom = params.startFrom || 0;
+    const sqlStmt = `SELECT c.id
         FROM agent_conversations c
         WHERE c.status = 'active'
-        ORDER BY c.id DESC
-        LIMIT ${limit}`
-    );
-    for (const row of conversations) {
+        AND (c.id > ? OR c.last_message_at > ?)`;
+    const rows = this.sql.exec(sqlStmt, startFrom, startFrom);
+    const result: Conversation[] = [];
+    for (const row of rows) {
+      const convId = row.id as number;
       const messages = this.sql.exec(
-        `SELECT * FROM agent_messages WHERE conversation_id = ?`,
-        row.id
+        `SELECT * FROM agent_messages WHERE conversation_id = ? and id > ?`,
+        convId,
+        startFrom
       );
-      const msgs: Message[] = [];
+      const messagesList: Message[] = [];
       for (const message of messages) {
-        msgs.push({
+        messagesList.push({
           id: message.id as number,
-          conversation_id: message.conversation_id as number,
+          conversation_id: convId,
           role: message.role as MessageRole,
           content: message.content as string,
           tool_calls: JSON.parse(message.tool_calls as string) as ToolCall[],
           tool_call_id: message.tool_call_id as string,
+          name: message.name as string,
         });
       }
-      results.push({
-        id: row.id as number,
-        messages: msgs,
+      result.push({
+        id: convId,
+        messages: messagesList,
       });
     }
-    return results;
+    return sortConversations(result);
   }
 
   async saveMessage(
@@ -180,3 +188,18 @@ function collectText(message: Message): string {
     return '';
   }
 }
+
+const sortConversations = (conversations: Conversation[]) => {
+  const getTimestamp = (conversation: Conversation) => {
+    const messages = conversation.messages || [];
+    if (messages.length > 0) {
+      return messages[messages.length - 1].id;
+    }
+    return conversation.id;
+  };
+  return conversations.sort((a, b) => {
+    const aTimestamp = getTimestamp(a);
+    const bTimestamp = getTimestamp(b);
+    return bTimestamp - aTimestamp;
+  });
+};

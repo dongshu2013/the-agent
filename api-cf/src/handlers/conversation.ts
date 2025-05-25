@@ -5,6 +5,7 @@ import {
   CreateConversationResponseSchema,
   DeleteConversationRequestSchema,
   DeleteConversationResponseSchema,
+  ListConversationsRequestSchema,
   ListConversationsResponseSchema,
 } from '@the-agent/shared';
 
@@ -96,6 +97,9 @@ export class DeleteConversation extends OpenAPIRoute {
 
 export class ListConversations extends OpenAPIRoute {
   schema = {
+    request: {
+      query: ListConversationsRequestSchema,
+    },
     responses: {
       '200': {
         description: 'List of user conversations',
@@ -114,7 +118,7 @@ export class ListConversations extends OpenAPIRoute {
 
     const doId = env.AgentContext.idFromName(userId);
     const stub = env.AgentContext.get(doId);
-    const conversations = await stub.listConversations();
+    const conversations = await stub.listConversations(c.req.query());
     return c.json(
       {
         conversations,
