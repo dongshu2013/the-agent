@@ -35,16 +35,6 @@ interface GetActiveTabResult {
   title?: string;
 }
 
-interface CreatePopupWindowResult {
-  windowId?: number;
-  tabId: number;
-  url?: string;
-}
-
-interface CloseWindowResult {
-  windowId: number;
-}
-
 const TAB_LOAD_TIMEOUT = 10000;
 
 export class TabToolkit {
@@ -186,26 +176,22 @@ export class TabToolkit {
             error: chrome.runtime.lastError.message,
           });
         } else if (tab) {
-          // Focus the window containing the tab
-          chrome.windows.update(tab.windowId, { focused: true }, async () => {
-            // 等待页面加载完成
-            const loadResult = await TabToolkit.waitForTabLoad(tabId, TAB_LOAD_TIMEOUT);
-            if (loadResult.success) {
-              resolve({
-                success: true,
-                data: {
-                  tabId: tab.id,
-                  url: loadResult.data!.url,
-                  title: loadResult.data!.title,
-                },
-              });
-            } else {
-              resolve({
-                success: false,
-                error: loadResult.error || 'Failed to load tab',
-              });
-            }
-          });
+          const loadResult = await TabToolkit.waitForTabLoad(tabId, TAB_LOAD_TIMEOUT);
+          if (loadResult.success) {
+            resolve({
+              success: true,
+              data: {
+                tabId: tab.id,
+                url: loadResult.data!.url,
+                title: loadResult.data!.title,
+              },
+            });
+          } else {
+            resolve({
+              success: false,
+              error: loadResult.error || 'Failed to load tab',
+            });
+          }
         } else {
           console.error('Failed to switch to tab');
           resolve({
@@ -288,72 +274,6 @@ export class TabToolkit {
           resolve({
             success: false,
             error: 'No active tab found',
-          });
-        }
-      });
-    });
-  }
-
-  /**
-   * Create a popup window for the extension
-   * @param url URL to load in the popup
-   * @param width Optional width of the popup (default: 400)
-   * @param height Optional height of the popup (default: 600)
-   */
-  static createPopupWindow(
-    url: string,
-    width: number = 400,
-    height: number = 600
-  ): Promise<WebInteractionResult<CreatePopupWindowResult>> {
-    return new Promise(resolve => {
-      const createData: chrome.windows.CreateData = {
-        url,
-        type: 'popup',
-        width,
-        height,
-        focused: true,
-      };
-
-      chrome.windows.create(createData, window => {
-        if (chrome.runtime.lastError) {
-          resolve({
-            success: false,
-            error: chrome.runtime.lastError.message,
-          });
-        } else if (window && window.tabs && window.tabs[0]?.id) {
-          resolve({
-            success: true,
-            data: {
-              windowId: window.id,
-              tabId: window.tabs[0].id,
-              url: window.tabs[0].url,
-            },
-          });
-        } else {
-          resolve({
-            success: false,
-            error: 'Failed to create popup window',
-          });
-        }
-      });
-    });
-  }
-
-  /**
-   * Close a specific window
-   */
-  static closeWindow(windowId: number): Promise<WebInteractionResult<CloseWindowResult>> {
-    return new Promise(resolve => {
-      chrome.windows.remove(windowId, () => {
-        if (chrome.runtime.lastError) {
-          resolve({
-            success: false,
-            error: chrome.runtime.lastError.message,
-          });
-        } else {
-          resolve({
-            success: true,
-            data: { windowId },
           });
         }
       });

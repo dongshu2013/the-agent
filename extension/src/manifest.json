@@ -4,16 +4,7 @@
   "short_name": "Mysta(Beta)",
   "version": "0.1.0",
   "description": "Mysta - Your private AI, in your browser.",
-  "permissions": [
-    "storage",
-    "sidePanel",
-    "tabs",
-    "activeTab",
-    "scripting",
-    "webNavigation",
-    "windows",
-    "debugger"
-  ],
+  "permissions": ["storage", "sidePanel", "tabs", "activeTab", "scripting", "debugger"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background/index.ts",
