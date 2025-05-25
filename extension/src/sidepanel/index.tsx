@@ -362,14 +362,16 @@ const Sidepanel = () => {
               >
                 <h3
                   style={{
-                    fontSize: '28px',
+                    fontSize: '25px',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '16px',
+                    marginBottom: '12px',
                     lineHeight: '1.3',
                   }}
                 >
-                  Ask anything. Automate everything.
+                  Ask anything.
+                  <br />
+                  Automate everything.
                 </h3>
                 <p
                   style={{
