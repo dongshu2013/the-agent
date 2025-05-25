@@ -38,7 +38,7 @@ class MystaDB extends Dexie {
     super('mysta-agent');
 
     this.version(6).stores({
-      conversations: 'id, *messages, user_id',
+      conversations: 'id, *messages, user_id, last_selected_at',
       messages: 'id, conversation_id',
       users:
         'id, api_key, api_key_enabled, credits, created_at, email, username, photoURL, updated_at',
@@ -122,20 +122,17 @@ class MystaDB extends Dexie {
 
   async getAllConversations(userId: string): Promise<Conversation[]> {
     const conversations = await this.conversations.where('user_id').equals(userId).toArray();
-
     const conversationsWithMessages = await Promise.all(
-      conversations
-        .sort((a, b) => Number(b.id) - Number(a.id))
-        .map(
-          async (conversation: Conversation) =>
-            ({
-              ...conversation,
-              messages: await this.messages
-                .where('conversation_id')
-                .equals(conversation.id)
-                .sortBy('id'),
-            }) as Conversation
-        ) || []
+      conversations.map(
+        async (conversation: Conversation) =>
+          ({
+            ...conversation,
+            messages: await this.messages
+              .where('conversation_id')
+              .equals(conversation.id)
+              .sortBy('id'),
+          }) as Conversation
+      ) || []
     );
     return sortConversations(conversationsWithMessages);
   }
@@ -187,6 +184,12 @@ class MystaDB extends Dexie {
     return messages.length > 0 ? messages[0].version || 0 : 0;
   }
 
+  async getLastInteractionTime(): Promise<number> {
+    // Using reverse() and first() to get the highest id directly from the database
+    const lastConversation = await this.conversations.orderBy('last_selected_at').reverse().first();
+    return lastConversation?.last_selected_at || 0;
+  }
+
   async deleteMessagesByConversation(conversationId: number): Promise<void> {
     await this.messages.where('conversation_id').equals(conversationId).delete();
   }
@@ -227,20 +230,15 @@ class MystaDB extends Dexie {
   }
 
   // Conversation and Messages operations
-  async saveConversationsAndMessages(conversations: Conversation[], userId: string): Promise<void> {
+  async saveConversationsAndMessages(conversations: Conversation[]): Promise<void> {
     try {
       await this.transaction('rw', [this.conversations, this.messages], async () => {
-        const userConversations = await this.conversations
-          .where('user_id')
-          .equals(userId)
-          .toArray();
-        const conversationIds = userConversations.map(conv => conv.id);
-        await this.messages.where('conversation_id').anyOf(conversationIds).delete();
-        await this.conversations.where('user_id').equals(userId).delete();
-
         for (const conversation of conversations) {
           const { messages, ...rest } = conversation;
-          await this.conversations.put(rest);
+          const existingConv = await this.conversations.get(conversation.id);
+          if (!existingConv) {
+            await this.conversations.put(rest);
+          }
 
           if (messages && messages.length > 0) {
             const validMessages = messages.filter(msg => {

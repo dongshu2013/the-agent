@@ -7,7 +7,7 @@ import ConversationList from './components/ConversationList';
 import {
   selectConversation as selectConv,
   deleteConversation as deleteConv,
-  getConversations,
+  syncConversations,
   createNewConversation,
 } from '../services/conversation';
 import { db, UserInfo } from '~/utils/db';
@@ -24,7 +24,6 @@ import Home from './Home';
 const Sidepanel = () => {
   const [apiKey, setApiKey] = useState<ApiKey | null>(null);
   const [prompt, setPrompt] = useState('');
-  const [currentConversationId, setCurrentConversationId] = useState<number>(-1);
   const [showConversationList, setShowConversationList] = useState(false);
   const [status, setStatus] = useState<ChatStatus>('uninitialized');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -33,12 +32,17 @@ const Sidepanel = () => {
   const [showSwitch, setShowSwitch] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
 
-  const messages =
-    useLiveQuery(
-      () =>
-        currentConversationId !== -1 ? db.getMessagesByConversation(currentConversationId) : [],
-      [currentConversationId]
-    ) ?? [];
+  const conversations = useLiveQuery(
+    () => (currentUser?.id ? db.getAllConversations(currentUser.id) : undefined),
+    [currentUser?.id]
+  );
+
+  const currentConversationId = conversations?.length ? conversations[0].id : -1;
+
+  const messages = useLiveQuery(
+    () => (currentConversationId !== -1 ? db.getMessagesByConversation(currentConversationId) : []),
+    [currentConversationId]
+  );
 
   const lastMessageVersion =
     useLiveQuery(() => {
@@ -46,11 +50,14 @@ const Sidepanel = () => {
       return db.getLastMessageVersion(currentConversationId);
     }, [currentConversationId]) ?? 0;
 
-  const conversations =
-    useLiveQuery(
-      () => (currentUser && currentUser.id ? db.getAllConversations(currentUser.id) : []),
-      [currentUser?.id]
-    ) ?? [];
+  useEffect(() => {
+    if (status === 'uninitialized' || !currentUser?.id) {
+      return;
+    }
+    if (conversations?.length === 0) {
+      createNewConversation(currentUser.id);
+    }
+  }, [conversations?.length, currentUser?.id]);
 
   const handleApiError = useCallback(
     (error: unknown) => {
@@ -70,6 +77,7 @@ const Sidepanel = () => {
             conversation_id: currentConversationId || -1,
             role: 'error',
           });
+          setLoginModalOpen(true);
           return;
         } else if (error.status === 402) {
           db.saveMessage({
@@ -97,30 +105,6 @@ const Sidepanel = () => {
     [currentConversationId, apiKey, setApiKey]
   );
 
-  const refreshConversations = useCallback(
-    async (userId: string) => {
-      try {
-        if (currentConversationId !== -1) {
-          return;
-        }
-        const freshConversations = await db.getAllConversations(userId);
-        if (freshConversations && freshConversations.length > 0) {
-          setTimeout(() => {
-            setCurrentConversationId(freshConversations[0].id);
-          }, 100);
-        } else {
-          const newConv = await createNewConversation(userId);
-          setTimeout(() => {
-            setCurrentConversationId(newConv.id);
-          }, 100);
-        }
-      } catch (error) {
-        handleApiError(error);
-      }
-    },
-    [handleApiError, setCurrentConversationId]
-  );
-
   const initializeUserAndData = useCallback(
     async (apiKeyToUse: ApiKey) => {
       try {
@@ -130,7 +114,7 @@ const Sidepanel = () => {
 
         const existingUser = await db.getUserByApiKey(apiKeyToUse.key);
         if (existingUser) {
-          refreshConversations(existingUser.id);
+          await syncConversations(existingUser.id);
           setCurrentUser(existingUser);
           setLoginModalOpen(false);
           return;
@@ -139,14 +123,14 @@ const Sidepanel = () => {
         const userInfo = await getUserInfo(apiKeyToUse);
         await db.initModels(userInfo.id);
         await db.saveOrUpdateUser(userInfo);
+        await syncConversations(userInfo.id);
         setCurrentUser(userInfo);
-        refreshConversations(userInfo.id);
         setLoginModalOpen(false);
       } catch (error) {
         handleApiError(error);
       }
     },
-    [handleApiError, refreshConversations]
+    [handleApiError]
   );
 
   useEffect(() => {
@@ -163,9 +147,12 @@ const Sidepanel = () => {
         if (!isEqualApiKey(oldApiKey, newApiKey)) {
           setApiKey(newApiKey);
           if (newApiKey?.enabled) {
+            setStatus('uninitialized');
             setShowSwitch(true);
             await initializeUserAndData(newApiKey);
+            setStatus('idle');
           } else {
+            setStatus('uninitialized');
             setLoginModalOpen(true);
           }
         }
@@ -201,7 +188,7 @@ const Sidepanel = () => {
   }, [setLoginModalOpen]);
 
   useEffect(() => {
-    if (apiKey?.enabled && currentConversationId) {
+    if (apiKey?.enabled && currentConversationId !== -1) {
       setChatHandler(
         new ChatHandler({
           apiKey: apiKey,
@@ -216,7 +203,7 @@ const Sidepanel = () => {
         })
       );
     }
-  }, [apiKey, currentConversationId, setLoginModalOpen, handleApiError]);
+  }, [apiKey, currentConversationId, handleApiError]);
 
   // 自动滚动到底部
   useEffect(() => {
@@ -224,7 +211,7 @@ const Sidepanel = () => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
     scrollToBottom();
-  }, [messages.length, lastMessageVersion]);
+  }, [messages?.length, lastMessageVersion]);
 
   // 事件处理函数
   const handleSubmit = async (e: React.FormEvent) => {
@@ -242,17 +229,6 @@ const Sidepanel = () => {
 
   const toggleConversationList = async (value?: boolean) => {
     const willShow = value !== undefined ? value : !showConversationList;
-
-    if (willShow) {
-      try {
-        if (currentUser?.id && (!conversations || conversations.length === 0)) {
-          await getConversations(currentUser.id);
-        }
-      } catch (error) {
-        handleApiError(error);
-      }
-    }
-
     setShowConversationList(willShow);
   };
 
@@ -263,10 +239,7 @@ const Sidepanel = () => {
     }
 
     try {
-      const conversation = await selectConv(id);
-      if (conversation) {
-        setCurrentConversationId(id);
-      }
+      await selectConv(id);
     } catch (error) {
       handleApiError(error);
     }
@@ -276,20 +249,6 @@ const Sidepanel = () => {
     e.stopPropagation();
     try {
       await deleteConv(id);
-      if (id === currentConversationId) {
-        const remaining = conversations?.filter(c => c.id !== id);
-        if (remaining?.length > 0) {
-          const conversation = await selectConv(remaining[0].id);
-          if (conversation) {
-            setCurrentConversationId(remaining[0].id);
-          }
-        } else {
-          if (currentUser?.id) {
-            const newConv = await createNewConversation(currentUser.id);
-            setCurrentConversationId(newConv.id);
-          }
-        }
-      }
     } catch (error) {
       handleApiError(error);
     }
@@ -298,8 +257,7 @@ const Sidepanel = () => {
   const handleCreateNewConversation = async () => {
     try {
       if (currentUser?.id) {
-        const newConv = await createNewConversation(currentUser.id);
-        setCurrentConversationId(newConv.id);
+        await createNewConversation(currentUser.id);
       }
     } catch (error) {
       handleApiError(error);
@@ -309,10 +267,7 @@ const Sidepanel = () => {
   // Initialize state from storage - run only once on mount
   useEffect(() => {
     const initializeFromStorage = async () => {
-      chrome.storage.local.get([API_KEY_TAG, 'currentConversationId'], result => {
-        const convId = result['currentConversationId'] || -1;
-        setCurrentConversationId(convId);
-
+      chrome.storage.local.get([API_KEY_TAG], async result => {
         const storedApiKey = parseApiKey(result[API_KEY_TAG]);
         if (storedApiKey) {
           setApiKey(storedApiKey);
@@ -321,8 +276,7 @@ const Sidepanel = () => {
         if (!storedApiKey?.enabled) {
           setLoginModalOpen(true);
         } else {
-          initializeUserAndData(storedApiKey);
-          setStatus('idle');
+          await initializeUserAndData(storedApiKey);
         }
       });
     };
@@ -330,8 +284,9 @@ const Sidepanel = () => {
     // Only run this effect once on mount
     if (status === 'uninitialized') {
       initializeFromStorage();
+      setStatus('idle');
     }
-  }); // Empty dependency array - only run once
+  }, []); // Empty dependency array - only run once
 
   // Debounced storage updates for apiKey
   useEffect(() => {
@@ -343,17 +298,6 @@ const Sidepanel = () => {
 
     return () => clearTimeout(timer);
   }, [apiKey]);
-
-  // Debounced storage updates for currentConversationId
-  useEffect(() => {
-    if (currentConversationId === -1) return;
-
-    const timer = setTimeout(() => {
-      chrome.storage.local.set({ currentConversationId });
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [currentConversationId]);
 
   if (!currentUser) {
     return <Home />;
@@ -400,7 +344,7 @@ const Sidepanel = () => {
         }}
       >
         <div className="max-w-3xl mx-auto p-4">
-          {messages.length === 0 ? (
+          {(messages?.length ?? 0) === 0 ? (
             <div
               style={{
                 display: 'flex',
@@ -419,14 +363,16 @@ const Sidepanel = () => {
               >
                 <h3
                   style={{
-                    fontSize: '28px',
+                    fontSize: '25px',
                     fontWeight: '600',
                     color: '#374151',
-                    marginBottom: '16px',
+                    marginBottom: '12px',
                     lineHeight: '1.3',
                   }}
                 >
-                  Ask anything. Automate everything.
+                  Ask anything.
+                  <br />
+                  Automate everything.
                 </h3>
                 <p
                   style={{
@@ -455,7 +401,7 @@ const Sidepanel = () => {
             </div>
           ) : (
             <div style={{ paddingBottom: '32px' }}>
-              {messages.map((message, index) => {
+              {messages?.map((message, index) => {
                 const isLast =
                   (index === messages.length - 1 && message.role === 'assistant') ||
                   message.role === 'error';
@@ -502,7 +448,7 @@ const Sidepanel = () => {
       {/* Conversation List */}
       {showConversationList && (
         <ConversationList
-          conversations={conversations}
+          conversations={conversations || []}
           currentConversationId={currentConversationId}
           selectConversation={handleSelectConversation}
           deleteConversation={handleDeleteConversation}
