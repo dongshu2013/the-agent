@@ -122,20 +122,17 @@ class MystaDB extends Dexie {
 
   async getAllConversations(userId: string): Promise<Conversation[]> {
     const conversations = await this.conversations.where('user_id').equals(userId).toArray();
-
     const conversationsWithMessages = await Promise.all(
-      conversations
-        .sort((a, b) => Number(b.id) - Number(a.id))
-        .map(
-          async (conversation: Conversation) =>
-            ({
-              ...conversation,
-              messages: await this.messages
-                .where('conversation_id')
-                .equals(conversation.id)
-                .sortBy('id'),
-            }) as Conversation
-        ) || []
+      conversations.map(
+        async (conversation: Conversation) =>
+          ({
+            ...conversation,
+            messages: await this.messages
+              .where('conversation_id')
+              .equals(conversation.id)
+              .sortBy('id'),
+          }) as Conversation
+      ) || []
     );
     return sortConversations(conversationsWithMessages);
   }

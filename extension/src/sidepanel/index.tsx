@@ -24,7 +24,6 @@ import Home from './Home';
 const Sidepanel = () => {
   const [apiKey, setApiKey] = useState<ApiKey | null>(null);
   const [prompt, setPrompt] = useState('');
-  const [currentConversationId, setCurrentConversationId] = useState<number>(-1);
   const [showConversationList, setShowConversationList] = useState(false);
   const [status, setStatus] = useState<ChatStatus>('uninitialized');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -32,6 +31,14 @@ const Sidepanel = () => {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [showSwitch, setShowSwitch] = useState(false);
   const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
+
+  const conversations =
+    useLiveQuery(
+      () => (currentUser && currentUser.id ? db.getAllConversations(currentUser.id) : []),
+      [currentUser?.id]
+    ) ?? [];
+
+  const currentConversationId = conversations?.length ? conversations[0].id : -1;
 
   const messages =
     useLiveQuery(
@@ -46,11 +53,11 @@ const Sidepanel = () => {
       return db.getLastMessageVersion(currentConversationId);
     }, [currentConversationId]) ?? 0;
 
-  const conversations =
-    useLiveQuery(
-      () => (currentUser && currentUser.id ? db.getAllConversations(currentUser.id) : []),
-      [currentUser?.id]
-    ) ?? [];
+  useEffect(() => {
+    if (!conversations || conversations.length === 0) {
+      createNewConversation(currentUser?.id || '');
+    }
+  }, [conversations]);
 
   const handleApiError = useCallback(
     (error: unknown) => {
@@ -97,31 +104,6 @@ const Sidepanel = () => {
     [currentConversationId, apiKey, setApiKey]
   );
 
-  const refreshConversations = useCallback(
-    async (userId: string) => {
-      try {
-        if (currentConversationId !== -1) {
-          return;
-        }
-        await syncConversations(userId);
-        const conversations = await db.getAllConversations(userId);
-        if (conversations && conversations.length > 0) {
-          setTimeout(() => {
-            setCurrentConversationId(conversations[0].id);
-          }, 100);
-        } else {
-          const newConv = await createNewConversation(userId);
-          setTimeout(() => {
-            setCurrentConversationId(newConv.id);
-          }, 100);
-        }
-      } catch (error) {
-        handleApiError(error);
-      }
-    },
-    [handleApiError, setCurrentConversationId]
-  );
-
   const initializeUserAndData = useCallback(
     async (apiKeyToUse: ApiKey) => {
       try {
@@ -131,7 +113,7 @@ const Sidepanel = () => {
 
         const existingUser = await db.getUserByApiKey(apiKeyToUse.key);
         if (existingUser) {
-          refreshConversations(existingUser.id);
+          syncConversations(existingUser.id);
           setCurrentUser(existingUser);
           setLoginModalOpen(false);
           return;
@@ -141,13 +123,13 @@ const Sidepanel = () => {
         await db.initModels(userInfo.id);
         await db.saveOrUpdateUser(userInfo);
         setCurrentUser(userInfo);
-        refreshConversations(userInfo.id);
+        syncConversations(userInfo.id);
         setLoginModalOpen(false);
       } catch (error) {
         handleApiError(error);
       }
     },
-    [handleApiError, refreshConversations]
+    [handleApiError]
   );
 
   useEffect(() => {
@@ -202,7 +184,7 @@ const Sidepanel = () => {
   }, [setLoginModalOpen]);
 
   useEffect(() => {
-    if (apiKey?.enabled && currentConversationId) {
+    if (apiKey?.enabled && currentConversationId !== -1) {
       setChatHandler(
         new ChatHandler({
           apiKey: apiKey,
@@ -217,7 +199,7 @@ const Sidepanel = () => {
         })
       );
     }
-  }, [apiKey, currentConversationId, setLoginModalOpen, handleApiError]);
+  }, [apiKey, currentConversationId, handleApiError]);
 
   // 自动滚动到底部
   useEffect(() => {
@@ -253,10 +235,7 @@ const Sidepanel = () => {
     }
 
     try {
-      const conversation = await selectConv(id);
-      if (conversation) {
-        setCurrentConversationId(id);
-      }
+      await selectConv(id);
     } catch (error) {
       handleApiError(error);
     }
@@ -266,20 +245,6 @@ const Sidepanel = () => {
     e.stopPropagation();
     try {
       await deleteConv(id);
-      if (id === currentConversationId) {
-        const remaining = conversations?.filter(c => c.id !== id);
-        if (remaining?.length > 0) {
-          const conversation = await selectConv(remaining[0].id);
-          if (conversation) {
-            setCurrentConversationId(remaining[0].id);
-          }
-        } else {
-          if (currentUser?.id) {
-            const newConv = await createNewConversation(currentUser.id);
-            setCurrentConversationId(newConv.id);
-          }
-        }
-      }
     } catch (error) {
       handleApiError(error);
     }
@@ -288,8 +253,7 @@ const Sidepanel = () => {
   const handleCreateNewConversation = async () => {
     try {
       if (currentUser?.id) {
-        const newConv = await createNewConversation(currentUser.id);
-        setCurrentConversationId(newConv.id);
+        await createNewConversation(currentUser.id);
       }
     } catch (error) {
       handleApiError(error);
@@ -299,10 +263,7 @@ const Sidepanel = () => {
   // Initialize state from storage - run only once on mount
   useEffect(() => {
     const initializeFromStorage = async () => {
-      chrome.storage.local.get([API_KEY_TAG, 'currentConversationId'], result => {
-        const convId = result['currentConversationId'] || -1;
-        setCurrentConversationId(convId);
-
+      chrome.storage.local.get([API_KEY_TAG], result => {
         const storedApiKey = parseApiKey(result[API_KEY_TAG]);
         if (storedApiKey) {
           setApiKey(storedApiKey);
