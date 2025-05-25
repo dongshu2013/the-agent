@@ -113,8 +113,8 @@ const Sidepanel = () => {
 
         const existingUser = await db.getUserByApiKey(apiKeyToUse.key);
         if (existingUser) {
-          setCurrentUser(existingUser);
           await syncConversations(existingUser.id);
+          setCurrentUser(existingUser);
           setLoginModalOpen(false);
           return;
         }
@@ -122,8 +122,8 @@ const Sidepanel = () => {
         const userInfo = await getUserInfo(apiKeyToUse);
         await db.initModels(userInfo.id);
         await db.saveOrUpdateUser(userInfo);
-        setCurrentUser(userInfo);
         await syncConversations(userInfo.id);
+        setCurrentUser(userInfo);
         setLoginModalOpen(false);
       } catch (error) {
         handleApiError(error);
@@ -146,9 +146,12 @@ const Sidepanel = () => {
         if (!isEqualApiKey(oldApiKey, newApiKey)) {
           setApiKey(newApiKey);
           if (newApiKey?.enabled) {
+            setStatus('uninitialized');
             setShowSwitch(true);
             await initializeUserAndData(newApiKey);
+            setStatus('idle');
           } else {
+            setStatus('uninitialized');
             setLoginModalOpen(true);
           }
         }
@@ -273,7 +276,6 @@ const Sidepanel = () => {
           setLoginModalOpen(true);
         } else {
           await initializeUserAndData(storedApiKey);
-          setStatus('idle');
         }
       });
     };
@@ -281,6 +283,7 @@ const Sidepanel = () => {
     // Only run this effect once on mount
     if (status === 'uninitialized') {
       initializeFromStorage();
+      setStatus('idle');
     }
   }, []); // Empty dependency array - only run once
 
