@@ -77,6 +77,7 @@ const Sidepanel = () => {
             conversation_id: currentConversationId || -1,
             role: 'error',
           });
+          setLoginModalOpen(true);
           return;
         } else if (error.status === 402) {
           db.saveMessage({

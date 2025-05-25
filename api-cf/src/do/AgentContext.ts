@@ -77,11 +77,13 @@ export class AgentContext extends DurableObject<Env> {
     topKMessageIds: string[];
     totalCost: number;
   }> {
-    const convExists = this.sql.exec(
-      'SELECT EXISTS(SELECT 1 FROM agent_conversations WHERE id = ?)',
+    const convExistsQuery = this.sql.exec(
+      'SELECT 1 FROM agent_conversations WHERE id = ? LIMIT 1',
       message.conversation_id
     );
-    if (!convExists) {
+    const convExists = Array.from(convExistsQuery);
+    if (convExists.length === 0) {
+      console.log('Got orphan conversation: ', message.conversation_id);
       this.createConversation(message.conversation_id);
     }
 
