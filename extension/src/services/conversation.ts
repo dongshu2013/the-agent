@@ -42,8 +42,6 @@ export const syncConversations = async (
       messages: conv.messages,
     }));
     await db.saveConversationsAndMessages(conversations);
-
-    console.log('Synced conversations:', conversations);
     return conversations;
   } catch (error) {
     console.error('Error in syncConversations:', error);
