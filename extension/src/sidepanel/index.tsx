@@ -295,17 +295,6 @@ const Sidepanel = () => {
     return () => clearTimeout(timer);
   }, [apiKey]);
 
-  // Debounced storage updates for currentConversationId
-  useEffect(() => {
-    if (currentConversationId === -1) return;
-
-    const timer = setTimeout(() => {
-      chrome.storage.local.set({ currentConversationId });
-    }, 1000);
-
-    return () => clearTimeout(timer);
-  }, [currentConversationId]);
-
   if (!currentUser) {
     return <Home />;
   }
