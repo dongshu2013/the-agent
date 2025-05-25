@@ -77,6 +77,14 @@ export class AgentContext extends DurableObject<Env> {
     topKMessageIds: string[];
     totalCost: number;
   }> {
+    const convExists = this.sql.exec(
+      'SELECT EXISTS(SELECT 1 FROM agent_conversations WHERE id = ?)',
+      message.conversation_id
+    );
+    if (!convExists) {
+      this.createConversation(message.conversation_id);
+    }
+
     const insertQuery =
       'INSERT INTO agent_messages' +
       '(id, conversation_id, role, content, tool_calls, tool_call_id, name)' +

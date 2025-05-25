@@ -59,8 +59,13 @@ export const createNewConversation = async (userId: string): Promise<Conversatio
     last_selected_at: Date.now(),
   };
   await db.saveConversation(conversation);
-  const client = await createApiClient();
-  await client.createConversation({ id: convId });
+  try {
+    const client = await createApiClient();
+    await client.createConversation({ id: convId });
+  } catch (error) {
+    console.error('Error creating conversation:', error);
+    // do not throw error
+  }
   return conversation;
 };
 
