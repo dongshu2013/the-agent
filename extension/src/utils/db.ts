@@ -38,7 +38,7 @@ class MystaDB extends Dexie {
     super('mysta-agent');
 
     this.version(6).stores({
-      conversations: 'id, *messages, user_id',
+      conversations: 'id, *messages, user_id, last_selected_at',
       messages: 'id, conversation_id',
       users:
         'id, api_key, api_key_enabled, credits, created_at, email, username, photoURL, updated_at',

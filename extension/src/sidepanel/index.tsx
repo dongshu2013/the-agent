@@ -54,6 +54,9 @@ const Sidepanel = () => {
     }, [currentConversationId]) ?? 0;
 
   useEffect(() => {
+    if (status === 'uninitialized') {
+      return;
+    }
     if (!conversations || conversations.length === 0) {
       createNewConversation(currentUser?.id || '');
     }
@@ -122,8 +125,8 @@ const Sidepanel = () => {
         const userInfo = await getUserInfo(apiKeyToUse);
         await db.initModels(userInfo.id);
         await db.saveOrUpdateUser(userInfo);
-        setCurrentUser(userInfo);
         syncConversations(userInfo.id);
+        setCurrentUser(userInfo);
         setLoginModalOpen(false);
       } catch (error) {
         handleApiError(error);

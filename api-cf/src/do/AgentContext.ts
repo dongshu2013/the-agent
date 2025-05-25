@@ -6,9 +6,9 @@ import { GatewayServiceError } from '../types/service';
 import {
   Message,
   Conversation,
-  ToolCall,
-  MessageRole,
   ListConversationsRequest,
+  MessageRole,
+  ToolCall,
 } from '@the-agent/shared';
 
 const DEFAULT_VECTOR_NAMESPACE = 'default';
@@ -36,47 +36,36 @@ export class AgentContext extends DurableObject<Env> {
 
   listConversations(params: ListConversationsRequest): Conversation[] {
     const startFrom = params.startFrom || 0;
-    const messages = this.sql.exec(`SELECT * FROM agent_messages WHERE id > ?`, startFrom);
-
-    // group messages
-    const conversations: Record<number, Conversation> = {};
-    for (const row of messages) {
-      const message = {
-        id: row.id as number,
-        conversation_id: row.conversation_id as number,
-        role: row.role as MessageRole,
-        content: row.content as string,
-        tool_calls: JSON.parse(row.tool_calls as string) as ToolCall[],
-        tool_call_id: row.tool_call_id as string,
-      };
-      const conv = conversations[message.conversation_id];
-      if (conv) {
-        conv.messages!.push(message);
-      } else {
-        conversations[message.conversation_id] = {
-          id: message.conversation_id,
-          messages: [message],
-        };
-      }
-    }
-
-    // it's possible that there is groups without any messages
-    // created after start from
     const sqlStmt = `SELECT c.id
         FROM agent_conversations c
         WHERE c.status = 'active'
-        AND c.id > ?`;
-    const rows = this.sql.exec(sqlStmt, startFrom);
+        AND (c.id > ? OR c.last_message_at > ?)`;
+    const rows = this.sql.exec(sqlStmt, startFrom, startFrom);
+    const result: Conversation[] = [];
     for (const row of rows) {
       const convId = row.id as number;
-      if (!conversations[convId]) {
-        conversations[convId] = {
-          id: convId,
-          messages: [],
-        };
+      const messages = this.sql.exec(
+        `SELECT * FROM agent_messages WHERE conversation_id = ?`,
+        convId
+      );
+      const messagesList: Message[] = [];
+      for (const message of messages) {
+        messagesList.push({
+          id: message.id as number,
+          conversation_id: convId,
+          role: message.role as MessageRole,
+          content: message.content as string,
+          tool_calls: JSON.parse(message.tool_calls as string) as ToolCall[],
+          tool_call_id: message.tool_call_id as string,
+          name: message.name as string,
+        });
       }
+      result.push({
+        id: convId,
+        messages: messagesList,
+      });
     }
-    return sortConversations(Object.values(conversations));
+    return sortConversations(result);
   }
 
   async saveMessage(
