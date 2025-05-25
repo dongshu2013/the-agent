@@ -7,7 +7,7 @@ import ConversationList from './components/ConversationList';
 import {
   selectConversation as selectConv,
   deleteConversation as deleteConv,
-  getConversations,
+  syncConversations,
   createNewConversation,
 } from '../services/conversation';
 import { db, UserInfo } from '~/utils/db';
@@ -103,10 +103,11 @@ const Sidepanel = () => {
         if (currentConversationId !== -1) {
           return;
         }
-        const freshConversations = await db.getAllConversations(userId);
-        if (freshConversations && freshConversations.length > 0) {
+        await syncConversations(userId);
+        const conversations = await db.getAllConversations(userId);
+        if (conversations && conversations.length > 0) {
           setTimeout(() => {
-            setCurrentConversationId(freshConversations[0].id);
+            setCurrentConversationId(conversations[0].id);
           }, 100);
         } else {
           const newConv = await createNewConversation(userId);
@@ -242,17 +243,6 @@ const Sidepanel = () => {
 
   const toggleConversationList = async (value?: boolean) => {
     const willShow = value !== undefined ? value : !showConversationList;
-
-    if (willShow) {
-      try {
-        if (currentUser?.id && (!conversations || conversations.length === 0)) {
-          await getConversations(currentUser.id);
-        }
-      } catch (error) {
-        handleApiError(error);
-      }
-    }
-
     setShowConversationList(willShow);
   };
 

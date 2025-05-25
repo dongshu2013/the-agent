@@ -3,7 +3,13 @@ import OpenAI from 'openai';
 import { CREATE_CONVERSATION_TABLE_QUERY, CREATE_MESSAGE_TABLE_QUERY } from './sql';
 import { createEmbeddingClient, generateEmbedding } from './embedding';
 import { GatewayServiceError } from '../types/service';
-import { Message, Conversation, ToolCall, MessageRole } from '@the-agent/shared';
+import {
+  Message,
+  Conversation,
+  ToolCall,
+  MessageRole,
+  ListConversationsRequest,
+} from '@the-agent/shared';
 
 const DEFAULT_VECTOR_NAMESPACE = 'default';
 
@@ -28,37 +34,49 @@ export class AgentContext extends DurableObject<Env> {
     this.sql.exec(`UPDATE agent_conversations SET status = 'deleted' WHERE id = ?`, conversationId);
   }
 
-  listConversations(limit = 10): Conversation[] {
-    const results: Conversation[] = [];
-    const conversations = this.sql.exec(
-      `SELECT c.id
+  listConversations(params: ListConversationsRequest): Conversation[] {
+    const startFrom = params.startFrom || 0;
+    const messages = this.sql.exec(`SELECT * FROM agent_messages WHERE id > ?`, startFrom);
+
+    // group messages
+    const conversations: Record<number, Conversation> = {};
+    for (const row of messages) {
+      const message = {
+        id: row.id as number,
+        conversation_id: row.conversation_id as number,
+        role: row.role as MessageRole,
+        content: row.content as string,
+        tool_calls: JSON.parse(row.tool_calls as string) as ToolCall[],
+        tool_call_id: row.tool_call_id as string,
+      };
+      const conv = conversations[message.conversation_id];
+      if (conv) {
+        conv.messages!.push(message);
+      } else {
+        conversations[message.conversation_id] = {
+          id: message.conversation_id,
+          messages: [message],
+        };
+      }
+    }
+
+    // it's possible that there is groups without any messages
+    // created after start from
+    const sqlStmt = `SELECT c.id
         FROM agent_conversations c
         WHERE c.status = 'active'
-        ORDER BY c.id DESC
-        LIMIT ${limit}`
-    );
-    for (const row of conversations) {
-      const messages = this.sql.exec(
-        `SELECT * FROM agent_messages WHERE conversation_id = ?`,
-        row.id
-      );
-      const msgs: Message[] = [];
-      for (const message of messages) {
-        msgs.push({
-          id: message.id as number,
-          conversation_id: message.conversation_id as number,
-          role: message.role as MessageRole,
-          content: message.content as string,
-          tool_calls: JSON.parse(message.tool_calls as string) as ToolCall[],
-          tool_call_id: message.tool_call_id as string,
-        });
+        AND c.id > ?`;
+    const rows = this.sql.exec(sqlStmt, startFrom);
+    for (const row of rows) {
+      const convId = row.id as number;
+      if (!conversations[convId]) {
+        conversations[convId] = {
+          id: convId,
+          messages: [],
+        };
       }
-      results.push({
-        id: row.id as number,
-        messages: msgs,
-      });
     }
-    return results;
+    return sortConversations(Object.values(conversations));
   }
 
   async saveMessage(
@@ -180,3 +198,18 @@ function collectText(message: Message): string {
     return '';
   }
 }
+
+const sortConversations = (conversations: Conversation[]) => {
+  const getTimestamp = (conversation: Conversation) => {
+    const messages = conversation.messages || [];
+    if (messages.length > 0) {
+      return messages[messages.length - 1].id;
+    }
+    return conversation.id;
+  };
+  return conversations.sort((a, b) => {
+    const aTimestamp = getTimestamp(a);
+    const bTimestamp = getTimestamp(b);
+    return bTimestamp - aTimestamp;
+  });
+};

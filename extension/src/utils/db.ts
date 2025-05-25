@@ -187,6 +187,12 @@ class MystaDB extends Dexie {
     return messages.length > 0 ? messages[0].version || 0 : 0;
   }
 
+  async getLastInteractionTime(): Promise<number> {
+    // Using reverse() and first() to get the highest id directly from the database
+    const lastConversation = await this.conversations.orderBy('last_selected_at').reverse().first();
+    return lastConversation?.last_selected_at || 0;
+  }
+
   async deleteMessagesByConversation(conversationId: number): Promise<void> {
     await this.messages.where('conversation_id').equals(conversationId).delete();
   }
@@ -227,20 +233,15 @@ class MystaDB extends Dexie {
   }
 
   // Conversation and Messages operations
-  async saveConversationsAndMessages(conversations: Conversation[], userId: string): Promise<void> {
+  async saveConversationsAndMessages(conversations: Conversation[]): Promise<void> {
     try {
       await this.transaction('rw', [this.conversations, this.messages], async () => {
-        const userConversations = await this.conversations
-          .where('user_id')
-          .equals(userId)
-          .toArray();
-        const conversationIds = userConversations.map(conv => conv.id);
-        await this.messages.where('conversation_id').anyOf(conversationIds).delete();
-        await this.conversations.where('user_id').equals(userId).delete();
-
         for (const conversation of conversations) {
           const { messages, ...rest } = conversation;
-          await this.conversations.put(rest);
+          const existingConv = await this.conversations.get(conversation.id);
+          if (!existingConv) {
+            await this.conversations.put(rest);
+          }
 
           if (messages && messages.length > 0) {
             const validMessages = messages.filter(msg => {

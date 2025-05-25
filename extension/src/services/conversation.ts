@@ -23,23 +23,29 @@ const createApiClient = async (): Promise<APIClient> => {
 };
 
 /**
- * 获取所有会话
+ * 同步所有会话
  */
-export const getConversations = async (userId: string): Promise<Conversation[]> => {
+export const syncConversations = async (
+  userId: string,
+  startFrom?: number
+): Promise<Conversation[]> => {
   try {
     const client = await createApiClient();
-    const response = await client.listConversations();
+    if (!startFrom) {
+      startFrom = await db.getLastInteractionTime();
+    }
+    const response = await client.listConversations({ startFrom });
     const conversations = response.conversations.map(conv => ({
       id: Number(conv.id),
       title: conv.messages?.[0]?.content?.slice(0, 20) || 'New Chat',
       user_id: userId,
       messages: conv.messages,
     }));
-    await db.saveConversationsAndMessages(conversations, userId);
+    await db.saveConversationsAndMessages(conversations);
 
     return conversations;
   } catch (error) {
-    console.error('Error in getConversations:', error);
+    console.error('Error in syncConversations:', error);
     throw error;
   }
 };
