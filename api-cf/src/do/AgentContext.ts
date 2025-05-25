@@ -45,8 +45,9 @@ export class AgentContext extends DurableObject<Env> {
     for (const row of rows) {
       const convId = row.id as number;
       const messages = this.sql.exec(
-        `SELECT * FROM agent_messages WHERE conversation_id = ?`,
-        convId
+        `SELECT * FROM agent_messages WHERE conversation_id = ? and id > ?`,
+        convId,
+        startFrom
       );
       const messagesList: Message[] = [];
       for (const message of messages) {
