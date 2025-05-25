@@ -51,8 +51,6 @@ export const syncConversations = async (
 
 export const createNewConversation = async (userId: string): Promise<Conversation> => {
   const convId = Date.now();
-  const client = await createApiClient();
-  await client.createConversation({ id: convId });
   const conversation: Conversation = {
     id: convId,
     title: 'New Chat',
@@ -60,8 +58,9 @@ export const createNewConversation = async (userId: string): Promise<Conversatio
     messages: [],
     last_selected_at: Date.now(),
   };
-
   await db.saveConversation(conversation);
+  const client = await createApiClient();
+  await client.createConversation({ id: convId });
   return conversation;
 };
 
