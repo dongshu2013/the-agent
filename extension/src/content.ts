@@ -2,6 +2,13 @@ import { ApiKey } from '~/types';
 import { API_KEY_TAG } from './services/cache';
 import { env } from './utils/env';
 
+import type { PlasmoCSConfig } from 'plasmo';
+
+export const config: PlasmoCSConfig = {
+  matches: ['https://*.mysta.ai/*'],
+  all_frames: true,
+};
+
 window.addEventListener('message', event => {
   if (event.source !== window) return;
   if (event.data && event.data.type === 'FROM_WEB_TO_EXTENSION') {

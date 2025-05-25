@@ -1,6 +1,21 @@
 {
   "name": "mysta-agent",
+  "displayName": "Mysta",
   "version": "0.1.0",
+  "description": "Mysta - Let AI Run the Web for You.",
+  "manifest": {
+    "permissions": [
+      "storage",
+      "sidePanel",
+      "tabs",
+      "activeTab",
+      "scripting",
+      "debugger"
+    ],
+    "host_permissions": [
+      "<all_urls>"
+    ]
+  },
   "scripts": {
     "dev": "plasmo dev",
     "build": "plasmo build",
