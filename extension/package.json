@@ -1,24 +1,6 @@
 {
-  "name": "the-agent",
-  "displayName": "MYSTA",
+  "name": "mysta-agent",
   "version": "0.1.0",
-  "description": "MYSTA - Your private AI, in your browser.",
-  "manifest": {
-    "permissions": [
-      "storage",
-      "sidePanel",
-      "contextMenus",
-      "tabs",
-      "activeTab",
-      "scripting",
-      "webNavigation",
-      "windows",
-      "debugger"
-    ],
-    "host_permissions": [
-      "<all_urls>"
-    ]
-  },
   "scripts": {
     "dev": "plasmo dev",
     "build": "plasmo build",
