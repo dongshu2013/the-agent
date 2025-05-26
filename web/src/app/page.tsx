@@ -25,7 +25,15 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-blue-50 to-green-50">
+    <div
+      className="flex flex-col items-center justify-center min-h-screen"
+      style={{
+        backgroundImage: 'url(/dashboard-bg.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
       <div className="w-full max-w-[560px] bg-white rounded-[20px] p-12 shadow-lg">
         <div className="flex flex-col items-center mb-8">
           <div className="flex items-center gap-2.5">
@@ -37,7 +45,7 @@ export default function Home() {
         <div className="space-y-4">
           <button
             onClick={signInWithGoogle}
-            className="flex items-center justify-center w-full gap-3 py-3 px-6 text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors cursor-pointer"
+            className="flex items-center justify-center w-full gap-3 py-3 px-6 text-white bg-black border border-gray-300 rounded-md hover:opacity-70 transition-colors cursor-pointer"
           >
             <Image
               src="/google-logo.svg"
