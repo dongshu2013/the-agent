@@ -127,19 +127,19 @@ export const PaymentModal = ({ isOpen, onClose }: PaymentModalProps) => {
               <div className="grid grid-cols-3 gap-3">
                 <button
                   onClick={() => setAmount(5)}
-                  className="py-6 border rounded-md hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="py-6 border border-gray-200 bg-gray-50 rounded-md hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer"
                 >
                   $5
                 </button>
                 <button
                   onClick={() => setAmount(10)}
-                  className="py-6 border rounded-md hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="py-6 border border-gray-200 bg-gray-50 rounded-md hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer"
                 >
                   $10
                 </button>
                 <button
                   onClick={() => setAmount(20)}
-                  className="py-6 border rounded-md hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="py-6 border border-gray-200 bg-gray-50 rounded-md hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer"
                 >
                   $20
                 </button>
