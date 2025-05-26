@@ -203,7 +203,7 @@ export const CreditsTable = () => {
           <div className="flex-none">
             <button
               onClick={resetFilters}
-              className="px-4 h-9 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="px-4 h-9 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
             >
               Reset
             </button>
@@ -290,46 +290,123 @@ export const CreditsTable = () => {
       </div>
 
       {/* Pagination */}
-      <div className="flex justify-between items-center p-4 border-t border-gray-200 dark:border-gray-700">
-        <div>
-          Page {page} of {Math.max(1, Math.ceil(total / pageSize))}
+      <div className="flex flex-wrap justify-between items-center p-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="text-sm text-gray-700 dark:text-gray-300">
+          Showing <span className="font-medium">{Math.min((page - 1) * pageSize + 1, total)}</span>{' '}
+          to <span className="font-medium">{Math.min(page * pageSize, total)}</span> of{' '}
+          <span className="font-medium">{total}</span> results
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className={
-              `px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 rounded-md disabled:opacity-50 ` +
-              (page === 1 ? 'cursor-not-allowed' : 'cursor-pointer')
-            }
-          >
-            Prev
-          </button>
-          <button
-            onClick={() => setPage(p => p + 1)}
-            disabled={page * pageSize >= total}
-            className={
-              `px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 rounded-md disabled:opacity-50 ` +
-              (page * pageSize >= total ? 'cursor-not-allowed' : 'cursor-pointer')
-            }
-          >
-            Next
-          </button>
+
+        <div className="flex items-center space-x-2 mt-2 sm:mt-0">
+          {/* Page size selector */}
+          <div className="flex items-center">
+            <label htmlFor="pageSize" className="mr-2 text-sm text-gray-600 dark:text-gray-400">
+              Show
+            </label>
+            <select
+              id="pageSize"
+              value={pageSize}
+              onChange={e => {
+                setPageSize(Number(e.target.value));
+                setPage(1);
+              }}
+              className="h-8 rounded-md border border-gray-300 dark:border-gray-600 px-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+            >
+              {[10, 20, 50, 100].map(size => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+            <span className="ml-2 text-sm text-gray-600 dark:text-gray-400">per page</span>
+          </div>
         </div>
-        <select
-          value={pageSize}
-          onChange={e => {
-            setPageSize(Number(e.target.value));
-            setPage(1);
-          }}
-          className="w-28 h-9 rounded-md border border-gray-300 dark:border-gray-600 px-3 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 ml-4"
-        >
-          {[10, 20, 50, 100].map(size => (
-            <option key={size} value={size}>
-              {size} / page
-            </option>
-          ))}
-        </select>
+
+        <div className="flex items-center justify-center mt-2 sm:mt-0 w-full sm:w-auto">
+          <nav
+            className="isolate inline-flex -space-x-px rounded-md shadow-sm"
+            aria-label="Pagination"
+          >
+            {/* First page button */}
+            <button
+              onClick={() => setPage(1)}
+              disabled={page === 1}
+              className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:hover:bg-white cursor-pointer disabled:cursor-not-allowed dark:bg-gray-800 dark:ring-gray-700 dark:hover:bg-gray-700 dark:text-gray-400"
+            >
+              <span className="sr-only">First page</span>
+              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path
+                  fillRule="evenodd"
+                  d="M13.293 6.293a1 1 0 011.414 1.414L11.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4z"
+                  clipRule="evenodd"
+                />
+                <path
+                  fillRule="evenodd"
+                  d="M7.293 6.293a1 1 0 011.414 1.414L5.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+
+            {/* Previous page button */}
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="relative inline-flex items-center px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:hover:bg-white cursor-pointer disabled:cursor-not-allowed dark:bg-gray-800 dark:ring-gray-700 dark:hover:bg-gray-700 dark:text-gray-400"
+            >
+              <span className="sr-only">Previous</span>
+              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path
+                  fillRule="evenodd"
+                  d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+
+            {/* Current page indicator */}
+            <span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 focus:outline-offset-0 bg-gray-50 dark:bg-gray-700 dark:text-white dark:ring-gray-600">
+              {page} of {Math.max(1, Math.ceil(total / pageSize))}
+            </span>
+
+            {/* Next page button */}
+            <button
+              onClick={() => setPage(p => p + 1)}
+              disabled={page * pageSize >= total}
+              className="relative inline-flex items-center px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:hover:bg-white cursor-pointer disabled:cursor-not-allowed dark:bg-gray-800 dark:ring-gray-700 dark:hover:bg-gray-700 dark:text-gray-400"
+            >
+              <span className="sr-only">Next</span>
+              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path
+                  fillRule="evenodd"
+                  d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+
+            {/* Last page button */}
+            <button
+              onClick={() => setPage(Math.max(1, Math.ceil(total / pageSize)))}
+              disabled={page * pageSize >= total}
+              className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:hover:bg-white cursor-pointer disabled:cursor-not-allowed dark:bg-gray-800 dark:ring-gray-700 dark:hover:bg-gray-700 dark:text-gray-400"
+            >
+              <span className="sr-only">Last page</span>
+              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path
+                  fillRule="evenodd"
+                  d="M6.707 14.707a1 1 0 01-1.414-1.414L8.586 10 5.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4z"
+                  clipRule="evenodd"
+                />
+                <path
+                  fillRule="evenodd"
+                  d="M12.707 14.707a1 1 0 01-1.414-1.414L14.586 10l-3.293-3.293a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+          </nav>
+        </div>
       </div>
     </div>
   );

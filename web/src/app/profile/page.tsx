@@ -110,7 +110,7 @@ export default function ProfilePage() {
           </div>
           <button
             onClick={signOut}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 rounded-md"
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-100 rounded-md cursor-pointer"
           >
             Sign Out
           </button>
@@ -189,13 +189,13 @@ export default function ProfilePage() {
                       <div className="flex space-x-3 w-full">
                         <button
                           onClick={() => setBuyCreditsOpen(true)}
-                          className="flex-1 px-4 py-2 text-sm font-medium text-gray-800 bg-white rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+                          className="flex-1 px-4 py-2 text-sm font-medium text-gray-800 bg-white rounded-md hover:bg-gray-200 transition-colors cursor-pointer"
                         >
                           Recharge
                         </button>
                         <button
                           onClick={() => setRedeemCouponOpen(true)}
-                          className="flex-1 px-4 py-2 text-sm font-medium text-white bg-gray-800 bg-opacity-50 border border-gray-600 rounded-md hover:bg-opacity-70 transition-colors cursor-pointer"
+                          className="flex-1 px-4 py-2 text-sm font-medium text-white bg-gray-800 bg-opacity-50 border border-gray-600 rounded-md hover:opacity-70 transition-colors cursor-pointer"
                         >
                           Coupon
                         </button>
