@@ -20,11 +20,15 @@ async function openSidePanel(tab: chrome.tabs.Tab) {
       enabled: true,
       path: 'sidepanel.html',
     });
-    // @ts-expect-error - sidePanel.open is available in Chrome 114+
-    await chrome.sidePanel.open({ windowId: tab.windowId });
+    // Do NOT call chrome.sidePanel.open here!
   } catch (error) {
-    console.error('Failed to open side panel:', error);
+    console.error('Failed to enable side panel:', error);
   }
+}
+
+if (typeof chrome !== 'undefined' && chrome.sidePanel && chrome.sidePanel.setPanelBehavior) {
+  // Ensure clicking the extension icon opens the side panel
+  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(console.error);
 }
 
 if (typeof chrome !== 'undefined' && chrome.action) {

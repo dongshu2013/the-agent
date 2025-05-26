@@ -4,10 +4,22 @@ import { useState } from 'react';
 import { processMarkdown } from '../../utils/markdown-processor';
 import { ScreenshotResult } from '~/tools/web-toolkit';
 import { VersionedMessage } from '~/utils/db';
+import RunIcon from '~/assets/icons/run.svg';
+import DoneIcon from '~/assets/icons/done.svg';
+import ErrorIcon from '~/assets/icons/error.svg';
+import Reasoning from './Reasoning';
+import { ChatStatus } from '~/types';
 
 interface Props {
   message: VersionedMessage;
   isLatestResponse?: boolean;
+  status?: ChatStatus;
+}
+
+interface ToolMessageContent {
+  success: boolean;
+  data?: unknown;
+  error?: string;
 }
 
 function areEqual(prevProps: Props, nextProps: Props) {
@@ -23,6 +35,7 @@ function areEqual(prevProps: Props, nextProps: Props) {
 const MessageComponent = React.memo(function MessageComponent({
   message,
   isLatestResponse,
+  status,
 }: Props) {
   const isUser = message?.role === 'user';
   const isError = message?.role === 'error';
@@ -55,57 +68,120 @@ const MessageComponent = React.memo(function MessageComponent({
     if (!message.content) return false;
     if (message.role === 'tool') return false;
 
-    return isLatestResponse || (isHovered && isUser);
+    return (isLatestResponse && status === 'idle') || (isHovered && isUser);
   };
 
   const renderToolMessage = () => {
     if (message.role !== 'tool') return null;
 
-    return (
-      <div
-        key={message.id}
+    let status: 'running' | 'success' | 'error' = 'running';
+    let parsedContent: ToolMessageContent | null = null;
+
+    if (!message.content) {
+      status = 'running';
+    } else {
+      try {
+        parsedContent = JSON.parse(message.content) as ToolMessageContent;
+        if (typeof parsedContent.success === 'boolean') {
+          status = parsedContent.success ? 'success' : 'error';
+        }
+      } catch (e) {
+        status = 'error';
+        console.warn('Failed to parse message.content as JSON:', e);
+      }
+    }
+
+    let icon = (
+      <img
+        src={RunIcon}
+        alt="running"
         style={{
-          border: '1px solid #ccc',
-          borderRadius: '6px',
-          padding: '6px 8px',
-          margin: '4px 0',
-          fontSize: '12px',
-          lineHeight: '1.4',
-          display: 'flex',
-          alignItems: 'center',
+          marginRight: 8,
+          width: 18,
+          height: 18,
+          verticalAlign: 'middle',
+          animation: 'spin 1s linear infinite',
         }}
-      >
-        <svg
-          style={{ marginRight: '6px' }}
-          xmlns="http://www.w3.org/2000/svg"
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="m15 12-8.5 8.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0a2.12 2.12 0 0 1 0-3L12 9" />
-          <path d="M17.64 15 22 10.64" />
-          <path d="m20.91 11.7-1.25-1.25c-.6-.6-.93-1.4-.93-2.25v-.86L16.01 4.6a5.56 5.56 0 0 0-3.94-1.64H9l.92.82A6.18 6.18 0 0 1 12 8.4v1.56l2 2h2.47l2.26 1.91" />
-        </svg>
-        Executed tool call{' '}
-        <span
+      />
+    );
+    let tip = 'Executing';
+    let border = '1px solid #ccc';
+    let bg = '#fff';
+
+    if (status === 'success') {
+      icon = (
+        <img
+          src={DoneIcon}
+          alt="done"
+          style={{ marginRight: 8, width: 18, height: 18, verticalAlign: 'middle' }}
+        />
+      );
+      tip = 'Executed';
+      border = '1.5px solid #55B610';
+      bg = '#f3faed';
+    } else if (status === 'error') {
+      icon = (
+        <img
+          src={ErrorIcon}
+          alt="error"
+          style={{ marginRight: 8, width: 18, height: 18, verticalAlign: 'middle' }}
+        />
+      );
+      tip = 'Error';
+      border = '1.5px solid #D20D0D';
+      bg = '#fef2f2';
+    }
+
+    return (
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', margin: '4px 0' }}>
+        <div
           style={{
-            display: 'inline-block',
-            backgroundColor: '#f7f7f7',
-            color: '#999',
-            border: '1px solid #ccc',
-            padding: '1px 6px',
-            borderRadius: '4px',
-            marginLeft: '6px',
-            fontSize: '11px',
+            border,
+            borderRadius: '6px',
+            padding: '5px 10px',
+            fontSize: '13px',
+            lineHeight: '1.5',
+            display: 'flex',
+            alignItems: 'center',
+            background: bg,
+            fontWeight: 500,
+            minWidth: 0,
+            maxWidth: 320,
           }}
         >
-          {message.name?.replace('TabToolkit_', '').replace('WebToolkit_', '')}
-        </span>
+          {icon}
+          <span style={{ fontWeight: 500 }}>{tip}</span>
+          <span
+            style={{
+              display: 'inline-block',
+              backgroundColor: '#fff',
+              color: '#999',
+              border: '1px solid #ccc',
+              padding: '1px 6px',
+              borderRadius: '4px',
+              marginLeft: '10px',
+              fontSize: '12px',
+              maxWidth: 120,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {message.name?.replace('TabToolkit_', '').replace('WebToolkit_', '') || ''}
+          </span>
+          <style>{`
+            @keyframes spin { 100% { transform: rotate(360deg); } }
+          `}</style>
+        </div>
+      </div>
+    );
+  };
+
+  const renderReasoning = () => {
+    if (!message.reasoning) return null;
+    return (
+      <div style={{ marginBottom: 8 }}>
+        <Reasoning reasoning={message.reasoning} finished={!!message.content} />
       </div>
     );
   };
@@ -128,6 +204,7 @@ const MessageComponent = React.memo(function MessageComponent({
 
     return (
       <>
+        {renderReasoning()}
         <div
           style={{ width: '100%', overflow: 'auto' }}
           dangerouslySetInnerHTML={{

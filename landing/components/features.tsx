@@ -22,32 +22,24 @@ const FeatureCard = ({ icon, title, description }: FeatureCardProps) => {
 // AI Solutions Showcase 数据
 const showcaseItems = [
   {
-    img: '/images/grid-1.png',
+    img: '/images/grid-3.png',
     title: 'AutoPilot AI Assistant',
     desc: 'A lightweight AI layer for any site — smart tools, \n one click, zero hassle.',
   },
   {
     img: '/images/grid-2.png',
-    title: 'Bring You Own Model',
+    title: 'Choose Your Favorite Model',
     desc: 'Connect custom AI models or third-party services to enhance \n automation, adapting to unique workflows.',
-  },
-  {
-    img: '/images/grid-3.png',
-    title: 'Maximize Your Value',
-    desc: 'AI that handles the busywork so you can focus on what matters. \n Say goodbye to overload and unlock faster, smarter execution.',
-    colSpan: true,
   },
 ];
 
 function ShowcaseGrid() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 grid-rows-3 md:grid-rows-2 gap-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 grid-rows-1 gap-8">
       {showcaseItems.map(item => (
         <div
           key={item.title}
-          className={`relative flex flex-col items-center text-center bg-[#f4f4f4] rounded-2xl overflow-hidden ${
-            item.colSpan ? 'md:col-span-2' : ''
-          }`}
+          className="relative flex flex-col items-center text-center bg-[#f4f4f4] rounded-2xl overflow-hidden py-10 px-6"
         >
           {/* 网格线背景 */}
           <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
@@ -65,7 +57,10 @@ function ShowcaseGrid() {
               <rect width="100%" height="100%" fill="url(#grid)" />
             </svg>
           </div>
-          <div className="w-full flex justify-center my-4 z-10">
+          <div
+            className="w-full flex justify-center items-center my-4 z-10"
+            style={{ height: 200, marginBottom: 32 }}
+          >
             <Image
               src={item.img}
               alt={item.title}
@@ -75,7 +70,7 @@ function ShowcaseGrid() {
             />
           </div>
           <h3 className="text-[#0C0A09] text-xl font-medium mb-2 z-10">{item.title}</h3>
-          <p className="text-[#78716C] mb-4 z-10 whitespace-pre-line">{item.desc}</p>
+          <p className="text-[#78716C] mb-0 z-10 whitespace-pre-line">{item.desc}</p>
         </div>
       ))}
     </div>
@@ -113,9 +108,9 @@ export default function Features() {
             <span className="text-gray-600">Deliver More Value, Effortlessly</span>
           </div>
           <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-4">
-            One-Click to Done: Let AI
+            Ask Anything.
             <br />
-            Run the Web for You
+            Automate Everything.
           </h2>
           <p className="text-md text-gray-600">
             From insight to execution, AI navigates the web

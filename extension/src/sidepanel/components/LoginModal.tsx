@@ -34,12 +34,14 @@ export default function LoginModal({
       footer={null}
       centered
       closable={false}
-      width={400}
+      width={300}
       styles={{
         body: {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
+        },
+        content: {
           borderRadius: 24,
         },
       }}
@@ -50,7 +52,7 @@ export default function LoginModal({
           alignItems: 'center',
           justifyContent: 'center',
           gap: '10px',
-          marginBottom: '24px',
+          marginBottom: '10px',
         }}
       >
         <img
@@ -63,7 +65,9 @@ export default function LoginModal({
       </div>
       {isSwitch ? (
         <>
-          <div style={{ fontWeight: 500, textAlign: 'center' }}>Mysta Account Detected</div>
+          <div style={{ fontSize: 18, fontWeight: 500, textAlign: 'center' }}>
+            Mysta Account Detected
+          </div>
           <div style={{ fontSize: 14, color: '#333', textAlign: 'center' }}>
             <span style={{ color: '#888' }}>{getDisplayName(currentUser)}</span>
           </div>
@@ -73,11 +77,11 @@ export default function LoginModal({
               width: '100%',
               maxWidth: 320,
               height: 48,
-              borderRadius: 24,
+              borderRadius: 12,
               border: '1.5px solid #d1d5db',
               background: '#fff',
               color: '#222',
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: 500,
               marginTop: 16,
               cursor: 'pointer',
@@ -93,13 +97,12 @@ export default function LoginModal({
             width: '100%',
             maxWidth: 320,
             height: 48,
-            borderRadius: 24,
+            borderRadius: 12,
             border: '1.5px solid #d1d5db',
             background: '#000',
-            fontSize: 18,
+            fontSize: 16,
             fontWeight: 500,
             color: '#fff',
-            marginBottom: 24,
             boxShadow: '0 1px 4px 0 rgba(0,0,0,0.04)',
             cursor: 'pointer',
             transition: 'background 0.2s, color 0.2s',

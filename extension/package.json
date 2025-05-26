@@ -1,23 +1,36 @@
 {
-  "name": "the-agent",
-  "displayName": "MYSTA",
+  "name": "mysta-agent",
+  "displayName": "Mysta",
   "version": "0.1.0",
-  "description": "MYSTA - Your private AI, in your browser.",
+  "description": "Mysta - Let AI Run the Web for You.",
   "manifest": {
     "permissions": [
       "storage",
       "sidePanel",
-      "contextMenus",
       "tabs",
       "activeTab",
       "scripting",
-      "webNavigation",
-      "windows",
       "debugger"
     ],
     "host_permissions": [
       "<all_urls>"
-    ]
+    ],
+    "web_accessible_resources": [
+      {
+        "resources": [
+          "sidepanel.html",
+          "popup.html",
+          "*.js",
+          "*.css"
+        ],
+        "matches": [
+          "<all_urls>"
+        ]
+      }
+    ],
+    "content_security_policy": {
+      "extension_pages": "script-src 'self' http://localhost; object-src 'self';"
+    }
   },
   "scripts": {
     "dev": "plasmo dev",

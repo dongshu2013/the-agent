@@ -3,11 +3,11 @@ import { env } from './env';
 import { getApiKey } from '../services/cache';
 import { ChatRequest } from '../types/api';
 import { getToolDescriptions } from '../tools/tool-descriptions';
-import { showLoginModal } from '~/utils/global-event';
 import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream.mjs';
 import { Message, SaveMessageResponse, ToolCall } from '@the-agent/shared';
 import { APIClient, APIError } from '@the-agent/shared';
 import { DEFAULT_MODEL } from './constants';
+import { Conversation } from '~/types/conversations';
 
 export const sendChatCompletion = async (
   request: ChatRequest,
@@ -53,29 +53,21 @@ export const saveMessageApi = async ({
   message: Message;
   top_k_related?: number;
 }): Promise<SaveMessageResponse> => {
-  try {
-    const apiKey = await getApiKey();
-    if (!apiKey?.enabled) {
-      throw new APIError('Unauthorized', 401);
-    }
-
-    const client = new APIClient({
-      baseUrl: env.BACKEND_URL,
-      apiKey: apiKey.key,
-    });
-    const response = await client.saveMessage({
-      message,
-      top_k_related,
-      threshold: 0.7, // Default threshold
-    });
-
-    return response;
-  } catch (error) {
-    if (error instanceof APIError && (error.status === 401 || error.status === 403)) {
-      showLoginModal();
-    }
-    throw error;
+  const apiKey = await getApiKey();
+  if (!apiKey?.enabled) {
+    throw new APIError('Unauthorized', 401);
   }
+
+  const client = new APIClient({
+    baseUrl: env.BACKEND_URL,
+    apiKey: apiKey.key,
+  });
+  const response = await client.saveMessage({
+    message,
+    top_k_related,
+    threshold: 0.7, // Default threshold
+  });
+  return response;
 };
 
 export const genUserPrompt = (contextPrompt: string, currentPrompt: string) => {
@@ -92,4 +84,22 @@ export const genToolCallResult = (toolCall: ToolCall): string => {
     `Tool calls: ${toolCall.function.name}, ` +
     `executed result: ${JSON.stringify(toolCall?.result?.data || '')} \n`
   );
+};
+
+export const sortConversations = (conversations: Conversation[]) => {
+  const getTimestamp = (conversation: Conversation) => {
+    if (conversation.last_selected_at) {
+      return conversation.last_selected_at;
+    }
+    const messages = conversation.messages || [];
+    if (messages.length > 0) {
+      return messages[messages.length - 1].id;
+    }
+    return conversation.id;
+  };
+  return conversations.sort((a, b) => {
+    const aTimestamp = getTimestamp(a);
+    const bTimestamp = getTimestamp(b);
+    return bTimestamp - aTimestamp;
+  });
 };

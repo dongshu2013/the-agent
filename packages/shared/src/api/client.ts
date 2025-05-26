@@ -26,6 +26,7 @@ import {
   type SaveMessageRequest,
   type SaveMessageResponse,
   SaveMessageResponseSchema,
+  ListConversationsRequest,
 } from '../types/api';
 
 export interface APIClientConfig {
@@ -134,9 +135,15 @@ export class APIClient {
     );
   }
 
-  async listConversations(): Promise<ListConversationsResponse> {
+  async listConversations(params?: ListConversationsRequest): Promise<ListConversationsResponse> {
+    const queryParams = new URLSearchParams();
+    if (params?.startFrom) queryParams.append('startFrom', params.startFrom.toString());
+
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/v1/conversation/list?${queryString}` : '/v1/conversation/list';
+
     return this.request(
-      '/v1/conversation/list',
+      endpoint,
       {
         method: 'GET',
       },

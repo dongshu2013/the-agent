@@ -30,8 +30,8 @@ export default function Cta() {
           </div>
           <div className="px-4 py-12 md:px-12 md:py-20">
             <h2 className="mb-6 border-y text-3xl md:text-5xl font-bold text-gray-200 [border-image:linear-gradient(to_right,transparent,--theme(--color-slate-700/.7),transparent)1] md:mb-12">
-              Your browser, <br className="block md:hidden" />
-              now smarter.
+              Let AI Run the Web <br className="block md:hidden" />
+              for You
             </h2>
             <div className="mx-auto max-w-xs sm:flex sm:max-w-none sm:justify-center">
               <a
@@ -67,13 +67,13 @@ export default function Cta() {
               >
                 <span className="relative inline-flex items-center">
                   <Image
-                    src="/images/logo-play.svg"
-                    alt="Play logo"
+                    src="/images/logo-install.svg"
+                    alt="Install logo"
                     width={24}
                     height={24}
                     className="mr-2"
                   />
-                  Watch video
+                  How to Install
                 </span>
               </a>
             </div>
