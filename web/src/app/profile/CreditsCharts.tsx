@@ -108,12 +108,12 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
       {/* Spend Chart */}
       <div
         className={
-          'bg-white p-4 rounded-lg border border-gray-200 hover:border-gray-300 hover:text-gray-900 shadow-sm hover:shadow-lg cursor-pointer transition-colors'
+          'bg-white p-4 rounded-lg border border-gray-200 hover:text-gray-900 shadow-sm transition-colors'
         }
       >
         <div className="flex justify-between items-center mb-2">
           <h3 className="text-lg font-medium">Spend</h3>
-          <Expand className="w-4 h-4" />
+          {/* <Expand className="w-4 h-4" /> */}
         </div>
 
         <div className="h-64">
@@ -133,7 +133,7 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
                   ]}
                   cursor={{ fill: 'rgba(0, 0, 0, 0.1)' }}
                 />
-                <Bar dataKey="value" fill="#F6465D" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="value" fill="#333333CC" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
