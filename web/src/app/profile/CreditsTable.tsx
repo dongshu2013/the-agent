@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { createApiClient } from '@/lib/api_client';
 import {
   CreditLog,
@@ -19,8 +19,18 @@ interface FilterOptions {
   txReasons: TransactionReason[];
 }
 
+interface DailyData {
+  date: string;
+  formattedDate: string;
+  totalCredits: number;
+  transactions: CreditLog[];
+  models: Set<string>;
+  reasons: Set<TransactionReason>;
+}
+
 export const CreditsTable = () => {
   const [credits, setCredits] = useState<CreditLog[]>([]);
+  const [dailyData, setDailyData] = useState<DailyData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     models: [],
@@ -41,22 +51,76 @@ export const CreditsTable = () => {
 
   const { user } = useAuth();
 
+  // Process credits data to group by day
+  const processDailyData = (creditLogs: CreditLog[]): DailyData[] => {
+    // Group transactions by date
+    const dailyMap = new Map<string, CreditLog[]>();
+
+    creditLogs.forEach(log => {
+      const date = new Date(log.created_at).toISOString().split('T')[0]; // YYYY-MM-DD
+      if (!dailyMap.has(date)) {
+        dailyMap.set(date, []);
+      }
+      dailyMap.get(date)?.push(log);
+    });
+
+    // Convert map to array and calculate totals
+    const result: DailyData[] = [];
+
+    dailyMap.forEach((logs, date) => {
+      let totalCredits = 0;
+      const models = new Set<string>();
+      const reasons = new Set<TransactionReason>();
+
+      logs.forEach(log => {
+        // Sum up credits (debit is positive, credit is negative)
+        if (log.tx_type === TransactionTypeSchema.enum.debit) {
+          totalCredits += log.tx_credits;
+        } else {
+          totalCredits -= log.tx_credits;
+        }
+
+        // Collect unique models and reasons
+        if (log.model) models.add(log.model);
+        if (log.tx_reason) reasons.add(log.tx_reason as TransactionReason);
+      });
+
+      result.push({
+        date,
+        formattedDate: format(parseISO(date), 'yyyy-MM-dd'),
+        totalCredits,
+        transactions: logs,
+        models,
+        reasons,
+      });
+    });
+
+    // Sort by date (newest first)
+    return result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  };
+
   useEffect(() => {
     const fetchCreditsData = async () => {
       setIsLoading(true);
       try {
+        // Get all records without pagination for daily view
         const { history, total } = await createApiClient(user.idToken).getCreditHistory({
           startDate,
           endDate,
           model: selectedModel,
           txType: selectedTxType as TransactionType,
           txReason: selectedTxReason as TransactionReason,
-          limit: pageSize,
-          offset: (page - 1) * pageSize,
+          // No pagination for the raw data since we need all records to group by day
+          limit: 1000, // Get a large number of records to ensure we have complete daily data
+          offset: 0,
         });
 
         setCredits(history || []);
         setTotal(total || 0);
+
+        // Process data by day
+        const dailyResults = processDailyData(history || []);
+        setDailyData(dailyResults);
 
         // Extract unique values for filter options from the history data
         if (history && history.length > 0) {
@@ -83,7 +147,7 @@ export const CreditsTable = () => {
     if (user && user.idToken) {
       fetchCreditsData();
     }
-  }, [user, startDate, endDate, selectedModel, selectedTxType, selectedTxReason, page, pageSize]);
+  }, [user, startDate, endDate, selectedModel, selectedTxType, selectedTxReason]);
 
   const formatDate = (dateString: string) => {
     try {
@@ -226,61 +290,75 @@ export const CreditsTable = () => {
                 scope="col"
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
               >
-                Reason
+                Models
               </th>
               <th
                 scope="col"
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
               >
-                Model
+                Reasons
               </th>
               <th
                 scope="col"
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
               >
-                Credits
+                Net Credits
+              </th>
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Transactions
               </th>
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-800">
             {isLoading ? (
               <tr>
-                <td colSpan={4} className="px-6 py-4 text-center">
+                <td colSpan={5} className="px-6 py-4 text-center">
                   <div className="flex justify-center">
                     <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
                   </div>
                 </td>
               </tr>
-            ) : credits.length === 0 ? (
+            ) : dailyData.length === 0 ? (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={5}
                   className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400"
                 >
                   No credits data found
                 </td>
               </tr>
             ) : (
-              credits.map(credit => (
-                <tr key={credit.id} className="hover:bg-gray-100 dark:hover:bg-gray-800">
+              // Display daily aggregated data
+              dailyData.slice((page - 1) * pageSize, page * pageSize).map(day => (
+                <tr key={day.date} className="hover:bg-gray-100 dark:hover:bg-gray-800">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                    {formatDate(credit.created_at)}
+                    {day.formattedDate}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                    {formatTxReason(credit.tx_reason as TransactionReason)}
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                    {day.models.size > 0 ? Array.from(day.models).join(', ') : '-'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                    {credit.model || '-'}
+                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">
+                    {day.reasons.size > 0
+                      ? Array.from(day.reasons)
+                          .map(reason => formatTxReason(reason))
+                          .join(', ')
+                      : '-'}
                   </td>
                   <td
                     className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                      credit.tx_type === TransactionTypeSchema.enum.credit
+                      day.totalCredits < 0
                         ? 'text-red-600 dark:text-red-400'
                         : 'text-green-600 dark:text-green-400'
                     }`}
                   >
-                    {credit.tx_type === TransactionTypeSchema.enum.credit ? '-' : '+'}
-                    {formatCurrency(credit.tx_credits, { maximumFractionDigits: 6 })}
+                    {day.totalCredits < 0 ? '' : '+'}
+                    {formatCurrency(day.totalCredits, { maximumFractionDigits: 6 })}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
+                    {day.transactions.length}
                   </td>
                 </tr>
               ))
@@ -292,9 +370,12 @@ export const CreditsTable = () => {
       {/* Pagination */}
       <div className="flex flex-wrap justify-between items-center p-4 border-t border-gray-200 dark:border-gray-700">
         <div className="text-sm text-gray-700 dark:text-gray-300">
-          Showing <span className="font-medium">{Math.min((page - 1) * pageSize + 1, total)}</span>{' '}
-          to <span className="font-medium">{Math.min(page * pageSize, total)}</span> of{' '}
-          <span className="font-medium">{total}</span> results
+          Showing{' '}
+          <span className="font-medium">
+            {Math.min((page - 1) * pageSize + 1, dailyData.length)}
+          </span>{' '}
+          to <span className="font-medium">{Math.min(page * pageSize, dailyData.length)}</span> of{' '}
+          <span className="font-medium">{dailyData.length}</span> days
         </div>
 
         <div className="flex items-center space-x-2 mt-2 sm:mt-0">
@@ -372,7 +453,7 @@ export const CreditsTable = () => {
             {/* Next page button */}
             <button
               onClick={() => setPage(p => p + 1)}
-              disabled={page * pageSize >= total}
+              disabled={page * pageSize >= dailyData.length}
               className="relative inline-flex items-center px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:hover:bg-white cursor-pointer disabled:cursor-not-allowed dark:bg-gray-800 dark:ring-gray-700 dark:hover:bg-gray-700 dark:text-gray-400"
             >
               <span className="sr-only">Next</span>
@@ -387,8 +468,8 @@ export const CreditsTable = () => {
 
             {/* Last page button */}
             <button
-              onClick={() => setPage(Math.max(1, Math.ceil(total / pageSize)))}
-              disabled={page * pageSize >= total}
+              onClick={() => setPage(Math.max(1, Math.ceil(dailyData.length / pageSize)))}
+              disabled={page * pageSize >= dailyData.length}
               className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:hover:bg-white cursor-pointer disabled:cursor-not-allowed dark:bg-gray-800 dark:ring-gray-700 dark:hover:bg-gray-700 dark:text-gray-400"
             >
               <span className="sr-only">Last page</span>
