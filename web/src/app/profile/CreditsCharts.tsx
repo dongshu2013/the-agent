@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
-import { Expand } from 'lucide-react';
 import { createApiClient } from '@/lib/api_client';
 import { CreditLog } from '@the-agent/shared';
 import { formatCurrency } from '@/lib/utils';
+import Image from 'next/image';
 
 interface ChartData {
   name: string;
@@ -138,6 +138,13 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
             </ResponsiveContainer>
           ) : (
             <div className="flex flex-col justify-center items-center h-full text-gray-500 dark:text-gray-400">
+              <Image
+                src="/empty.png"
+                alt="No data"
+                width={120}
+                height={120}
+                className="mb-2 opacity-70"
+              />
               <p className="text-sm">No data available</p>
             </div>
           )}
