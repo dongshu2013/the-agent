@@ -58,7 +58,8 @@
     "turndown": "^7.2.0",
     "uuid": "^9.0.1",
     "webextension-polyfill": "^0.10.0",
-    "@the-agent/shared": "workspace:*"
+    "@the-agent/shared": "workspace:*",
+    "mem0ai": "^2.1.27"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.248",
