@@ -425,9 +425,9 @@ export default function ProfilePage() {
           </div>
 
           {/* Credits Table */}
-          <div className="px-6 pb-6">
+          {/* <div className="px-6 pb-6">
             <CreditsTable />
-          </div>
+          </div> */}
         </div>
       </main>
 
