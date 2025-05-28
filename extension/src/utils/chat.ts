@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import { env } from './env';
 import { getApiKey } from '../services/cache';
-import { ChatRequest } from '../types/api';
+import { ChatRequest } from '../types/chat';
 import { getToolDescriptions } from '../tools/tool-descriptions';
 import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream.mjs';
 import { Message, SaveMessageResponse, ToolCall } from '@the-agent/shared';
