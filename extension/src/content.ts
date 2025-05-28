@@ -1,8 +1,8 @@
 import { ApiKey } from '~/types';
-import { API_KEY_TAG } from './services/cache';
-import { env } from './utils/env';
+import { API_KEY_TAG } from './storages/cache';
 
 import type { PlasmoCSConfig } from 'plasmo';
+import { env } from './configs/env';
 
 export const config: PlasmoCSConfig = {
   matches: ['https://*.mysta.ai/*'],

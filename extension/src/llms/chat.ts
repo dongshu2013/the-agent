@@ -1,12 +1,12 @@
 import OpenAI from 'openai';
-import { env } from './env';
-import { getApiKey } from '../services/cache';
+import { env } from '../configs/env';
+import { getApiKey } from '../storages/cache';
 import { ChatRequest } from '../types/chat';
 import { getToolDescriptions } from '../tools/tool-descriptions';
 import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream.mjs';
 import { Message, SaveMessageResponse, ToolCall } from '@the-agent/shared';
 import { APIClient, APIError } from '@the-agent/shared';
-import { DEFAULT_MODEL } from './constants';
+import { DEFAULT_MODEL } from '../utils/constants';
 import { Conversation } from '~/types/conversations';
 
 export const sendChatCompletion = async (
@@ -68,15 +68,6 @@ export const saveMessageApi = async ({
     threshold: 0.7, // Default threshold
   });
   return response;
-};
-
-export const genUserPrompt = (contextPrompt: string, currentPrompt: string) => {
-  return `
-Given the chat history:
->>>>> Start of Chat History >>>>>>>>
-${contextPrompt}
->>>>>> End of Chat History >>>>>>>>
-Now reply to user's message: ${currentPrompt}`;
 };
 
 export const genToolCallResult = (toolCall: ToolCall): string => {

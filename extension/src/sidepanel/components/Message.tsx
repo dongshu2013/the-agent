@@ -3,7 +3,7 @@ import { useState } from 'react';
 
 import { processMarkdown } from '../../utils/markdown-processor';
 import { ScreenshotResult } from '~/tools/web-toolkit';
-import { VersionedMessage } from '~/utils/db';
+import { VersionedMessage } from '~/storages/indexdb';
 import RunIcon from '~/assets/icons/run.svg';
 import DoneIcon from '~/assets/icons/done.svg';
 import ErrorIcon from '~/assets/icons/error.svg';

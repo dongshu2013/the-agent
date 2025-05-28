@@ -16,13 +16,14 @@ import {
   syncConversations,
   createNewConversation,
 } from '../services/conversation';
-import { db, UserInfo } from '~/utils/db';
+import { db, UserInfo } from '~/storages/indexdb';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { ChatHandler } from '../services/chat-handler';
+import { ChatHandler } from '../core/chat/handler';
 import { APIError } from '@the-agent/shared';
 import { ApiKey, ChatStatus } from '~/types';
-import { API_KEY_TAG } from '~/services/cache';
-import { getUserInfo, isEqualApiKey, parseApiKey } from '~/utils/user';
+import { API_KEY_TAG } from '~/storages/cache';
+import { getUserInfo } from '~/services/user';
+import { parseApiKey, isEqualApiKey } from '~/services/api/key';
 
 const Sidepanel = () => {
   const [apiKey, setApiKey] = useState<ApiKey | null>(null);

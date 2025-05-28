@@ -2,25 +2,9 @@
  * 会话服务 - 管理会话相关功能
  */
 
-import { env } from '../utils/env';
-import { getApiKey } from './cache';
 import { Conversation } from '../types/conversations';
-import { db } from '../utils/db';
-import { showLoginModal } from '~/utils/global-event';
-import { APIClient } from '@the-agent/shared';
-
-// Create API client instance
-const createApiClient = async (): Promise<APIClient> => {
-  const keyToUse = await getApiKey();
-  if (!keyToUse?.enabled) {
-    showLoginModal();
-    throw new Error('Authentication required');
-  }
-  return new APIClient({
-    baseUrl: env.BACKEND_URL,
-    apiKey: keyToUse.key,
-  });
-};
+import { db } from '../storages/indexdb';
+import { createApiClient } from './api/client';
 
 /**
  * 同步所有会话
