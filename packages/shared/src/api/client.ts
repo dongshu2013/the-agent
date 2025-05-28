@@ -12,12 +12,14 @@ import {
   type ToggleApiKeyRequest,
   type RotateApiKeyResponse,
   type GetCreditHistoryResponse,
+  type GetCreditDailyResponse,
   type RedeemCouponResponse,
   type StripeCheckoutResponse,
   type TelegramStats,
   GetUserResponseSchema,
   RotateApiKeyResponseSchema,
   GetCreditHistoryResponseSchema,
+  GetCreditDailyResponseSchema,
   RedeemCouponResponseSchema,
   StripeCheckoutResponseSchema,
   TelegramStatsSchema,
@@ -167,6 +169,7 @@ export class APIClient {
     return this.request('/v1/user/rotate_api_key', { method: 'POST' }, RotateApiKeyResponseSchema);
   }
 
+  // deprecated
   async getCreditHistory(params?: {
     startDate?: string;
     endDate?: string;
@@ -191,6 +194,22 @@ export class APIClient {
       : '/v1/user/credit_history';
 
     return this.request(endpoint, { method: 'GET' }, GetCreditHistoryResponseSchema);
+  }
+
+  async getCreditDaily(params?: {
+    startDate?: string;
+    endDate?: string;
+    model?: string;
+  }): Promise<GetCreditDailyResponse> {
+    const queryParams = new URLSearchParams();
+    if (params?.startDate) queryParams.append('startDate', params.startDate);
+    if (params?.endDate) queryParams.append('endDate', params.endDate);
+    if (params?.model) queryParams.append('model', params.model);
+
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/v1/user/credit_daily?${queryString}` : '/v1/user/credit_daily';
+
+    return this.request(endpoint, { method: 'GET' }, GetCreditDailyResponseSchema);
   }
 
   async redeemCoupon(code: string): Promise<RedeemCouponResponse> {

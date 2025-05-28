@@ -3,6 +3,7 @@ import { Context } from 'hono';
 import {
   createUser,
   getCreditLogs,
+  getCreditDaily,
   getUserBalance,
   getUserInfo,
   rotateApiKey,
@@ -19,6 +20,7 @@ import {
   ToggleApiKeyResponseSchema,
   RedeemCouponRequestSchema,
   GetUserBalanceResponseSchema,
+  GetCreditDailyResponseSchema,
 } from '@the-agent/shared';
 import { GatewayServiceError } from '../types/service';
 
@@ -97,6 +99,7 @@ export class GetUserBalance extends OpenAPIRoute {
   }
 }
 
+// deprecated
 export class GetCreditLogs extends OpenAPIRoute {
   schema = {
     responses: {
@@ -128,6 +131,36 @@ export class GetCreditLogs extends OpenAPIRoute {
 
     const { history, total } = await getCreditLogs(c.env, userId, options);
     return c.json({ history, total }, 200);
+  }
+}
+
+export class GetCreditDaily extends OpenAPIRoute {
+  schema = {
+    responses: {
+      '200': {
+        description: 'Daily credit usage',
+        content: {
+          'application/json': {
+            schema: GetCreditDailyResponseSchema,
+          },
+        },
+      },
+    },
+  };
+
+  async handle(c: Context) {
+    const userId = c.get('userId');
+    const query = c.req.query();
+
+    // Extract query parameters
+    const options = {
+      startDate: query.startDate,
+      endDate: query.endDate,
+      model: query.model,
+    };
+
+    const data = await getCreditDaily(c.env, userId, options);
+    return c.json({ data }, 200);
   }
 }
 

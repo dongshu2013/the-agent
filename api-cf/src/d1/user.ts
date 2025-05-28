@@ -94,6 +94,7 @@ export async function toggleApiKeyEnabled(
   }
 }
 
+// deprecated
 export async function getCreditLogs(
   env: Env,
   userId: string,
@@ -165,6 +166,56 @@ export async function getCreditLogs(
     })),
     total,
   };
+}
+
+export async function getCreditDaily(
+  env: Env,
+  userId: string,
+  options: {
+    startDate?: string;
+    endDate?: string;
+    model?: string;
+  } = {}
+): Promise<{ date: string; credits: number }[]> {
+  const { startDate, endDate, model } = options;
+  const db = env.DB;
+
+  let baseQuery = `
+    SELECT 
+      DATE(created_at) as date, 
+      SUM(tx_credits) as credits 
+    FROM credit_history 
+    WHERE user_id = ? AND tx_type = 'credit'
+  `;
+
+  const params: (string | number)[] = [userId];
+
+  if (startDate) {
+    baseQuery += ' AND created_at >= ?';
+    params.push(startDate);
+  }
+  if (endDate) {
+    baseQuery += ' AND created_at <= ?';
+    params.push(endDate);
+  }
+  if (model) {
+    baseQuery += ' AND model = ?';
+    params.push(model);
+  }
+
+  baseQuery += ' GROUP BY DATE(created_at) ORDER BY date ASC';
+
+  const result = await db
+    .prepare(baseQuery)
+    .bind(...params)
+    .all();
+
+  if (!result.success) throw new GatewayServiceError(500, 'Failed to query db');
+
+  return result.results.map(r => ({
+    date: r.date as string,
+    credits: r.credits as number,
+  }));
 }
 
 export async function getUserBalance(env: Env, userId: string): Promise<number> {
