@@ -1,10 +1,10 @@
-import { genToolCallResult, saveMessageApi, sendChatCompletion } from '../../llms/chat';
-import { toolExecutor } from '../../tools/tool-executor';
+import { genToolCallResult, saveMessageApi, sendChatCompletion } from '~/llms/chat';
+import { toolExecutor } from '~/tools/tool-executor';
 import { db } from '~/storages/indexdb';
 import { ChatMessage, Message, ToolCall } from '@the-agent/shared';
-import { MAX_TOOL_CALLS, SYSTEM_MESSAGE } from './constants';
-import { ChatHandlerOptions, Model } from '../../types';
-import { genUserPrompt } from '../../prompt';
+import { MAX_TOOL_CALLS, SYSTEM_MESSAGE } from '~/utils/constants';
+import { ChatHandlerOptions, Model } from '~/types';
+import { genUserPrompt } from '~/prompt';
 
 export class ChatHandler {
   private options: ChatHandlerOptions;
