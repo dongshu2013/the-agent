@@ -48,8 +48,8 @@ GET {{baseUrl}}/v1/user/balance
 Content-Type: application/json
 x-api-key: {{apiKey}}
 
-### Get Credit History
-GET {{baseUrl}}/v1/user/credit_history
+### Get Credit Daily
+GET {{baseUrl}}/v1/user/credit_daily
 Content-Type: application/json
 x-api-key: {{apiKey}}
 

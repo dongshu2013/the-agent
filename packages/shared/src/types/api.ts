@@ -219,12 +219,11 @@ export const RotateApiKeyResponseSchema = z.object({
 });
 export type RotateApiKeyResponse = z.infer<typeof RotateApiKeyResponseSchema>;
 
-// deprecated
-export const GetCreditHistoryResponseSchema = z.object({
-  history: z.array(CreditLogSchema),
-  total: z.number(),
+export const GetCreditDailyRequestSchema = z.object({
+  startDate: z.string().nullable().optional(),
+  endDate: z.string().nullable().optional(),
 });
-export type GetCreditHistoryResponse = z.infer<typeof GetCreditHistoryResponseSchema>;
+export type GetCreditDailyRequest = z.infer<typeof GetCreditDailyRequestSchema>;
 
 export const CreditDailyItemSchema = z.object({
   date: z.string(),
