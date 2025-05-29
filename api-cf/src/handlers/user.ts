@@ -2,7 +2,7 @@ import { OpenAPIRoute } from 'chanfana';
 import { Context } from 'hono';
 import {
   createUser,
-  getCreditLogs,
+  getCreditDaily,
   getUserBalance,
   getUserInfo,
   rotateApiKey,
@@ -14,11 +14,12 @@ import {
   GetUserResponseSchema,
   RotateApiKeyResponseSchema,
   ToggleApiKeyRequestSchema,
-  GetCreditHistoryResponseSchema,
   RedeemCouponResponseSchema,
   ToggleApiKeyResponseSchema,
   RedeemCouponRequestSchema,
   GetUserBalanceResponseSchema,
+  GetCreditDailyResponseSchema,
+  GetCreditDailyRequestSchema,
 } from '@the-agent/shared';
 import { GatewayServiceError } from '../types/service';
 
@@ -97,14 +98,17 @@ export class GetUserBalance extends OpenAPIRoute {
   }
 }
 
-export class GetCreditLogs extends OpenAPIRoute {
+export class GetCreditDaily extends OpenAPIRoute {
   schema = {
+    request: {
+      query: GetCreditDailyRequestSchema,
+    },
     responses: {
       '200': {
-        description: 'Credit logs',
+        description: 'Daily credit usage',
         content: {
           'application/json': {
-            schema: GetCreditHistoryResponseSchema,
+            schema: GetCreditDailyResponseSchema,
           },
         },
       },
@@ -115,19 +119,13 @@ export class GetCreditLogs extends OpenAPIRoute {
     const userId = c.get('userId');
     const query = c.req.query();
 
-    // Extract query parameters
     const options = {
       startDate: query.startDate,
       endDate: query.endDate,
-      model: query.model,
-      transType: query.transType,
-      transReason: query.transReason,
-      limit: query.limit ? parseInt(query.limit, 10) : undefined,
-      offset: query.offset ? parseInt(query.offset, 10) : undefined,
     };
 
-    const { history, total } = await getCreditLogs(c.env, userId, options);
-    return c.json({ history, total }, 200);
+    const data = await getCreditDaily(c.env, userId, options);
+    return c.json({ data }, 200);
   }
 }
 

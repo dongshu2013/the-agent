@@ -22,7 +22,7 @@ import { TgContext } from './do/TgContext';
 import { corsHeaders } from './utils/common';
 import { StripeCheckout, StripeWebhook } from './handlers/stripe';
 import {
-  GetCreditLogs,
+  GetCreditDaily,
   GetUser,
   GetUserBalance,
   RotateApiKey,
@@ -65,7 +65,7 @@ app.use('/v1/tg/sync_chat', jwtOrApiKeyAuthMiddleware);
 app.use('/v1/tg/sync_messages', jwtOrApiKeyAuthMiddleware);
 
 app.use('/v1/user/balance', jwtOrApiKeyAuthMiddleware);
-app.use('/v1/user/credit_history', jwtOrApiKeyAuthMiddleware);
+app.use('/v1/user/credit_daily', jwtOrApiKeyAuthMiddleware);
 app.use('/v1/user', jwtOrApiKeyAuthMiddleware);
 // Only JWT auth
 app.use('/v1/user/rotate_api_key', jwtAuthMiddleware);
@@ -127,7 +127,7 @@ openapi.post('/v1/user/toggle_api_key_enabled', ToggleApiKeyEnabled);
 openapi.post('/v1/user/redeem_coupon_code', RedeemCouponCode);
 
 openapi.get('/v1/user/balance', GetUserBalance);
-openapi.get('/v1/user/credit_history', GetCreditLogs);
+openapi.get('/v1/user/credit_daily', GetCreditDaily);
 openapi.get('/v1/user', GetUser);
 
 // OpenAPI documentation endpoints

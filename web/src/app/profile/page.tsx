@@ -8,7 +8,6 @@ import { RefreshCw } from 'lucide-react';
 import { PaymentModal } from './PaymentModal';
 import { CouponCodeModal } from './CouponCodeModal';
 import { CreditsCharts } from './CreditsCharts';
-import { CreditsTable } from './CreditsTable';
 import { TelegramStats } from '@the-agent/shared';
 import { createApiClient } from '@/lib/api_client';
 import { formatCurrency } from '@/lib/utils';
@@ -423,11 +422,6 @@ export default function ProfilePage() {
           <div className="p-6">
             <CreditsCharts />
           </div>
-
-          {/* Credits Table */}
-          {/* <div className="px-6 pb-6">
-            <CreditsTable />
-          </div> */}
         </div>
       </main>
 

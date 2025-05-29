@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { createApiClient } from '@/lib/api_client';
-import { CreditLog } from '@the-agent/shared';
+import { CreditDailyItem } from '@the-agent/shared';
 import { formatCurrency } from '@/lib/utils';
 import Image from 'next/image';
 
@@ -16,14 +16,11 @@ interface CreditsChartsProps {
   className?: string;
 }
 
-const processCreditsData = (credits: CreditLog[]) => {
+const processCreditsData = (dailyCredits: CreditDailyItem[]) => {
   // Sort by date
-  const sortedCredits = [...credits].sort(
-    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  const sortedCredits = [...dailyCredits].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
-
-  // Group by day for the chart
-  const dailySpend: Record<string, number> = {};
 
   const now = new Date();
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -32,34 +29,24 @@ const processCreditsData = (credits: CreditLog[]) => {
   let daySpendTotal = 0;
   let weekSpendTotal = 0;
 
-  sortedCredits.forEach(transaction => {
-    const date = new Date(transaction.created_at);
-    const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+  // Calculate totals for last day and week
+  sortedCredits.forEach(item => {
+    const date = new Date(item.date);
+    const absCredits = Math.abs(item.credits);
 
-    // Only process debit transactions for spend data
-    if (transaction.tx_type === 'credit') {
-      // Add to daily spend
-      if (!dailySpend[dateKey]) {
-        dailySpend[dateKey] = 0;
-      }
-      const absCredits = Math.abs(transaction.tx_credits);
-      dailySpend[dateKey] += absCredits;
-
-      // Calculate totals for last day and week
-      if (date >= oneDayAgo) {
-        daySpendTotal += absCredits;
-      }
-      if (date >= oneWeekAgo) {
-        weekSpendTotal += absCredits;
-      }
+    if (date >= oneDayAgo) {
+      daySpendTotal += absCredits;
+    }
+    if (date >= oneWeekAgo) {
+      weekSpendTotal += absCredits;
     }
   });
 
   // Convert to chart data format
-  const spendChartData = Object.entries(dailySpend).map(([date, value]) => ({
-    name: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-    value: parseFloat(value.toFixed(4)),
-    date,
+  const spendChartData = sortedCredits.map(item => ({
+    name: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    value: parseFloat(item.credits.toFixed(4)),
+    date: item.date,
   }));
 
   // Take last 30 days of data
@@ -82,9 +69,10 @@ export const CreditsCharts = ({ className }: CreditsChartsProps) => {
     const fetchCreditsData = async () => {
       setIsLoading(true);
       try {
-        const { history } = await createApiClient(user.idToken).getCreditHistory({});
-        if (history) {
-          const result = processCreditsData(history);
+        // Get daily credit usage data
+        const { data } = await createApiClient(user.idToken).getCreditDaily({});
+        if (data) {
+          const result = processCreditsData(data);
           setSpendData(result.last30DaysSpend);
           setLastDaySpend(result.daySpendTotal);
           setLastWeekSpend(result.weekSpendTotal);
