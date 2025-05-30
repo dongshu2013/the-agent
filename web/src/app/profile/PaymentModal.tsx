@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { loadStripe } from '@stripe/stripe-js';
 import { toast } from 'sonner';
 import { createApiClient } from '@/lib/api_client';
+import { X } from 'lucide-react';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -97,23 +98,10 @@ export const PaymentModal = ({ isOpen, onClose }: PaymentModalProps) => {
             <h2 className="text-xl font-semibold">Complete Payment</h2>
             <button
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700 focus:outline-none"
+              className="text-gray-500 hover:text-gray-700 focus:outline-none cursor-pointer"
               aria-label="Close"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+              <X className="h-6 w-6" />
             </button>
           </div>
 
@@ -178,14 +166,14 @@ export const PaymentModal = ({ isOpen, onClose }: PaymentModalProps) => {
               <div className="flex justify-end space-x-2 pt-2">
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 text-sm font-medium text-black bg-white rounded-md border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                  className="px-4 py-2 text-sm font-medium text-black bg-white rounded-md border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   disabled={isSubmitting || !isAmountValid}
                   onClick={handleCheckout}
-                  className="px-4 py-2 text-sm font-medium text-white disabled:opacity-50 bg-black rounded-md hover:opacity-70 transition-opacity focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
+                  className="px-4 py-2 text-sm font-medium text-white disabled:opacity-50 bg-black rounded-md hover:opacity-70 transition-opacity focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2 cursor-pointer disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? 'Processing...' : 'Pay Now'}
                 </button>
