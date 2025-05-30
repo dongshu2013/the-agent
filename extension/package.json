@@ -1,7 +1,7 @@
 {
   "name": "mysta-agent",
   "displayName": "Mysta",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Mysta - Let AI Run the Web for You.",
   "manifest": {
     "permissions": [
