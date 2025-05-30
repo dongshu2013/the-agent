@@ -11,13 +11,13 @@ import {
   type GetUserResponse,
   type ToggleApiKeyRequest,
   type RotateApiKeyResponse,
-  type GetCreditHistoryResponse,
+  type GetCreditDailyResponse,
   type RedeemCouponResponse,
   type StripeCheckoutResponse,
   type TelegramStats,
   GetUserResponseSchema,
   RotateApiKeyResponseSchema,
-  GetCreditHistoryResponseSchema,
+  GetCreditDailyResponseSchema,
   RedeemCouponResponseSchema,
   StripeCheckoutResponseSchema,
   TelegramStatsSchema,
@@ -27,6 +27,7 @@ import {
   type SaveMessageResponse,
   SaveMessageResponseSchema,
   ListConversationsRequest,
+  GetCreditDailyRequest,
 } from '../types/api';
 
 export interface APIClientConfig {
@@ -167,30 +168,15 @@ export class APIClient {
     return this.request('/v1/user/rotate_api_key', { method: 'POST' }, RotateApiKeyResponseSchema);
   }
 
-  async getCreditHistory(params?: {
-    startDate?: string;
-    endDate?: string;
-    model?: string;
-    txType?: TransactionType;
-    txReason?: TransactionReason;
-    limit?: number;
-    offset?: number;
-  }): Promise<GetCreditHistoryResponse> {
+  async getCreditDaily(params?: GetCreditDailyRequest): Promise<GetCreditDailyResponse> {
     const queryParams = new URLSearchParams();
     if (params?.startDate) queryParams.append('startDate', params.startDate);
     if (params?.endDate) queryParams.append('endDate', params.endDate);
-    if (params?.model) queryParams.append('model', params.model);
-    if (params?.txType) queryParams.append('transType', params.txType);
-    if (params?.txReason) queryParams.append('transReason', params.txReason);
-    if (params?.limit !== undefined) queryParams.append('limit', params.limit.toString());
-    if (params?.offset !== undefined) queryParams.append('offset', params.offset.toString());
 
     const queryString = queryParams.toString();
-    const endpoint = queryString
-      ? `/v1/user/credit_history?${queryString}`
-      : '/v1/user/credit_history';
+    const endpoint = queryString ? `/v1/user/credit_daily?${queryString}` : '/v1/user/credit_daily';
 
-    return this.request(endpoint, { method: 'GET' }, GetCreditHistoryResponseSchema);
+    return this.request(endpoint, { method: 'GET' }, GetCreditDailyResponseSchema);
   }
 
   async redeemCoupon(code: string): Promise<RedeemCouponResponse> {

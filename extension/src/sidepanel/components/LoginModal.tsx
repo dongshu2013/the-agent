@@ -1,7 +1,7 @@
 import { Modal } from 'antd';
-import { env } from '~/utils/env';
+import { env } from '~/configs/env';
 import logoIcon from '~/assets/mysta-logo-brand-beta.png';
-import { UserInfo } from '~/utils/db';
+import { UserInfo } from '~/storages/indexdb';
 
 interface LoginModalProps {
   open: boolean;

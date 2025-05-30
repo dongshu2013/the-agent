@@ -1,9 +1,4 @@
-import {
-  CreditLog,
-  GetUserResponse,
-  TransactionReasonSchema,
-  TransactionTypeSchema,
-} from '@the-agent/shared';
+import { GetUserResponse, TransactionReasonSchema, TransactionTypeSchema } from '@the-agent/shared';
 import { GatewayServiceError } from '../types/service';
 import { getCreditFromAmount } from '../utils/common';
 
@@ -94,23 +89,25 @@ export async function toggleApiKeyEnabled(
   }
 }
 
-export async function getCreditLogs(
+export async function getCreditDaily(
   env: Env,
   userId: string,
   options: {
-    limit?: number;
-    offset?: number;
     startDate?: string;
     endDate?: string;
-    model?: string;
-    transType?: string;
-    transReason?: string;
   } = {}
-): Promise<{ history: CreditLog[]; total: number }> {
-  const { limit = 100, offset = 0, startDate, endDate, model, transType, transReason } = options;
-
+): Promise<{ date: string; credits: number }[]> {
+  const { startDate, endDate } = options;
   const db = env.DB;
-  let baseQuery = ' FROM credit_history WHERE user_id = ?';
+
+  let baseQuery = `
+    SELECT 
+      DATE(created_at) as date, 
+      SUM(tx_credits) as credits 
+    FROM credit_history 
+    WHERE user_id = ? AND tx_type = 'credit'
+  `;
+
   const params: (string | number)[] = [userId];
 
   if (startDate) {
@@ -121,50 +118,20 @@ export async function getCreditLogs(
     baseQuery += ' AND created_at <= ?';
     params.push(endDate);
   }
-  if (model) {
-    baseQuery += ' AND model = ?';
-    params.push(model);
-  }
-  if (transType) {
-    baseQuery += ' AND tx_type = ?';
-    params.push(transType);
-  }
-  if (transReason) {
-    baseQuery += ' AND tx_reason = ?';
-    params.push(transReason);
-  }
 
-  // 查询总数
-  const totalResult = await db
-    .prepare('SELECT COUNT(*) as total' + baseQuery)
-    .bind(...params)
-    .all();
-  const total = totalResult.success ? (totalResult.results[0].total as number) : 0;
+  baseQuery += ' GROUP BY DATE(created_at) ORDER BY date ASC';
 
-  // 查询分页数据
-  const query =
-    'SELECT id, tx_credits, tx_type, tx_reason, model, created_at' +
-    baseQuery +
-    ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-  const pageParams = [...params, limit, offset];
   const result = await db
-    .prepare(query)
-    .bind(...pageParams)
+    .prepare(baseQuery)
+    .bind(...params)
     .all();
 
   if (!result.success) throw new GatewayServiceError(500, 'Failed to query db');
 
-  return {
-    history: result.results.map(r => ({
-      id: r.id as number,
-      tx_credits: r.tx_credits as number,
-      tx_type: r.tx_type as string,
-      tx_reason: r.tx_reason as string,
-      model: r.model as string,
-      created_at: r.created_at as string,
-    })),
-    total,
-  };
+  return result.results.map(r => ({
+    date: r.date as string,
+    credits: r.credits as number,
+  }));
 }
 
 export async function getUserBalance(env: Env, userId: string): Promise<number> {
