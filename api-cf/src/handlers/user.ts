@@ -20,6 +20,7 @@ import {
   GetUserBalanceResponseSchema,
   GetCreditDailyResponseSchema,
   GetCreditDailyRequestSchema,
+  ClearUserResponseSchema,
 } from '@the-agent/shared';
 import { GatewayServiceError } from '../types/service';
 
@@ -261,5 +262,29 @@ export class RedeemCouponCode extends OpenAPIRoute {
       },
       200
     );
+  }
+}
+
+export class ClearUser extends OpenAPIRoute {
+  schema = {
+    responses: {
+      '200': {
+        description: 'User cleared successfully',
+        content: {
+          'application/json': {
+            schema: ClearUserResponseSchema,
+          },
+        },
+      },
+    },
+  };
+
+  async handle(c: Context) {
+    const userId = c.get('userId');
+    const env = c.env;
+    const doId = env.AgentContext.idFromName(userId);
+    const stub = env.AgentContext.get(doId);
+    await stub.reset();
+    return c.json({ success: true }, 200);
   }
 }

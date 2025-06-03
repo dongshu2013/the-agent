@@ -5,7 +5,7 @@ import type { PlasmoCSConfig } from 'plasmo';
 import { env } from './configs/env';
 
 export const config: PlasmoCSConfig = {
-  matches: ['https://*.mysta.ai/*'],
+  matches: ['https://*.mysta.ai/*', 'http://localhost/*'],
   all_frames: true,
 };
 
