@@ -103,10 +103,10 @@ export default function Features() {
     <section className="py-16">
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 mb-4">
+          {/* <div className="inline-flex items-center gap-2 mb-4">
             <Sparkles className="w-4 h-4 text-gray-400" />
             <span className="text-gray-600">Deliver More Value, Effortlessly</span>
-          </div>
+          </div> */}
           <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-4">
             Ask Anything.
             <br />
@@ -125,12 +125,12 @@ export default function Features() {
         </div>
 
         {/* AI Solutions Showcase */}
-        <div className="mt-24">
+        <div className="mt-16">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 mb-4">
+            {/* <div className="inline-flex items-center gap-2 mb-4">
               <BrainCog className="w-4 h-4 text-gray-400" />
               <span className="text-gray-600">Let AI Drive the Value</span>
-            </div>
+            </div> */}
             <h2 className="text-2xl md:text-4xl font-bold text-gray-900 mb-4">
               Work Smarter. Grow Faster.
             </h2>

@@ -7,10 +7,9 @@ import {
   getUserInfo,
   rotateApiKey,
   toggleApiKeyEnabled,
+  redeemCouponCode,
 } from '../d1/user';
 import {
-  TransactionReasonSchema,
-  TransactionTypeSchema,
   GetUserResponseSchema,
   RotateApiKeyResponseSchema,
   ToggleApiKeyRequestSchema,
@@ -22,7 +21,6 @@ import {
   GetCreditDailyRequestSchema,
   ClearUserResponseSchema,
 } from '@the-agent/shared';
-import { GatewayServiceError } from '../types/service';
 
 export class GetUser extends OpenAPIRoute {
   schema = {
@@ -210,55 +208,12 @@ export class RedeemCouponCode extends OpenAPIRoute {
     const userEmail = c.get('userEmail');
     const { code } = await c.req.json();
 
-    // Get coupon code info with user_whitelist check
-    const { results } = await c.env.DB.prepare(
-      `SELECT * FROM coupon_codes 
-       WHERE code = ? 
-       AND is_active = 1 
-       AND (expired_at IS NULL OR expired_at > datetime('now'))
-       AND (user_whitelist IS NULL OR user_whitelist LIKE ?)`
-    )
-      .bind(code, `%${userEmail}%`)
-      .all();
+    const result = await redeemCouponCode(c.env, userId, userEmail, code);
 
-    if (!results || results.length === 0) {
-      throw new GatewayServiceError(400, 'Invalid, expired, or unauthorized coupon code');
-    }
-
-    const coupon = results[0];
-    if (coupon.used_count >= coupon.max_uses) {
-      throw new GatewayServiceError(400, 'Coupon code has reached maximum uses');
-    }
-
-    // Start transaction
-    const tx = c.env.DB.batch([
-      // Update coupon used count
-      c.env.DB.prepare('UPDATE coupon_codes SET used_count = used_count + 1 WHERE code = ?').bind(
-        code
-      ),
-      // Add credits to user
-      c.env.DB.prepare('UPDATE users SET balance = balance + ? WHERE id = ?').bind(
-        coupon.credits,
-        userId
-      ),
-      // Add credit history
-      c.env.DB.prepare(
-        `INSERT INTO credit_history (user_id, tx_credits, tx_type, tx_reason)
-         VALUES (?, ?, ?, ?)`
-      ).bind(
-        userId,
-        coupon.credits,
-        TransactionTypeSchema.enum.debit,
-        TransactionReasonSchema.enum.coupon_code
-      ),
-    ]);
-    await tx;
-
-    const newBalance = await getUserBalance(c.env, userId);
     return c.json(
       {
-        added_credits: coupon.credits,
-        total_credits: newBalance,
+        added_credits: result.added_credits,
+        total_credits: result.total_credits,
       },
       200
     );
