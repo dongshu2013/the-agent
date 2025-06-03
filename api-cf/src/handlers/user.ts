@@ -20,6 +20,7 @@ import {
   GetUserBalanceResponseSchema,
   GetCreditDailyResponseSchema,
   GetCreditDailyRequestSchema,
+  ClearUserResponseSchema,
 } from '@the-agent/shared';
 import { GatewayServiceError } from '../types/service';
 
@@ -271,9 +272,7 @@ export class ClearUser extends OpenAPIRoute {
         description: 'User cleared successfully',
         content: {
           'application/json': {
-            schema: {
-              success: true,
-            },
+            schema: ClearUserResponseSchema,
           },
         },
       },
@@ -285,7 +284,7 @@ export class ClearUser extends OpenAPIRoute {
     const env = c.env;
     const doId = env.AgentContext.idFromName(userId);
     const stub = env.AgentContext.get(doId);
-    await stub.clearUser();
+    await stub.reset();
     return c.json({ success: true }, 200);
   }
 }

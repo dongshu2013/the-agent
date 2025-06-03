@@ -1,10 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ResetAccountModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: () => Promise<{ success: boolean }>;
 }
 
 export function ResetAccountModal({ isOpen, onClose, onConfirm }: ResetAccountModalProps) {
@@ -74,7 +75,20 @@ export function ResetAccountModal({ isOpen, onClose, onConfirm }: ResetAccountMo
               Cancel
             </button>
             <button
-              onClick={onConfirm}
+              onClick={async () => {
+                try {
+                  const result = await onConfirm();
+                  if (result.success) {
+                    toast.success('Account has been reset successfully');
+                    onClose();
+                  } else {
+                    toast.error('Failed to reset account');
+                  }
+                } catch (error) {
+                  console.error('Error resetting account:', error);
+                  toast.error('An error occurred while resetting your account');
+                }
+              }}
               className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 cursor-pointer"
             >
               Reset

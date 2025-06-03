@@ -459,10 +459,10 @@ export default function ProfilePage() {
         onClose={() => setResetConfirmOpen(false)}
         onConfirm={async () => {
           if (user?.idToken) {
-            // TODO: Implement reset account API call
-            // await createApiClient(user.idToken).resetAccount();
-            setResetConfirmOpen(false);
+            const result = await createApiClient(user.idToken).clearUser();
+            return result;
           }
+          return { success: false };
         }}
       />
     </div>

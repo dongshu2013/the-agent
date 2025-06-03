@@ -28,6 +28,8 @@ import {
   SaveMessageResponseSchema,
   ListConversationsRequest,
   GetCreditDailyRequest,
+  ClearUserResponse,
+  ClearUserResponseSchema,
 } from '../types/api';
 
 export interface APIClientConfig {
@@ -188,6 +190,10 @@ export class APIClient {
       },
       RedeemCouponResponseSchema
     );
+  }
+
+  async clearUser(): Promise<ClearUserResponse> {
+    return this.request('/v1/user/clear', { method: 'POST' }, ClearUserResponseSchema);
   }
 
   // Stripe endpoints

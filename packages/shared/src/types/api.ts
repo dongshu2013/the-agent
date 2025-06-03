@@ -260,3 +260,8 @@ export const StripeCheckoutResponseSchema = z.object({
   public_key: z.string(),
 });
 export type StripeCheckoutResponse = z.infer<typeof StripeCheckoutResponseSchema>;
+
+export const ClearUserResponseSchema = z.object({
+  success: z.boolean(),
+});
+export type ClearUserResponse = z.infer<typeof ClearUserResponseSchema>;

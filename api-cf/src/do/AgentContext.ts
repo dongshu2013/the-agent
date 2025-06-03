@@ -93,9 +93,13 @@ export class AgentContext extends DurableObject<Env> {
       this.sql.exec('DROP TABLE IF EXISTS agent_messages');
       this.sql.exec('DROP TABLE IF EXISTS agent_conversations');
 
+      console.log('Dropped tables: agent_messages, agent_conversations');
+
       // Recreate the tables
       this.sql.exec(CREATE_CONVERSATION_TABLE_QUERY);
       this.sql.exec(CREATE_MESSAGE_TABLE_QUERY);
+
+      console.log('Recreated tables: agent_messages, agent_conversations');
     } catch (error) {
       console.error('Error during reset:', error);
       throw new GatewayServiceError(500, 'Failed to reset data');
