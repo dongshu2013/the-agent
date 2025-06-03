@@ -402,7 +402,11 @@ const Sidepanel = () => {
                     {PROMPT_TEMPLATES.map((template, index) => (
                       <div
                         key={index}
-                        onClick={() => setPrompt(template)}
+                        onClick={() => {
+                          if (chatHandler) {
+                            chatHandler.handleSubmit(template);
+                          }
+                        }}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
