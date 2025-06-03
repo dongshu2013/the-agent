@@ -263,3 +263,29 @@ export class RedeemCouponCode extends OpenAPIRoute {
     );
   }
 }
+
+export class ClearUser extends OpenAPIRoute {
+  schema = {
+    responses: {
+      '200': {
+        description: 'User cleared successfully',
+        content: {
+          'application/json': {
+            schema: {
+              success: true,
+            },
+          },
+        },
+      },
+    },
+  };
+
+  async handle(c: Context) {
+    const userId = c.get('userId');
+    const env = c.env;
+    const doId = env.AgentContext.idFromName(userId);
+    const stub = env.AgentContext.get(doId);
+    await stub.clearUser();
+    return c.json({ success: true }, 200);
+  }
+}
