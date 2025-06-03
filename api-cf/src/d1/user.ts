@@ -175,3 +175,88 @@ export async function deductUserCredits(
   }
   return { success: true };
 }
+
+// Redeem a coupon code for a user
+export async function redeemCouponCode(
+  env: Env,
+  userId: string,
+  userEmail: string,
+  code: string
+): Promise<{ added_credits: number; total_credits: number }> {
+  const db = env.DB;
+
+  // Get coupon code info with user_whitelist check
+  const { results } = await db
+    .prepare(
+      `SELECT * FROM coupon_codes 
+     WHERE code = ? 
+     AND is_active = 1 
+     AND (expired_at IS NULL OR expired_at > datetime('now'))
+     AND (user_whitelist IS NULL OR user_whitelist LIKE ?)`
+    )
+    .bind(code, `%${userEmail}%`)
+    .all();
+
+  if (!results || results.length === 0) {
+    throw new GatewayServiceError(400, 'Invalid, expired, or unauthorized coupon code');
+  }
+
+  const coupon = results[0] as {
+    used_count: number;
+    max_uses: number;
+    credits: number;
+  };
+  if (coupon.used_count >= coupon.max_uses) {
+    throw new GatewayServiceError(400, 'Coupon code has reached maximum uses');
+  }
+
+  // Check if user has already redeemed this coupon code
+  const { results: redemptionResults } = await db
+    .prepare(`SELECT * FROM coupon_redemptions WHERE user_id = ? AND coupon_code = ?`)
+    .bind(userId, code)
+    .all();
+
+  if (redemptionResults && redemptionResults.length > 0) {
+    throw new GatewayServiceError(400, 'You have already redeemed this coupon code');
+  }
+
+  // Start transaction
+  const tx = await db.batch([
+    // Update coupon used count
+    db.prepare('UPDATE coupon_codes SET used_count = used_count + 1 WHERE code = ?').bind(code),
+    // Add credits to user
+    db.prepare('UPDATE users SET balance = balance + ? WHERE id = ?').bind(coupon.credits, userId),
+    // Add credit history
+    db
+      .prepare(
+        `INSERT INTO credit_history (user_id, tx_credits, tx_type, tx_reason)
+       VALUES (?, ?, ?, ?)`
+      )
+      .bind(
+        userId,
+        coupon.credits,
+        TransactionTypeSchema.enum.debit,
+        TransactionReasonSchema.enum.coupon_code
+      ),
+    // Record the coupon redemption
+    db
+      .prepare(
+        `INSERT INTO coupon_redemptions (user_id, coupon_code)
+       VALUES (?, ?)`
+      )
+      .bind(userId, code),
+  ]);
+
+  // Check if all operations succeeded
+  for (const result of tx) {
+    if (!result.success) {
+      throw new GatewayServiceError(500, 'Failed to redeem coupon code');
+    }
+  }
+
+  const newBalance = await getUserBalance(env, userId);
+  return {
+    added_credits: coupon.credits,
+    total_credits: newBalance,
+  };
+}
