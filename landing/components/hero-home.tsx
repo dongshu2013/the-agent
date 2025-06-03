@@ -12,7 +12,7 @@ export default function HeroHome() {
       <PageIllustration />
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
         {/* Hero content */}
-        <div className="pb-12 pt-32 md:pb-20 md:pt-40">
+        <div className="pt-32 md:pt-40">
           {/* Section header */}
           <div className="pb-12 text-center md:pb-16">
             <h1
@@ -80,12 +80,12 @@ export default function HeroHome() {
           </div>
           {/* Hero video */}
           <div
-            className="mx-auto max-w-7xl px-4 sm:px-6"
+            className="mx-auto max-w-5xl px-4 sm:px-6"
             data-aos="zoom-y-out"
             data-aos-delay={600}
           >
             <div className="relative">
-              <div className="relative mx-auto max-w-[1200px]">
+              <div className="relative mx-auto max-w-[900px]">
                 <div
                   className="relative overflow-hidden rounded-lg shadow-xl"
                   style={{
