@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Settings } from 'lucide-react';
 import { PaymentModal } from './PaymentModal';
 import { CouponCodeModal } from './CouponCodeModal';
+import { AccountSettingsModal } from './AccountSettingsModal';
+import { ResetAccountModal } from './ResetAccountModal';
 import { CreditsCharts } from './CreditsCharts';
 import { TelegramStats } from '@the-agent/shared';
 import { createApiClient } from '@/lib/api_client';
@@ -23,6 +25,8 @@ export default function ProfilePage() {
   const [buyCreditsOpen, setBuyCreditsOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [redeemCouponOpen, setRedeemCouponOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -123,7 +127,13 @@ export default function ProfilePage() {
           <div className="lg:w-1/3 bg-white dark:bg-gray-800 shadow-lg rounded-lg">
             <div className="flex flex-col h-full">
               {/* User Profile Section - 1/3 height */}
-              <div className="p-6" style={{ height: '33%' }}>
+              <div className="p-6 relative" style={{ height: '33%' }}>
+                <button
+                  onClick={() => setSettingsOpen(true)}
+                  className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                >
+                  <Settings className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                </button>
                 <div className="flex flex-col items-center">
                   {user?.photoURL ? (
                     <div className="w-20 h-20 overflow-hidden rounded-full mb-3">
@@ -432,6 +442,29 @@ export default function ProfilePage() {
       {/* Modals */}
       <PaymentModal isOpen={buyCreditsOpen} onClose={() => setBuyCreditsOpen(false)} />
       <CouponCodeModal isOpen={redeemCouponOpen} onClose={() => setRedeemCouponOpen(false)} />
+
+      {/* Account Settings Modal */}
+      <AccountSettingsModal
+        isOpen={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        onResetClick={() => {
+          setSettingsOpen(false);
+          setResetConfirmOpen(true);
+        }}
+      />
+
+      {/* Reset Account Confirmation Modal */}
+      <ResetAccountModal
+        isOpen={resetConfirmOpen}
+        onClose={() => setResetConfirmOpen(false)}
+        onConfirm={async () => {
+          if (user?.idToken) {
+            const result = await createApiClient(user.idToken).clearUser();
+            return result;
+          }
+          return { success: false };
+        }}
+      />
     </div>
   );
 }
