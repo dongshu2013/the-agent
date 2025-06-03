@@ -37,6 +37,7 @@ export default function HeroHome() {
                         : 'opacity-50 cursor-not-allowed'
                     }`}
                     href={chromeStoreUrl || '#'}
+                    target="_blank"
                     onClick={e => !chromeStoreUrl && e.preventDefault()}
                     title={!chromeStoreUrl ? 'Chrome store URL not configured' : ''}
                   >
@@ -51,48 +52,57 @@ export default function HeroHome() {
                       Add to Chrome
                     </span>
                   </a>
-                  <a
+                  {/* <a
                     className={`btn w-full bg-white text-gray-800 shadow-sm sm:ml-4 sm:w-auto ${
                       watchVideoUrl
                         ? 'hover:bg-gray-50 cursor-pointer'
                         : 'opacity-50 cursor-not-allowed'
                     }`}
                     href={watchVideoUrl || '#'}
+                    target="_blank"
                     onClick={e => !watchVideoUrl && e.preventDefault()}
                     title={!watchVideoUrl ? 'Watch video URL not configured' : ''}
                   >
                     <span className="relative inline-flex items-center">
                       <Image
-                        src="/images/logo-install.svg"
-                        alt="Install logo"
+                        src="/images/logo-play.svg"
+                        alt="Play logo"
                         width={24}
                         height={24}
                         className="mr-2"
                       />
-                      How to Install
+                      Watch video
                     </span>
-                  </a>
+                  </a> */}
                 </div>
               </div>
             </div>
           </div>
-          {/* Hero image */}
+          {/* Hero video */}
           <div
             className="mx-auto max-w-7xl px-4 sm:px-6"
             data-aos="zoom-y-out"
             data-aos-delay={600}
           >
             <div className="relative">
-              {/* Hero image */}
               <div className="relative mx-auto max-w-[1200px]">
-                <div className="relative overflow-hidden">
-                  <Image
-                    src="/images/hero.png"
-                    alt="Hero screenshot"
-                    width={1200}
-                    height={750}
-                    className="w-full"
-                    priority
+                <div
+                  className="relative overflow-hidden rounded-lg shadow-xl"
+                  style={{
+                    paddingBottom: '56.25%',
+                    height: 0,
+                    backgroundColor: '#000',
+                  }}
+                >
+                  <iframe
+                    src="https://www.youtube.com/embed/b3Xgf9ZYQFs?autoplay=0&rel=0&modestbranding=1&controls=1&showinfo=0"
+                    title="Hero video"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    className="absolute top-0 left-0 w-full h-full border-0 transition-opacity duration-300"
+                    style={{
+                      borderRadius: '0.5rem',
+                    }}
                   />
                 </div>
               </div>

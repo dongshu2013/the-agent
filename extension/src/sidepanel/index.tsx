@@ -1,25 +1,29 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import '../style.css';
-import Header from './components/Header';
-import Message from './components/Message';
-import InputArea from './components/InputArea';
-import ConversationList from './components/ConversationList';
+import {
+  Header,
+  Message,
+  InputArea,
+  ConversationList,
+  LoginModal,
+  Thinking,
+  Home,
+} from './components';
+
 import {
   selectConversation as selectConv,
   deleteConversation as deleteConv,
   syncConversations,
   createNewConversation,
 } from '../services/conversation';
-import { db, UserInfo } from '~/utils/db';
+import { db, UserInfo } from '~/storages/indexdb';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { ChatHandler } from '../services/chat-handler';
-import LoginModal from './components/LoginModal';
-import Thinking from './components/Thinking';
+import { ChatHandler } from '../core/chat/handler';
 import { APIError } from '@the-agent/shared';
 import { ApiKey, ChatStatus } from '~/types';
-import { API_KEY_TAG } from '~/services/cache';
-import { getUserInfo, isEqualApiKey, parseApiKey } from '~/utils/user';
-import Home from './Home';
+import { API_KEY_TAG } from '~/storages/cache';
+import { getUserInfo } from '~/services/user';
+import { parseApiKey, isEqualApiKey } from '~/services/api/key';
 import StarIcon from '~/assets/icons/star.svg';
 
 // Prompt templates that users can click on to quickly fill the input

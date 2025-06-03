@@ -1,6 +1,6 @@
 import bgImg from '~/assets/bg.png';
 import bgLogo from '~/assets/bg-logo.png';
-import { env } from '~/utils/env';
+import { env } from '~/configs/env';
 
 const Home = () => (
   <div
