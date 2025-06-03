@@ -28,9 +28,9 @@ import StarIcon from '~/assets/icons/star.svg';
 
 // Prompt templates that users can click on to quickly fill the input
 const PROMPT_TEMPLATES = [
-  "Help me find users on linkedin, like their latest posts, add them as friends and leave a message saying that I'm alan",
-  'Analyze my Telegram chat history and summarize the main topics we discuss',
-  'Write a Python script to analyze cryptocurrency price data and suggest trading opportunities',
+  "Summarize Elon Musk's most recent pinned tweets for me!",
+  'Find the latest crypto discussions in my Telegram groups and summarize key points.',
+  'Extract my recent LinkedIn connections and identify potential collaboration opportunities.',
 ];
 
 const Sidepanel = () => {
