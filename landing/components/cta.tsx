@@ -41,6 +41,7 @@ export default function Cta() {
                     : 'opacity-50 cursor-not-allowed'
                 }`}
                 href={chromeStoreUrl || '#'}
+                target="_blank"
                 onClick={e => !chromeStoreUrl && e.preventDefault()}
                 title={!chromeStoreUrl ? 'Chrome store URL not configured' : ''}
               >
@@ -55,13 +56,14 @@ export default function Cta() {
                   Add to Chrome
                 </span>
               </a>
-              <a
+              {/* <a
                 className={`btn w-full bg-white text-gray-800 shadow-sm sm:ml-4 sm:w-auto ${
                   watchVideoUrl
                     ? 'hover:bg-gray-50 cursor-pointer'
                     : 'opacity-50 cursor-not-allowed'
                 }`}
                 href={watchVideoUrl || '#'}
+                target="_blank"
                 onClick={e => !watchVideoUrl && e.preventDefault()}
                 title={!watchVideoUrl ? 'Watch video URL not configured' : ''}
               >
@@ -75,7 +77,7 @@ export default function Cta() {
                   />
                   How to Install
                 </span>
-              </a>
+              </a> */}
             </div>
           </div>
         </div>
