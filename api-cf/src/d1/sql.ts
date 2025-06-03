@@ -47,3 +47,13 @@ export const CREATE_COUPON_CODE_TABLE_QUERY = `CREATE TABLE IF NOT EXISTS coupon
     expired_at TEXT,
     FOREIGN KEY(user_id) REFERENCES users(id)
 );`;
+
+export const CREATE_COUPON_REDEMPTIONS_TABLE_QUERY = `CREATE TABLE IF NOT EXISTS coupon_redemptions(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    coupon_code TEXT NOT NULL,
+    redeemed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id),
+    FOREIGN KEY(coupon_code) REFERENCES coupon_codes(code),
+    UNIQUE(user_id, coupon_code)
+);`;

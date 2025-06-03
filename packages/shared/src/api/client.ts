@@ -98,7 +98,7 @@ export class APIClient {
       }
 
       throw new APIError(
-        errorData?.error?.message || 'API request failed',
+        errorData || errorData?.error?.message || 'API request failed',
         response.status,
         errorData
       );

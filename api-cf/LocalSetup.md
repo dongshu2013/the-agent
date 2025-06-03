@@ -64,6 +64,19 @@ npx wrangler d1 execute mysta-staging --command="CREATE TABLE IF NOT EXISTS coup
 );" --local
 ```
 
+```bash
+// create coupon redemptions table
+npx wrangler d1 execute mysta-staging --command="CREATE TABLE IF NOT EXISTS coupon_redemptions(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    coupon_code TEXT NOT NULL,
+    redeemed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id),
+    FOREIGN KEY(coupon_code) REFERENCES coupon_codes(code),
+    UNIQUE(user_id, coupon_code)
+);" --local
+```
+
 > use `--remote` for setup remote D1 Database
 
 ## Init Coupon Code Sample Dataset
