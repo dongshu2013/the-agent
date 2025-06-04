@@ -1,12 +1,12 @@
 import { Conversation } from '../types/conversations';
 import Dexie, { Table } from 'dexie';
 import { Model } from '~/types';
-import { PROVIDER_MODELS } from './models';
+import { PROVIDER_MODELS } from '../configs/llm';
 import { Message } from '@the-agent/shared';
-import { DEFAULT_MODEL, SYSTEM_MODEL_ID } from './constants';
-import { env } from './env';
-import { getApiKey } from '~/services/cache';
-import { sortConversations } from './chat';
+import { DEFAULT_MODEL, SYSTEM_MODEL_ID } from '../utils/constants';
+import { env } from '../configs/env';
+import { getApiKey } from '~/storages/cache';
+import { sortConversations } from '../llms/chat';
 
 export interface UserInfo {
   id: string;

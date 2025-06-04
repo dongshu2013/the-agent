@@ -22,12 +22,13 @@ import { TgContext } from './do/TgContext';
 import { corsHeaders } from './utils/common';
 import { StripeCheckout, StripeWebhook } from './handlers/stripe';
 import {
-  GetCreditLogs,
+  GetCreditDaily,
   GetUser,
   GetUserBalance,
   RotateApiKey,
   ToggleApiKeyEnabled,
   RedeemCouponCode,
+  ClearUser,
 } from './handlers/user';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -65,13 +66,15 @@ app.use('/v1/tg/sync_chat', jwtOrApiKeyAuthMiddleware);
 app.use('/v1/tg/sync_messages', jwtOrApiKeyAuthMiddleware);
 
 app.use('/v1/user/balance', jwtOrApiKeyAuthMiddleware);
-app.use('/v1/user/credit_history', jwtOrApiKeyAuthMiddleware);
+app.use('/v1/user/credit_daily', jwtOrApiKeyAuthMiddleware);
 app.use('/v1/user', jwtOrApiKeyAuthMiddleware);
+
 // Only JWT auth
 app.use('/v1/user/rotate_api_key', jwtAuthMiddleware);
 app.use('/v1/user/toggle_api_key_enabled', jwtAuthMiddleware);
 app.use('/v1/user/redeem_coupon_code', jwtAuthMiddleware);
 app.use('/v1/stripe/checkout', jwtAuthMiddleware);
+app.use('/v1/user/clear', jwtAuthMiddleware);
 
 app.onError(async (err, c) => {
   if (err instanceof GatewayServiceError) {
@@ -125,9 +128,10 @@ openapi.post('/v1/stripe/webhook', StripeWebhook);
 openapi.post('/v1/user/rotate_api_key', RotateApiKey);
 openapi.post('/v1/user/toggle_api_key_enabled', ToggleApiKeyEnabled);
 openapi.post('/v1/user/redeem_coupon_code', RedeemCouponCode);
+openapi.post('/v1/user/clear', ClearUser);
 
 openapi.get('/v1/user/balance', GetUserBalance);
-openapi.get('/v1/user/credit_history', GetCreditLogs);
+openapi.get('/v1/user/credit_daily', GetCreditDaily);
 openapi.get('/v1/user', GetUser);
 
 // OpenAPI documentation endpoints

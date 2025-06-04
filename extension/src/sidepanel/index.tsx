@@ -1,25 +1,37 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import '../style.css';
-import Header from './components/Header';
-import Message from './components/Message';
-import InputArea from './components/InputArea';
-import ConversationList from './components/ConversationList';
+import {
+  Header,
+  Message,
+  InputArea,
+  ConversationList,
+  LoginModal,
+  Thinking,
+  Home,
+} from './components';
+
 import {
   selectConversation as selectConv,
   deleteConversation as deleteConv,
   syncConversations,
   createNewConversation,
 } from '../services/conversation';
-import { db, UserInfo } from '~/utils/db';
+import { db, UserInfo } from '~/storages/indexdb';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { ChatHandler } from '../services/chat-handler';
-import LoginModal from './components/LoginModal';
-import Thinking from './components/Thinking';
+import { ChatHandler } from '../core/chat/handler';
 import { APIError } from '@the-agent/shared';
 import { ApiKey, ChatStatus } from '~/types';
-import { API_KEY_TAG } from '~/services/cache';
-import { getUserInfo, isEqualApiKey, parseApiKey } from '~/utils/user';
-import Home from './Home';
+import { API_KEY_TAG } from '~/storages/cache';
+import { getUserInfo } from '~/services/user';
+import { parseApiKey, isEqualApiKey } from '~/services/api/key';
+import StarIcon from '~/assets/icons/star.svg';
+
+// Prompt templates that users can click on to quickly fill the input
+const PROMPT_TEMPLATES = [
+  "Summarize Elon Musk's latest tweet.",
+  "Post a tweet saying: 'mysta is awesome'.",
+  'Search for MystaAI on my LinkedIn.',
+];
 
 const Sidepanel = () => {
   const [apiKey, setApiKey] = useState<ApiKey | null>(null);
@@ -351,7 +363,7 @@ const Sidepanel = () => {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '120px 24px',
+                padding: '0px 24px',
                 minHeight: '100%',
               }}
             >
@@ -384,6 +396,58 @@ const Sidepanel = () => {
                 >
                   Start typing — your AI agent is here to help.
                 </p>
+                {/* Prompt templates */}
+                {apiKey && (
+                  <div style={{ marginTop: '24px' }}>
+                    {PROMPT_TEMPLATES.map((template, index) => (
+                      <div
+                        key={index}
+                        onClick={() => {
+                          if (chatHandler) {
+                            chatHandler.handleSubmit(template);
+                          }
+                        }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: '16px',
+                          marginBottom: '12px',
+                          borderRadius: '12px',
+                          border: '1px solid #e5e7eb',
+                          backgroundColor: '#f9fafb',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+                        }}
+                        onMouseOver={e => {
+                          e.currentTarget.style.backgroundColor = '#f3f4f6';
+                          e.currentTarget.style.borderColor = '#d1d5db';
+                        }}
+                        onMouseOut={e => {
+                          e.currentTarget.style.backgroundColor = '#f9fafb';
+                          e.currentTarget.style.borderColor = '#e5e7eb';
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '24px',
+                            height: '24px',
+                            marginRight: '12px',
+                            flexShrink: 0,
+                          }}
+                        >
+                          <img src={StarIcon} alt="star" />
+                        </div>
+                        <div style={{ textAlign: 'left', fontSize: '14px', color: '#4b5563' }}>
+                          {template}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {!apiKey && (
                   <p
                     style={{

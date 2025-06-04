@@ -219,11 +219,22 @@ export const RotateApiKeyResponseSchema = z.object({
 });
 export type RotateApiKeyResponse = z.infer<typeof RotateApiKeyResponseSchema>;
 
-export const GetCreditHistoryResponseSchema = z.object({
-  history: z.array(CreditLogSchema),
-  total: z.number(),
+export const GetCreditDailyRequestSchema = z.object({
+  startDate: z.string().nullable().optional(),
+  endDate: z.string().nullable().optional(),
 });
-export type GetCreditHistoryResponse = z.infer<typeof GetCreditHistoryResponseSchema>;
+export type GetCreditDailyRequest = z.infer<typeof GetCreditDailyRequestSchema>;
+
+export const CreditDailyItemSchema = z.object({
+  date: z.string(),
+  credits: z.number(),
+});
+export type CreditDailyItem = z.infer<typeof CreditDailyItemSchema>;
+
+export const GetCreditDailyResponseSchema = z.object({
+  data: z.array(CreditDailyItemSchema),
+});
+export type GetCreditDailyResponse = z.infer<typeof GetCreditDailyResponseSchema>;
 
 export const RedeemCouponRequestSchema = z.object({
   code: z.string(),
@@ -249,3 +260,8 @@ export const StripeCheckoutResponseSchema = z.object({
   public_key: z.string(),
 });
 export type StripeCheckoutResponse = z.infer<typeof StripeCheckoutResponseSchema>;
+
+export const ClearUserResponseSchema = z.object({
+  success: z.boolean(),
+});
+export type ClearUserResponse = z.infer<typeof ClearUserResponseSchema>;

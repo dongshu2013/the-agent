@@ -1,9 +1,4 @@
-import {
-  CreditLog,
-  GetUserResponse,
-  TransactionReasonSchema,
-  TransactionTypeSchema,
-} from '@the-agent/shared';
+import { GetUserResponse, TransactionReasonSchema, TransactionTypeSchema } from '@the-agent/shared';
 import { GatewayServiceError } from '../types/service';
 import { getCreditFromAmount } from '../utils/common';
 
@@ -94,23 +89,25 @@ export async function toggleApiKeyEnabled(
   }
 }
 
-export async function getCreditLogs(
+export async function getCreditDaily(
   env: Env,
   userId: string,
   options: {
-    limit?: number;
-    offset?: number;
     startDate?: string;
     endDate?: string;
-    model?: string;
-    transType?: string;
-    transReason?: string;
   } = {}
-): Promise<{ history: CreditLog[]; total: number }> {
-  const { limit = 100, offset = 0, startDate, endDate, model, transType, transReason } = options;
-
+): Promise<{ date: string; credits: number }[]> {
+  const { startDate, endDate } = options;
   const db = env.DB;
-  let baseQuery = ' FROM credit_history WHERE user_id = ?';
+
+  let baseQuery = `
+    SELECT 
+      DATE(created_at) as date, 
+      SUM(tx_credits) as credits 
+    FROM credit_history 
+    WHERE user_id = ? AND tx_type = 'credit'
+  `;
+
   const params: (string | number)[] = [userId];
 
   if (startDate) {
@@ -121,50 +118,20 @@ export async function getCreditLogs(
     baseQuery += ' AND created_at <= ?';
     params.push(endDate);
   }
-  if (model) {
-    baseQuery += ' AND model = ?';
-    params.push(model);
-  }
-  if (transType) {
-    baseQuery += ' AND tx_type = ?';
-    params.push(transType);
-  }
-  if (transReason) {
-    baseQuery += ' AND tx_reason = ?';
-    params.push(transReason);
-  }
 
-  // 查询总数
-  const totalResult = await db
-    .prepare('SELECT COUNT(*) as total' + baseQuery)
-    .bind(...params)
-    .all();
-  const total = totalResult.success ? (totalResult.results[0].total as number) : 0;
+  baseQuery += ' GROUP BY DATE(created_at) ORDER BY date ASC';
 
-  // 查询分页数据
-  const query =
-    'SELECT id, tx_credits, tx_type, tx_reason, model, created_at' +
-    baseQuery +
-    ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-  const pageParams = [...params, limit, offset];
   const result = await db
-    .prepare(query)
-    .bind(...pageParams)
+    .prepare(baseQuery)
+    .bind(...params)
     .all();
 
   if (!result.success) throw new GatewayServiceError(500, 'Failed to query db');
 
-  return {
-    history: result.results.map(r => ({
-      id: r.id as number,
-      tx_credits: r.tx_credits as number,
-      tx_type: r.tx_type as string,
-      tx_reason: r.tx_reason as string,
-      model: r.model as string,
-      created_at: r.created_at as string,
-    })),
-    total,
-  };
+  return result.results.map(r => ({
+    date: r.date as string,
+    credits: r.credits as number,
+  }));
 }
 
 export async function getUserBalance(env: Env, userId: string): Promise<number> {
@@ -207,4 +174,89 @@ export async function deductUserCredits(
     throw new GatewayServiceError(500, 'Failed to deduct credits');
   }
   return { success: true };
+}
+
+// Redeem a coupon code for a user
+export async function redeemCouponCode(
+  env: Env,
+  userId: string,
+  userEmail: string,
+  code: string
+): Promise<{ added_credits: number; total_credits: number }> {
+  const db = env.DB;
+
+  // Get coupon code info with user_whitelist check
+  const { results } = await db
+    .prepare(
+      `SELECT * FROM coupon_codes 
+     WHERE code = ? 
+     AND is_active = 1 
+     AND (expired_at IS NULL OR expired_at > datetime('now'))
+     AND (user_whitelist IS NULL OR user_whitelist LIKE ?)`
+    )
+    .bind(code, `%${userEmail}%`)
+    .all();
+
+  if (!results || results.length === 0) {
+    throw new GatewayServiceError(400, 'Invalid, expired, or unauthorized coupon code');
+  }
+
+  const coupon = results[0] as {
+    used_count: number;
+    max_uses: number;
+    credits: number;
+  };
+  if (coupon.used_count >= coupon.max_uses) {
+    throw new GatewayServiceError(400, 'Coupon code has reached maximum uses');
+  }
+
+  // Check if user has already redeemed this coupon code
+  const { results: redemptionResults } = await db
+    .prepare(`SELECT * FROM coupon_redemptions WHERE user_id = ? AND coupon_code = ?`)
+    .bind(userId, code)
+    .all();
+
+  if (redemptionResults && redemptionResults.length > 0) {
+    throw new GatewayServiceError(400, 'You have already redeemed this coupon code');
+  }
+
+  // Start transaction
+  const tx = await db.batch([
+    // Update coupon used count
+    db.prepare('UPDATE coupon_codes SET used_count = used_count + 1 WHERE code = ?').bind(code),
+    // Add credits to user
+    db.prepare('UPDATE users SET balance = balance + ? WHERE id = ?').bind(coupon.credits, userId),
+    // Add credit history
+    db
+      .prepare(
+        `INSERT INTO credit_history (user_id, tx_credits, tx_type, tx_reason)
+       VALUES (?, ?, ?, ?)`
+      )
+      .bind(
+        userId,
+        coupon.credits,
+        TransactionTypeSchema.enum.debit,
+        TransactionReasonSchema.enum.coupon_code
+      ),
+    // Record the coupon redemption
+    db
+      .prepare(
+        `INSERT INTO coupon_redemptions (user_id, coupon_code)
+       VALUES (?, ?)`
+      )
+      .bind(userId, code),
+  ]);
+
+  // Check if all operations succeeded
+  for (const result of tx) {
+    if (!result.success) {
+      throw new GatewayServiceError(500, 'Failed to redeem coupon code');
+    }
+  }
+
+  const newBalance = await getUserBalance(env, userId);
+  return {
+    added_credits: coupon.credits,
+    total_credits: newBalance,
+  };
 }

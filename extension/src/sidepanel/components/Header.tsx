@@ -1,5 +1,5 @@
 import { AlignLeft, User as UserIcon } from 'lucide-react';
-import { db, UserInfo } from '~/utils/db';
+import { db, UserInfo } from '~/storages/indexdb';
 import { useState, useEffect } from 'react';
 import { Modal, Dropdown, Tooltip } from 'antd';
 import { ProviderGroup } from './ModelCascader';

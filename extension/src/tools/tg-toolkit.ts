@@ -1,6 +1,6 @@
 import { WebInteractionResult } from '~/types/tools';
-import { env } from '../utils/env';
-import { getApiKey } from '../services/cache';
+import { env } from '../configs/env';
+import { getApiKey } from '../storages/cache';
 import { showLoginModal } from '~/utils/global-event';
 
 export class TgToolkit {

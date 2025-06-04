@@ -2,25 +2,25 @@ import { OpenAPIRoute } from 'chanfana';
 import { Context } from 'hono';
 import {
   createUser,
-  getCreditLogs,
+  getCreditDaily,
   getUserBalance,
   getUserInfo,
   rotateApiKey,
   toggleApiKeyEnabled,
+  redeemCouponCode,
 } from '../d1/user';
 import {
-  TransactionReasonSchema,
-  TransactionTypeSchema,
   GetUserResponseSchema,
   RotateApiKeyResponseSchema,
   ToggleApiKeyRequestSchema,
-  GetCreditHistoryResponseSchema,
   RedeemCouponResponseSchema,
   ToggleApiKeyResponseSchema,
   RedeemCouponRequestSchema,
   GetUserBalanceResponseSchema,
+  GetCreditDailyResponseSchema,
+  GetCreditDailyRequestSchema,
+  ClearUserResponseSchema,
 } from '@the-agent/shared';
-import { GatewayServiceError } from '../types/service';
 
 export class GetUser extends OpenAPIRoute {
   schema = {
@@ -97,14 +97,17 @@ export class GetUserBalance extends OpenAPIRoute {
   }
 }
 
-export class GetCreditLogs extends OpenAPIRoute {
+export class GetCreditDaily extends OpenAPIRoute {
   schema = {
+    request: {
+      query: GetCreditDailyRequestSchema,
+    },
     responses: {
       '200': {
-        description: 'Credit logs',
+        description: 'Daily credit usage',
         content: {
           'application/json': {
-            schema: GetCreditHistoryResponseSchema,
+            schema: GetCreditDailyResponseSchema,
           },
         },
       },
@@ -115,19 +118,13 @@ export class GetCreditLogs extends OpenAPIRoute {
     const userId = c.get('userId');
     const query = c.req.query();
 
-    // Extract query parameters
     const options = {
       startDate: query.startDate,
       endDate: query.endDate,
-      model: query.model,
-      transType: query.transType,
-      transReason: query.transReason,
-      limit: query.limit ? parseInt(query.limit, 10) : undefined,
-      offset: query.offset ? parseInt(query.offset, 10) : undefined,
     };
 
-    const { history, total } = await getCreditLogs(c.env, userId, options);
-    return c.json({ history, total }, 200);
+    const data = await getCreditDaily(c.env, userId, options);
+    return c.json({ data }, 200);
   }
 }
 
@@ -211,57 +208,38 @@ export class RedeemCouponCode extends OpenAPIRoute {
     const userEmail = c.get('userEmail');
     const { code } = await c.req.json();
 
-    // Get coupon code info with user_whitelist check
-    const { results } = await c.env.DB.prepare(
-      `SELECT * FROM coupon_codes 
-       WHERE code = ? 
-       AND is_active = 1 
-       AND (expired_at IS NULL OR expired_at > datetime('now'))
-       AND (user_whitelist IS NULL OR user_whitelist LIKE ?)`
-    )
-      .bind(code, `%${userEmail}%`)
-      .all();
+    const result = await redeemCouponCode(c.env, userId, userEmail, code);
 
-    if (!results || results.length === 0) {
-      throw new GatewayServiceError(400, 'Invalid, expired, or unauthorized coupon code');
-    }
-
-    const coupon = results[0];
-    if (coupon.used_count >= coupon.max_uses) {
-      throw new GatewayServiceError(400, 'Coupon code has reached maximum uses');
-    }
-
-    // Start transaction
-    const tx = c.env.DB.batch([
-      // Update coupon used count
-      c.env.DB.prepare('UPDATE coupon_codes SET used_count = used_count + 1 WHERE code = ?').bind(
-        code
-      ),
-      // Add credits to user
-      c.env.DB.prepare('UPDATE users SET balance = balance + ? WHERE id = ?').bind(
-        coupon.credits,
-        userId
-      ),
-      // Add credit history
-      c.env.DB.prepare(
-        `INSERT INTO credit_history (user_id, tx_credits, tx_type, tx_reason)
-         VALUES (?, ?, ?, ?)`
-      ).bind(
-        userId,
-        coupon.credits,
-        TransactionTypeSchema.enum.debit,
-        TransactionReasonSchema.enum.coupon_code
-      ),
-    ]);
-    await tx;
-
-    const newBalance = await getUserBalance(c.env, userId);
     return c.json(
       {
-        added_credits: coupon.credits,
-        total_credits: newBalance,
+        added_credits: result.added_credits,
+        total_credits: result.total_credits,
       },
       200
     );
+  }
+}
+
+export class ClearUser extends OpenAPIRoute {
+  schema = {
+    responses: {
+      '200': {
+        description: 'User cleared successfully',
+        content: {
+          'application/json': {
+            schema: ClearUserResponseSchema,
+          },
+        },
+      },
+    },
+  };
+
+  async handle(c: Context) {
+    const userId = c.get('userId');
+    const env = c.env;
+    const doId = env.AgentContext.idFromName(userId);
+    const stub = env.AgentContext.get(doId);
+    await stub.reset();
+    return c.json({ success: true }, 200);
   }
 }

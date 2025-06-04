@@ -32,6 +32,15 @@ export class AgentContext extends DurableObject<Env> {
 
   deleteConversation(conversationId: number): void {
     this.sql.exec(`UPDATE agent_conversations SET status = 'deleted' WHERE id = ?`, conversationId);
+    const messages = this.sql.exec(
+      `SELECT id FROM agent_messages WHERE conversation_id = ?`,
+      conversationId
+    );
+    const ids: string[] = [];
+    for (const row of messages) {
+      ids.push(row.id as string);
+    }
+    this.cleanupVectorIndexEntries(ids);
   }
 
   listConversations(params: ListConversationsRequest): Conversation[] {
@@ -67,6 +76,52 @@ export class AgentContext extends DurableObject<Env> {
       });
     }
     return sortConversations(result);
+  }
+
+  async reset() {
+    try {
+      const messages = this.sql.exec('SELECT id FROM agent_messages');
+      const ids: string[] = [];
+      for (const row of messages) {
+        ids.push(row.id as string);
+      }
+      // Clean up vector index entries
+      await this.cleanupVectorIndexEntries(ids);
+
+      // Drop tables completely instead of deleting rows for better performance
+      // Drop messages first to respect foreign key constraints
+      this.sql.exec('DROP TABLE IF EXISTS agent_messages');
+      this.sql.exec('DROP TABLE IF EXISTS agent_conversations');
+
+      console.log('Dropped tables: agent_messages, agent_conversations');
+
+      // Recreate the tables
+      this.sql.exec(CREATE_CONVERSATION_TABLE_QUERY);
+      this.sql.exec(CREATE_MESSAGE_TABLE_QUERY);
+
+      console.log('Recreated tables: agent_messages, agent_conversations');
+    } catch (error) {
+      console.error('Error during reset:', error);
+      throw new GatewayServiceError(500, 'Failed to reset data');
+    }
+  }
+
+  /**
+   * Cleans up vector index entries for the current user
+   * Uses the Vectorize API to remove entries associated with this user ID
+   */
+  private async cleanupVectorIndexEntries(ids: string[]): Promise<void> {
+    if (!this.env.MYTSTA_E5_INDEX) {
+      return;
+    }
+    try {
+      // Delete these vectors by ID
+      await this.env.MYTSTA_E5_INDEX.deleteByIds(ids);
+      console.info(`Deleted ${ids.length} vector entries so far`);
+    } catch (error) {
+      // Log the error but don't fail the reset operation
+      console.error('Error cleaning up vector index entries:', error);
+    }
   }
 
   async saveMessage(

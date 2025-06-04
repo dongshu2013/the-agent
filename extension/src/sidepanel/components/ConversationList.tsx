@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Conversation } from '../../types/conversations';
-import { sortConversations } from '~/utils/chat';
+import { sortConversations } from '~/llms/chat';
 import { Modal, Tooltip } from 'antd';
 import newchatIcon from '~/assets/icons/newchat.svg';
 import { X, Trash2 } from 'lucide-react';

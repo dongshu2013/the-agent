@@ -1,7 +1,7 @@
 ### Variables
 @baseUrl = http://localhost:8787
 @apiKey = 355c41fa-49eb-48fc-8bce-4957d624e355
-@token = ""
+@token = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjZlODk1YzQ3YTA0YzVmNmRlMzExMmFmZjE2ODFhMzUwNzdkMWNjZDQiLCJ0eXAiOiJKV1QifQ.eyJuYW1lIjoidGFvIGtldmluIiwicGljdHVyZSI6Imh0dHBzOi8vbGgzLmdvb2dsZXVzZXJjb250ZW50LmNvbS9hL0FDZzhvY0lMWVk2SVpKaXdPcVFqOHhVdjBORVV4ODBPQ0hjaVlyNU9UdmFXRFp2b19CZWpQclE9czk2LWMiLCJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vbXlzdGEtYWkiLCJhdWQiOiJteXN0YS1haSIsImF1dGhfdGltZSI6MTc0ODkyMjgzMywidXNlcl9pZCI6ImtCM0F6eUR2MDVUT3FCQjUxTkIzNEhiZzFJaDEiLCJzdWIiOiJrQjNBenlEdjA1VE9xQkI1MU5CMzRIYmcxSWgxIiwiaWF0IjoxNzQ4OTMyNTA4LCJleHAiOjE3NDg5MzYxMDgsImVtYWlsIjoidGFva2V2aW4xMDI0QGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJmaXJlYmFzZSI6eyJpZGVudGl0aWVzIjp7Imdvb2dsZS5jb20iOlsiMTA4ODY0NTQwMDc5ODU4NTE2ODg0Il0sImVtYWlsIjpbInRhb2tldmluMTAyNEBnbWFpbC5jb20iXX0sInNpZ25faW5fcHJvdmlkZXIiOiJnb29nbGUuY29tIn19.h4LrbF6iq4otEESTACSpDeEx7ItyLUSt9BeYwglh4ZI6lk_HuUzvTdTF9KKs-oiMGEIPezKivEvA4PXOmlB9wkPy98U50vzgjHkYGwrJcUax0VXei1qdFtbFXjW1DoXkYFIAKguI-vMzy0ZYLRxyr1K3-YuKWhNNY7SrLCYRIJot8hbazFlZM6a-qFafPFvXn3dT7CfnhE9dlwIVRxucyeblIjh9RvZm3uW-YQ5htdfpZeXjc2lBHwVFGuNJqSiULiLLQWobdSTFvbveZWJcMtLhcRXcWD6X8v5cO6CRyXApGXh4eVJL0dwCYMkoTYZe4Ui7QycEgdSAFJUSmaxptA"
 
 ### Health Check
 GET {{baseUrl}}/health
@@ -48,8 +48,8 @@ GET {{baseUrl}}/v1/user/balance
 Content-Type: application/json
 x-api-key: {{apiKey}}
 
-### Get Credit History
-GET {{baseUrl}}/v1/user/credit_history
+### Get Credit Daily
+GET {{baseUrl}}/v1/user/credit_daily
 Content-Type: application/json
 x-api-key: {{apiKey}}
 
@@ -71,6 +71,11 @@ x-api-key: {{apiKey}}
 {
   "enabled": true
 }
+
+### Clear User
+POST {{baseUrl}}/v1/user/clear
+Content-Type: application/json
+Authorization: Bearer {{token}}
 
 ### Create Conversation
 POST {{baseUrl}}/v1/conversation/create
