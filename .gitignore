@@ -68,3 +68,6 @@ web/node_modules
 .wrangler
 .dev.vars
 wrangler.prod.toml
+
+# cursor
+.cursor/
