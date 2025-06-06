@@ -23,10 +23,11 @@ const envSchema = z.object({
   RATE_LIMIT_MAX: z.string().default('100'),
   MEM0_API_KEY: z.string(),
   MEM0_HOST: z.string(),
-  OPENAI_API_KEY: z.string(),
-  OPENAI_EMBEDDING_MODEL: z.string(),
   DEEPINFRA_API_KEY: z.string(),
-  DEEPINFRA_MODEL: z.string().default('sentence-transformers/all-mpnet-base-v2'),
+  DEEPINFRA_MODEL: z.string().default('intfloat/multilingual-e5-large'),
+  NEO4J_DATABASE: z.string().optional(),
+  DEEPINFRA_LLM_MODEL: z.string().default('mistralai/Mistral-7B-Instruct-v0.2'),
+  DEEPINFRA_EMBEDDING_MODEL: z.string().default('mistralai/Mistral-7B-Instruct-v0.2'),
 });
 
 const env = envSchema.parse(process.env);
@@ -37,23 +38,20 @@ export const config = {
   env: env.NODE_ENV,
   port: parseInt(env.PORT, 10),
   logLevel: env.LOG_LEVEL,
-  server: {
-    requestTimeout: parseInt(env.REQUEST_TIMEOUT, 10),
-    corsOrigin: env.CORS_ORIGIN,
-    rateLimit: {
-      windowMs: parseInt(env.RATE_LIMIT_WINDOW, 10),
-      max: parseInt(env.RATE_LIMIT_MAX, 10),
-    },
-  },
   mem0: {
-    // apiKey: env.MEM0_API_KEY,
-    // host: env.MEM0_HOST || 'https://api.mem0.ai',
     enableGraph: true,
     embedder: {
       provider: 'deepinfra',
       config: {
         apiKey: env.DEEPINFRA_API_KEY,
-        model: env.DEEPINFRA_MODEL,
+        model: env.DEEPINFRA_EMBEDDING_MODEL,
+      },
+    },
+    llm: {
+      provider: 'deepinfra',
+      config: {
+        apiKey: env.DEEPINFRA_API_KEY,
+        model: env.DEEPINFRA_LLM_MODEL,
       },
     },
     graphStore: {
@@ -62,12 +60,13 @@ export const config = {
         url: env.NEO4J_URI,
         username: env.NEO4J_USER,
         password: env.NEO4J_PASSWORD,
+        database: env.NEO4J_DATABASE,
       },
       llm: {
-        provider: 'openai',
+        provider: 'deepinfra',
         config: {
-          apiKey: env.OPENAI_API_KEY,
-          model: 'gpt-4-turbo-preview',
+          apiKey: env.DEEPINFRA_API_KEY,
+          model: env.DEEPINFRA_LLM_MODEL,
         },
       },
     },
