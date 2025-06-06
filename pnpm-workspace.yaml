@@ -4,3 +4,4 @@ packages:
   - 'extension'
   - 'api-cf'
   - 'landing'
+  - 'memory-server'

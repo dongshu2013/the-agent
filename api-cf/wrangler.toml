@@ -25,6 +25,7 @@ class_name = "TgContext"
 
 [vars]
 MYSTA_PUBLIC_DOMAIN = "https://my-staging.mysta.ai"
+MEMORY_SERVER_URL="http://localhost:3000"
 
 [[migrations]]
 tag = "<v1>"

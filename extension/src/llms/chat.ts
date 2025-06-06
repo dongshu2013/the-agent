@@ -58,11 +58,11 @@ export const saveMessageApi = async ({
     throw new APIError('Unauthorized', 401);
   }
 
-  const client = new APIClient({
+  const backendClient = new APIClient({
     baseUrl: env.BACKEND_URL,
     apiKey: apiKey.key,
   });
-  const response = await client.saveMessage({
+  const response = await backendClient.saveMessage({
     message,
     top_k_related,
     threshold: 0.7, // Default threshold

@@ -1,5 +1,5 @@
 import { WebInteractionResult } from '~/types/tools';
-import { parseHtml, minify } from './dom-minify';
+import { parseHtml, minify } from '../utils/dom-minify';
 
 interface DebuggerState {
   attached: boolean;

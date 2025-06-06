@@ -42,6 +42,7 @@
     "@heroicons/react": "^2.1.1",
     "@plasmohq/messaging": "^0.7.1",
     "@plasmohq/storage": "^1.15.0",
+    "@the-agent/shared": "workspace:*",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@types/turndown": "^5.0.5",
@@ -50,6 +51,7 @@
     "dexie-react-hooks": "^1.1.7",
     "dotenv": "^16.0.3",
     "lucide-react": "^0.509.0",
+    "mem0ai": "^2.1.27",
     "openai": "^4.93.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -57,9 +59,7 @@
     "remark-gfm": "3.0.1",
     "turndown": "^7.2.0",
     "uuid": "^9.0.1",
-    "webextension-polyfill": "^0.10.0",
-    "@the-agent/shared": "workspace:*",
-    "mem0ai": "^2.1.27"
+    "webextension-polyfill": "^0.10.0"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.248",

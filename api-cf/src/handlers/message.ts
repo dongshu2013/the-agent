@@ -7,8 +7,8 @@ import {
   SaveMessageResponseSchema,
 } from '@the-agent/shared';
 import { GatewayServiceError } from '../types/service';
-import { deductUserCredits, getUserBalance } from '../d1/user';
-import { EMBEDDING_MODEL } from '../utils/common';
+import { getUserBalance } from '../d1/user';
+import { deductUserCredits } from '../d1/user';
 
 export class SaveMessage extends OpenAPIRoute {
   schema = {
@@ -54,18 +54,17 @@ export class SaveMessage extends OpenAPIRoute {
     // Save the message
     const doId = c.env.AgentContext.idFromName(userId);
     const stub = c.env.AgentContext.get(doId);
-    const { topKMessageIds, totalCost } = await stub.saveMessage(
-      message,
-      body.top_k_related,
-      body.threshold
-    );
-    // Deduct credits from user
-    await deductUserCredits(c.env, userId, totalCost, EMBEDDING_MODEL);
 
-    // Return success response with CORS headers
+    const { totalCost, relatedMessages } = await stub.saveMessage(message);
+
+    if (totalCost > 0) {
+      await deductUserCredits(c.env, userId, totalCost, 'embedding');
+    }
+
     return c.json(
       {
-        top_k_message_ids: topKMessageIds.map((id: string) => Number(id)),
+        success: true,
+        related_messages: relatedMessages,
       },
       200
     );

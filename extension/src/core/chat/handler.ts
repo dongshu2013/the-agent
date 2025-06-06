@@ -29,24 +29,21 @@ export class ChatHandler {
     this.abortController = new AbortController();
     this.options.onStatusChange('waiting');
 
-    await db.saveMessages([userMessage]);
-
     try {
+      await db.saveMessages([userMessage]);
+
       const saveResponse = await saveMessageApi({
         message: userMessage,
         top_k_related: 3,
       });
 
-      const relatedMessages = await db.getRelatedMessagesWithContext(
-        saveResponse.top_k_message_ids || [],
-        this.options.currentConversationId
-      );
       const recentMessages = await db.getRecentMessages(this.options.currentConversationId, 10);
 
       let contextPrompt = '';
-      if (relatedMessages.length > 0) {
+
+      if (saveResponse.related_messages && saveResponse.related_messages.length > 0) {
         contextPrompt += 'Related messages:\n';
-        relatedMessages.forEach(msg => {
+        saveResponse.related_messages.forEach(msg => {
           contextPrompt += `${msg.role}: ${msg.content}\n`;
           if (msg.tool_calls) {
             msg.tool_calls.forEach((toolCall: ToolCall) => {
@@ -57,6 +54,7 @@ export class ChatHandler {
           }
         });
       }
+
       if (recentMessages.length > 0) {
         contextPrompt += 'Recent messages:\n';
         recentMessages.forEach(msg => {
@@ -130,7 +128,9 @@ export class ChatHandler {
           '\n\n' + 'We are hitting the limit of tool calls. Let me know if you want to continue.';
       }
       await this.updateMessage(message);
+
       await saveMessageApi({ message });
+
       inputMessages.push(message);
 
       if (!message.tool_calls || toolCallCount >= MAX_TOOL_CALLS) {
@@ -158,6 +158,7 @@ export class ChatHandler {
         await this.updateMessage(toolMessage);
         this.options.onStatusChange('waiting');
         await saveMessageApi({ message: toolMessage });
+
         inputMessages.push(toolMessage);
       }
     }

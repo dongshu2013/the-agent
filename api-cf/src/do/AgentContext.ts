@@ -1,8 +1,5 @@
 import { DurableObject } from 'cloudflare:workers';
-import OpenAI from 'openai';
 import { CREATE_CONVERSATION_TABLE_QUERY, CREATE_MESSAGE_TABLE_QUERY } from './sql';
-import { createEmbeddingClient, generateEmbedding } from './embedding';
-import { GatewayServiceError } from '../types/service';
 import {
   Message,
   Conversation,
@@ -11,10 +8,7 @@ import {
   ToolCall,
 } from '@the-agent/shared';
 
-const DEFAULT_VECTOR_NAMESPACE = 'default';
-
 export class AgentContext extends DurableObject<Env> {
-  openai: OpenAI;
   sql: SqlStorage;
 
   constructor(ctx: DurableObjectState, env: Env) {
@@ -22,7 +16,6 @@ export class AgentContext extends DurableObject<Env> {
     this.sql = ctx.storage.sql;
     this.sql.exec(CREATE_CONVERSATION_TABLE_QUERY);
     this.sql.exec(CREATE_MESSAGE_TABLE_QUERY);
-    this.openai = createEmbeddingClient(env);
   }
 
   createConversation(conversationId: number): number {
@@ -69,21 +62,13 @@ export class AgentContext extends DurableObject<Env> {
     return sortConversations(result);
   }
 
-  async saveMessage(
-    message: Message,
-    topK = 3,
-    threshold = 0.7
-  ): Promise<{
-    topKMessageIds: string[];
-    totalCost: number;
-  }> {
+  async saveMessage(message: Message) {
     const convExistsQuery = this.sql.exec(
       'SELECT 1 FROM agent_conversations WHERE id = ? LIMIT 1',
       message.conversation_id
     );
     const convExists = Array.from(convExistsQuery);
     if (convExists.length === 0) {
-      console.log('Got orphan conversation: ', message.conversation_id);
       this.createConversation(message.conversation_id);
     }
 
@@ -109,56 +94,33 @@ export class AgentContext extends DurableObject<Env> {
     const text = collectText(message);
     if (!text) {
       return {
-        topKMessageIds: [],
+        relatedMessages: [],
         totalCost: 0,
       };
     }
-    // Generate embedding
-    const embeddingResult = await generateEmbedding(this.openai, [text], topK);
-    if (embeddingResult === null) {
-      throw new GatewayServiceError(500, 'Failed to generate embedding');
-    }
-    const { embedding, totalCost } = embeddingResult;
 
-    const toInsert = [
-      {
-        id: message.id.toString(),
-        values: embedding,
-        metadata: {
-          user_id: this.ctx.id.toString(),
-          conversation_id: message.conversation_id,
-        },
-        namespace: DEFAULT_VECTOR_NAMESPACE,
-      },
-    ];
-    if (topK > 0) {
-      const [topKMessages, _] = await Promise.all([
-        this.env.MYTSTA_E5_INDEX.query(embedding, {
-          topK,
-          namespace: DEFAULT_VECTOR_NAMESPACE,
-          filter: {
-            user_id: { $eq: this.ctx.id.toString() },
-            conversation_id: { $eq: message.conversation_id },
-          },
-          returnValues: false,
-          returnMetadata: 'none',
-        }),
-        this.env.MYTSTA_E5_INDEX.insert(toInsert),
-      ]);
-      const topKMessageIds = topKMessages.matches
-        .filter(m => m.score && m.score >= threshold)
-        .map(m => m.id);
-      return {
-        topKMessageIds,
-        totalCost,
-      };
-    } else {
-      await this.env.MYTSTA_E5_INDEX.insert(toInsert);
-      return {
-        topKMessageIds: [],
-        totalCost,
-      };
-    }
+    // 2. add embedding and get totalCost
+    const addRes = await fetch(`${process.env.MEMORY_SERVER_URL}/memory/add`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [message],
+        options: { metadata: { id: message.id, conversationId: message.conversation_id } },
+      }),
+    });
+    const addResult = (await addRes.json()) as any;
+    const totalCost = addResult.totalCost || 0;
+
+    // 3. search related memory
+    const searchRes = await fetch(`${process.env.MEMORY_SERVER_URL}/memory/search`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: message.content }),
+    });
+    const searchResult = (await searchRes.json()) as any;
+    const relatedMessages = searchResult.results || [];
+
+    return { totalCost, relatedMessages };
   }
 }
 
