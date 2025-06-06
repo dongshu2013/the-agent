@@ -1,3 +1,5 @@
+// pnpm test -- --testPathPattern=dom-analyzer.test.ts
+
 import { segmentHtmlContent, PageSegment } from '../tools/dom-analyzer';
 import { JSDOM } from 'jsdom';
 
