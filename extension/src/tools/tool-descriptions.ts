@@ -623,6 +623,122 @@ If click fails:
       },
     },
     {
+      name: 'WebToolkit_analyzeDOMV2',
+      description:
+        'Analyze the DOM using enhanced AI-optimized DOM Analyzer V2. This is the PREFERRED method over listElements for AI agents as it provides a more efficient, structured representation of interactive elements with highlight indices. Returns semantic segments, highlighted interactive elements, and an AI-friendly string representation.',
+      parameters: {
+        type: 'object',
+        properties: {},
+      },
+      returns: {
+        type: 'object',
+        description: 'Comprehensive DOM analysis optimized for AI understanding',
+        properties: {
+          success: {
+            type: 'boolean',
+            description: 'Whether the analysis was successful',
+          },
+          data: {
+            type: 'object',
+            properties: {
+              analysis: {
+                type: 'object',
+                description: 'The complete DOM analysis result',
+                properties: {
+                  segments: {
+                    type: 'array',
+                    description: 'Semantic page segments (header, nav, main, footer, etc.)',
+                  },
+                  highlightedElements: {
+                    type: 'array',
+                    description: 'All interactive elements with highlight indices and metadata',
+                  },
+                  totalElements: {
+                    type: 'number',
+                    description: 'Total number of interactive elements found',
+                  },
+                  clickableElementsString: {
+                    type: 'string',
+                    description: 'AI-friendly string representation: [index]<type>text</type>',
+                  },
+                },
+              },
+              performance: {
+                type: 'object',
+                description: 'Performance metrics comparing to listElements',
+                properties: {
+                  analysisTime: {
+                    type: 'number',
+                    description: 'Time taken for analysis in milliseconds',
+                  },
+                  totalElements: {
+                    type: 'number',
+                    description: 'Number of interactive elements processed',
+                  },
+                  pageSize: {
+                    type: 'number',
+                    description: 'Original HTML page size in bytes',
+                  },
+                  stringLength: {
+                    type: 'number',
+                    description: 'Length of AI-friendly string representation',
+                  },
+                },
+              },
+            },
+          },
+          error: {
+            type: 'string',
+            description: 'Error message if analysis failed',
+          },
+        },
+      },
+    },
+    {
+      name: 'WebToolkit_clickElementByIndex',
+      description:
+        'Click an element using its highlight index from analyzeDOMV2. This is more reliable than using CSS selectors as it references elements by their assigned highlight index from the DOM analysis. Always use analyzeDOMV2 first to get the element indices.',
+      parameters: {
+        type: 'object',
+        properties: {
+          highlightIndex: {
+            type: 'number',
+            description:
+              'The highlight index of the element to click, obtained from analyzeDOMV2 results. Example: if the AI-friendly string shows "[5]<button>Submit</button>", use highlightIndex: 5',
+          },
+        },
+        required: ['highlightIndex'],
+      },
+      returns: {
+        type: 'object',
+        description: 'Result of the click operation',
+        properties: {
+          success: {
+            type: 'boolean',
+            description: 'Whether the element was successfully clicked',
+          },
+          data: {
+            type: 'object',
+            properties: {
+              clicked: {
+                type: 'boolean',
+                description: 'Whether the click was executed',
+              },
+              elementStillExists: {
+                type: 'boolean',
+                description: 'Whether the element still exists after clicking',
+              },
+            },
+          },
+          error: {
+            type: 'string',
+            description:
+              'Error message if click failed. Common errors: "Element with highlight index X not found", "Element is not visible", "Click failed"',
+          },
+        },
+      },
+    },
+    {
       name: 'WebToolkit_listElements',
       description:
         'List elements on the page that match the given selector. Use this tool first to find the correct selector before attempting to click or input. Returns detailed information about matching elements including their attributes, text content, and role.',

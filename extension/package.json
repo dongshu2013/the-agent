@@ -80,7 +80,7 @@
   },
   "jest": {
     "preset": "ts-jest",
-    "testEnvironment": "node",
+    "testEnvironment": "jsdom",
     "transform": {
       "^.+\\.tsx?$": [
         "ts-jest",
@@ -97,6 +97,9 @@
       "jsx",
       "json",
       "node"
+    ],
+    "setupFiles": [
+      "<rootDir>/src/tests/setup.ts"
     ]
   }
 }

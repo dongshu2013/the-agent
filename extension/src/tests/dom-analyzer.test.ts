@@ -1,15 +1,6 @@
 // pnpm test -- --testPathPattern=dom-analyzer.test.ts
 
 import { segmentHtmlContent, PageSegment } from '../tools/dom-analyzer';
-import { JSDOM } from 'jsdom';
-
-// 设置jsdom环境
-beforeAll(() => {
-  const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
-  global.document = dom.window.document;
-  global.DOMParser = dom.window.DOMParser;
-  global.Element = dom.window.Element;
-});
 
 // 辅助函数：格式化输出PageSegment对象
 function formatSegment(segment: PageSegment, index: number): string {

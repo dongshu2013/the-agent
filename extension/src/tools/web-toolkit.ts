@@ -1,6 +1,14 @@
 import { WebInteractionResult } from '~/types/tools';
 import { parseHtml, minify } from './dom-minify';
 
+interface DOMAnalysisResult {
+  segments: any[];
+  highlightedElements: any[];
+  elementMap: Map<number, any>;
+  totalElements: number;
+  clickableElementsString: string;
+}
+
 interface DebuggerState {
   attached: boolean;
   tabId: number | null;
@@ -54,6 +62,16 @@ interface ListElementsResult {
       dataTestId?: string;
     };
   }[];
+}
+
+interface AnalyzeDOMV2Result {
+  analysis: DOMAnalysisResult;
+  performance: {
+    analysisTime: number;
+    totalElements: number;
+    pageSize: number;
+    stringLength: number;
+  };
 }
 
 export interface InputElementParams {
@@ -789,6 +807,614 @@ export class WebToolkit {
 
       return result;
     } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  /**
+   * Analyze DOM using the enhanced DOM Analyzer V2 for AI agent understanding
+   * This method provides a more efficient and AI-friendly representation compared to listElements
+   */
+  async analyzeDOMV2(): Promise<WebInteractionResult<AnalyzeDOMV2Result>> {
+    try {
+      const startTime = Date.now();
+
+      const result = await this.executeInTab<{
+        analysis: DOMAnalysisResult;
+        pageSize: number;
+      }>(() => {
+        // DOM Analyzer V2 implementation - moved to content script context
+        class DOMAnalyzerV2 {
+          private doc: Document;
+          private elementMap = new Map<number, any>();
+          private highlightIndex = 0;
+
+          constructor(doc: Document) {
+            this.doc = doc;
+          }
+
+          public analyze() {
+            const segments = this.findSemanticSegments();
+            const highlightedElements = this.extractAndHighlightInteractiveElements();
+            const clickableElementsString = this.clickable_elements_to_string(highlightedElements);
+
+            return {
+              segments,
+              highlightedElements,
+              elementMap: this.elementMap,
+              totalElements: highlightedElements.length,
+              clickableElementsString,
+            };
+          }
+
+          private findSemanticSegments() {
+            const segments: any[] = [];
+            const semanticSelectors = [
+              'header',
+              'nav',
+              'main',
+              'section',
+              'article',
+              'aside',
+              'footer',
+            ];
+
+            semanticSelectors.forEach(tagName => {
+              const elements = this.doc.querySelectorAll(tagName);
+              elements.forEach(element => {
+                const segment = {
+                  type: tagName,
+                  selector: this.getCssSelector(element),
+                  element,
+                  highlightedElements: [],
+                  textContent: element.textContent?.trim() || undefined,
+                  depth: this.getElementDepth(element),
+                };
+                segments.push(segment);
+              });
+            });
+
+            if (segments.length === 0) {
+              const containers = this.findPotentialContainers();
+              containers.forEach(element => {
+                const segment = {
+                  type: 'container',
+                  selector: this.getCssSelector(element),
+                  element,
+                  highlightedElements: [],
+                  textContent: element.textContent?.trim() || undefined,
+                  depth: this.getElementDepth(element),
+                };
+                segments.push(segment);
+              });
+            }
+
+            return segments;
+          }
+
+          private extractAndHighlightInteractiveElements() {
+            const highlightedElements: any[] = [];
+            const interactiveSelectors = [
+              'button',
+              'input',
+              'select',
+              'textarea',
+              'a[href]',
+              'summary',
+              'details',
+              '[role="button"]',
+              '[role="link"]',
+              '[role="checkbox"]',
+              '[role="radio"]',
+              '[role="menuitem"]',
+              '[role="tab"]',
+              '[role="switch"]',
+              '[role="combobox"]',
+              '[role="slider"]',
+              '[role="searchbox"]',
+              '[role="textbox"]',
+              '[role="option"]',
+              '[tabindex]:not([tabindex="-1"])',
+              '[contenteditable="true"]',
+              '[onclick]',
+              '[onmousedown]',
+              '[onkeydown]',
+              '[onchange]',
+              '[oninput]',
+              '[style*="cursor: pointer"]',
+              '[style*="cursor:pointer"]',
+            ];
+
+            const elements = this.doc.querySelectorAll(interactiveSelectors.join(','));
+
+            elements.forEach(element => {
+              if (this.isElementHidden(element)) return;
+              if (highlightedElements.some(he => he.element === element)) return;
+
+              const highlightedElement = this.createHighlightedElement(element);
+              highlightedElements.push(highlightedElement);
+
+              this.elementMap.set(highlightedElement.highlight_index, {
+                element,
+                tagName: element.tagName.toLowerCase(),
+                attributes: this.getElementAttributes(element),
+                textContent: element.textContent?.trim() || undefined,
+                id: element.id || undefined,
+                selector: highlightedElement.selector,
+                xpath: highlightedElement.xpath,
+              });
+            });
+
+            return highlightedElements;
+          }
+
+          private createHighlightedElement(element: Element) {
+            const highlight_index = this.highlightIndex++;
+            const tagName = element.tagName.toLowerCase();
+            const attributes = this.getElementAttributes(element);
+
+            let interactionType = 'click';
+            if (tagName === 'input' || tagName === 'textarea') {
+              interactionType = 'input';
+            } else if (tagName === 'select') {
+              interactionType = 'select';
+            } else if (tagName === 'form' || attributes.type === 'submit') {
+              interactionType = 'submit';
+            } else if (tagName === 'a' && attributes.href) {
+              interactionType = 'navigate';
+            }
+
+            let type = tagName;
+            if (attributes.type) {
+              type = `${tagName}[type="${attributes.type}"]`;
+            } else if (attributes.role) {
+              type = `${tagName}[role="${attributes.role}"]`;
+            }
+
+            const associatedLabels = this.getAssociatedLabels(element);
+            const { formId, formName } = this.getFormContext(element);
+
+            return {
+              element,
+              highlight_index,
+              tagName,
+              type,
+              interactionType,
+              attributes,
+              textContent: element.textContent?.trim() || undefined,
+              id: element.id || undefined,
+              selector: this.getCssSelector(element),
+              xpath: this.getXPath(element),
+              isVisible: !this.isElementHidden(element),
+              value: this.getElementValue(element),
+              placeholder: attributes.placeholder,
+              ariaLabel: attributes['aria-label'],
+              role: attributes.role,
+              disabled: element.hasAttribute('disabled') || attributes['aria-disabled'] === 'true',
+              hidden: this.isElementHidden(element),
+              required: element.hasAttribute('required') || attributes['aria-required'] === 'true',
+              checked: this.isElementChecked(element),
+              selected: element.hasAttribute('selected') || attributes['aria-selected'] === 'true',
+              formId,
+              formName,
+              labelText: associatedLabels.length > 0 ? associatedLabels[0] : undefined,
+              associatedLabels: associatedLabels.length > 0 ? associatedLabels : undefined,
+            };
+          }
+
+          public clickable_elements_to_string(elements: any[]) {
+            const elementStrings: string[] = [];
+
+            elements.forEach(element => {
+              let displayText = '';
+              let attributeText = '';
+
+              if (element.ariaLabel) {
+                displayText = element.ariaLabel;
+              } else if (element.labelText) {
+                displayText = element.labelText;
+              } else if (element.placeholder) {
+                displayText = element.placeholder;
+              } else if (element.textContent) {
+                displayText = element.textContent.replace(/\s+/g, ' ').trim();
+              } else if (element.value) {
+                displayText = element.value;
+              } else if (element.attributes.title) {
+                displayText = element.attributes.title;
+              } else if (element.attributes.alt) {
+                displayText = element.attributes.alt;
+              }
+
+              if (displayText.length > 50) {
+                displayText = displayText.substring(0, 47) + '...';
+              }
+
+              const importantAttrs: string[] = [];
+              if (element.ariaLabel) {
+                importantAttrs.push(`aria-label="${element.ariaLabel}"`);
+              }
+              if (element.placeholder && element.tagName === 'input') {
+                importantAttrs.push(`placeholder="${element.placeholder}"`);
+              }
+              if (element.attributes.type && element.tagName === 'input') {
+                importantAttrs.push(`type="${element.attributes.type}"`);
+              }
+              if (element.disabled) {
+                importantAttrs.push('disabled');
+              }
+              if (element.required) {
+                importantAttrs.push('required');
+              }
+              if (element.checked) {
+                importantAttrs.push('checked');
+              }
+              if (element.attributes.href) {
+                const href =
+                  element.attributes.href.length > 30
+                    ? element.attributes.href.substring(0, 27) + '...'
+                    : element.attributes.href;
+                importantAttrs.push(`href="${href}"`);
+              }
+
+              if (importantAttrs.length > 0) {
+                attributeText = ' ' + importantAttrs.join(' ');
+              }
+
+              const elementString = `[${element.highlight_index}]<${element.tagName}${attributeText}>${displayText}</${element.tagName}>`;
+              elementStrings.push(elementString);
+            });
+
+            return elementStrings.join('\n');
+          }
+
+          private isElementHidden(element: Element) {
+            const style = element.getAttribute('style');
+            return (
+              element.hasAttribute('hidden') ||
+              (element.hasAttribute('aria-hidden') &&
+                element.getAttribute('aria-hidden') === 'true') ||
+              (style != null &&
+                (style.includes('display: none') ||
+                  style.includes('display:none') ||
+                  style.includes('visibility: hidden') ||
+                  style.includes('visibility:hidden')))
+            );
+          }
+
+          private getElementAttributes(element: Element) {
+            const attributes: Record<string, string> = {};
+            for (let i = 0; i < element.attributes.length; i++) {
+              const attr = element.attributes[i];
+              attributes[attr.name] = attr.value;
+            }
+            return attributes;
+          }
+
+          private getElementValue(element: Element) {
+            if ('value' in element) {
+              return (element as HTMLInputElement).value || undefined;
+            }
+            return element.getAttribute('value') || undefined;
+          }
+
+          private isElementChecked(element: Element) {
+            if ('checked' in element) {
+              return (element as HTMLInputElement).checked;
+            }
+            return element.getAttribute('aria-checked') === 'true';
+          }
+
+          private getAssociatedLabels(element: Element) {
+            const labels: string[] = [];
+
+            if (['input', 'select', 'textarea'].includes(element.tagName.toLowerCase())) {
+              if (element.id) {
+                const labelElements = document.querySelectorAll(`label[for="${element.id}"]`);
+                labelElements.forEach(label => {
+                  if (label.textContent) {
+                    labels.push(label.textContent.trim());
+                  }
+                });
+              }
+
+              let parent = element.parentElement;
+              while (parent && parent !== document.body) {
+                if (parent.tagName === 'LABEL' && parent.textContent) {
+                  labels.push(parent.textContent.trim());
+                  break;
+                }
+                parent = parent.parentElement;
+              }
+            }
+
+            return labels;
+          }
+
+          private getFormContext(element: Element) {
+            let formId: string | undefined;
+            let formName: string | undefined;
+
+            if ('form' in element) {
+              const form = (element as HTMLInputElement).form;
+              if (form) {
+                formId = form.id || undefined;
+                formName = form.getAttribute('name') || undefined;
+              }
+            } else {
+              let parent = element.parentElement;
+              while (parent && parent !== document.body) {
+                if (parent.tagName === 'FORM') {
+                  formId = parent.id || undefined;
+                  formName = parent.getAttribute('name') || undefined;
+                  break;
+                }
+                parent = parent.parentElement;
+              }
+            }
+
+            return { formId, formName };
+          }
+
+          private findPotentialContainers() {
+            const containers: Element[] = [];
+            const divs = document.querySelectorAll('div');
+
+            Array.from(divs).forEach(div => {
+              if (div.children.length < 2) return;
+              if (containers.some(container => container.contains(div) && container !== div))
+                return;
+
+              const className = div.className.toLowerCase();
+              const isContainer =
+                className.includes('container') ||
+                className.includes('section') ||
+                className.includes('panel') ||
+                className.includes('wrapper') ||
+                className.includes('content') ||
+                className.includes('layout') ||
+                div.children.length >= 3;
+
+              if (isContainer) {
+                containers.push(div);
+              }
+            });
+
+            if (containers.length === 0) {
+              const bodyChildren = Array.from(document.body.children);
+              if (bodyChildren.length > 0) {
+                containers.push(document.body);
+              }
+            }
+
+            return containers;
+          }
+
+          private getCssSelector(element: Element): string {
+            if (element.id) {
+              return `#${element.id}`;
+            }
+
+            let selector = element.tagName.toLowerCase();
+
+            if (element.classList.length > 0) {
+              selector += `.${Array.from(element.classList).join('.')}`;
+            }
+
+            if (element.parentElement) {
+              const siblings = Array.from(element.parentElement.children);
+              const sameTagSiblings = siblings.filter(el => el.tagName === element.tagName);
+              if (sameTagSiblings.length > 1) {
+                const index = sameTagSiblings.indexOf(element as Element) + 1;
+                selector += `:nth-of-type(${index})`;
+              }
+            }
+
+            if (
+              element.parentElement &&
+              element.parentElement.tagName !== 'HTML' &&
+              element.parentElement.tagName !== 'BODY'
+            ) {
+              return `${this.getCssSelector(element.parentElement)} > ${selector}`;
+            }
+
+            return selector;
+          }
+
+          private getXPath(element: Element): string {
+            if (element.id) {
+              return `//*[@id="${element.id}"]`;
+            }
+
+            if (element.tagName.toLowerCase() === 'body') {
+              return '/html/body';
+            }
+
+            if (!element.parentElement) {
+              return '';
+            }
+
+            const siblings = Array.from(element.parentElement.children);
+            const tagName = element.tagName.toLowerCase();
+            const sameTagSiblings = siblings.filter(el => el.tagName.toLowerCase() === tagName);
+            const index = sameTagSiblings.indexOf(element as Element) + 1;
+
+            const parentPath = this.getXPath(element.parentElement);
+
+            if (sameTagSiblings.length === 1) {
+              return `${parentPath}/${tagName}`;
+            }
+
+            return `${parentPath}/${tagName}[${index}]`;
+          }
+
+          private getElementDepth(element: Element) {
+            let depth = 0;
+            let parent = element.parentElement;
+
+            while (parent) {
+              depth++;
+              parent = parent.parentElement;
+            }
+
+            return depth;
+          }
+        }
+
+        // Perform DOM analysis in content script context
+        const analyzer = new DOMAnalyzerV2(document);
+        const analysis = analyzer.analyze();
+        const pageSize = document.documentElement.outerHTML.length;
+
+        return {
+          analysis,
+          pageSize,
+        };
+      });
+
+      if (!result || !result.analysis) {
+        throw new Error('No DOM analysis result returned from page');
+      }
+
+      const analysisTime = Date.now() - startTime;
+
+      // Performance metrics
+      const performance = {
+        analysisTime,
+        totalElements: result.analysis.totalElements,
+        pageSize: result.pageSize,
+        stringLength: result.analysis.clickableElementsString.length,
+      };
+
+      console.log('🚀 DOM Analysis V2 Performance:', {
+        analysisTime: `${analysisTime}ms`,
+        totalElements: result.analysis.totalElements,
+        pageSize: `${Math.round(result.pageSize / 1024)}KB`,
+        stringLength: `${result.analysis.clickableElementsString.length} chars`,
+        compressionRatio: `${Math.round((result.analysis.clickableElementsString.length / result.pageSize) * 100)}%`,
+      });
+
+      return {
+        success: true,
+        data: {
+          analysis: result.analysis,
+          performance,
+        },
+      };
+    } catch (error) {
+      console.error('Error in analyzeDOMV2:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  /**
+   * Click element by highlight index from DOM analysis
+   * This method works with the highlight indices from analyzeDOMV2
+   */
+  async clickElementByIndex(
+    highlightIndex: number
+  ): Promise<WebInteractionResult<ClickElementResult>> {
+    try {
+      // Execute click in the content script context where we can access stored element map
+      const result = await this.executeInTab<WebInteractionResult<ClickElementResult>>(
+        (indexStr: string) => {
+          const index = parseInt(indexStr, 10);
+          // Find element by highlight index in the current page
+          const findElementByIndex = (highlightIndex: number): Element | null => {
+            const interactiveSelectors = [
+              'button',
+              'input',
+              'select',
+              'textarea',
+              'a[href]',
+              'summary',
+              'details',
+              '[role="button"]',
+              '[role="link"]',
+              '[role="checkbox"]',
+              '[role="radio"]',
+              '[role="menuitem"]',
+              '[role="tab"]',
+              '[role="switch"]',
+              '[role="combobox"]',
+              '[role="slider"]',
+              '[role="searchbox"]',
+              '[role="textbox"]',
+              '[role="option"]',
+              '[tabindex]:not([tabindex="-1"])',
+              '[contenteditable="true"]',
+              '[onclick]',
+              '[onmousedown]',
+              '[onkeydown]',
+              '[onchange]',
+              '[oninput]',
+              '[style*="cursor: pointer"]',
+              '[style*="cursor:pointer"]',
+            ];
+
+            const elements = document.querySelectorAll(interactiveSelectors.join(','));
+            let currentIndex = 0;
+
+            for (const element of elements) {
+              const style = element.getAttribute('style');
+              const isHidden =
+                element.hasAttribute('hidden') ||
+                (element.hasAttribute('aria-hidden') &&
+                  element.getAttribute('aria-hidden') === 'true') ||
+                (style != null &&
+                  (style.includes('display: none') ||
+                    style.includes('display:none') ||
+                    style.includes('visibility: hidden') ||
+                    style.includes('visibility:hidden')));
+
+              if (!isHidden) {
+                if (currentIndex === highlightIndex) {
+                  return element;
+                }
+                currentIndex++;
+              }
+            }
+            return null;
+          };
+
+          const element = findElementByIndex(index);
+          if (!element) {
+            return {
+              success: false,
+              error: `Element with highlight index ${index} not found`,
+            };
+          }
+
+          // Perform the click
+          try {
+            (element as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => (element as HTMLElement).click(), 50);
+
+            return {
+              success: true,
+              data: {
+                clicked: true,
+                elementStillExists: document.contains(element),
+              },
+            };
+          } catch (clickError) {
+            return {
+              success: false,
+              error: `Failed to click element: ${clickError instanceof Error ? clickError.message : String(clickError)}`,
+            };
+          }
+        },
+        [highlightIndex.toString()]
+      );
+
+      return result;
+    } catch (error) {
+      console.error('Error in clickElementByIndex:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),

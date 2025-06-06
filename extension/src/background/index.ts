@@ -47,6 +47,7 @@ type WebToolKitArguments =
       selector: string;
     }
   | { selectors: string }
+  | { highlightIndex: number }
   | InputElementParams;
 
 type GetDialogsArguments = {
@@ -127,6 +128,11 @@ chrome.runtime.onMessage.addListener(
               case 'clickElement':
                 result = await webToolkit.clickElement((args as { selector: string }).selector);
                 break;
+              case 'clickElementByIndex':
+                result = await webToolkit.clickElementByIndex(
+                  (args as { highlightIndex: number }).highlightIndex
+                );
+                break;
               case 'scrollToElement':
                 result = await webToolkit.scrollToElement((args as { selector: string }).selector);
                 break;
@@ -135,6 +141,9 @@ chrome.runtime.onMessage.addListener(
                 break;
               case 'listElements':
                 result = await webToolkit.listElements((args as { selectors: string }).selectors);
+                break;
+              case 'analyzeDOMV2':
+                result = await webToolkit.analyzeDOMV2();
                 break;
               default:
                 throw new Error(`Unknown WebToolkit operation: ${toolName}`);

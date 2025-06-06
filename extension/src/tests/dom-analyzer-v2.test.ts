@@ -6,15 +6,6 @@ import {
   getClickableElementsString,
   getElementByIndex,
 } from '../tools/dom-analyzer-v2';
-import { JSDOM } from 'jsdom';
-
-// 设置jsdom环境
-beforeAll(() => {
-  const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>');
-  global.document = dom.window.document;
-  global.DOMParser = dom.window.DOMParser;
-  global.Element = dom.window.Element;
-});
 
 describe('DOMAnalyzerV2', () => {
   const sampleHTML = `
