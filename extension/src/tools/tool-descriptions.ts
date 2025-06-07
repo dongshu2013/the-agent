@@ -622,89 +622,89 @@ If click fails:
         },
       },
     },
-    {
-      name: 'WebToolkit_listElements',
-      description:
-        'List elements on the page that match the given selector. Use this tool first to find the correct selector before attempting to click or input. Returns detailed information about matching elements including their attributes, text content, and role.',
-      parameters: {
-        type: 'object',
-        properties: {
-          selectors: {
-            type: 'string',
-            description: `CSS selector to find elements. Common selector patterns:
-1. Basic selectors:
-   - tag: 'button', 'input', 'a'
-   - class: '.classname'
-   - id: '#elementId'
-   - attribute: '[attr="value"]'
+    //     {
+    //       name: 'WebToolkit_listElements',
+    //       description:
+    //         'List elements on the page that match the given selector. Use this tool first to find the correct selector before attempting to click or input. Returns detailed information about matching elements including their attributes, text content, and role.',
+    //       parameters: {
+    //         type: 'object',
+    //         properties: {
+    //           selectors: {
+    //             type: 'string',
+    //             description: `CSS selector to find elements. Common selector patterns:
+    // 1. Basic selectors:
+    //    - tag: 'button', 'input', 'a'
+    //    - class: '.classname'
+    //    - id: '#elementId'
+    //    - attribute: '[attr="value"]'
 
-2. Attribute selectors:
-   - '[role="button"]' - elements with role attribute
-   - '[aria-label="Submit"]' - elements with aria-label
-   - '[data-testid="submitButton"]' - elements with data-testid
-   - '[type="submit"]' - input/button type
+    // 2. Attribute selectors:
+    //    - '[role="button"]' - elements with role attribute
+    //    - '[aria-label="Submit"]' - elements with aria-label
+    //    - '[data-testid="submitButton"]' - elements with data-testid
+    //    - '[type="submit"]' - input/button type
 
-3. Combining selectors:
-   - 'button.primary' - button with class
-   - 'button[type="submit"]' - button with type
-   - '.container button' - button inside container
+    // 3. Combining selectors:
+    //    - 'button.primary' - button with class
+    //    - 'button[type="submit"]' - button with type
+    //    - '.container button' - button inside container
 
-4. Multiple elements:
-   - 'button, [role="button"]' - buttons and button-like elements
-   - 'input[type="text"], textarea' - text inputs
+    // 4. Multiple elements:
+    //    - 'button, [role="button"]' - buttons and button-like elements
+    //    - 'input[type="text"], textarea' - text inputs
 
-Always use listElements first to find the correct selector before clicking or inputting.`,
-          },
-        },
-      },
-      returns: {
-        type: 'object',
-        description: 'List of matching elements with their properties',
-        properties: {
-          success: {
-            type: 'boolean',
-            description: 'Whether elements were found',
-          },
-          data: {
-            type: 'object',
-            properties: {
-              elements: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    selector: {
-                      type: 'string',
-                      description: 'Unique selector for this element',
-                    },
-                    text: {
-                      type: 'string',
-                      description: 'Text content of the element',
-                    },
-                    type: {
-                      type: 'string',
-                      description: 'Element type (button, input, link, etc)',
-                    },
-                    attributes: {
-                      type: 'object',
-                      description: 'Element attributes (role, aria-label, data-testid, etc)',
-                    },
-                    isVisible: {
-                      type: 'boolean',
-                      description: 'Whether the element is visible',
-                    },
-                    isInteractive: {
-                      type: 'boolean',
-                      description: 'Whether the element can be interacted with',
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
+    // Always use listElements first to find the correct selector before clicking or inputting.`,
+    //           },
+    //         },
+    //       },
+    //       returns: {
+    //         type: 'object',
+    //         description: 'List of matching elements with their properties',
+    //         properties: {
+    //           success: {
+    //             type: 'boolean',
+    //             description: 'Whether elements were found',
+    //           },
+    //           data: {
+    //             type: 'object',
+    //             properties: {
+    //               elements: {
+    //                 type: 'array',
+    //                 items: {
+    //                   type: 'object',
+    //                   properties: {
+    //                     selector: {
+    //                       type: 'string',
+    //                       description: 'Unique selector for this element',
+    //                     },
+    //                     text: {
+    //                       type: 'string',
+    //                       description: 'Text content of the element',
+    //                     },
+    //                     type: {
+    //                       type: 'string',
+    //                       description: 'Element type (button, input, link, etc)',
+    //                     },
+    //                     attributes: {
+    //                       type: 'object',
+    //                       description: 'Element attributes (role, aria-label, data-testid, etc)',
+    //                     },
+    //                     isVisible: {
+    //                       type: 'boolean',
+    //                       description: 'Whether the element is visible',
+    //                     },
+    //                     isInteractive: {
+    //                       type: 'boolean',
+    //                       description: 'Whether the element can be interacted with',
+    //                     },
+    //                   },
+    //                 },
+    //               },
+    //             },
+    //           },
+    //         },
+    //       },
+    //     },
     {
       name: 'WebToolkit_getPageText',
       description: 'Get the text content of the current page, format as markdown',
@@ -719,6 +719,181 @@ Always use listElements first to find the correct selector before clicking or in
           text: { type: 'string' },
           success: { type: 'boolean' },
           error: { type: 'string' },
+        },
+      },
+    },
+    {
+      name: 'WebToolkit_analyzePage',
+      description:
+        'Analyze the current page to extract actionable parts for AI agent understanding. This provides semantic segments and interactive elements with highlight indices, allowing for better page understanding without sending full HTML. This is the PREFERRED method over listElements for getting page structure.',
+      parameters: {
+        type: 'object',
+        properties: {},
+      },
+      returns: {
+        type: 'object',
+        description: 'Analysis result with semantic segments and interactive elements',
+        properties: {
+          success: {
+            type: 'boolean',
+            description: 'Whether the analysis was successful',
+          },
+          error: {
+            type: 'string',
+            description: 'Error message if analysis failed',
+          },
+          data: {
+            type: 'object',
+            description: 'Analysis results',
+            properties: {
+              segments: {
+                type: 'array',
+                description: 'Semantic page segments (header, nav, main, etc.)',
+                items: {
+                  type: 'object',
+                  properties: {
+                    type: {
+                      type: 'string',
+                      description:
+                        'Segment type: header, nav, main, section, article, aside, footer, container',
+                    },
+                    selector: {
+                      type: 'string',
+                      description: 'CSS selector for the segment',
+                    },
+                    textContent: {
+                      type: 'string',
+                      description: 'Text content of the segment',
+                    },
+                    depth: {
+                      type: 'number',
+                      description: 'Depth level in DOM tree',
+                    },
+                  },
+                },
+              },
+              highlightedElements: {
+                type: 'array',
+                description: 'Interactive elements with highlight indices for clickElementByIndex',
+                items: {
+                  type: 'object',
+                  properties: {
+                    highlight_index: {
+                      type: 'number',
+                      description: 'Unique index for this element (use with clickElementByIndex)',
+                    },
+                    tagName: {
+                      type: 'string',
+                      description: 'HTML tag name',
+                    },
+                    type: {
+                      type: 'string',
+                      description: 'Element type with attributes',
+                    },
+                    interactionType: {
+                      type: 'string',
+                      description: 'Type of interaction: click, input, select, submit, navigate',
+                    },
+                    selector: {
+                      type: 'string',
+                      description: 'CSS selector for the element',
+                    },
+                    textContent: {
+                      type: 'string',
+                      description: 'Visible text content',
+                    },
+                    ariaLabel: {
+                      type: 'string',
+                      description: 'ARIA label for accessibility',
+                    },
+                    disabled: {
+                      type: 'boolean',
+                      description: 'Whether element is disabled',
+                    },
+                    attributes: {
+                      type: 'object',
+                      description: 'Element attributes',
+                    },
+                  },
+                },
+              },
+              totalElements: {
+                type: 'number',
+                description: 'Total number of interactive elements found',
+              },
+              clickableElementsString: {
+                type: 'string',
+                description:
+                  'AI-friendly string representation of all interactive elements: [index]<tag>text</tag>',
+              },
+            },
+          },
+        },
+      },
+    },
+    {
+      name: 'WebToolkit_clickElementByIndex',
+      description:
+        'Click an element using its highlight index from analyzePage results. This is more reliable than using CSS selectors as it uses the exact element mapping from the page analysis. Always run analyzePage first to get the highlight indices.',
+      parameters: {
+        type: 'object',
+        properties: {
+          highlightIndex: {
+            type: 'number',
+            description:
+              'The highlight index of the element to click (obtained from analyzePage results)',
+          },
+        },
+        required: ['highlightIndex'],
+      },
+      returns: {
+        type: 'object',
+        description: 'Result of the click operation',
+        properties: {
+          success: {
+            type: 'boolean',
+            description: 'Whether the click was successful',
+          },
+          error: {
+            type: 'string',
+            description: 'Error message if click failed',
+          },
+          data: {
+            type: 'object',
+            description: 'Click operation details',
+            properties: {
+              clicked: {
+                type: 'boolean',
+                description: 'Whether the click action was performed',
+              },
+              elementFound: {
+                type: 'boolean',
+                description: 'Whether the element was found in analysis data',
+              },
+              elementStillExists: {
+                type: 'boolean',
+                description: 'Whether the element still exists on the page',
+              },
+              elementInfo: {
+                type: 'object',
+                description: 'Information about the clicked element',
+                properties: {
+                  tagName: {
+                    type: 'string',
+                    description: 'Tag name of the element',
+                  },
+                  textContent: {
+                    type: 'string',
+                    description: 'Text content of the element',
+                  },
+                  attributes: {
+                    type: 'object',
+                    description: 'Element attributes',
+                  },
+                },
+              },
+            },
+          },
         },
       },
     },
