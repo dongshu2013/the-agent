@@ -56,6 +56,51 @@ interface ListElementsResult {
   }[];
 }
 
+interface AnalyzePageResult {
+  segments: Array<{
+    type: 'header' | 'nav' | 'main' | 'section' | 'article' | 'aside' | 'footer' | 'container';
+    selector: string;
+    textContent?: string;
+    depth: number;
+  }>;
+  highlightedElements: Array<{
+    highlight_index: number;
+    tagName: string;
+    type: string;
+    interactionType: 'click' | 'input' | 'select' | 'submit' | 'navigate';
+    selector: string;
+    xpath: string;
+    textContent?: string;
+    value?: string;
+    placeholder?: string;
+    ariaLabel?: string;
+    role?: string;
+    disabled?: boolean;
+    hidden?: boolean;
+    required?: boolean;
+    checked?: boolean;
+    selected?: boolean;
+    formId?: string;
+    formName?: string;
+    labelText?: string;
+    associatedLabels?: string[];
+    attributes: Record<string, string>;
+  }>;
+  totalElements: number;
+  clickableElementsString: string;
+}
+
+interface ClickElementByIndexResult {
+  clicked: boolean;
+  elementFound: boolean;
+  elementStillExists: boolean;
+  elementInfo?: {
+    tagName: string;
+    textContent?: string;
+    attributes: Record<string, string>;
+  };
+}
+
 export interface InputElementParams {
   selector: string;
   value: string;
@@ -792,6 +837,602 @@ export class WebToolkit {
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
+  async analyzePage(): Promise<WebInteractionResult<AnalyzePageResult>> {
+    try {
+      const result = await this.executeInTab<WebInteractionResult<AnalyzePageResult>>(() => {
+        // DOM Analyzer V2 implementation - embedded to avoid DOMParser issues in background
+        interface DOMElementNode {
+          element: Element;
+          tagName: string;
+          attributes: Record<string, string>;
+          textContent?: string;
+          id?: string;
+          selector: string;
+          xpath: string;
+        }
+
+        interface HighlightedElement extends DOMElementNode {
+          highlight_index: number;
+          type: string;
+          interactionType: 'click' | 'input' | 'select' | 'submit' | 'navigate';
+          value?: string;
+          placeholder?: string;
+          ariaLabel?: string;
+          role?: string;
+          disabled?: boolean;
+          hidden?: boolean;
+          required?: boolean;
+          checked?: boolean;
+          selected?: boolean;
+          formId?: string;
+          formName?: string;
+          labelText?: string;
+          associatedLabels?: string[];
+        }
+
+        interface SemanticSegment {
+          type:
+            | 'header'
+            | 'nav'
+            | 'main'
+            | 'section'
+            | 'article'
+            | 'aside'
+            | 'footer'
+            | 'container';
+          selector: string;
+          element: Element;
+          textContent?: string;
+          depth: number;
+        }
+
+        class DOMAnalyzer {
+          private doc: Document;
+          private elementMap = new Map<number, DOMElementNode>();
+          private highlightIndex = 0;
+
+          constructor() {
+            this.doc = document;
+          }
+
+          public analyze(): {
+            segments: SemanticSegment[];
+            highlightedElements: HighlightedElement[];
+            elementMap: Map<number, DOMElementNode>;
+            totalElements: number;
+            clickableElementsString: string;
+          } {
+            const segments = this.findSemanticSegments();
+            const highlightedElements = this.extractAndHighlightInteractiveElements();
+            const clickableElementsString = this.clickable_elements_to_string(highlightedElements);
+
+            return {
+              segments,
+              highlightedElements,
+              elementMap: this.elementMap,
+              totalElements: highlightedElements.length,
+              clickableElementsString,
+            };
+          }
+
+          private findSemanticSegments(): SemanticSegment[] {
+            const segments: SemanticSegment[] = [];
+            const semanticSelectors = [
+              'header',
+              'nav',
+              'main',
+              'section',
+              'article',
+              'aside',
+              'footer',
+            ];
+
+            semanticSelectors.forEach(tagName => {
+              const elements = this.doc.querySelectorAll(tagName);
+              elements.forEach(element => {
+                const segment: SemanticSegment = {
+                  type: tagName as SemanticSegment['type'],
+                  selector: this.getCssSelector(element),
+                  element,
+                  textContent: element.textContent?.trim() || undefined,
+                  depth: this.getElementDepth(element),
+                };
+                segments.push(segment);
+              });
+            });
+
+            if (segments.length === 0) {
+              const containers = this.findPotentialContainers();
+              containers.forEach(element => {
+                const segment: SemanticSegment = {
+                  type: 'container',
+                  selector: this.getCssSelector(element),
+                  element,
+                  textContent: element.textContent?.trim() || undefined,
+                  depth: this.getElementDepth(element),
+                };
+                segments.push(segment);
+              });
+            }
+
+            return segments;
+          }
+
+          private extractAndHighlightInteractiveElements(): HighlightedElement[] {
+            const highlightedElements: HighlightedElement[] = [];
+            const interactiveSelectors = [
+              'button',
+              'input',
+              'select',
+              'textarea',
+              'a[href]',
+              'summary',
+              'details',
+              '[role="button"]',
+              '[role="link"]',
+              '[role="checkbox"]',
+              '[role="radio"]',
+              '[role="menuitem"]',
+              '[role="tab"]',
+              '[role="switch"]',
+              '[role="combobox"]',
+              '[role="slider"]',
+              '[role="searchbox"]',
+              '[role="textbox"]',
+              '[role="option"]',
+              '[tabindex]:not([tabindex="-1"])',
+              '[contenteditable="true"]',
+              '[onclick]',
+              '[onmousedown]',
+              '[onkeydown]',
+              '[onchange]',
+              '[oninput]',
+              '[style*="cursor: pointer"]',
+              '[style*="cursor:pointer"]',
+            ];
+
+            const elements = this.doc.querySelectorAll(interactiveSelectors.join(','));
+
+            elements.forEach(element => {
+              if (this.isElementHidden(element)) return;
+              if (highlightedElements.some(he => he.element === element)) return;
+
+              const highlightedElement = this.createHighlightedElement(element);
+              highlightedElements.push(highlightedElement);
+
+              this.elementMap.set(highlightedElement.highlight_index, {
+                element,
+                tagName: element.tagName.toLowerCase(),
+                attributes: this.getElementAttributes(element),
+                textContent: element.textContent?.trim() || undefined,
+                id: element.id || undefined,
+                selector: highlightedElement.selector,
+                xpath: highlightedElement.xpath,
+              });
+            });
+
+            return highlightedElements;
+          }
+
+          private createHighlightedElement(element: Element): HighlightedElement {
+            const highlight_index = this.highlightIndex++;
+            const tagName = element.tagName.toLowerCase();
+            const attributes = this.getElementAttributes(element);
+
+            let interactionType: HighlightedElement['interactionType'] = 'click';
+            if (tagName === 'input' || tagName === 'textarea') {
+              interactionType = 'input';
+            } else if (tagName === 'select') {
+              interactionType = 'select';
+            } else if (tagName === 'form' || attributes.type === 'submit') {
+              interactionType = 'submit';
+            } else if (tagName === 'a' && attributes.href) {
+              interactionType = 'navigate';
+            }
+
+            let type = tagName;
+            if (attributes.type) {
+              type = `${tagName}[type="${attributes.type}"]`;
+            } else if (attributes.role) {
+              type = `${tagName}[role="${attributes.role}"]`;
+            }
+
+            const associatedLabels = this.getAssociatedLabels(element);
+            const { formId, formName } = this.getFormContext(element);
+
+            return {
+              element,
+              highlight_index,
+              tagName,
+              type,
+              interactionType,
+              attributes,
+              textContent: element.textContent?.trim() || undefined,
+              id: element.id || undefined,
+              selector: this.getCssSelector(element),
+              xpath: this.getXPath(element),
+              value: this.getElementValue(element),
+              placeholder: attributes.placeholder,
+              ariaLabel: attributes['aria-label'],
+              role: attributes.role,
+              disabled: element.hasAttribute('disabled') || attributes['aria-disabled'] === 'true',
+              hidden: !!this.isElementHidden(element),
+              required: element.hasAttribute('required') || attributes['aria-required'] === 'true',
+              checked: this.isElementChecked(element),
+              selected: element.hasAttribute('selected') || attributes['aria-selected'] === 'true',
+              formId,
+              formName,
+              labelText: associatedLabels.length > 0 ? associatedLabels[0] : undefined,
+              associatedLabels: associatedLabels.length > 0 ? associatedLabels : undefined,
+            };
+          }
+
+          private clickable_elements_to_string(elements: HighlightedElement[]): string {
+            const elementStrings: string[] = [];
+
+            elements.forEach(element => {
+              let displayText = '';
+              let attributeText = '';
+
+              if (element.ariaLabel) {
+                displayText = element.ariaLabel;
+              } else if (element.labelText) {
+                displayText = element.labelText;
+              } else if (element.placeholder) {
+                displayText = element.placeholder;
+              } else if (element.textContent) {
+                displayText = element.textContent.replace(/\s+/g, ' ').trim();
+              } else if (element.value) {
+                displayText = element.value;
+              } else if (element.attributes.title) {
+                displayText = element.attributes.title;
+              } else if (element.attributes.alt) {
+                displayText = element.attributes.alt;
+              }
+
+              if (displayText.length > 50) {
+                displayText = displayText.substring(0, 47) + '...';
+              }
+
+              const importantAttrs: string[] = [];
+              if (element.ariaLabel) importantAttrs.push(`aria-label="${element.ariaLabel}"`);
+              if (element.placeholder && element.tagName === 'input')
+                importantAttrs.push(`placeholder="${element.placeholder}"`);
+              if (element.attributes.type && element.tagName === 'input')
+                importantAttrs.push(`type="${element.attributes.type}"`);
+              if (element.disabled) importantAttrs.push('disabled');
+              if (element.required) importantAttrs.push('required');
+              if (element.checked) importantAttrs.push('checked');
+              if (element.attributes.href) {
+                const href =
+                  element.attributes.href.length > 30
+                    ? element.attributes.href.substring(0, 27) + '...'
+                    : element.attributes.href;
+                importantAttrs.push(`href="${href}"`);
+              }
+
+              if (importantAttrs.length > 0) {
+                attributeText = ' ' + importantAttrs.join(' ');
+              }
+
+              const elementString = `[${element.highlight_index}]<${element.tagName}${attributeText}>${displayText}</${element.tagName}>`;
+              elementStrings.push(elementString);
+            });
+
+            return elementStrings.join('\n');
+          }
+
+          // Helper methods
+          private isElementHidden(element: Element): boolean {
+            const style = element.getAttribute('style');
+            return (
+              element.hasAttribute('hidden') ||
+              element.getAttribute('aria-hidden') === 'true' ||
+              (style !== null && style.includes('display: none')) ||
+              (style !== null && style.includes('display:none')) ||
+              (style !== null && style.includes('visibility: hidden')) ||
+              (style !== null && style.includes('visibility:hidden'))
+            );
+          }
+
+          private getElementAttributes(element: Element): Record<string, string> {
+            const attributes: Record<string, string> = {};
+            for (let i = 0; i < element.attributes.length; i++) {
+              const attr = element.attributes[i];
+              attributes[attr.name] = attr.value;
+            }
+            return attributes;
+          }
+
+          private getElementValue(element: Element): string | undefined {
+            if ('value' in element) {
+              return (element as HTMLInputElement).value || undefined;
+            }
+            return element.getAttribute('value') || undefined;
+          }
+
+          private isElementChecked(element: Element): boolean {
+            if ('checked' in element) {
+              return (element as HTMLInputElement).checked;
+            }
+            return element.getAttribute('aria-checked') === 'true';
+          }
+
+          private getAssociatedLabels(element: Element): string[] {
+            const labels: string[] = [];
+            if (['input', 'select', 'textarea'].includes(element.tagName.toLowerCase())) {
+              if (element.id) {
+                const labelElements = this.doc.querySelectorAll(`label[for="${element.id}"]`);
+                labelElements.forEach(label => {
+                  if (label.textContent) labels.push(label.textContent.trim());
+                });
+              }
+              let parent = element.parentElement;
+              while (parent && parent !== this.doc.body) {
+                if (parent.tagName === 'LABEL' && parent.textContent) {
+                  labels.push(parent.textContent.trim());
+                  break;
+                }
+                parent = parent.parentElement;
+              }
+            }
+            return labels;
+          }
+
+          private getFormContext(element: Element): { formId?: string; formName?: string } {
+            let formId: string | undefined;
+            let formName: string | undefined;
+            let parent = element.parentElement;
+            while (parent && parent !== this.doc.body) {
+              if (parent.tagName === 'FORM') {
+                formId = parent.id || undefined;
+                formName = parent.getAttribute('name') || undefined;
+                break;
+              }
+              parent = parent.parentElement;
+            }
+            return { formId, formName };
+          }
+
+          private findPotentialContainers(): Element[] {
+            const containers: Element[] = [];
+            const divs = this.doc.querySelectorAll('div');
+            Array.from(divs).forEach(div => {
+              if (div.children.length < 2) return;
+              if (containers.some(container => container.contains(div) && container !== div))
+                return;
+              const className = div.className.toLowerCase();
+              const isContainer =
+                className.includes('container') ||
+                className.includes('section') ||
+                className.includes('panel') ||
+                className.includes('wrapper') ||
+                className.includes('content') ||
+                className.includes('layout') ||
+                div.children.length >= 3;
+              if (isContainer) containers.push(div);
+            });
+            if (containers.length === 0 && this.doc.body.children.length > 0) {
+              containers.push(this.doc.body);
+            }
+            return containers;
+          }
+
+          private getCssSelector(element: Element): string {
+            if (element.id) return `#${element.id}`;
+            let selector = element.tagName.toLowerCase();
+            if (element.classList.length > 0) {
+              selector += `.${Array.from(element.classList).join('.')}`;
+            }
+            if (element.parentElement) {
+              const siblings = Array.from(element.parentElement.children);
+              const sameTagSiblings = siblings.filter(el => el.tagName === element.tagName);
+              if (sameTagSiblings.length > 1) {
+                const index = sameTagSiblings.indexOf(element as Element) + 1;
+                selector += `:nth-of-type(${index})`;
+              }
+            }
+            return selector;
+          }
+
+          private getXPath(element: Element): string {
+            if (element.id) return `//*[@id="${element.id}"]`;
+            if (element.tagName.toLowerCase() === 'body') return '/html/body';
+            if (!element.parentElement) return '';
+            const siblings = Array.from(element.parentElement.children);
+            const tagName = element.tagName.toLowerCase();
+            const sameTagSiblings = siblings.filter(el => el.tagName.toLowerCase() === tagName);
+            const index = sameTagSiblings.indexOf(element as Element) + 1;
+            const parentPath = this.getXPath(element.parentElement);
+            return sameTagSiblings.length === 1
+              ? `${parentPath}/${tagName}`
+              : `${parentPath}/${tagName}[${index}]`;
+          }
+
+          private getElementDepth(element: Element): number {
+            let depth = 0;
+            let parent = element.parentElement;
+            while (parent) {
+              depth++;
+              parent = parent.parentElement;
+            }
+            return depth;
+          }
+        }
+
+        try {
+          const analyzer = new DOMAnalyzer();
+          const analysisResult = analyzer.analyze();
+
+          // Convert to serializable format
+          const result: AnalyzePageResult = {
+            segments: analysisResult.segments.map(segment => ({
+              type: segment.type,
+              selector: segment.selector,
+              textContent: segment.textContent,
+              depth: segment.depth,
+            })),
+            highlightedElements: analysisResult.highlightedElements.map(element => ({
+              highlight_index: element.highlight_index,
+              tagName: element.tagName,
+              type: element.type,
+              interactionType: element.interactionType,
+              selector: element.selector,
+              xpath: element.xpath,
+              textContent: element.textContent,
+              value: element.value,
+              placeholder: element.placeholder,
+              ariaLabel: element.ariaLabel,
+              role: element.role,
+              disabled: element.disabled,
+              hidden: element.hidden,
+              required: element.required,
+              checked: element.checked,
+              selected: element.selected,
+              formId: element.formId,
+              formName: element.formName,
+              labelText: element.labelText,
+              associatedLabels: element.associatedLabels,
+              attributes: element.attributes,
+            })),
+            totalElements: analysisResult.totalElements,
+            clickableElementsString: analysisResult.clickableElementsString,
+          };
+
+          // Store element map in window for clickElementByIndex
+          (window as any).__domAnalysisElementMap = analysisResult.elementMap;
+
+          return { success: true, data: result };
+        } catch (error) {
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error during analysis',
+          };
+        }
+      });
+
+      return result;
+    } catch (error) {
+      console.error('Error analyzing page:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  async clickElementByIndex(
+    highlightIndex: number
+  ): Promise<WebInteractionResult<ClickElementByIndexResult>> {
+    try {
+      const result = await this.executeInTab<WebInteractionResult<ClickElementByIndexResult>>(
+        (index: string) => {
+          const highlightIndex = parseInt(index);
+          const elementMap = (window as any).__domAnalysisElementMap as Map<number, any>;
+
+          if (!elementMap) {
+            return {
+              success: false,
+              error: 'No DOM analysis data found. Please run analyzePage first.',
+            };
+          }
+
+          const elementInfo = elementMap.get(highlightIndex);
+          if (!elementInfo) {
+            return {
+              success: false,
+              error: `Element with highlight index ${highlightIndex} not found.`,
+              data: {
+                clicked: false,
+                elementFound: false,
+                elementStillExists: false,
+              },
+            };
+          }
+
+          // Find element by selector
+          const element = document.querySelector(elementInfo.selector) as HTMLElement;
+          if (!element) {
+            return {
+              success: false,
+              error: `Element with selector "${elementInfo.selector}" no longer exists on the page.`,
+              data: {
+                clicked: false,
+                elementFound: false,
+                elementStillExists: false,
+              },
+            };
+          }
+
+          // Check if element is visible and clickable
+          const rect = element.getBoundingClientRect();
+          if (rect.width === 0 || rect.height === 0) {
+            return {
+              success: false,
+              error: 'Element is not visible or has zero dimensions.',
+              data: {
+                clicked: false,
+                elementFound: true,
+                elementStillExists: true,
+                elementInfo: {
+                  tagName: element.tagName.toLowerCase(),
+                  textContent: element.textContent?.trim(),
+                  attributes: elementInfo.attributes,
+                },
+              },
+            };
+          }
+
+          // Scroll element into view
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+          // Perform click
+          try {
+            element.click();
+
+            return {
+              success: true,
+              data: {
+                clicked: true,
+                elementFound: true,
+                elementStillExists: document.querySelector(elementInfo.selector) !== null,
+                elementInfo: {
+                  tagName: element.tagName.toLowerCase(),
+                  textContent: element.textContent?.trim(),
+                  attributes: elementInfo.attributes,
+                },
+              },
+            };
+          } catch (clickError) {
+            return {
+              success: false,
+              error: `Click failed: ${clickError instanceof Error ? clickError.message : 'Unknown click error'}`,
+              data: {
+                clicked: false,
+                elementFound: true,
+                elementStillExists: true,
+                elementInfo: {
+                  tagName: element.tagName.toLowerCase(),
+                  textContent: element.textContent?.trim(),
+                  attributes: elementInfo.attributes,
+                },
+              },
+            };
+          }
+        },
+        [highlightIndex.toString()]
+      );
+
+      return result;
+    } catch (error) {
+      console.error('Error clicking element by index:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
