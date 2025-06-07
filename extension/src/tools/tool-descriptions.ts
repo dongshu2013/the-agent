@@ -438,93 +438,93 @@ export const getToolDescriptions = (): ToolDescription[] => {
         },
       },
     },
-    {
-      name: 'WebToolkit_clickElement',
-      description:
-        'Click an element on the page. The element must be visible and clickable. Always use listElements first to find the correct selector.',
-      parameters: {
-        type: 'object',
-        properties: {
-          selector: {
-            type: 'string',
-            description: `CSS selector for the element to click. Use listElements first to find the correct selector.
+    //     {
+    //       name: 'WebToolkit_clickElement',
+    //       description:
+    //         'Click an element on the page. The element must be visible and clickable. Always use listElements first to find the correct selector.',
+    //       parameters: {
+    //         type: 'object',
+    //         properties: {
+    //           selector: {
+    //             type: 'string',
+    //             description: `CSS selector for the element to click. Use listElements first to find the correct selector.
 
-Best practices for selectors:
-1. Prefer attribute selectors for interactive elements:
-   - '[role="button"]'
-   - '[aria-label="Submit"]'
-   - '[data-testid="submitButton"]'
-   - 'button[type="submit"]'
+    // Best practices for selectors:
+    // 1. Prefer attribute selectors for interactive elements:
+    //    - '[role="button"]'
+    //    - '[aria-label="Submit"]'
+    //    - '[data-testid="submitButton"]'
+    //    - 'button[type="submit"]'
 
-2. Use specific class or id if available:
-   - '.submit-button'
-   - '#submitButton'
+    // 2. Use specific class or id if available:
+    //    - '.submit-button'
+    //    - '#submitButton'
 
-3. Combine selectors for more precision:
-   - 'button.primary[type="submit"]'
-   - '.form-container button[type="submit"]'
+    // 3. Combine selectors for more precision:
+    //    - 'button.primary[type="submit"]'
+    //    - '.form-container button[type="submit"]'
 
-4. Avoid relying on text content alone as it may change
+    // 4. Avoid relying on text content alone as it may change
 
-If click fails:
-1. Use listElements to verify the element exists
-2. Check if element is visible and interactive
-3. Try a more specific selector`,
-          },
-        },
-        required: ['selector'],
-      },
-      returns: {
-        type: 'object',
-        description: 'Result of the click operation',
-        properties: {
-          success: {
-            type: 'boolean',
-            description: 'Whether the click was successful',
-          },
-          error: {
-            type: 'string',
-            description:
-              'Error details if click failed, including why the element was not clickable',
-          },
-          data: {
-            type: 'object',
-            description: 'Information about the clicked element',
-            properties: {
-              text: {
-                type: 'string',
-                description: "Element's text content",
-              },
-              html: {
-                type: 'string',
-                description: "Element's HTML structure",
-              },
-              clicked: {
-                type: 'boolean',
-                description: 'Whether click was performed',
-              },
-              position: {
-                type: 'object',
-                description: 'Click coordinates',
-                properties: {
-                  x: { type: 'number' },
-                  y: { type: 'number' },
-                },
-              },
-              elementState: {
-                type: 'object',
-                description: 'Element state when clicked',
-                properties: {
-                  isVisible: { type: 'boolean' },
-                  isEnabled: { type: 'boolean' },
-                  attributes: { type: 'object' },
-                },
-              },
-            },
-          },
-        },
-      },
-    },
+    // If click fails:
+    // 1. Use listElements to verify the element exists
+    // 2. Check if element is visible and interactive
+    // 3. Try a more specific selector`,
+    //           },
+    //         },
+    //         required: ['selector'],
+    //       },
+    //       returns: {
+    //         type: 'object',
+    //         description: 'Result of the click operation',
+    //         properties: {
+    //           success: {
+    //             type: 'boolean',
+    //             description: 'Whether the click was successful',
+    //           },
+    //           error: {
+    //             type: 'string',
+    //             description:
+    //               'Error details if click failed, including why the element was not clickable',
+    //           },
+    //           data: {
+    //             type: 'object',
+    //             description: 'Information about the clicked element',
+    //             properties: {
+    //               text: {
+    //                 type: 'string',
+    //                 description: "Element's text content",
+    //               },
+    //               html: {
+    //                 type: 'string',
+    //                 description: "Element's HTML structure",
+    //               },
+    //               clicked: {
+    //                 type: 'boolean',
+    //                 description: 'Whether click was performed',
+    //               },
+    //               position: {
+    //                 type: 'object',
+    //                 description: 'Click coordinates',
+    //                 properties: {
+    //                   x: { type: 'number' },
+    //                   y: { type: 'number' },
+    //                 },
+    //               },
+    //               elementState: {
+    //                 type: 'object',
+    //                 description: 'Element state when clicked',
+    //                 properties: {
+    //                   isVisible: { type: 'boolean' },
+    //                   isEnabled: { type: 'boolean' },
+    //                   attributes: { type: 'object' },
+    //                 },
+    //               },
+    //             },
+    //           },
+    //         },
+    //       },
+    //     },
     {
       name: 'WebToolkit_scrollToElement',
       description: 'Scroll the page to bring an element into view',
